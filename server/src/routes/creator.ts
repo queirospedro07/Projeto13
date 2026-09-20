@@ -119,7 +119,7 @@ router.post('/courses', authenticate, requireRole('CREATOR', 'ADMIN'), async (re
     let resolvedSpaceId = customSpaceId || null;
 
     transaction(() => {
-      // 1. Create linked Discord-style Space if channels are provided or by default
+      // 1. Create linked Community Space if channels are provided or by default
       if (!resolvedSpaceId) {
         resolvedSpaceId = `space-${Date.now()}`;
         const spaceSlug = `${slug}-comunidade`;

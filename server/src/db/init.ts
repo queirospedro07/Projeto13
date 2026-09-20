@@ -441,25 +441,25 @@ function seedData(db: any) {
   const txn = db.transaction(() => {
     // 1. Users
     insertUser.run(
-      'user-pedro',
-      'pedro@learnspace.io',
-      'pedro',
+      'user-student',
+      'aluno@learnspace.io',
+      'aluno',
       passwordHash,
-      'Pedro Silva',
+      'Estudante Demo',
       'STUDENT',
       'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
-      'Estudante entusiasmado de engenharia de software e arquiteturas modernas.',
+      'Estudante de engenharia de software e tecnologias web modernas.',
       'Lisboa, Portugal',
-      12,
-      60,
-      42,
-      1480,
-      1450,
-      4,
+      0,
+      45,
+      0,
+      0,
+      0,
+      1,
       now,
       now
     );
-    insertProfile.run('prof-pedro', 'user-pedro', 'Estudante Full Stack & Aprendiz Contínuo', 'https://learnspace.io', 'https://github.com', '', '', );
+    insertProfile.run('prof-student', 'user-student', 'Estudante LearnSpace', 'https://learnspace.io', '', '', '', );
 
     insertUser.run(
       'user-sarah',
@@ -532,7 +532,7 @@ function seedData(db: any) {
 
     // 5. Memberships
     insertMembership.run('mem-1', 'user-sarah', 'space-react', 'OWNER', now);
-    insertMembership.run('mem-2', 'user-pedro', 'space-react', 'MEMBER', now);
+    insertMembership.run('mem-2', 'user-student', 'space-react', 'MEMBER', now);
     insertMembership.run('mem-3', 'user-alex', 'space-react', 'ADMIN', now);
 
     // 6. Courses
@@ -563,26 +563,18 @@ function seedData(db: any) {
     insertLesson.run('les-2', 'mod-1', '1.2 Tipagem Avançada de Hooks & Props', 'video', 'Aprenda a tipar useState, useReducer, useRef e handlers de eventos com rigor.', 'https://www.w3schools.com/html/mov_bbb.mp4', 18, 1, 35);
     insertLesson.run('les-3', 'mod-1', '1.3 Questionário de Avaliação: Fundamentos', 'quiz', 'Avalie a sua compreensão sobre tipagem de componentes.', '', 10, 2, 50);
 
-    insertModule.run('mod-2', 'course-react-ts', 'Módulo 2: Otimização & Performance', 'Técnicas de renderização, memoização e arquitetura de componentes escaláveis.', 1);
-    insertLesson.run('les-4', 'mod-2', '2.1 Estratégias de Memoização Inteligente', 'video', 'Quando e como usar useMemo e useCallback sem prejudicar o ciclo de renderização.', 'https://www.w3schools.com/html/mov_bbb.mp4', 22, 0, 40);
-
     // 8. Quiz
     insertQuiz.run('quiz-1', 'les-3', 'Questionário: Fundamentos do React com TypeScript', 'Teste prático de 2 perguntas essenciais de arquitetura.', 70, 50);
     insertQuizQuestion.run('qq-1', 'quiz-1', 'Qual é a forma recomendada de tipar as propriedades de um componente React funcional?', JSON.stringify(['Usando interface ou type dedicado', 'Utilizando tipo "any"', 'Não definindo tipos', 'Utilizando a função Object']), 0, 'Interfaces e types dedicados garantem verificação em tempo de compilação.', 0);
     insertQuizQuestion.run('qq-2', 'quiz-1', 'Qual o benefício principal do modo estrito do TypeScript no React?', JSON.stringify(['Reduzir bugs e detetar referências nulas', 'Aumentar a velocidade da internet', 'Adicionar animações CSS automáticas', 'Ignorar erros de sintaxe']), 0, 'O modo estrito previne erros comuns como acesso a propriedades nulas ou indefinidas.', 1);
 
-    // 9. Enrollment
-    insertEnrollment.run('enr-pedro-1', 'user-pedro', 'course-react-ts', now, 50.0, 'les-2');
-
-    // 10. Achievements
+    // 9. Achievements
     insertAchievement.run('ach-first-step', 'primeiro-passo', 'Primeiro Passo', 'Concluiu a sua primeira lição na plataforma LearnSpace.', 'CheckCircle2', 'learning', 'Comum', 100);
     insertAchievement.run('ach-quiz-master', 'mestre-quizzes', 'Mestre dos Questionários', 'Acertou 100% num questionário de avaliação técnica.', 'Award', 'quiz', 'Raro', 250);
     insertAchievement.run('ach-streak-7', 'consistencia-7', 'Foco de Aço (7 Dias)', 'Manteve uma sequência ativa de estudo durante 7 dias consecutivos.', 'Flame', 'streak', 'Épico', 500);
 
-    insertUserAchievement.run('uach-1', 'user-pedro', 'ach-first-step', now);
-
-    // 11. Welcome Notification
-    insertNotification.run('notif-1', 'user-pedro', 'achievement', 'Bem-vindo ao LearnSpace!', 'Aceda aos seus cursos e participe nas salas de estudo ao vivo.', '/explore', 0, now);
+    // 10. Welcome Notification
+    insertNotification.run('notif-1', 'user-student', 'achievement', 'Bem-vindo ao LearnSpace!', 'Aceda aos seus cursos e participe nas salas de estudo ao vivo.', '/explore', 0, now);
   });
 
   txn();

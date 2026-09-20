@@ -129,7 +129,7 @@ export const AdminDashboard: React.FC = () => {
             <Card className="p-6 border-slate-200 bg-white shadow-xs">
               <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Espaços Ativos</span>
               <p className="text-3xl font-extrabold text-slate-900 mt-1">{stats?.totalSpaces || 5}</p>
-              <span className="text-xs font-medium text-slate-500 mt-1 block">Canais estilo Discord</span>
+              <span className="text-xs font-medium text-slate-500 mt-1 block">Canais da Comunidade</span>
             </Card>
 
             <Card className="p-6 border-slate-200 bg-white shadow-xs">

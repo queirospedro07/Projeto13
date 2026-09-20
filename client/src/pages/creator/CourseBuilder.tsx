@@ -215,7 +215,7 @@ const PRESET_TEMPLATES: ChannelTemplate[] = [
     name: 'mentoria-ao-vivo',
     type: 'voice',
     title: 'Sala de Mentoria',
-    description: 'Sessão ao vivo com áudio, vídeo e partilha de ecrã (Discord)',
+    description: 'Sessão ao vivo com áudio, vídeo e partilha de ecrã',
     icon: Volume2
   },
   {
@@ -302,7 +302,7 @@ export const CourseBuilder: React.FC = () => {
       id: 'ch-4',
       name: 'mentoria-ao-vivo',
       type: 'voice',
-      topic: 'Sala ao vivo Discord para estudo conjunto, mentoria e partilha de ecrã.',
+      topic: 'Sala ao vivo para estudo conjunto, mentoria e partilha de ecrã.',
       guidingQuestion: 'Que tópico estão a rever em grupo neste momento?',
       guidelines: 'Mantenha o microfone silenciado quando não estiver a falar.',
     },
@@ -690,7 +690,7 @@ export const CourseBuilder: React.FC = () => {
       };
 
       const result = await api.createCourse(payload);
-      toast({ title: 'Curso Criado com Sucesso', message: 'O curso, canais Discord e lições foram publicados com sucesso!', type: 'success' });
+      toast({ title: 'Curso Criado com Sucesso', message: 'O curso, canais da comunidade e lições foram publicados com sucesso!', type: 'success' });
       navigate(`/learn/${result.id || result.slug}`);
     } catch (err: any) {
       toast({ title: 'Erro ao Publicar', message: err.message || 'Não foi possível publicar o curso.', type: 'error' });
@@ -751,7 +751,7 @@ export const CourseBuilder: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs text-zinc-400 mt-0.5">
-                Personalize lições ricas, canais Discord, badges de gamificação e certificados.
+                Personalize lições interativas, canais de estudo, medalhas de gamificação e certificados.
               </p>
             </div>
           </div>
@@ -791,8 +791,8 @@ export const CourseBuilder: React.FC = () => {
           <div className="bg-[#12141c] p-1.5 rounded-2xl grid grid-cols-2 sm:grid-cols-4 gap-1.5 max-w-4xl mx-auto border border-[#1e2230]">
             {[
               { num: 1, label: '1. Identidade & Marca' },
-              { num: 2, label: '2. Comunidade Discord' },
-              { num: 3, label: '3. Aulas & Módulos Ricos' },
+              { num: 2, label: '2. Espaço & Canais' },
+              { num: 3, label: '3. Aulas & Módulos' },
               { num: 4, label: '4. Revisão & Publicação' },
             ].map((st) => {
               const isCurrent = activeStep === st.num;
@@ -1123,7 +1123,7 @@ export const CourseBuilder: React.FC = () => {
         )}
 
         {/* ======================================================================= */}
-        {/* PASSO 2: CANAIS DISCORD & SALAS DE VOZ/VÍDEO */}
+        {/* PASSO 2: CANAIS DE TEXTO & SALAS DE ESTUDO AO VIVO */}
         {/* ======================================================================= */}
         {activeStep === 2 && (
           <div className="flex flex-col gap-6 animate-fade-in">
@@ -1132,7 +1132,7 @@ export const CourseBuilder: React.FC = () => {
                 <div>
                   <h2 className="text-base font-black text-white flex items-center gap-2">
                     <Volume2 className="w-5 h-5 text-indigo-400" />
-                    Canais & Salas de Voz Estilo Discord
+                    Canais de Texto & Salas de Estudo ao Vivo
                   </h2>
                   <p className="text-xs text-zinc-400 mt-0.5">
                     Configure os canais de texto, fóruns de dúvidas e salas de mentoria da turma.
@@ -1176,7 +1176,7 @@ export const CourseBuilder: React.FC = () => {
                           className="bg-[#181a24] border border-[#2b3044] rounded-lg px-3 py-1.5 text-xs font-bold text-white"
                         />
                         <span className="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 font-mono capitalize">
-                          {chan.type === 'voice' ? 'Voz & Vídeo Discord' : chan.type}
+                          {chan.type === 'voice' ? 'Voz & Vídeo ao Vivo' : chan.type}
                         </span>
                       </div>
 
@@ -1550,7 +1550,7 @@ export const CourseBuilder: React.FC = () => {
                 </div>
 
                 <div className="p-4 rounded-2xl bg-[#141620] border border-[#222638] flex flex-col gap-1">
-                  <span className="text-[11px] font-bold text-zinc-400">Comunidade Discord</span>
+                  <span className="text-[11px] font-bold text-zinc-400">Comunidade da Turma</span>
                   <p className="text-lg font-black text-white">{channels.length} Canais</p>
                   <p className="text-xs text-emerald-400 font-bold">Salas de Voz, Q&A e Texto</p>
                 </div>

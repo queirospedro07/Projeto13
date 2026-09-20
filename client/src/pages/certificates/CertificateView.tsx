@@ -16,14 +16,7 @@ export const CertificateView: React.FC = () => {
     api.verifyCertificate(id)
       .then(data => setCert(data))
       .catch(() => {
-        setCert({
-          certificateId: id,
-          recipientName: 'Pedro Silva',
-          courseTitle: 'Full Stack Web Development & Real-Time Systems',
-          creatorName: 'Sarah Jenkins',
-          issuedAt: new Date().toISOString(),
-          scorePercent: 100,
-        });
+        setCert(null);
       })
       .finally(() => setLoading(false));
   }, [id]);
@@ -33,6 +26,27 @@ export const CertificateView: React.FC = () => {
   };
 
   if (loading) return <div className="p-16 text-center text-slate-500 font-medium">A verificar credencial de certificado...</div>;
+
+  if (!cert) {
+    return (
+      <div className="max-w-xl mx-auto py-20 px-6 text-center animate-fade-in">
+        <div className="p-10 rounded-3xl bg-white border border-slate-200 shadow-sm flex flex-col items-center">
+          <div className="w-16 h-16 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mb-4">
+            <Award className="w-8 h-8" />
+          </div>
+          <h2 className="text-2xl font-black text-slate-950 mb-2">Certificado Não Encontrado</h2>
+          <p className="text-base text-slate-600 mb-6">
+            O certificado com o identificador informado não existe ou ainda não foi emitido.
+          </p>
+          <Link to="/library">
+            <Button variant="primary" size="md" className="font-bold">
+              Voltar aos Meus Cursos
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto flex flex-col gap-8 py-8 animate-fade-in pb-16">

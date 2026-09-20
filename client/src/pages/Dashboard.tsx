@@ -60,17 +60,17 @@ export const Dashboard: React.FC = () => {
   <div className="max-w-7xl mx-auto flex flex-col gap-8 animate-fade-in">
    
    {/* 1. Header with Personalized Greeting & Streak */}
-   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
+   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-zinc-800">
     <div>
      <div className="flex items-center gap-2 mb-1.5">
-      <span className="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-md">
+      <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-2.5 py-0.5 rounded-md border border-blue-100 dark:border-blue-900/40">
        Painel do Aluno
       </span>
      </div>
-     <h1 className="text-3xl sm:text-4xl font-black text-slate-950 tracking-tight">
+     <h1 className="text-3xl sm:text-4xl font-black text-slate-950 dark:text-white tracking-tight">
       {getTimeGreeting()}, {user?.name?.split(' ')[0] || 'Aluno'}!
      </h1>
-     <p className="text-base text-slate-600 mt-1">
+     <p className="text-base text-slate-600 dark:text-zinc-400 mt-1">
       Continue as suas aulas em curso, acompanhe a sua turma e alcance os seus objetivos semanais.
      </p>
     </div>
@@ -78,14 +78,14 @@ export const Dashboard: React.FC = () => {
     {/* Action buttons */}
     <div className="flex items-center gap-3">
      <Link to="/library">
-      <button className="px-5 py-2.5 text-sm font-semibold bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 rounded-xl shadow-xs flex items-center gap-2 transition-all cursor-pointer">
-       <Users className="w-4 h-4 text-slate-600" />
+      <button className="px-5 py-2.5 text-sm font-semibold bg-white hover:bg-slate-50 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-200 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-xs flex items-center gap-2 transition-all cursor-pointer">
+       <Users className="w-4 h-4 text-slate-600 dark:text-zinc-400" />
        <span>Os Meus Espaços</span>
       </button>
      </Link>
      <Link to="/community">
-      <button className="px-5 py-2.5 text-sm font-semibold bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-xs flex items-center gap-2 transition-all cursor-pointer">
-       <Compass className="w-4 h-4 text-white" />
+      <button className="px-5 py-2.5 text-sm font-semibold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-zinc-200 text-white dark:text-black rounded-xl shadow-xs flex items-center gap-2 transition-all cursor-pointer">
+       <Compass className="w-4 h-4" />
        <span>Explorar Espaços</span>
       </button>
      </Link>
@@ -95,86 +95,125 @@ export const Dashboard: React.FC = () => {
    {/* 2. Top Highlights Grid */}
    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
     
-    {/* Continue Learning Featured Card */}
-    <div className="lg:col-span-2 flex flex-col justify-between p-8 rounded-3xl bg-white border border-slate-200 shadow-sm">
-     <div>
-      <div className="flex items-center justify-between mb-4">
-       <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold uppercase tracking-wider">
-        Em Curso
-       </span>
-       <span className="text-sm font-bold text-slate-700">
-        {primaryEnrollment ? `${Math.round(primaryEnrollment.progressPercent)}% concluído` : '68% concluído'}
-       </span>
+    {/* Continue Learning Featured Card or Empty State */}
+    <div className="lg:col-span-2 flex flex-col justify-between p-8 rounded-3xl bg-white dark:bg-[#0e0e0e] border border-slate-200 dark:border-zinc-800 shadow-sm">
+     {primaryEnrollment ? (
+      <>
+       <div>
+        <div className="flex items-center justify-between mb-4">
+         <span className="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 text-xs font-bold uppercase tracking-wider">
+          Em Curso
+         </span>
+         <span className="text-sm font-bold text-slate-700 dark:text-zinc-300">
+          {Math.round(primaryEnrollment.progressPercent || 0)}% concluído
+         </span>
+        </div>
+
+        <h3 className="text-2xl font-extrabold text-slate-950 dark:text-white mb-2 leading-snug">
+         {primaryEnrollment.course?.title || 'Curso em Andamento'}
+        </h3>
+        <p className="text-base text-slate-600 dark:text-zinc-400 line-clamp-2 mb-6">
+         {primaryEnrollment.course?.description || 'Continue de onde parou as suas lições práticas.'}
+        </p>
+
+        <ProgressBar
+         value={primaryEnrollment.progressPercent || 0}
+         size="lg"
+         variant="brand"
+         className="mb-6"
+        />
+       </div>
+
+       <div className="flex items-center justify-between pt-5 border-t border-slate-100 dark:border-zinc-800">
+        <div className="flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-zinc-400">
+         <Clock className="w-4 h-4 text-slate-400 dark:text-zinc-500" />
+         <span>{primaryEnrollment.course?.durationHours ? `${primaryEnrollment.course.durationHours}h de carga horária` : 'Pronto para aprender'}</span>
+        </div>
+        <Link to={`/learn/${primaryEnrollment.courseId}`}>
+         <button className="px-6 py-3 rounded-xl font-bold text-sm bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 flex items-center gap-2 transition-all cursor-pointer">
+          <span>Continuar Aula</span>
+          <ArrowRight className="w-4 h-4" />
+         </button>
+        </Link>
+       </div>
+      </>
+     ) : (
+      <div className="flex flex-col justify-between h-full py-2">
+       <div>
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 text-xs font-bold mb-4 border border-blue-100 dark:border-blue-900/40">
+         <Sparkles className="w-3.5 h-3.5" />
+         Bem-vindo ao LearnSpace
+        </div>
+        <h3 className="text-2xl font-extrabold text-slate-950 dark:text-white mb-2 leading-snug">
+         Ainda não está inscrito em nenhum curso
+        </h3>
+        <p className="text-base text-slate-600 dark:text-zinc-400 mb-6">
+         Explore o nosso catálogo com cursos interativos, projetos práticos e salas de estudo ao vivo da comunidade.
+        </p>
+       </div>
+
+       <div className="flex items-center justify-between pt-5 border-t border-slate-100 dark:border-zinc-800">
+        <span className="text-sm font-semibold text-slate-500 dark:text-zinc-400">
+         Inicie a sua formação académica
+        </span>
+        <Link to="/explore">
+         <button className="px-6 py-3 rounded-xl font-bold text-sm bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 flex items-center gap-2 transition-all cursor-pointer">
+          <Compass className="w-4 h-4" />
+          <span>Explorar Cursos</span>
+         </button>
+        </Link>
+       </div>
       </div>
-
-      <h3 className="text-2xl font-extrabold text-slate-950 mb-2 leading-snug">
-       {primaryEnrollment?.course?.title || 'Full Stack Web Development com React 19 & Node.js'}
-      </h3>
-      <p className="text-base text-slate-600 line-clamp-2 mb-6">
-       Próxima Aula: Arquitetura de Estado Concorrente, WebSockets e Salas ao Vivo com Partilha de Ecrã.
-      </p>
-
-      <ProgressBar
-       value={primaryEnrollment?.progressPercent || 68}
-       size="lg"
-       variant="brand"
-       className="mb-6"
-      />
-     </div>
-
-     <div className="flex items-center justify-between pt-5 border-t border-slate-100">
-      <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
-       <Clock className="w-4 h-4 text-slate-400" />
-       <span>~22 minutos restantes na aula</span>
-      </div>
-      <Link to={`/learn/${primaryEnrollment?.courseId || 'course-fullstack'}`}>
-       <button className="px-6 py-3 rounded-xl font-bold text-sm bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 flex items-center gap-2 transition-all cursor-pointer">
-        <span>Continuar Aula</span>
-        <ArrowRight className="w-4 h-4" />
-       </button>
-      </Link>
-     </div>
+     )}
     </div>
 
     {/* Streak & Daily Goal Card */}
     <div className="flex flex-col gap-6">
      
      {/* Streak Card */}
-     <div className="flex items-center justify-between p-6 rounded-3xl bg-white border border-slate-200 shadow-sm">
+     <div className="flex items-center justify-between p-6 rounded-3xl bg-white dark:bg-[#0e0e0e] border border-slate-200 dark:border-zinc-800 shadow-sm">
       <div className="flex items-center gap-4">
-       <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-500">
+       <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 flex items-center justify-center text-amber-500">
         <Flame className="w-7 h-7 fill-amber-500 text-amber-500" />
        </div>
        <div>
-        <p className="text-2xl font-black text-slate-950">
-         {user?.streakDays || 12} Dias
+        <p className="text-2xl font-black text-slate-950 dark:text-white">
+         {user?.streakDays ?? 0} Dias
         </p>
-        <p className="text-sm font-semibold text-slate-500">Sequência de Estudo</p>
+        <p className="text-sm font-semibold text-slate-500 dark:text-zinc-400">Sequência de Estudo</p>
        </div>
       </div>
-      <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">Ativa</span>
+      <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+       (user?.streakDays ?? 0) > 0 
+        ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300' 
+        : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400'
+      }`}>
+       {(user?.streakDays ?? 0) > 0 ? 'Ativa' : 'Inativa'}
+      </span>
      </div>
 
      {/* Daily Goal Card */}
-     <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm flex flex-col justify-between">
+     <div className="p-6 rounded-3xl bg-white dark:bg-[#0e0e0e] border border-slate-200 dark:border-zinc-800 shadow-sm flex flex-col justify-between">
       <div className="flex items-center justify-between mb-3">
        <div className="flex items-center gap-2">
-        <Target className="w-5 h-5 text-blue-600" />
-        <span className="text-sm font-bold text-slate-900">Meta Diária de Estudo</span>
+        <Target className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        <span className="text-sm font-bold text-slate-900 dark:text-white">Meta Diária de Estudo</span>
        </div>
-       <span className="text-sm font-extrabold text-blue-600">
-        {user?.minutesToday || 42} / {user?.dailyGoalMinutes || 60}m
+       <span className="text-sm font-extrabold text-blue-600 dark:text-blue-400">
+        {user?.minutesToday ?? 0} / {user?.dailyGoalMinutes || 45}m
        </span>
       </div>
       <ProgressBar
-       value={user?.minutesToday || 42}
-       max={user?.dailyGoalMinutes || 60}
+       value={user?.minutesToday ?? 0}
+       max={user?.dailyGoalMinutes || 45}
        size="md"
        variant="brand"
        className="my-3"
       />
-      <p className="text-xs font-semibold text-slate-500 text-right">
-       Faltam {Math.max(0, (user?.dailyGoalMinutes || 60) - (user?.minutesToday || 42))} minutos para bater a meta de hoje
+      <p className="text-xs font-semibold text-slate-500 dark:text-zinc-400 text-right">
+       {Math.max(0, (user?.dailyGoalMinutes || 45) - (user?.minutesToday ?? 0)) === 0
+        ? 'Meta de hoje cumprida!'
+        : `Faltam ${Math.max(0, (user?.dailyGoalMinutes || 45) - (user?.minutesToday ?? 0))} minutos para bater a meta de hoje`}
       </p>
      </div>
 
@@ -185,42 +224,50 @@ export const Dashboard: React.FC = () => {
    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
     
     {/* Weekly Chart */}
-    <div className="lg:col-span-2 p-8 rounded-3xl bg-white border border-slate-200 shadow-sm flex flex-col justify-between">
+    <div className="lg:col-span-2 p-8 rounded-3xl bg-white dark:bg-[#0e0e0e] border border-slate-200 dark:border-zinc-800 shadow-sm flex flex-col justify-between">
      <div className="flex items-center justify-between mb-6">
       <div>
-       <h3 className="text-lg font-extrabold text-slate-950 flex items-center gap-2">
-        <TrendingUp className="w-5 h-5 text-blue-600" /> Atividade Semanal
+       <h3 className="text-lg font-extrabold text-slate-950 dark:text-white flex items-center gap-2">
+        <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" /> Atividade Semanal
        </h3>
-       <p className="text-sm text-slate-500 mt-0.5">Horas de dedicação nos últimos 7 dias</p>
+       <p className="text-sm text-slate-500 dark:text-zinc-400 mt-0.5">Horas de dedicação nos últimos 7 dias</p>
       </div>
-      <span className="px-3.5 py-1.5 rounded-xl bg-blue-50 text-blue-700 font-bold text-sm border border-blue-100">
-       Total: {stats?.totalHours || '24.6'} horas
+      <span className="px-3.5 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-bold text-sm border border-blue-100 dark:border-blue-900/40">
+       Total: {stats?.totalMinutes ? (stats.totalMinutes / 60).toFixed(1) : (stats?.totalHours ?? '0.0')} horas
       </span>
      </div>
 
      <div className="h-48 w-full">
       <ResponsiveContainer width="100%" height="100%">
-       <BarChart data={stats?.weeklyHours || [
-        { day: 'Seg', hours: 1.5 },
-        { day: 'Ter', hours: 2.0 },
-        { day: 'Qua', hours: 1.2 },
-        { day: 'Qui', hours: 0.8 },
-        { day: 'Sex', hours: 2.5 },
-        { day: 'Sáb', hours: 3.0 },
-        { day: 'Dom', hours: 1.8 },
+       <BarChart data={stats?.weeklyHours && stats.weeklyHours.length > 0 ? stats.weeklyHours : [
+        { day: 'Seg', hours: 0 },
+        { day: 'Ter', hours: 0 },
+        { day: 'Qua', hours: 0 },
+        { day: 'Qui', hours: 0 },
+        { day: 'Sex', hours: 0 },
+        { day: 'Sáb', hours: 0 },
+        { day: 'Dom', hours: 0 },
        ]}>
         <XAxis dataKey="day" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
         <Tooltip
-         contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '12px', fontSize: '12px', color: '#0f172a', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
-         cursor={{ fill: 'rgba(241, 245, 249, 0.6)' }}
+         contentStyle={{ backgroundColor: '#0e0e0e', borderColor: '#27272a', borderRadius: '12px', fontSize: '12px', color: '#ffffff', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)' }}
+         cursor={{ fill: 'rgba(241, 245, 249, 0.05)' }}
          formatter={(val: any) => [`${val} horas`, 'Investidas']}
         />
         <Bar dataKey="hours" radius={[6, 6, 0, 0]}>
-         {(stats?.weeklyHours || []).map((entry: any, index: number) => (
+         {(stats?.weeklyHours && stats.weeklyHours.length > 0 ? stats.weeklyHours : [
+          { day: 'Seg', hours: 0 },
+          { day: 'Ter', hours: 0 },
+          { day: 'Qua', hours: 0 },
+          { day: 'Qui', hours: 0 },
+          { day: 'Sex', hours: 0 },
+          { day: 'Sáb', hours: 0 },
+          { day: 'Dom', hours: 0 },
+         ]).map((entry: any, index: number) => (
           <Cell
            key={`cell-${index}`}
-           fill={index === 5 ? '#2563eb' : '#93c5fd'}
-           className="transition-colors hover:fill-blue-700"
+           fill={entry.hours > 0 ? '#2563eb' : '#27272a'}
+           className="transition-colors hover:fill-blue-600"
           />
          ))}
         </Bar>
@@ -228,66 +275,73 @@ export const Dashboard: React.FC = () => {
       </ResponsiveContainer>
      </div>
 
-     <div className="grid grid-cols-4 gap-4 pt-6 mt-4 border-t border-slate-100 text-center">
+     <div className="grid grid-cols-4 gap-4 pt-6 mt-4 border-t border-slate-100 dark:border-zinc-800 text-center">
       <div>
-       <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Inscritos</p>
-       <p className="font-black text-slate-900 text-lg mt-1">{stats?.enrolledCoursesCount || 2}</p>
+       <p className="text-slate-400 dark:text-zinc-500 text-xs font-bold uppercase tracking-wider">Inscritos</p>
+       <p className="font-black text-slate-900 dark:text-white text-lg mt-1">{myCourses.length}</p>
       </div>
       <div>
-       <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Quizzes</p>
-       <p className="font-black text-emerald-600 text-lg mt-1">{stats?.quizzesTaken || 5}</p>
+       <p className="text-slate-400 dark:text-zinc-500 text-xs font-bold uppercase tracking-wider">Quizzes</p>
+       <p className="font-black text-emerald-600 dark:text-emerald-400 text-lg mt-1">{stats?.quizzesTaken ?? 0}</p>
       </div>
       <div>
-       <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Badges</p>
-       <p className="font-black text-amber-600 text-lg mt-1">{stats?.badgesCount || 5}</p>
+       <p className="text-slate-400 dark:text-zinc-500 text-xs font-bold uppercase tracking-wider">Badges</p>
+       <p className="font-black text-amber-600 dark:text-amber-400 text-lg mt-1">{stats?.badgesCount ?? 0}</p>
       </div>
       <div>
-       <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Total XP</p>
-       <p className="font-black text-blue-600 text-lg mt-1">{user?.xp || 1450}</p>
+       <p className="text-slate-400 dark:text-zinc-500 text-xs font-bold uppercase tracking-wider">Total XP</p>
+       <p className="font-black text-blue-600 dark:text-blue-400 text-lg mt-1">{user?.xp ?? 0}</p>
       </div>
      </div>
     </div>
 
     {/* Streak Calendar / Activity Feed */}
-    <div className="p-8 rounded-3xl bg-white border border-slate-200 shadow-sm flex flex-col justify-between">
+    <div className="p-8 rounded-3xl bg-white dark:bg-[#0e0e0e] border border-slate-200 dark:border-zinc-800 shadow-sm flex flex-col justify-between">
      <div>
       <div className="flex items-center justify-between mb-6">
-       <h3 className="text-lg font-extrabold text-slate-950 flex items-center gap-2">
+       <h3 className="text-lg font-extrabold text-slate-950 dark:text-white flex items-center gap-2">
         <Flame className="w-5 h-5 text-amber-500" /> Consistência
        </h3>
-       <Link to="/progress" className="text-sm font-bold text-blue-600 hover:underline">
+       <Link to="/progress" className="text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline">
         Ver Tudo →
        </Link>
       </div>
 
       {/* Weekly Days Indicator */}
       <div className="grid grid-cols-7 gap-2 mb-6 text-center">
-       {['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map((day, i) => (
-        <div key={i} className="flex flex-col items-center gap-1.5">
-         <span className="text-xs text-slate-400 font-bold">{day}</span>
-         <div
-          className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold ${
-           i < 6
-            ? 'bg-amber-100 text-amber-800 border border-amber-300'
-            : 'bg-slate-100 text-slate-400 border border-slate-200'
-          }`}
-         >
-          {i < 6 ? <Check className="w-3.5 h-3.5 text-amber-800" /> : null}
+       {['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map((day, i) => {
+        const hasStudied = i < (user?.streakDays ?? 0);
+        return (
+         <div key={i} className="flex flex-col items-center gap-1.5">
+          <span className="text-xs text-slate-400 dark:text-zinc-500 font-bold">{day}</span>
+          <div
+           className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold ${
+            hasStudied
+             ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800/60'
+             : 'bg-slate-100 dark:bg-zinc-900 text-slate-400 dark:text-zinc-600 border border-slate-200 dark:border-zinc-800'
+           }`}
+          >
+           {hasStudied ? <Check className="w-3.5 h-3.5 text-amber-800 dark:text-amber-300" /> : null}
+          </div>
          </div>
-        </div>
-       ))}
+        );
+       })}
       </div>
 
-      <p className="text-sm text-slate-600 leading-relaxed mb-6">
-       Sequência de aprendizagem ativa de <span className="font-bold text-slate-900">12 dias consecutivos</span>. Conclua mais 1 lição hoje para manter a sequência!
+      <p className="text-sm text-slate-600 dark:text-zinc-400 leading-relaxed mb-6">
+       {(user?.streakDays ?? 0) > 0 ? (
+        <>Sequência de aprendizagem ativa de <span className="font-bold text-slate-900 dark:text-white">{user?.streakDays} dia(s) consecutivos</span>. Conclua mais 1 lição hoje para manter a sequência!</>
+       ) : (
+        <>Ainda não iniciou a sua sequência. Conclua a sua primeira lição para acumular dias consecutivos!</>
+       )}
       </p>
      </div>
 
-     <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-center gap-3">
-      <Award className="w-6 h-6 text-amber-600 shrink-0" />
+     <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 flex items-center gap-3">
+      <Award className="w-6 h-6 text-amber-600 dark:text-amber-400 shrink-0" />
       <div className="text-xs">
-       <p className="font-bold text-slate-900 text-sm">Próximo Marco: 14 Dias</p>
-       <p className="text-amber-800 font-medium">+100 XP & Medalha de Académico Dedicado</p>
+       <p className="font-bold text-slate-900 dark:text-white text-sm">Próximo Marco: 7 Dias</p>
+       <p className="text-amber-800 dark:text-amber-300 font-medium">+100 XP & Medalha de Académico Dedicado</p>
       </div>
      </div>
     </div>

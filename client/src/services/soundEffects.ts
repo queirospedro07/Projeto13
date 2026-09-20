@@ -202,7 +202,7 @@ class SoundService {
   // DISCORD SOUNDBOARD SYNTHESIZED SOUNDS
   // ==========================================
 
-  // Airhorn: Classic MLG/Discord blast
+  // Airhorn: Classic celebration blast
   public playAirhorn() {
     if (!this.enabled) return;
     const ctx = this.getContext();

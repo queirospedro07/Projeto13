@@ -159,9 +159,9 @@ export const LandingPage: React.FC = () => {
               </div>
 
               <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center gap-3 mt-4">
-                <Avatar src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80" name="Pedro Silva" size="sm" status="online" />
+                <Avatar src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80" name="Lucas Mendes" size="sm" status="online" />
                 <div className="min-w-0">
-                  <p className="font-bold text-white text-xs truncate">Pedro Silva</p>
+                  <p className="font-bold text-white text-xs truncate">Lucas Mendes</p>
                   <p className="text-[10px] text-emerald-400">Microfone Ligado</p>
                 </div>
               </div>

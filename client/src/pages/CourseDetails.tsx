@@ -257,7 +257,7 @@ export const CourseDetails: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Espaço de comunidade & canais ao vivo estilo Discord</span>
+                    <span>Espaço de comunidade & canais de estudo ao vivo</span>
                   </div>
                   <div className="flex items-center gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />

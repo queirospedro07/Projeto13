@@ -13,12 +13,13 @@ function generateToken(user: { id: string; email: string; username: string; role
 // POST /api/auth/register
 router.post('/register', async (req, res: Response) => {
   try {
-    const { name, username, email, password } = req.body;
+    const { name, username, email, password, role } = req.body;
 
     if (!name || !username || !email || !password) {
       return res.status(400).json({ error: 'Todos os campos são obrigatórios' });
     }
 
+    const targetRole = role === 'CREATOR' ? 'CREATOR' : 'STUDENT';
     const cleanUsername = username.toLowerCase().trim();
     const cleanEmail = email.toLowerCase().trim();
 
@@ -41,13 +42,13 @@ router.post('/register', async (req, res: Response) => {
     transaction(() => {
       execute(
         `INSERT INTO users (id, email, username, passwordHash, name, role, avatarUrl, bio, location, streakDays, dailyGoalMinutes, minutesToday, totalMinutes, xp, level, isSuspended, createdAt, updatedAt)
-         VALUES (?, ?, ?, ?, ?, 'STUDENT', ?, '', '', 1, 45, 0, 0, 100, 1, 0, ?, ?)`,
-        [userId, cleanEmail, cleanUsername, passwordHash, name, avatarUrl, now, now]
+         VALUES (?, ?, ?, ?, ?, ?, ?, '', '', 0, 45, 0, 0, 0, 1, 0, ?, ?)`,
+        [userId, cleanEmail, cleanUsername, passwordHash, name, targetRole, avatarUrl, now, now]
       );
 
       execute(
         `INSERT INTO profiles (id, userId, headline, isPublic, showStreak, showLeaderboard, themePreference)
-         VALUES (?, ?, 'Novo Estudante LearnSpace', 1, 1, 1, 'light')`,
+         VALUES (?, ?, '', 1, 1, 1, 'light')`,
         [`prof-${userId}`, userId]
       );
 
@@ -63,11 +64,11 @@ router.post('/register', async (req, res: Response) => {
       name,
       username: cleanUsername,
       email: cleanEmail,
-      role: 'STUDENT',
+      role: targetRole,
       avatarUrl,
-      xp: 100,
+      xp: 0,
       level: 1,
-      streakDays: 1,
+      streakDays: 0,
     };
 
     const token = generateToken(user);
@@ -156,17 +157,26 @@ router.get('/demo/:role', async (req, res: Response) => {
 
   try {
     const { role } = req.params;
-    let username = 'pedro';
+    let username = 'aluno';
     if (role === 'creator') username = 'sarah_dev';
     if (role === 'admin') username = 'alex_admin';
 
-    const user = queryOne<any>(
+    let user = queryOne<any>(
       `SELECT u.*, p.headline, p.website, p.github, p.twitter, p.linkedin, p.themePreference
        FROM users u
        LEFT JOIN profiles p ON u.id = p.userId
        WHERE u.username = ?`,
       [username]
     );
+
+    if (!user && role === 'student') {
+      user = queryOne<any>(
+        `SELECT u.*, p.headline, p.website, p.github, p.twitter, p.linkedin, p.themePreference
+         FROM users u
+         LEFT JOIN profiles p ON u.id = p.userId
+         WHERE u.username = 'pedro'`
+      );
+    }
 
     if (!user) {
       return res.status(404).json({ error: 'Conta de demonstração não encontrada' });
