@@ -53,6 +53,8 @@ export interface CourseChannel {
   guidingQuestion?: string;
   guidelines?: string;
   isResolved?: boolean;
+  accessMode?: 'discussion' | 'announcement' | 'qa';
+  voiceMode?: 'open' | 'stage';
 }
 
 export const CoursePlayer: React.FC = () => {
@@ -321,7 +323,21 @@ export const CoursePlayer: React.FC = () => {
     if (!socket) return;
     const handleNewMessage = (msg: Message) => {
       if (msg.channelId === currentTextChannel?.id) {
-        setChannelMessages(prev => (prev.some(m => m.id === msg.id) ? prev : [...prev, msg]));
+        setChannelMessages(prev => {
+          if (prev.some(m => m.id === msg.id)) return prev;
+          // Check if this incoming message matches a temporary optimistic message by this user
+          const optimisticIdx = prev.findIndex(m => 
+            m.id.startsWith('temp-') && 
+            (m.senderId === msg.senderId || m.sender?.username === msg.sender?.username) &&
+            m.content === msg.content
+          );
+          if (optimisticIdx !== -1) {
+            const next = [...prev];
+            next[optimisticIdx] = msg;
+            return next;
+          }
+          return [...prev, msg];
+        });
       }
     };
     socket.on('new-message', handleNewMessage);
@@ -348,34 +364,58 @@ export const CoursePlayer: React.FC = () => {
     }
   };
 
-  // 4. Send Channel Message
+  // 4. Send Channel Message (Instant Optimistic Display)
   const handleSendChatMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatInput.trim() || !currentTextChannel) return;
 
     const content = chatInput.trim();
-    setChatInput('');
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+    const currentReply = replyingTo;
 
+    const optimisticMsg: Message = {
+      id: tempId,
+      channelId: currentTextChannel.id,
+      senderId: user?.id || 'temp-user',
+      content,
+      isPinned: false,
+      createdAt: new Date().toISOString(),
+      sender: {
+        id: user?.id || 'temp-user',
+        name: user?.name || 'Eu',
+        username: user?.username || 'eu',
+        avatarUrl: user?.avatarUrl,
+        role: user?.role || 'STUDENT'
+      },
+      replyTo: currentReply ? {
+        id: currentReply.id,
+        content: currentReply.content,
+        sender: currentReply.sender
+      } : undefined,
+      reactions: []
+    };
+
+    // 1. Instant optimistic visual display
+    setChatInput('');
+    setReplyingTo(null);
+    setChannelMessages(prev => [...prev, optimisticMsg]);
+    soundEffects.playMessage();
+
+    // 2. Immediate socket broadcast
+    socket?.emit('send-message', optimisticMsg);
+
+    // 3. Persist to server
     try {
       const newMsg = await api.sendMessage(currentTextChannel.id, {
         content,
-        replyToId: replyingTo?.id
+        replyToId: currentReply?.id
       });
-      setChannelMessages(prev => [...prev, newMsg]);
+      // Replace optimistic item with server data
+      setChannelMessages(prev => prev.map(m => (m.id === tempId ? newMsg : m)));
       socket?.emit('send-message', newMsg);
-      soundEffects.playMessage();
-      setReplyingTo(null);
     } catch {
-      const localMsg: any = {
-        id: 'msg-' + Date.now(),
-        channelId: currentTextChannel.id,
-        senderId: user?.id,
-        content,
-        createdAt: new Date().toISOString(),
-        sender: { name: user?.name, username: user?.username, avatarUrl: user?.avatarUrl, role: user?.role }
-      };
-      setChannelMessages(prev => [...prev, localMsg]);
-      setReplyingTo(null);
+      // Keep optimistic message or notify if network error
+      console.warn('Network issue saving message, retaining local view');
     }
   };
 
@@ -451,7 +491,7 @@ export const CoursePlayer: React.FC = () => {
   return (
     <div className="flex h-[calc(100vh-4rem)] overflow-hidden bg-slate-50 text-slate-900 selection:bg-blue-100">
       
-      {/* 1. DISCORD-STYLE SERVER SIDEBAR */}
+      {/* 1. INTERACTIVE SERVER SIDEBAR */}
       <CourseServerSidebar
         courseTitle={course.title}
         isCreatorOrAdmin={isCreatorOrAdmin}

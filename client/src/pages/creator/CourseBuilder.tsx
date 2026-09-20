@@ -17,56 +17,62 @@ import {
   BookOpen, 
   CheckCircle2, 
   DollarSign,
-  GripVertical,
+  Users, 
+  Code2, 
+  ChevronDown, 
+  ChevronUp, 
+  Settings, 
+  Clock, 
+  Award, 
+  Trophy, 
+  Flame, 
+  Star, 
+  Shield, 
+  Palette, 
+  Download, 
+  FolderArchive, 
   Bell,
-  Users,
-  Code2,
-  ChevronDown,
-  ChevronUp,
-  Wand2,
-  Play,
-  Settings,
-  AlertCircle,
-  Info,
-  CheckSquare,
-  Square,
-  Upload,
-  Video,
-  Award,
-  Trophy,
-  Flame,
-  Star,
-  Shield,
-  Palette,
-  ExternalLink,
-  Download,
-  FolderArchive,
-  Clock,
-  Unlock,
-  Lock,
-  Tag,
-  FileCode,
-  Laptop,
-  CheckCheck,
-  QrCode,
+  Megaphone,
+  Mic,
+  MicOff,
   Radio,
-  FileBadge
+  FileBadge,
+  SlidersHorizontal,
+  Lock,
+  Unlock,
+  Copy,
+  Monitor
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import { useToast } from '../../components/ui/Toast';
+import { useAuth } from '../../context/AuthContext';
 import { soundEffects } from '../../services/soundEffects';
 import { api } from '../../services/api';
 import { QuizQuestionType } from '../../types';
 
 export type LessonType = 'video' | 'text' | 'quiz' | 'code' | 'project' | 'resource' | 'embed';
 
+export interface CourseRoleItem {
+  id: string;
+  name: string;
+  color: 'indigo' | 'emerald' | 'amber' | 'purple' | 'cyan' | 'rose' | 'zinc';
+  canPostAnnouncements: boolean;
+  canSpeakInStage: boolean;
+  canShareScreen: boolean;
+  canModerateChat: boolean;
+  canManageVoice: boolean;
+  isSystem?: boolean;
+}
+
 export interface ChannelItem {
   id: string;
   name: string;
   type: 'text' | 'voice' | 'qa' | 'showcase' | 'doc';
+  accessMode?: 'discussion' | 'announcement' | 'qa';
+  voiceMode?: 'open' | 'stage' | 'qa';
   topic: string;
   guidingQuestion: string;
   guidelines: string;
@@ -85,10 +91,6 @@ export interface QuizQuestionItem {
   explanation: string;
   points?: number;
   options: QuizOptionItem[];
-  gradingMode?: 'auto' | 'teacher';
-  expectedAnswer?: string;
-  keywords?: string[];
-  minWords?: number;
 }
 
 export interface VideoChapter {
@@ -113,25 +115,12 @@ export interface RichArticleData {
   checklist: { id: string; text: string }[];
 }
 
-export interface ProjectAssignmentData {
-  deliverableTitle: string;
-  brief: string;
-  rubric: string[];
-  allowedSubmission: 'github' | 'file' | 'both';
-}
-
 export interface DownloadableResourceItem {
   id: string;
   name: string;
   url: string;
   size: string;
   type: 'pdf' | 'zip' | 'figma' | 'code' | 'doc';
-}
-
-export interface EmbedData {
-  embedUrl: string;
-  provider: 'figma' | 'codepen' | 'replit' | 'loom' | 'youtube' | 'slides';
-  caption: string;
 }
 
 export interface LessonItem {
@@ -145,9 +134,7 @@ export interface LessonItem {
   videoChapters?: VideoChapter[];
   codeChallenge?: CodeChallengeData;
   richArticle?: RichArticleData;
-  projectAssignment?: ProjectAssignmentData;
   resources?: DownloadableResourceItem[];
-  embedData?: EmbedData;
   quiz?: {
     title: string;
     description: string;
@@ -166,307 +153,156 @@ export interface ModuleItem {
   lessons: LessonItem[];
 }
 
-// Preset channel templates
-interface ChannelTemplate {
-  name: string;
-  type: 'text' | 'voice' | 'qa' | 'showcase' | 'doc';
-  title: string;
-  description: string;
-  icon: React.ComponentType<{ className?: string }>;
-}
-
-const PRESET_TEMPLATES: ChannelTemplate[] = [
-  {
-    name: 'anuncios',
-    type: 'text',
-    title: 'Anúncios Oficiais',
-    description: 'Avisos e comunicados importantes do instrutor',
-    icon: Bell
-  },
-  {
-    name: 'geral',
-    type: 'text',
-    title: 'Discussão Geral',
-    description: 'Apresentações e conversas entre os membros',
-    icon: Hash
-  },
-  {
-    name: 'duvidas-aulas',
-    type: 'qa',
-    title: 'Dúvidas & Questões',
-    description: 'Tira-dúvidas técnicas e suporte com instrutores',
-    icon: HelpCircle
-  },
-  {
-    name: 'projetos-showcase',
-    type: 'showcase',
-    title: 'Showcase de Projetos',
-    description: 'Partilha de código, repositórios e feedback',
-    icon: Code2
-  },
-  {
-    name: 'materiais-apoio',
-    type: 'doc',
-    title: 'Documentos & Recursos',
-    description: 'Documentação, guias de estudo e ficheiros de apoio',
-    icon: FileText
-  },
-  {
-    name: 'mentoria-ao-vivo',
-    type: 'voice',
-    title: 'Sala de Mentoria',
-    description: 'Sessão ao vivo com áudio, vídeo e partilha de ecrã',
-    icon: Volume2
-  },
-  {
-    name: 'networking',
-    type: 'text',
-    title: 'Espaço de Networking',
-    description: 'Conexões profissionais e oportunidades da turma',
-    icon: Users
-  },
-  {
-    name: 'desafios-praticos',
-    type: 'qa',
-    title: 'Desafios & Exercícios',
-    description: 'Exercícios práticos e desafios técnicos periódicos',
-    icon: Sparkles
-  }
+const PRESET_THUMBNAILS = [
+  { label: 'Programação', url: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&auto=format&fit=crop&q=80' },
+  { label: 'Design & UI/UX', url: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&auto=format&fit=crop&q=80' },
+  { label: 'Inteligência Artificial', url: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&auto=format&fit=crop&q=80' },
+  { label: 'Negócios & Gestão', url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=80' }
 ];
 
 export const CourseBuilder: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { toast } = useToast();
 
   const [activeStep, setActiveStep] = useState<1 | 2 | 3 | 4>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
 
-  // Step 1: Course Identity, Branding & Rewards Customizations
+  // Step 1: Identity & Pricing
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('programming');
   const [difficulty, setDifficulty] = useState('Iniciante');
   const [language, setLanguage] = useState('Português');
   const [isFree, setIsFree] = useState(true);
-  const [price, setPrice] = useState('0');
+  const [price, setPrice] = useState('');
   const [hasDiscount, setHasDiscount] = useState(false);
-  const [discountPrice, setDiscountPrice] = useState('0');
-  const [couponCode, setCouponCode] = useState('BEMVINDO2026');
+  const [discountPrice, setDiscountPrice] = useState('');
+  const [couponCode, setCouponCode] = useState('');
   const [durationHours, setDurationHours] = useState('10');
-  const [thumbnailUrl, setThumbnailUrl] = useState('https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&auto=format&fit=crop&q=80');
-  
-  // Custom Visual Branding
+  const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [brandColor, setBrandColor] = useState<'indigo' | 'cyan' | 'emerald' | 'rose' | 'amber' | 'violet' | 'slate'>('indigo');
-  
-  // Custom Gamification / Badge Designer
-  const [badgeTitle, setBadgeTitle] = useState('Mestre do Código');
-  const [badgeIcon, setBadgeIcon] = useState<'trophy' | 'flame' | 'sparkles' | 'star' | 'shield' | 'award'>('trophy');
+
+  // Gamification & Certificate
+  const [badgeTitle, setBadgeTitle] = useState('');
+  const [badgeIcon, setBadgeIcon] = useState<'trophy' | 'flame' | 'sparkles' | 'star' | 'shield' | 'award'>('award');
   const [badgeRarity, setBadgeRarity] = useState<'bronze' | 'silver' | 'gold' | 'platinum' | 'diamond'>('gold');
   const [courseCompletionXp, setCourseCompletionXp] = useState(500);
 
-  // Custom Certificate Designer
-  const [certificateTitle, setCertificateTitle] = useState('Certificado de Conclusão e Excelência');
-  const [certificateInstructorSignature, setCertificateInstructorSignature] = useState('Prof. Sarah Jenkins');
+  const [certificateTitle, setCertificateTitle] = useState('Certificado de Conclusão e Competências');
+  const [certificateInstructorSignature, setCertificateInstructorSignature] = useState(user?.name || '');
   const [certificateOrg, setCertificateOrg] = useState('LearnSpace Academy');
-  const [certificateCustomMessage, setCertificateCustomMessage] = useState('Por ter concluído com sucesso todos os módulos teóricos, práticos e avaliações.');
+  const [certificateCustomMessage, setCertificateCustomMessage] = useState('Por ter concluído com sucesso todos os módulos teóricos, projetos práticos e avaliações.');
   const [certificateHasQrCode, setCertificateHasQrCode] = useState(true);
 
-  // Step 2: Channels State
+  // Step 2: Live Calls Settings
+  const [defaultCallMode, setDefaultCallMode] = useState<'open' | 'stage' | 'qa'>('open');
+  const [allowStudentScreenShare, setAllowStudentScreenShare] = useState(true);
+  const [allowStudentCamera, setAllowStudentCamera] = useState(true);
+  const [step2SubTab, setStep2SubTab] = useState<'channels' | 'calls' | 'roles'>('channels');
+
+  // Step 2: Channels (clean default structure)
   const [channels, setChannels] = useState<ChannelItem[]>([
     {
-      id: 'ch-1',
+      id: 'ch-anuncios',
+      name: 'anuncios',
+      type: 'text',
+      accessMode: 'announcement',
+      topic: 'Comunicados e avisos oficiais emitidos pelo instrutor e equipa pedagógica.',
+      guidingQuestion: '',
+      guidelines: 'Canal informativo reservado para publicações da equipa.',
+    },
+    {
+      id: 'ch-geral',
       name: 'geral',
       type: 'text',
-      topic: 'Boas-vindas, apresentações e conversas gerais sobre o curso.',
-      guidingQuestion: 'Qual é o seu principal objetivo com este curso?',
-      guidelines: 'Mantenha uma comunicação cordial e profissional com todos.',
+      accessMode: 'discussion',
+      topic: 'Apresentações, convívio e debates gerais sobre os temas do curso.',
+      guidingQuestion: 'Qual é o seu principal objetivo ao concluir este curso?',
+      guidelines: 'Mantenha o respeito e uma comunicação colaborativa.',
     },
     {
-      id: 'ch-2',
-      name: 'duvidas-exercicios',
+      id: 'ch-duvidas',
+      name: 'duvidas-aulas',
       type: 'qa',
-      topic: 'Colocação de dúvidas de código e resolução coletiva com instrutores.',
-      guidingQuestion: 'Em que lição ou conceito encontrou dificuldade?',
-      guidelines: 'Inclua o excerto de código formatado e a mensagem de erro.',
+      accessMode: 'qa',
+      topic: 'Espaço dedicado a colocar questões e tirar dúvidas técnicas com suporte da turma.',
+      guidingQuestion: 'Em que exercício ou lição encontrou dificuldade?',
+      guidelines: 'Descreva a dúvida e inclua capturas ou blocos de código se aplicável.',
     },
     {
-      id: 'ch-3',
-      name: 'projetos-showcase',
-      type: 'showcase',
-      topic: 'Partilha de projetos concluídos, links de repositórios e feedback da turma.',
-      guidingQuestion: 'Que personalizações adicionou ao seu projeto prático?',
-      guidelines: 'Partilhe o link do repositório ou demonstração.',
-    },
-    {
-      id: 'ch-4',
-      name: 'mentoria-ao-vivo',
+      id: 'ch-mentoria',
+      name: 'sala-ao-vivo',
       type: 'voice',
-      topic: 'Sala ao vivo para estudo conjunto, mentoria e partilha de ecrã.',
-      guidingQuestion: 'Que tópico estão a rever em grupo neste momento?',
+      voiceMode: 'open',
+      topic: 'Sala ao vivo para estudo coletivo, mentoria e transmissão de ecrã.',
+      guidingQuestion: 'Que lição estão a rever em grupo?',
       guidelines: 'Mantenha o microfone silenciado quando não estiver a falar.',
     },
   ]);
 
-  // Expanded advanced settings accordion per channel
   const [expandedChannelIds, setExpandedChannelIds] = useState<Set<string>>(new Set());
 
-  // Step 3: Modules & Rich Lessons State
-  const [modules, setModules] = useState<ModuleItem[]>([
+  // Step 2: Course Roles & Permissions (Custom Rules)
+  const [customRoles, setCustomRoles] = useState<CourseRoleItem[]>([
     {
-      id: 'mod-1',
-      title: 'Módulo 1: Fundamentos & Configuração',
-      description: 'Primeiros passos, ferramentas essenciais e arquitetura base.',
-      dripMode: 'instant',
-      dripDays: 0,
-      lessons: [
-        {
-          id: 'les-1',
-          title: '1.1 Visão Geral e Metodologia do Curso',
-          type: 'video',
-          durationMin: 12,
-          videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-          content: 'Apresentação detalhada da estrutura e objetivos de aprendizagem.',
-          xpReward: 25,
-          videoChapters: [
-            { id: 'vc-1', time: '00:00', title: 'Boas-vindas & Visão Geral' },
-            { id: 'vc-2', time: '03:30', title: 'Metodologia de Aprendizagem Ativa' },
-            { id: 'vc-3', time: '08:15', title: 'Visão do Projeto Final' }
-          ]
-        },
-        {
-          id: 'les-2',
-          title: '1.2 Configuração do Ambiente de Trabalho',
-          type: 'text',
-          durationMin: 15,
-          videoUrl: '',
-          content: 'Instalação das ferramentas recomendadas e primeiros comandos de terminal.',
-          xpReward: 25,
-          richArticle: {
-            markdown: '### Guia de Configuração Rápida\n\nSiga os passos abaixo para preparar o seu ambiente de desenvolvimento completo:\n\n1. Instale o Node.js v20+\n2. Configure o seu editor de código\n3. Clone o repositório de suporte',
-            calloutType: 'tip',
-            calloutTitle: 'Dica de Produtividade',
-            calloutText: 'Utilize os atalhos de teclado recomendados para poupar até 30% do tempo de codificação.',
-            checklist: [
-              { id: 'cl-1', text: 'Instalar Node.js LTS' },
-              { id: 'cl-2', text: 'Criar conta no GitHub' },
-              { id: 'cl-3', text: 'Testar execução no terminal' }
-            ]
-          }
-        },
-        {
-          id: 'les-2b',
-          title: '1.3 Desafio Interativo: Primeiro Script',
-          type: 'code',
-          durationMin: 20,
-          videoUrl: '',
-          content: 'Desafio prático de código executável.',
-          xpReward: 40,
-          codeChallenge: {
-            language: 'typescript',
-            initialCode: '// Crie uma função que retorne a mensagem de boas-vindas\nfunction boasVindas(nome: string): string {\n  // O seu código aqui\n  return "";\n}',
-            solutionCode: 'function boasVindas(nome: string): string {\n  return `Bem-vindo ao LearnSpace, ${nome}!`;\n}',
-            instructions: 'Implemente a função `boasVindas` para retornar uma saudação personalizada.',
-            hints: ['Utilize template strings com acentos graves (`).']
-          }
-        }
-      ],
+      id: 'role-instructor',
+      name: 'Instrutor',
+      color: 'indigo',
+      canPostAnnouncements: true,
+      canSpeakInStage: true,
+      canShareScreen: true,
+      canModerateChat: true,
+      canManageVoice: true,
+      isSystem: true
     },
     {
-      id: 'mod-2',
-      title: 'Módulo 2: Projetos Práticos e Avaliação',
-      description: 'Desenvolvimento de casos práticos e teste de competências.',
-      dripMode: 'sequential',
-      dripDays: 3,
-      lessons: [
-        {
-          id: 'les-3',
-          title: '2.1 Construção do Projeto Principal',
-          type: 'video',
-          durationMin: 25,
-          videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-          content: 'Implementação prática passo a passo com boas práticas de arquitetura.',
-          xpReward: 35,
-          videoChapters: [
-            { id: 'vc-21', time: '00:00', title: 'Arquitetura do Projeto' },
-            { id: 'vc-22', time: '07:20', title: 'Implementação dos Componentes' },
-            { id: 'vc-23', time: '18:40', title: 'Testes e Validação' }
-          ]
-        },
-        {
-          id: 'les-4',
-          title: '2.2 Questionário de Avaliação de Conhecimentos',
-          type: 'quiz',
-          durationMin: 10,
-          videoUrl: '',
-          content: 'Questionário prático para validar os conhecimentos adquiridos.',
-          xpReward: 50,
-          quiz: {
-            title: 'Avaliação dos Fundamentos',
-            description: 'Responda às questões práticas para testar a sua compreensão.',
-            passingScore: 70,
-            xpReward: 50,
-            questions: [
-              {
-                id: 'q-demo-1',
-                type: 'single',
-                question: 'Qual é o primeiro passo recomendado para inicializar um novo projeto?',
-                explanation: 'A inicialização e estrutura base garantem estabilidade e organização ao projeto.',
-                points: 10,
-                options: [
-                  { id: 'opt-demo-1-1', text: 'Inicializar as dependências e estrutura de pastas', isCorrect: true },
-                  { id: 'opt-demo-1-2', text: 'Publicar diretamente em produção sem testar', isCorrect: false },
-                  { id: 'opt-demo-1-3', text: 'Desativar o controlo de versões (Git)', isCorrect: false },
-                  { id: 'opt-demo-1-4', text: 'Eliminar todos os ficheiros de configuração', isCorrect: false }
-                ]
-              },
-              {
-                id: 'q-demo-2',
-                type: 'multiple',
-                question: 'Selecione as opções que representam boas práticas essenciais num código escalável:',
-                explanation: 'Tipagem estrita e testes automatizados reduzem bugs e aumentam a robustez do software.',
-                points: 10,
-                options: [
-                  { id: 'opt-demo-2-1', text: 'Tipagem estrita e contratos claros entre módulos', isCorrect: true },
-                  { id: 'opt-demo-2-2', text: 'Testes unitários e de integração contínua', isCorrect: true },
-                  { id: 'opt-demo-2-3', text: 'Guardar chaves secretas no repositório público', isCorrect: false },
-                  { id: 'opt-demo-2-4', text: 'Documentar convenções e arquitetura da aplicação', isCorrect: true }
-                ]
-              },
-              {
-                id: 'q-demo-3',
-                type: 'true-false',
-                question: 'Verdadeiro ou Falso: Um design com bom contraste e tipografia legível melhora a acessibilidade para todos os estudantes.',
-                explanation: 'Verdadeiro: O contraste adequado e tipografia legível são requisitos fundamentais de acessibilidade (WCAG).',
-                points: 10,
-                options: [
-                  { id: 'opt-demo-3-1', text: 'Verdadeiro', isCorrect: true },
-                  { id: 'opt-demo-3-2', text: 'Falso', isCorrect: false }
-                ]
-              }
-            ],
-          },
-        },
-        {
-          id: 'les-5',
-          title: '2.3 Pacote de Recursos & Assets do Curso',
-          type: 'resource',
-          durationMin: 5,
-          videoUrl: '',
-          content: 'Descarregue os ficheiros e templates de suporte.',
-          xpReward: 15,
-          resources: [
-            { id: 'res-1', name: 'Starter-Kit-LearnSpace.zip', url: 'https://learnspace.io/files/starter.zip', size: '12.4 MB', type: 'zip' },
-            { id: 'res-2', name: 'Guia-Atalhos-Completos.pdf', url: 'https://learnspace.io/files/guia.pdf', size: '2.1 MB', type: 'pdf' },
-            { id: 'res-3', name: 'Figma-Design-Tokens.fig', url: 'https://learnspace.io/files/tokens.fig', size: '8.7 MB', type: 'figma' }
-          ]
-        }
-      ],
+      id: 'role-tutor',
+      name: 'Tutor / Moderador',
+      color: 'emerald',
+      canPostAnnouncements: true,
+      canSpeakInStage: true,
+      canShareScreen: true,
+      canModerateChat: true,
+      canManageVoice: true,
+      isSystem: false
     },
+    {
+      id: 'role-monitor',
+      name: 'Monitor de Dúvidas',
+      color: 'amber',
+      canPostAnnouncements: false,
+      canSpeakInStage: true,
+      canShareScreen: false,
+      canModerateChat: false,
+      canManageVoice: false,
+      isSystem: false
+    },
+    {
+      id: 'role-student',
+      name: 'Estudante',
+      color: 'zinc',
+      canPostAnnouncements: false,
+      canSpeakInStage: false,
+      canShareScreen: true,
+      canModerateChat: false,
+      canManageVoice: false,
+      isSystem: true
+    }
   ]);
 
-  // Active lesson editor modal state
-  const [editingLessonId, setEditingLessonId] = useState<{ modId: string; lesId: string } | null>(null);
+  const [showNewRoleModal, setShowNewRoleModal] = useState(false);
+  const [newRoleName, setNewRoleName] = useState('');
+  const [newRoleColor, setNewRoleColor] = useState<CourseRoleItem['color']>('indigo');
+  const [newRoleAnnouncements, setNewRoleAnnouncements] = useState(false);
+  const [newRoleSpeakStage, setNewRoleSpeakStage] = useState(true);
+  const [newRoleShareScreen, setNewRoleShareScreen] = useState(true);
+  const [newRoleModerateChat, setNewRoleModerateChat] = useState(false);
+  const [newRoleManageVoice, setNewRoleManageVoice] = useState(false);
+
+  // Step 3: Modules & Lessons (starts clean and professional)
+  const [modules, setModules] = useState<ModuleItem[]>([]);
 
   // Toggle channel accordion
   const toggleChannelExpand = (id: string) => {
@@ -478,41 +314,22 @@ export const CourseBuilder: React.FC = () => {
     });
   };
 
-  // Add channel from template or custom
-  const handleAddChannelFromTemplate = (template: ChannelTemplate) => {
+  // Add new channel
+  const handleAddChannel = (type: 'text' | 'voice' | 'qa') => {
     soundEffects.play('click');
-    const cleanName = template.name.toLowerCase().replace(/[^a-z0-9-_]/g, '-');
-    const isDuplicate = channels.some(c => c.name === cleanName);
-    const finalName = isDuplicate ? `${cleanName}-${channels.length + 1}` : cleanName;
-
-    const newChan: ChannelItem = {
-      id: `ch-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-      name: finalName,
-      type: template.type,
-      topic: template.description,
-      guidingQuestion: `Qual o objetivo principal deste canal #${finalName}?`,
-      guidelines: 'Mantenha a comunicação respeitosa e no âmbito do curso.',
-    };
-
-    setChannels(prev => [...prev, newChan]);
-    toast({
-      title: 'Canal Criado',
-      message: `O canal #${finalName} foi adicionado à comunidade do curso.`,
-      type: 'success'
-    });
-  };
-
-  const handleAddCustomChannel = (type: 'text' | 'voice' | 'qa' | 'showcase' | 'doc' = 'text') => {
-    soundEffects.play('click');
+    const count = channels.filter(c => c.type === type).length + 1;
     const newChan: ChannelItem = {
       id: `ch-${Date.now()}`,
-      name: type === 'voice' ? `sala-ao-vivo-${channels.length + 1}` : `novo-canal-${channels.length + 1}`,
+      name: type === 'voice' ? `sala-ao-vivo-${count}` : `novo-canal-${count}`,
       type,
-      topic: 'Canal temático da turma.',
-      guidingQuestion: 'Qual o tema principal a debater aqui?',
-      guidelines: 'Respeite as regras de convivência da comunidade.',
+      accessMode: type === 'text' ? 'discussion' : type === 'qa' ? 'qa' : undefined,
+      voiceMode: type === 'voice' ? defaultCallMode : undefined,
+      topic: 'Canal de interação da comunidade.',
+      guidingQuestion: '',
+      guidelines: 'Comunique de forma cordial e profissional.',
     };
     setChannels(prev => [...prev, newChan]);
+    toggleChannelExpand(newChan.id);
   };
 
   const handleUpdateChannel = (id: string, field: keyof ChannelItem, value: any) => {
@@ -535,29 +352,87 @@ export const CourseBuilder: React.FC = () => {
     setChannels(prev => prev.filter(c => c.id !== id));
   };
 
-  // Module & Lesson helpers
+  // Roles management
+  const handleCreateCustomRole = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newRoleName.trim()) return;
+
+    const newRole: CourseRoleItem = {
+      id: `role-${Date.now()}`,
+      name: newRoleName.trim(),
+      color: newRoleColor,
+      canPostAnnouncements: newRoleAnnouncements,
+      canSpeakInStage: newRoleSpeakStage,
+      canShareScreen: newRoleShareScreen,
+      canModerateChat: newRoleModerateChat,
+      canManageVoice: newRoleManageVoice,
+      isSystem: false
+    };
+
+    setCustomRoles(prev => [...prev, newRole]);
+    setNewRoleName('');
+    setShowNewRoleModal(false);
+    toast({ title: 'Cargo Criado', message: `O cargo "${newRole.name}" foi adicionado com sucesso.`, type: 'success' });
+  };
+
+  const handleRemoveRole = (roleId: string) => {
+    setCustomRoles(prev => prev.filter(r => r.id !== roleId));
+    toast({ title: 'Cargo Removido', message: 'O cargo foi removido da configuração do curso.', type: 'info' });
+  };
+
+  // Modules & Lessons management
   const handleAddModule = () => {
     soundEffects.play('click');
     const newMod: ModuleItem = {
       id: `mod-${Date.now()}`,
       title: `Módulo ${modules.length + 1}: Novo Módulo`,
-      description: 'Breve descrição dos tópicos abordados neste módulo.',
+      description: '',
       dripMode: 'instant',
       dripDays: 0,
-      lessons: [
-        {
-          id: `les-${Date.now()}-1`,
-          title: 'Lição 1: Introdução ao Módulo',
-          type: 'video',
-          durationMin: 15,
-          videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-          content: 'Conteúdo programático da lição.',
-          xpReward: 25,
-          videoChapters: [{ id: 'vc-1', time: '00:00', title: 'Introdução' }]
-        },
-      ],
+      lessons: [],
     };
     setModules(prev => [...prev, newMod]);
+  };
+
+  const handleLoadBoilerplateModules = () => {
+    soundEffects.play('click');
+    setModules([
+      {
+        id: `mod-${Date.now()}-1`,
+        title: 'Módulo 1: Fundamentos & Apresentação',
+        description: 'Introdução aos conceitos e configuração inicial.',
+        dripMode: 'instant',
+        dripDays: 0,
+        lessons: [
+          {
+            id: `les-${Date.now()}-1`,
+            title: '1.1 Boas-vindas e Visão Geral do Curso',
+            type: 'video',
+            durationMin: 10,
+            videoUrl: '',
+            content: 'Apresentação detalhada da metodologia do curso.',
+            xpReward: 25,
+            videoChapters: [{ id: 'vc-1', time: '00:00', title: 'Boas-vindas' }]
+          },
+          {
+            id: `les-${Date.now()}-2`,
+            title: '1.2 Guia Prático de Estudo',
+            type: 'text',
+            durationMin: 15,
+            content: '',
+            xpReward: 20,
+            richArticle: {
+              markdown: '### Plano de Aprendizagem\n\nAqui encontra as orientações para aproveitar este curso ao máximo.',
+              calloutType: 'tip',
+              calloutTitle: 'Dica do Instrutor',
+              calloutText: 'Pratique diariamente e utilize as salas de mentoria ao vivo.',
+              checklist: [{ id: 'cl-1', text: 'Entrar nos canais da comunidade' }]
+            }
+          }
+        ]
+      }
+    ]);
+    toast({ title: 'Estrutura Inicial Carregada', message: 'Módulo de exemplo adicionado. Pode editá-lo à vontade.', type: 'info' });
   };
 
   const handleUpdateModule = (modId: string, field: keyof ModuleItem, value: any) => {
@@ -566,10 +441,6 @@ export const CourseBuilder: React.FC = () => {
 
   const handleRemoveModule = (modId: string) => {
     soundEffects.play('click');
-    if (modules.length <= 1) {
-      toast({ title: 'Atenção', message: 'O curso deve conter pelo menos 1 módulo.', type: 'error' });
-      return;
-    }
     setModules(prev => prev.filter(m => m.id !== modId));
   };
 
@@ -578,13 +449,14 @@ export const CourseBuilder: React.FC = () => {
     setModules(prev =>
       prev.map(m => {
         if (m.id !== modId) return m;
+        const count = m.lessons.length + 1;
         const newLes: LessonItem = {
           id: `les-${Date.now()}`,
-          title: `Nova Lição ${m.lessons.length + 1} (${lessonType})`,
+          title: `Aula ${count}: Nova Lição`,
           type: lessonType,
           durationMin: 15,
-          videoUrl: lessonType === 'video' ? 'https://www.w3schools.com/html/mov_bbb.mp4' : '',
-          content: 'Descrição detalhada e recursos da lição.',
+          videoUrl: '',
+          content: '',
           xpReward: 25,
         };
 
@@ -595,21 +467,37 @@ export const CourseBuilder: React.FC = () => {
             language: 'typescript',
             initialCode: '// Escreva a sua solução aqui\nfunction solucao() {\n  return true;\n}',
             solutionCode: 'function solucao() {\n  return true;\n}',
-            instructions: 'Resolva o problema proposto.',
-            hints: ['Pense na complexidade do algoritmo.']
+            instructions: 'Resolva o desafio proposto.',
+            hints: ['Pense no caso base do algoritmo.']
           };
         } else if (lessonType === 'text') {
           newLes.richArticle = {
-            markdown: '### Tópico de Leitura\n\nConteúdo explicativo com conceitos fundamentais.',
+            markdown: '### Tópico da Aula\n\nIntroduza os conceitos teóricos e práticos com exemplos claros.',
             calloutType: 'tip',
-            calloutTitle: 'Dica do Instrutor',
-            calloutText: 'Pratique este conceito criando um exemplo próprio.',
-            checklist: [{ id: 'cl-1', text: 'Ler documentação oficial' }]
+            calloutTitle: 'Dica Prática',
+            calloutText: 'Registe as suas notas durante o estudo.',
+            checklist: [{ id: 'cl-1', text: 'Rever documentação de apoio' }]
           };
-        } else if (lessonType === 'resource') {
-          newLes.resources = [
-            { id: 'res-1', name: 'Recurso-Apoio.pdf', url: 'https://learnspace.io/files/guia.pdf', size: '1.5 MB', type: 'pdf' }
-          ];
+        } else if (lessonType === 'quiz') {
+          newLes.quiz = {
+            title: 'Questionário de Avaliação',
+            description: 'Valide a sua compreensão respondendo às perguntas abaixo.',
+            passingScore: 70,
+            xpReward: 50,
+            questions: [
+              {
+                id: `q-${Date.now()}`,
+                type: 'single',
+                question: 'Introduza aqui o enunciado da questão...',
+                explanation: 'Explicação detalhada da resposta correta.',
+                points: 10,
+                options: [
+                  { id: 'opt-1', text: 'Opção Correta', isCorrect: true },
+                  { id: 'opt-2', text: 'Opção Incorreta', isCorrect: false }
+                ]
+              }
+            ]
+          };
         }
 
         return { ...m, lessons: [...m.lessons, newLes] };
@@ -637,10 +525,6 @@ export const CourseBuilder: React.FC = () => {
     setModules(prev =>
       prev.map(m => {
         if (m.id !== modId) return m;
-        if (m.lessons.length <= 1) {
-          toast({ title: 'Atenção', message: 'Cada módulo deve conter pelo menos 1 lição.', type: 'error' });
-          return m;
-        }
         return { ...m, lessons: m.lessons.filter(l => l.id !== lesId) };
       })
     );
@@ -649,7 +533,7 @@ export const CourseBuilder: React.FC = () => {
   // Submit / Publish Course
   const handlePublish = async () => {
     if (!title.trim()) {
-      toast({ title: 'Campo Obrigatório', message: 'Por favor, introduza o nome do curso no Passo 1.', type: 'error' });
+      toast({ title: 'Campo Obrigatório', message: 'Por favor, introduza o título do curso no Passo 1.', type: 'error' });
       setActiveStep(1);
       return;
     }
@@ -660,7 +544,7 @@ export const CourseBuilder: React.FC = () => {
     try {
       const payload = {
         title: title.trim(),
-        description: description.trim() || 'Curso completo com comunidade, aulas e acompanhamento contínuo.',
+        description: description.trim() || 'Curso completo com comunidade integrada, salas ao vivo e acompanhamento contínuo.',
         category,
         difficulty,
         language,
@@ -668,29 +552,33 @@ export const CourseBuilder: React.FC = () => {
         isFree,
         hasDiscount,
         discountPrice: Number(discountPrice || 0),
-        couponCode,
+        couponCode: couponCode.trim(),
         durationHours: Number(durationHours || 10),
-        thumbnailUrl: thumbnailUrl.trim() || 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&auto=format&fit=crop&q=80',
+        thumbnailUrl: thumbnailUrl.trim() || PRESET_THUMBNAILS[0].url,
         brandColor,
+        defaultCallMode,
+        allowStudentScreenShare,
+        allowStudentCamera,
         badge: {
-          title: badgeTitle,
+          title: badgeTitle.trim() || `Certificado ${title.trim()}`,
           icon: badgeIcon,
           rarity: badgeRarity,
           xpReward: courseCompletionXp
         },
         certificate: {
           title: certificateTitle,
-          instructorSignature: certificateInstructorSignature,
+          instructorSignature: certificateInstructorSignature.trim() || user?.name || 'Instrutor',
           organization: certificateOrg,
           customMessage: certificateCustomMessage,
           hasQrCode: certificateHasQrCode
         },
         channels,
+        customRoles,
         modules,
       };
 
       const result = await api.createCourse(payload);
-      toast({ title: 'Curso Criado com Sucesso', message: 'O curso, canais da comunidade e lições foram publicados com sucesso!', type: 'success' });
+      toast({ title: 'Curso Criado com Sucesso', message: 'O curso, canais e regras foram publicados com sucesso!', type: 'success' });
       navigate(`/learn/${result.id || result.slug}`);
     } catch (err: any) {
       toast({ title: 'Erro ao Publicar', message: err.message || 'Não foi possível publicar o curso.', type: 'error' });
@@ -699,7 +587,6 @@ export const CourseBuilder: React.FC = () => {
     }
   };
 
-  // Badge icon helper
   const renderBadgeIcon = (iconName: string, className = "w-5 h-5") => {
     switch (iconName) {
       case 'trophy': return <Trophy className={className} />;
@@ -711,47 +598,44 @@ export const CourseBuilder: React.FC = () => {
     }
   };
 
-  // Channel vector icon helper
-  const renderChannelIcon = (type: string, className = "w-4 h-4") => {
-    switch (type) {
-      case 'voice':
-        return <Volume2 className={`${className} text-indigo-400`} />;
-      case 'qa':
-        return <HelpCircle className={`${className} text-amber-400`} />;
-      case 'showcase':
-        return <Code2 className={`${className} text-emerald-400`} />;
-      case 'doc':
-        return <FileText className={`${className} text-blue-400`} />;
-      default:
-        return <Hash className={`${className} text-zinc-400`} />;
+  const getRoleBadgeClasses = (color: CourseRoleItem['color']) => {
+    switch (color) {
+      case 'emerald': return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20';
+      case 'amber': return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
+      case 'purple': return 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20';
+      case 'cyan': return 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20';
+      case 'rose': return 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20';
+      case 'zinc': return 'bg-slate-500/10 text-slate-600 dark:text-zinc-400 border-slate-500/20';
+      default: return 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20';
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#090a0f] text-zinc-100 pb-24 font-sans selection:bg-indigo-600 selection:text-white">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0c0d12] text-slate-900 dark:text-zinc-100 pb-24 font-sans selection:bg-indigo-600 selection:text-white transition-colors duration-200">
       
-      {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-30 bg-[#0d0e14]/95 backdrop-blur-xl border-b border-[#1e2230] py-3.5 px-4 sm:px-8">
+      {/* Top Header Bar */}
+      <header className="sticky top-0 z-30 bg-white/95 dark:bg-[#151720]/95 backdrop-blur-xl border-b border-slate-200 dark:border-[#222636] py-3.5 px-4 sm:px-8 transition-colors">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           
           <div className="flex items-center gap-3.5">
             <Link 
               to="/creator" 
-              className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-[#1a1d28] transition-colors"
+              className="p-2 rounded-xl text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1e2230] transition-colors"
+              title="Voltar ao Painel do Criador"
             >
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
               <div className="flex items-center gap-2.5">
-                <h1 className="text-lg font-black text-white tracking-tight">
-                  Criador de Cursos Avançado
+                <h1 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
+                  Criador de Cursos Profissional
                 </h1>
-                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                  Estúdio PRO
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                  Estúdio do Professor
                 </span>
               </div>
-              <p className="text-xs text-zinc-400 mt-0.5">
-                Personalize lições interativas, canais de estudo, medalhas de gamificação e certificados.
+              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+                Estruture lições, canais informativos e de discussão, regras de chamadas e cargos da turma.
               </p>
             </div>
           </div>
@@ -765,7 +649,7 @@ export const CourseBuilder: React.FC = () => {
                 soundEffects.play('click');
                 setPreviewOpen(true);
               }}
-              className="font-bold cursor-pointer rounded-xl text-xs bg-[#1a1d28] hover:bg-[#242838] text-zinc-200 border-[#2b3044]"
+              className="font-bold cursor-pointer rounded-xl text-xs bg-slate-100 dark:bg-[#202433] hover:bg-slate-200 dark:hover:bg-[#2b3144] text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-[#2b3144]"
             >
               Pré-visualizar
             </Button>
@@ -775,9 +659,9 @@ export const CourseBuilder: React.FC = () => {
               leftIcon={<Check className="w-4 h-4" />}
               isLoading={isSubmitting}
               onClick={handlePublish}
-              className="font-black rounded-xl text-xs bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 cursor-pointer"
+              className="font-black rounded-xl text-xs bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/25 cursor-pointer"
             >
-              Publicar Curso & Comunidade
+              Publicar Curso
             </Button>
           </div>
 
@@ -788,10 +672,10 @@ export const CourseBuilder: React.FC = () => {
 
         {/* Step Indicator */}
         <nav aria-label="Progresso da criação do curso" className="mb-8">
-          <div className="bg-[#12141c] p-1.5 rounded-2xl grid grid-cols-2 sm:grid-cols-4 gap-1.5 max-w-4xl mx-auto border border-[#1e2230]">
+          <div className="bg-white dark:bg-[#151720] p-1.5 rounded-2xl grid grid-cols-2 sm:grid-cols-4 gap-1.5 max-w-4xl mx-auto border border-slate-200 dark:border-[#222636] shadow-xs transition-colors">
             {[
               { num: 1, label: '1. Identidade & Marca' },
-              { num: 2, label: '2. Espaço & Canais' },
+              { num: 2, label: '2. Canais & Permissões' },
               { num: 3, label: '3. Aulas & Módulos' },
               { num: 4, label: '4. Revisão & Publicação' },
             ].map((st) => {
@@ -804,7 +688,7 @@ export const CourseBuilder: React.FC = () => {
                   className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 select-none ${
                     isCurrent
                       ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-black'
-                      : 'text-zinc-400 hover:text-white hover:bg-[#1a1d28]'
+                      : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1e2230]'
                   }`}
                 >
                   <span>{st.label}</span>
@@ -815,114 +699,128 @@ export const CourseBuilder: React.FC = () => {
         </nav>
 
         {/* ======================================================================= */}
-        {/* PASSO 1: IDENTIDADE, PERSONALIZAÇÃO VISUAL, BADGES E CERTIFICADOS */}
+        {/* PASSO 1: IDENTIDADE, MARCA, PREÇO E CERTIFICAÇÃO */}
         {/* ======================================================================= */}
         {activeStep === 1 && (
           <div className="flex flex-col gap-6 animate-fade-in">
             
-            {/* 1.1 Informações Principais */}
-            <Card className="p-6 bg-[#11131a] border-[#1e2230] rounded-3xl flex flex-col gap-5">
-              <div className="flex items-center justify-between pb-3 border-b border-[#1e2230]">
+            {/* Informações Principais */}
+            <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-3xl flex flex-col gap-5 shadow-xs transition-colors">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-[#222636]">
                 <div>
-                  <h2 className="text-base font-black text-white flex items-center gap-2">
-                    <BookOpen className="w-5 h-5 text-indigo-400" />
-                    Identidade Principal do Curso
+                  <h2 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                    Identidade do Curso
                   </h2>
-                  <p className="text-xs text-zinc-400 mt-0.5">Título, descrição, categorias e configurações de acesso.</p>
+                  <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">Título, descrição, categoria e carga horária.</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5 md:col-span-2">
-                  <label className="text-xs font-bold text-zinc-300">Título do Curso *</label>
+                  <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">Título do Curso *</label>
                   <input
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="ex: Full-Stack React & Node.js Pro: Do Zero à Produção"
-                    className="bg-[#181a24] border border-[#262a3b] rounded-xl px-4 py-3 text-sm text-white focus:border-indigo-500 focus:outline-none placeholder:text-zinc-500"
+                    placeholder="ex: Desenvolvimento Web Moderno com React & Node.js"
+                    className="bg-white dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none placeholder:text-slate-400 dark:placeholder:text-zinc-500 transition-colors"
                   />
                 </div>
 
                 <div className="flex flex-col gap-1.5 md:col-span-2">
-                  <label className="text-xs font-bold text-zinc-300">Descrição Completa</label>
+                  <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">Descrição do Curso</label>
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={3}
-                    placeholder="Descreva o que os estudantes vão dominar, metodologias e projetos que irão construir..."
-                    className="bg-[#181a24] border border-[#262a3b] rounded-xl px-4 py-3 text-sm text-white focus:border-indigo-500 focus:outline-none placeholder:text-zinc-500"
+                    placeholder="Apresente os objetivos, competências a desenvolver e o que os estudantes vão dominar..."
+                    className="bg-white dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none placeholder:text-slate-400 dark:placeholder:text-zinc-500 transition-colors"
                   />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-zinc-300">Categoria</label>
+                  <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">Área / Categoria</label>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="bg-[#181a24] border border-[#262a3b] rounded-xl px-4 py-3 text-sm text-white focus:border-indigo-500 focus:outline-none cursor-pointer"
+                    className="bg-white dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none cursor-pointer transition-colors"
                   >
-                    <option value="programming">Programação & Web Dev</option>
-                    <option value="design">UI/UX Design & Figma</option>
-                    <option value="ai">Inteligência Artificial & Data</option>
-                    <option value="business">Negócios & Gestão</option>
-                    <option value="marketing">Marketing Digital & Growth</option>
+                    <option value="programming">Programação & Engenharia de Software</option>
+                    <option value="design">UI/UX Design & Produto</option>
+                    <option value="ai">Inteligência Artificial & Data Science</option>
+                    <option value="business">Negócios, Gestão & Liderança</option>
+                    <option value="marketing">Marketing Digital & Comunicação</option>
                   </select>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-zinc-300">Dificuldade</label>
+                  <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">Nível de Dificuldade</label>
                   <select
                     value={difficulty}
                     onChange={(e) => setDifficulty(e.target.value)}
-                    className="bg-[#181a24] border border-[#262a3b] rounded-xl px-4 py-3 text-sm text-white focus:border-indigo-500 focus:outline-none cursor-pointer"
+                    className="bg-white dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none cursor-pointer transition-colors"
                   >
-                    <option value="Iniciante">Iniciante (Fundamentos)</option>
-                    <option value="Intermédio">Intermédio (Prático)</option>
-                    <option value="Avançado">Avançado (Arquitetura)</option>
+                    <option value="Iniciante">Iniciante (Sem pré-requisitos)</option>
+                    <option value="Intermédio">Intermédio (Conhecimentos prévios)</option>
+                    <option value="Avançado">Avançado (Especialização)</option>
                   </select>
                 </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-zinc-300">Capa / Imagem de Apresentação (URL)</label>
+                <div className="flex flex-col gap-1.5 md:col-span-2">
+                  <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">Imagem de Capa (URL)</label>
                   <input
                     type="text"
                     value={thumbnailUrl}
                     onChange={(e) => setThumbnailUrl(e.target.value)}
-                    className="bg-[#181a24] border border-[#262a3b] rounded-xl px-4 py-3 text-sm text-white focus:border-indigo-500 focus:outline-none font-mono text-xs"
+                    placeholder="https://... ou escolha um tema sugerido abaixo"
+                    className="bg-white dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none font-mono text-xs transition-colors"
                   />
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
+                    <span className="text-[11px] text-slate-500 dark:text-zinc-400">Sugestões rápidas:</span>
+                    {PRESET_THUMBNAILS.map((pt, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setThumbnailUrl(pt.url)}
+                        className="text-[11px] px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-[#202433] hover:bg-slate-200 dark:hover:bg-[#2b3144] text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-[#2b3144] cursor-pointer transition-colors"
+                      >
+                        {pt.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-zinc-300">Carga Horária Estimada (Horas)</label>
+                  <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">Carga Horária Estimada (Horas)</label>
                   <input
                     type="number"
                     value={durationHours}
                     onChange={(e) => setDurationHours(e.target.value)}
-                    className="bg-[#181a24] border border-[#262a3b] rounded-xl px-4 py-3 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                    className="bg-white dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none transition-colors"
                   />
                 </div>
               </div>
             </Card>
 
-            {/* 1.2 Personalização Visual & Preço */}
+            {/* Visual Branding & Pricing */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               
               {/* Tema Visual da Marca */}
-              <Card className="p-6 bg-[#11131a] border-[#1e2230] rounded-3xl flex flex-col gap-4">
-                <div className="flex items-center gap-2 pb-2 border-b border-[#1e2230]">
-                  <Palette className="w-5 h-5 text-indigo-400" />
-                  <h3 className="text-sm font-black text-white">Cor de Destaque da Marca do Curso</h3>
+              <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-3xl flex flex-col gap-4 shadow-xs transition-colors">
+                <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-[#222636]">
+                  <Palette className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white">Cor de Destaque do Curso</h3>
                 </div>
-                <p className="text-xs text-zinc-400">Personalize o tom dos badges, botões e cartões de progresso.</p>
+                <p className="text-xs text-slate-500 dark:text-zinc-400">Personalize o tom dos badges, etiquetas e cartões de progresso.</p>
 
                 <div className="grid grid-cols-4 gap-2.5">
                   {[
                     { id: 'indigo', label: 'Índigo', color: 'bg-indigo-600' },
                     { id: 'cyan', label: 'Ciano', color: 'bg-cyan-500' },
                     { id: 'emerald', label: 'Esmeralda', color: 'bg-emerald-500' },
-                    { id: 'rose', label: 'Rosa Neon', color: 'bg-rose-500' },
-                    { id: 'amber', label: 'Âmbar Ouro', color: 'bg-amber-500' },
+                    { id: 'rose', label: 'Rosa', color: 'bg-rose-500' },
+                    { id: 'amber', label: 'Âmbar', color: 'bg-amber-500' },
                     { id: 'violet', label: 'Violeta', color: 'bg-purple-600' },
                     { id: 'slate', label: 'Obsidiana', color: 'bg-zinc-600' },
                   ].map(c => (
@@ -932,22 +830,22 @@ export const CourseBuilder: React.FC = () => {
                       onClick={() => setBrandColor(c.id as any)}
                       className={`p-2.5 rounded-xl border flex flex-col items-center gap-1.5 transition-all cursor-pointer ${
                         brandColor === c.id
-                          ? 'border-white bg-[#1a1d28] shadow-lg shadow-black/40'
-                          : 'border-[#262a3b] bg-[#141620] hover:border-zinc-500'
+                          ? 'border-indigo-600 dark:border-white bg-indigo-50/50 dark:bg-[#202433] shadow-sm'
+                          : 'border-slate-200 dark:border-[#2b3144] bg-slate-50 dark:bg-[#181a24] hover:border-slate-400'
                       }`}
                     >
                       <div className={`w-5 h-5 rounded-full ${c.color}`} />
-                      <span className="text-[11px] font-bold text-zinc-300">{c.label}</span>
+                      <span className="text-[11px] font-bold text-slate-700 dark:text-zinc-300">{c.label}</span>
                     </button>
                   ))}
                 </div>
               </Card>
 
-              {/* Preçário & Promoções */}
-              <Card className="p-6 bg-[#11131a] border-[#1e2230] rounded-3xl flex flex-col gap-4">
-                <div className="flex items-center gap-2 pb-2 border-b border-[#1e2230]">
-                  <DollarSign className="w-5 h-5 text-emerald-400" />
-                  <h3 className="text-sm font-black text-white">Modelo de Preço & Descontos</h3>
+              {/* Preçário */}
+              <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-3xl flex flex-col gap-4 shadow-xs transition-colors">
+                <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-[#222636]">
+                  <DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white">Acesso & Preço</h3>
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -955,7 +853,7 @@ export const CourseBuilder: React.FC = () => {
                     type="button"
                     onClick={() => setIsFree(true)}
                     className={`flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                      isFree ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-[#181a24] text-zinc-400 border-[#262a3b]'
+                      isFree ? 'bg-emerald-600 text-white border-emerald-500 shadow-sm' : 'bg-slate-50 dark:bg-[#181a24] text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-[#2b3044]'
                     }`}
                   >
                     100% Gratuito
@@ -964,10 +862,10 @@ export const CourseBuilder: React.FC = () => {
                     type="button"
                     onClick={() => setIsFree(false)}
                     className={`flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                      !isFree ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-[#181a24] text-zinc-400 border-[#262a3b]'
+                      !isFree ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm' : 'bg-slate-50 dark:bg-[#181a24] text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-[#2b3044]'
                     }`}
                   >
-                    Curso Pago (Premium)
+                    Curso Pago
                   </button>
                 </div>
 
@@ -975,32 +873,25 @@ export const CourseBuilder: React.FC = () => {
                   <div className="flex flex-col gap-3 pt-2">
                     <div className="flex gap-3">
                       <div className="flex-1">
-                        <label className="text-[11px] font-bold text-zinc-400">Preço Regular (€)</label>
+                        <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-400">Preço Regular (€)</label>
                         <input
                           type="number"
                           value={price}
                           onChange={(e) => setPrice(e.target.value)}
-                          className="w-full bg-[#181a24] border border-[#262a3b] rounded-xl px-3 py-2 text-xs text-white"
+                          placeholder="ex: 49"
+                          className="w-full bg-white dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none"
                         />
                       </div>
                       <div className="flex-1">
-                        <label className="text-[11px] font-bold text-zinc-400">Preço Promo / Early Bird (€)</label>
+                        <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-400">Preço com Desconto (€)</label>
                         <input
                           type="number"
                           value={discountPrice}
                           onChange={(e) => setDiscountPrice(e.target.value)}
-                          className="w-full bg-[#181a24] border border-[#262a3b] rounded-xl px-3 py-2 text-xs text-emerald-400 font-bold"
+                          placeholder="ex: 29"
+                          className="w-full bg-white dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-xl px-3 py-2 text-xs text-emerald-600 dark:text-emerald-400 font-bold focus:outline-none"
                         />
                       </div>
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-bold text-zinc-400">Cupão Promocional de Lançamento</label>
-                      <input
-                        type="text"
-                        value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                        className="w-full bg-[#181a24] border border-[#262a3b] rounded-xl px-3 py-2 text-xs text-white uppercase font-mono"
-                      />
                     </div>
                   </div>
                 )}
@@ -1008,98 +899,75 @@ export const CourseBuilder: React.FC = () => {
 
             </div>
 
-            {/* 1.3 Designer de Badge do Curso & Certificado */}
+            {/* Certificação & Badge */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               
               {/* Badge Designer */}
-              <Card className="p-6 bg-[#11131a] border-[#1e2230] rounded-3xl flex flex-col gap-4">
-                <div className="flex items-center justify-between pb-2 border-b border-[#1e2230]">
+              <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-3xl flex flex-col gap-4 shadow-xs transition-colors">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-[#222636]">
                   <div className="flex items-center gap-2">
-                    <Award className="w-5 h-5 text-amber-400" />
-                    <h3 className="text-sm font-black text-white">Designer de Badge do Curso</h3>
+                    <Award className="w-5 h-5 text-amber-500" />
+                    <h3 className="text-sm font-black text-slate-900 dark:text-white">Medalha de Conclusão</h3>
                   </div>
-                  <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 text-[10px] font-bold">
-                    +{courseCompletionXp} XP Recompensa
+                  <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 text-[10px] font-bold border border-amber-500/20">
+                    +{courseCompletionXp} XP
                   </span>
-                </div>
-
-                <div className="flex items-center gap-4 p-4 rounded-2xl bg-[#181a24] border border-[#262a3b]">
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl text-black font-black ${
-                    badgeRarity === 'diamond' ? 'bg-gradient-to-br from-cyan-400 to-blue-600 text-white' :
-                    badgeRarity === 'platinum' ? 'bg-gradient-to-br from-slate-200 to-slate-400' :
-                    badgeRarity === 'gold' ? 'bg-gradient-to-br from-amber-300 to-amber-500' :
-                    badgeRarity === 'silver' ? 'bg-gradient-to-br from-zinc-300 to-zinc-500' :
-                    'bg-gradient-to-br from-orange-400 to-amber-700'
-                  }`}>
-                    {renderBadgeIcon(badgeIcon, "w-7 h-7")}
-                  </div>
-
-                  <div className="flex-1">
-                    <p className="text-xs font-black text-white">{badgeTitle || 'Nome da Medalha'}</p>
-                    <p className="text-[11px] text-zinc-400 capitalize">Tier: {badgeRarity} • Desbloqueado ao concluir 100%</p>
-                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[11px] font-bold text-zinc-400">Título da Medalha</label>
+                    <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-400">Título da Medalha</label>
                     <input
                       type="text"
                       value={badgeTitle}
                       onChange={(e) => setBadgeTitle(e.target.value)}
-                      className="w-full bg-[#181a24] border border-[#262a3b] rounded-xl px-3 py-2 text-xs text-white"
+                      placeholder="ex: Especialista em React"
+                      className="w-full bg-white dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] font-bold text-zinc-400">Raridade</label>
+                    <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-400">Raridade</label>
                     <select
                       value={badgeRarity}
                       onChange={(e) => setBadgeRarity(e.target.value as any)}
-                      className="w-full bg-[#181a24] border border-[#262a3b] rounded-xl px-3 py-2 text-xs text-white"
+                      className="w-full bg-white dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none cursor-pointer"
                     >
-                      <option value="bronze">Bronze (Básico)</option>
-                      <option value="silver">Prata (Médio)</option>
+                      <option value="bronze">Bronze (Iniciante)</option>
+                      <option value="silver">Prata (Intermédio)</option>
                       <option value="gold">Ouro (Avançado)</option>
                       <option value="platinum">Platina (Especialista)</option>
-                      <option value="diamond">Diamante (Lendário)</option>
+                      <option value="diamond">Diamante (Mestre)</option>
                     </select>
                   </div>
                 </div>
               </Card>
 
               {/* Certificate Designer */}
-              <Card className="p-6 bg-[#11131a] border-[#1e2230] rounded-3xl flex flex-col gap-4">
-                <div className="flex items-center gap-2 pb-2 border-b border-[#1e2230]">
-                  <FileBadge className="w-5 h-5 text-indigo-400" />
-                  <h3 className="text-sm font-black text-white">Designer de Certificado de Conclusão</h3>
+              <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-3xl flex flex-col gap-4 shadow-xs transition-colors">
+                <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-[#222636]">
+                  <FileBadge className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white">Certificado Oficial</h3>
                 </div>
 
                 <div className="flex flex-col gap-3">
                   <div>
-                    <label className="text-[11px] font-bold text-zinc-400">Assinatura do Instrutor</label>
+                    <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-400">Assinatura do Instrutor</label>
                     <input
                       type="text"
                       value={certificateInstructorSignature}
                       onChange={(e) => setCertificateInstructorSignature(e.target.value)}
-                      className="w-full bg-[#181a24] border border-[#262a3b] rounded-xl px-3 py-2 text-xs text-white"
+                      placeholder={user?.name || 'O seu nome ou título profissional'}
+                      className="w-full bg-white dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] font-bold text-zinc-400">Instituição / Academia Emissora</label>
+                    <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-400">Instituição / Academia</label>
                     <input
                       type="text"
                       value={certificateOrg}
                       onChange={(e) => setCertificateOrg(e.target.value)}
-                      className="w-full bg-[#181a24] border border-[#262a3b] rounded-xl px-3 py-2 text-xs text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-bold text-zinc-400">Mensagem Oficial de Conclusão</label>
-                    <textarea
-                      value={certificateCustomMessage}
-                      onChange={(e) => setCertificateCustomMessage(e.target.value)}
-                      rows={2}
-                      className="w-full bg-[#181a24] border border-[#262a3b] rounded-xl px-3 py-2 text-xs text-white"
+                      placeholder="LearnSpace Academy"
+                      className="w-full bg-white dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none"
                     />
                   </div>
                 </div>
@@ -1107,15 +975,15 @@ export const CourseBuilder: React.FC = () => {
 
             </div>
 
-            {/* Next step button */}
+            {/* Next step */}
             <div className="flex justify-end pt-4">
               <Button
                 variant="primary"
                 onClick={() => { soundEffects.play('click'); setActiveStep(2); }}
                 rightIcon={<ArrowRight className="w-4 h-4" />}
-                className="bg-indigo-600 hover:bg-indigo-500 font-bold px-6 py-3 rounded-xl"
+                className="bg-indigo-600 hover:bg-indigo-500 font-bold px-6 py-3 rounded-xl shadow-md cursor-pointer"
               >
-                Continuar para Canais & Comunidade
+                Continuar para Canais & Permissões
               </Button>
             </div>
 
@@ -1123,114 +991,423 @@ export const CourseBuilder: React.FC = () => {
         )}
 
         {/* ======================================================================= */}
-        {/* PASSO 2: CANAIS DE TEXTO & SALAS DE ESTUDO AO VIVO */}
+        {/* PASSO 2: CANAIS, REGRAS DE CHAMADAS & CARGOS / PERMISSÕES */}
         {/* ======================================================================= */}
         {activeStep === 2 && (
           <div className="flex flex-col gap-6 animate-fade-in">
-            <Card className="p-6 bg-[#11131a] border-[#1e2230] rounded-3xl flex flex-col gap-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#1e2230]">
-                <div>
-                  <h2 className="text-base font-black text-white flex items-center gap-2">
-                    <Volume2 className="w-5 h-5 text-indigo-400" />
-                    Canais de Texto & Salas de Estudo ao Vivo
+            
+            {/* Step 2 Subtabs */}
+            <div className="flex items-center gap-2 p-1.5 bg-white dark:bg-[#151720] border border-slate-200 dark:border-[#222636] rounded-2xl w-fit shadow-xs">
+              <button
+                type="button"
+                onClick={() => setStep2SubTab('channels')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                  step2SubTab === 'channels'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Hash className="w-4 h-4" />
+                <span>Canais da Turma ({channels.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setStep2SubTab('calls')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                  step2SubTab === 'calls'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Volume2 className="w-4 h-4" />
+                <span>Regras de Chamadas ao Vivo</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setStep2SubTab('roles')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                  step2SubTab === 'roles'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Shield className="w-4 h-4" />
+                <span>Cargos & Permissões ({customRoles.length})</span>
+              </button>
+            </div>
+
+            {/* SUBTAB 1: CANAIS */}
+            {step2SubTab === 'channels' && (
+              <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-3xl flex flex-col gap-5 shadow-xs transition-colors">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-[#222636]">
+                  <div>
+                    <h2 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                      <Hash className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                      Canais de Texto e Fóruns da Comunidade
+                    </h2>
+                    <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+                      Configure quais canais são puramente informativos (apenas leitura) e quais permitem discussão aberta.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => handleAddChannel('text')}
+                      leftIcon={<Plus className="w-4 h-4" />}
+                      className="text-xs bg-slate-100 dark:bg-[#202433] text-slate-700 dark:text-zinc-200 border-slate-200 dark:border-[#2b3144]"
+                    >
+                      + Canal de Texto
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      onClick={() => handleAddChannel('voice')}
+                      leftIcon={<Volume2 className="w-4 h-4" />}
+                      className="text-xs bg-indigo-600 hover:bg-indigo-500 text-white"
+                    >
+                      + Sala ao Vivo
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Channel List */}
+                <div className="flex flex-col gap-3">
+                  {channels.map((chan) => {
+                    const isVoice = chan.type === 'voice';
+                    const isAnnouncement = chan.accessMode === 'announcement';
+
+                    return (
+                      <div 
+                        key={chan.id} 
+                        className="p-4 rounded-2xl bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-3 transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-8 h-8 rounded-xl bg-white dark:bg-[#222636] border border-slate-200 dark:border-[#2b3144] flex items-center justify-center shrink-0">
+                              {isVoice ? (
+                                <Volume2 className="w-4 h-4 text-emerald-500" />
+                              ) : isAnnouncement ? (
+                                <Megaphone className="w-4 h-4 text-indigo-500" />
+                              ) : (
+                                <Hash className="w-4 h-4 text-slate-400" />
+                              )}
+                            </div>
+                            <input
+                              type="text"
+                              value={chan.name}
+                              onChange={(e) => handleUpdateChannel(chan.id, 'name', e.target.value)}
+                              className="bg-white dark:bg-[#141620] border border-slate-300 dark:border-[#2b3044] rounded-lg px-3 py-1.5 text-xs font-bold text-slate-900 dark:text-white"
+                            />
+                            {isAnnouncement ? (
+                              <span className="text-[10px] px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-500/20 flex items-center gap-1">
+                                <Lock className="w-3 h-3" />
+                                Apenas Informativo
+                              </span>
+                            ) : isVoice ? (
+                              <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/20">
+                                Sala de Voz / Vídeo
+                              </span>
+                            ) : (
+                              <span className="text-[10px] px-2 py-0.5 rounded bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 font-bold">
+                                Discussão Aberta
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => toggleChannelExpand(chan.id)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-[#202434] transition-colors cursor-pointer"
+                            >
+                              {expandedChannelIds.has(chan.id) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveChannel(chan.id)}
+                              className="p-1.5 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
+                              title="Remover canal"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {expandedChannelIds.has(chan.id) && (
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-3 border-t border-slate-200 dark:border-[#222636]">
+                            {!isVoice ? (
+                              <div>
+                                <label className="text-[10px] font-bold text-slate-600 dark:text-zinc-400">Modo de Envio</label>
+                                <select
+                                  value={chan.accessMode || 'discussion'}
+                                  onChange={(e) => handleUpdateChannel(chan.id, 'accessMode', e.target.value)}
+                                  className="w-full bg-white dark:bg-[#141620] border border-slate-300 dark:border-[#2b3044] rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white font-medium cursor-pointer"
+                                >
+                                  <option value="discussion">Discussão Aberta (Todos podem publicar)</option>
+                                  <option value="announcement">Apenas Leitura / Informativo (Apenas Instrutor)</option>
+                                  <option value="qa">Fila de Dúvidas (Perguntas & Respostas)</option>
+                                </select>
+                              </div>
+                            ) : (
+                              <div>
+                                <label className="text-[10px] font-bold text-slate-600 dark:text-zinc-400">Formato da Sala ao Vivo</label>
+                                <select
+                                  value={chan.voiceMode || defaultCallMode}
+                                  onChange={(e) => handleUpdateChannel(chan.id, 'voiceMode', e.target.value)}
+                                  className="w-full bg-white dark:bg-[#141620] border border-slate-300 dark:border-[#2b3044] rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white font-medium cursor-pointer"
+                                >
+                                  <option value="open">Modo Aberto (Todos falam livremente)</option>
+                                  <option value="stage">Modo Palco (Alunos entram silenciados)</option>
+                                  <option value="qa">Modo Dúvidas (Fila de intervenção)</option>
+                                </select>
+                              </div>
+                            )}
+
+                            <div>
+                              <label className="text-[10px] font-bold text-slate-600 dark:text-zinc-400">Tópico / Descrição Curta</label>
+                              <input
+                                type="text"
+                                value={chan.topic}
+                                onChange={(e) => handleUpdateChannel(chan.id, 'topic', e.target.value)}
+                                placeholder="ex: Avisos oficiais da coordenação"
+                                className="w-full bg-white dark:bg-[#141620] border border-slate-300 dark:border-[#2b3044] rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="text-[10px] font-bold text-slate-600 dark:text-zinc-400">Orientações de Convivência</label>
+                              <input
+                                type="text"
+                                value={chan.guidelines}
+                                onChange={(e) => handleUpdateChannel(chan.id, 'guidelines', e.target.value)}
+                                placeholder="ex: Seja cordial e objetivo"
+                                className="w-full bg-white dark:bg-[#141620] border border-slate-300 dark:border-[#2b3044] rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
+            )}
+
+            {/* SUBTAB 2: REGRAS DE CHAMADAS AO VIVO */}
+            {step2SubTab === 'calls' && (
+              <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-3xl flex flex-col gap-6 shadow-xs transition-colors">
+                <div className="pb-3 border-b border-slate-200 dark:border-[#222636]">
+                  <h2 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                    <Volume2 className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                    Regras das Salas ao Vivo (Voz & Vídeo)
                   </h2>
-                  <p className="text-xs text-zinc-400 mt-0.5">
-                    Configure os canais de texto, fóruns de dúvidas e salas de mentoria da turma.
+                  <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+                    Defina se todos os participantes podem falar livremente ou se a sala funciona como palco com intervenção controlada.
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => handleAddCustomChannel('text')}
-                    leftIcon={<Plus className="w-4 h-4" />}
-                    className="text-xs bg-[#181a24] border-[#262a3b] text-zinc-200"
-                  >
-                    + Canal Texto
-                  </Button>
+
+                {/* Main Call Mode Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {[
+                    {
+                      id: 'open',
+                      title: 'Modo Aberto (Convívio Livre)',
+                      desc: 'Todos os alunos podem desmutar o microfone livremente e interagir a qualquer momento.',
+                      icon: Volume2,
+                      badge: 'Ideal para debates'
+                    },
+                    {
+                      id: 'stage',
+                      title: 'Modo Palco (Silêncio Inicial)',
+                      desc: 'Alunos entram silenciados. Para falar, levantam a mão e o professor ou moderador autoriza.',
+                      icon: Radio,
+                      badge: 'Ideal para aulas e palestras'
+                    },
+                    {
+                      id: 'qa',
+                      title: 'Fila de Dúvidas',
+                      desc: 'Os alunos entram numa fila ordenada para esclarecimento de dúvidas pontuais.',
+                      icon: HelpCircle,
+                      badge: 'Ideal para mentoria'
+                    }
+                  ].map((mode) => (
+                    <div
+                      key={mode.id}
+                      onClick={() => setDefaultCallMode(mode.id as any)}
+                      className={`p-4 rounded-2xl border flex flex-col justify-between gap-3 cursor-pointer transition-all ${
+                        defaultCallMode === mode.id
+                          ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-50/40 dark:bg-indigo-950/20 shadow-md shadow-indigo-600/10 ring-2 ring-indigo-500/20'
+                          : 'border-slate-200 dark:border-[#282d3e] bg-slate-50 dark:bg-[#181a24] hover:border-slate-400'
+                      }`}
+                    >
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <mode.icon className={`w-5 h-5 ${defaultCallMode === mode.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500'}`} />
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-200 dark:bg-[#252a3b] text-slate-700 dark:text-zinc-300">
+                            {mode.badge}
+                          </span>
+                        </div>
+                        <h3 className="font-bold text-slate-900 dark:text-white text-xs">{mode.title}</h3>
+                        <p className="text-[11px] text-slate-500 dark:text-zinc-400 leading-relaxed">{mode.desc}</p>
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-200/60 dark:border-[#252a3b] flex items-center justify-between text-[11px] font-bold">
+                        <span className={defaultCallMode === mode.id ? 'text-indigo-600 dark:text-indigo-400 font-black' : 'text-slate-400'}>
+                          {defaultCallMode === mode.id ? 'Selecionado' : 'Escolher este modo'}
+                        </span>
+                        {defaultCallMode === mode.id && <Check className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Additional Call Media Permissions */}
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-4">
+                  <h3 className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-2">
+                    <SlidersHorizontal className="w-4 h-4 text-indigo-500" />
+                    Permissões de Média dos Estudantes
+                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label className="flex items-start gap-3 p-3 rounded-xl bg-white dark:bg-[#141620] border border-slate-200 dark:border-[#2b3144] cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={allowStudentScreenShare}
+                        onChange={(e) => setAllowStudentScreenShare(e.target.checked)}
+                        className="mt-0.5 rounded text-indigo-600 focus:ring-indigo-500"
+                      />
+                      <div>
+                        <p className="text-xs font-bold text-slate-900 dark:text-white">Permitir partilha de ecrã para alunos</p>
+                        <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">
+                          Se desativado, apenas instrutores, tutores ou moderadores podem partilhar ecrã.
+                        </p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-start gap-3 p-3 rounded-xl bg-white dark:bg-[#141620] border border-slate-200 dark:border-[#2b3144] cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={allowStudentCamera}
+                        onChange={(e) => setAllowStudentCamera(e.target.checked)}
+                        className="mt-0.5 rounded text-indigo-600 focus:ring-indigo-500"
+                      />
+                      <div>
+                        <p className="text-xs font-bold text-slate-900 dark:text-white">Permitir câmara de vídeo para alunos</p>
+                        <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">
+                          Os estudantes podem ativar a sua webcam durante as sessões de estudo.
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            {/* SUBTAB 3: CARGOS & REGRAS DE PERMISSÕES */}
+            {step2SubTab === 'roles' && (
+              <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-3xl flex flex-col gap-6 shadow-xs transition-colors">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-[#222636]">
+                  <div>
+                    <h2 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                      <Shield className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                      Cargos & Regras de Permissões da Turma
+                    </h2>
+                    <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+                      Crie regras personalizadas e atribua cargos específicos aos membros para controlar quem fala no palco, modera e publica comunicados.
+                    </p>
+                  </div>
+
                   <Button
                     size="sm"
                     variant="primary"
-                    onClick={() => handleAddCustomChannel('voice')}
-                    leftIcon={<Volume2 className="w-4 h-4" />}
-                    className="text-xs bg-indigo-600 hover:bg-indigo-500 text-white"
+                    onClick={() => setShowNewRoleModal(true)}
+                    leftIcon={<Plus className="w-4 h-4" />}
+                    className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs cursor-pointer shadow-sm"
                   >
-                    + Sala de Voz/Vídeo
+                    + Criar Cargo Personalizado
                   </Button>
                 </div>
-              </div>
 
-              {/* Channel List */}
-              <div className="flex flex-col gap-3">
-                {channels.map((chan, idx) => (
-                  <div key={chan.id} className="p-4 rounded-2xl bg-[#141620] border border-[#222638] flex flex-col gap-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-xl bg-[#1e2230] flex items-center justify-center">
-                          {renderChannelIcon(chan.type)}
+                {/* Roles Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {customRoles.map((r) => (
+                    <div
+                      key={r.id}
+                      className="p-4 rounded-2xl bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col justify-between gap-3 transition-colors"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-[#252a3b]">
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${getRoleBadgeClasses(r.color)}`}>
+                              {r.name}
+                            </span>
+                            {r.isSystem && (
+                              <span className="text-[10px] text-slate-400 font-medium">(Padrão)</span>
+                            )}
+                          </div>
+
+                          {!r.isSystem && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveRole(r.id)}
+                              className="p-1 rounded-md text-red-500 hover:bg-red-500/10 cursor-pointer"
+                              title="Remover cargo"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
-                        <input
-                          type="text"
-                          value={chan.name}
-                          onChange={(e) => handleUpdateChannel(chan.id, 'name', e.target.value)}
-                          className="bg-[#181a24] border border-[#2b3044] rounded-lg px-3 py-1.5 text-xs font-bold text-white"
-                        />
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 font-mono capitalize">
-                          {chan.type === 'voice' ? 'Voz & Vídeo ao Vivo' : chan.type}
-                        </span>
-                      </div>
 
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => toggleChannelExpand(chan.id)}
-                          className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-[#202434] transition-colors"
-                        >
-                          {expandedChannelIds.has(chan.id) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveChannel(chan.id)}
-                          className="p-1.5 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {/* Permissions Summary Badges */}
+                        <div className="flex flex-wrap gap-1.5 mt-3 text-[10px] font-bold">
+                          {r.canPostAnnouncements && (
+                            <span className="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                              Publicar em Informativos
+                            </span>
+                          )}
+                          {r.canSpeakInStage && (
+                            <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                              Falar no Palco Livremente
+                            </span>
+                          )}
+                          {r.canShareScreen && (
+                            <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                              Partilhar Ecrã
+                            </span>
+                          )}
+                          {r.canManageVoice && (
+                            <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                              Gerir Chamadas & Palco
+                            </span>
+                          )}
+                          {r.canModerateChat && (
+                            <span className="px-2 py-0.5 rounded bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                              Moderar Conversas
+                            </span>
+                          )}
+                          {!r.canPostAnnouncements && !r.canSpeakInStage && !r.canManageVoice && !r.canModerateChat && (
+                            <span className="px-2 py-0.5 rounded bg-slate-200 dark:bg-[#252a3b] text-slate-600 dark:text-zinc-400">
+                              Acesso Padrão de Estudante
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
+                  ))}
+                </div>
+              </Card>
+            )}
 
-                    {expandedChannelIds.has(chan.id) && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-[#1e2230]">
-                        <div>
-                          <label className="text-[10px] font-bold text-zinc-400">Tópico do Canal</label>
-                          <input
-                            type="text"
-                            value={chan.topic}
-                            onChange={(e) => handleUpdateChannel(chan.id, 'topic', e.target.value)}
-                            className="w-full bg-[#181a24] border border-[#2b3044] rounded-lg px-2.5 py-1.5 text-xs text-zinc-300"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-bold text-zinc-400">Regras / Orientações</label>
-                          <input
-                            type="text"
-                            value={chan.guidelines}
-                            onChange={(e) => handleUpdateChannel(chan.id, 'guidelines', e.target.value)}
-                            className="w-full bg-[#181a24] border border-[#2b3044] rounded-lg px-2.5 py-1.5 text-xs text-zinc-300"
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </Card>
-
+            {/* Navigation Buttons */}
             <div className="flex justify-between pt-4">
               <Button
                 variant="secondary"
                 onClick={() => { soundEffects.play('click'); setActiveStep(1); }}
                 leftIcon={<ArrowLeft className="w-4 h-4" />}
-                className="bg-[#181a24] border-[#262a3b] text-zinc-300"
+                className="bg-white dark:bg-[#181a24] border-slate-300 dark:border-[#2b3144] text-slate-700 dark:text-zinc-200"
               >
                 Voltar
               </Button>
@@ -1238,273 +1415,294 @@ export const CourseBuilder: React.FC = () => {
                 variant="primary"
                 onClick={() => { soundEffects.play('click'); setActiveStep(3); }}
                 rightIcon={<ArrowRight className="w-4 h-4" />}
-                className="bg-indigo-600 hover:bg-indigo-500 font-bold px-6 py-3 rounded-xl"
+                className="bg-indigo-600 hover:bg-indigo-500 font-bold px-6 py-3 rounded-xl shadow-md cursor-pointer"
               >
                 Continuar para Aulas & Módulos
               </Button>
             </div>
+
           </div>
         )}
 
         {/* ======================================================================= */}
-        {/* PASSO 3: MÓDULOS & 7 TIPOS DE LIÇÕES RICAS */}
+        {/* PASSO 3: MÓDULOS & LIÇÕES (LIMPO E PROFISSIONAL) */}
         {/* ======================================================================= */}
         {activeStep === 3 && (
           <div className="flex flex-col gap-6 animate-fade-in">
             
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#11131a] p-5 rounded-3xl border border-[#1e2230]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#151720] p-5 rounded-3xl border border-slate-200 dark:border-[#222636] shadow-xs transition-colors">
               <div>
-                <h2 className="text-base font-black text-white flex items-center gap-2">
-                  <Layers className="w-5 h-5 text-indigo-400" />
-                  Módulos & Lições Ricas
+                <h2 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <Layers className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  Estrutura Curricular & Lições
                 </h2>
-                <p className="text-xs text-zinc-400 mt-0.5">
-                  Crie vídeos com capítulos, desafios de código sandbox, artigos com callouts, quizzes e recursos.
+                <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+                  Adicione módulos, lições em vídeo, artigos explicativos, exercícios de código e questionários.
                 </p>
               </div>
 
-              <Button
-                onClick={handleAddModule}
-                leftIcon={<Plus className="w-4 h-4" />}
-                className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl"
-              >
-                + Novo Módulo
-              </Button>
+              <div className="flex items-center gap-2">
+                {modules.length === 0 && (
+                  <Button
+                    variant="secondary"
+                    onClick={handleLoadBoilerplateModules}
+                    className="bg-slate-100 dark:bg-[#202433] text-slate-700 dark:text-zinc-200 border-slate-200 dark:border-[#2b3144] text-xs font-bold"
+                  >
+                    Carregar Exemplo Base
+                  </Button>
+                )}
+                <Button
+                  onClick={handleAddModule}
+                  leftIcon={<Plus className="w-4 h-4" />}
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl cursor-pointer"
+                >
+                  + Novo Módulo
+                </Button>
+              </div>
             </div>
 
-            {/* Modules List */}
-            {modules.map((mod, mIdx) => (
-              <Card key={mod.id} className="p-6 bg-[#11131a] border-[#1e2230] rounded-3xl flex flex-col gap-5">
-                
-                {/* Module Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#1e2230]">
-                  <div className="flex-1 min-w-0">
-                    <input
-                      type="text"
-                      value={mod.title}
-                      onChange={(e) => handleUpdateModule(mod.id, 'title', e.target.value)}
-                      className="bg-[#181a24] border border-[#2b3044] rounded-xl px-3.5 py-2 text-sm font-black text-white w-full max-w-md"
-                    />
-                    <input
-                      type="text"
-                      value={mod.description}
-                      onChange={(e) => handleUpdateModule(mod.id, 'description', e.target.value)}
-                      placeholder="Descrição do módulo..."
-                      className="bg-transparent border-0 text-xs text-zinc-400 mt-1 w-full focus:outline-none"
-                    />
-                  </div>
-
-                  {/* Drip Pacing mode */}
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={mod.dripMode || 'instant'}
-                      onChange={(e) => handleUpdateModule(mod.id, 'dripMode', e.target.value)}
-                      className="bg-[#181a24] border border-[#2b3044] rounded-lg px-2.5 py-1.5 text-xs text-zinc-300 font-bold"
-                      title="Regra de desbloqueio"
-                    >
-                      <option value="instant">Desbloqueio Imediato</option>
-                      <option value="sequential">Sequencial (Pré-requisito)</option>
-                      <option value="drip">Programado por Dias (Drip)</option>
-                    </select>
-
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveModule(mod.id)}
-                      className="p-2 rounded-xl text-red-400 hover:bg-red-500/10 transition-colors"
-                      title="Eliminar Módulo"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+            {/* Empty State */}
+            {modules.length === 0 ? (
+              <Card className="p-12 text-center bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-3xl flex flex-col items-center justify-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                  <Layers className="w-6 h-6" />
                 </div>
-
-                {/* Lessons in this module */}
-                <div className="flex flex-col gap-3">
-                  {mod.lessons.map((les, lIdx) => (
-                    <div key={les.id} className="p-4 rounded-2xl bg-[#141620] border border-[#222638] flex flex-col gap-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5 flex-1 min-w-0 mr-3">
-                          <span className="w-6 h-6 rounded-lg bg-[#1e2230] text-zinc-300 text-xs font-bold flex items-center justify-center">
-                            {lIdx + 1}
-                          </span>
-                          <input
-                            type="text"
-                            value={les.title}
-                            onChange={(e) => handleUpdateLesson(mod.id, les.id, 'title', e.target.value)}
-                            className="bg-[#181a24] border border-[#2b3044] rounded-lg px-3 py-1.5 text-xs font-bold text-white flex-1"
-                          />
-                        </div>
-
-                        {/* Lesson Type selector */}
-                        <div className="flex items-center gap-2">
-                          <select
-                            value={les.type}
-                            onChange={(e) => handleUpdateLesson(mod.id, les.id, 'type', e.target.value as any)}
-                            className="bg-[#181a24] border border-[#2b3044] rounded-lg px-2.5 py-1.5 text-xs text-indigo-300 font-bold"
-                          >
-                            <option value="video">Vídeo & Capítulos</option>
-                            <option value="code">Desafio de Código</option>
-                            <option value="text">Artigo Técnico Rico</option>
-                            <option value="quiz">Questionário / Avaliação</option>
-                            <option value="project">Projeto Prático</option>
-                            <option value="resource">Pacote de Recursos / Ficheiros</option>
-                            <option value="embed">Ambiente Interativo / Embed</option>
-                          </select>
-
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveLesson(mod.id, les.id)}
-                            className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Lesson Custom Content Editors by Type */}
-                      
-                      {/* TYPE 1: Video with Chapters */}
-                      {les.type === 'video' && (
-                        <div className="p-3 rounded-xl bg-[#181a24] border border-[#262a3b] flex flex-col gap-2.5">
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              value={les.videoUrl || ''}
-                              onChange={(e) => handleUpdateLesson(mod.id, les.id, 'videoUrl', e.target.value)}
-                              placeholder="URL do Vídeo (ex: https://.../video.mp4 ou YouTube)"
-                              className="flex-1 bg-[#12141c] border border-[#2b3044] rounded-lg px-3 py-1.5 text-xs text-zinc-300 font-mono"
-                            />
-                            <input
-                              type="number"
-                              value={les.durationMin}
-                              onChange={(e) => handleUpdateLesson(mod.id, les.id, 'durationMin', Number(e.target.value))}
-                              placeholder="Minutos"
-                              className="w-20 bg-[#12141c] border border-[#2b3044] rounded-lg px-2 py-1.5 text-xs text-zinc-300 text-center"
-                            />
-                          </div>
-                          
-                          {/* Chapters preview */}
-                          <div className="flex flex-wrap gap-1.5 items-center text-[11px] text-zinc-400">
-                            <Clock className="w-3 h-3 text-indigo-400" />
-                            <span>Capítulos:</span>
-                            {(les.videoChapters || []).map((ch, cIdx) => (
-                              <span key={ch.id} className="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-mono">
-                                {ch.time} {ch.title}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* TYPE 2: Coding Sandbox */}
-                      {les.type === 'code' && (
-                        <div className="p-3 rounded-xl bg-[#181a24] border border-[#262a3b] flex flex-col gap-2.5">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-bold text-emerald-400 flex items-center gap-1.5">
-                              <Code2 className="w-3.5 h-3.5" />
-                              Sandbox de Código Interativo ({les.codeChallenge?.language || 'typescript'})
-                            </span>
-                            <span className="text-[10px] text-zinc-400">Executável pelo Aluno</span>
-                          </div>
-                          <textarea
-                            value={les.codeChallenge?.initialCode || ''}
-                            onChange={(e) => {
-                              const curr = les.codeChallenge || { language: 'typescript', initialCode: '', solutionCode: '', instructions: '', hints: [] };
-                              handleUpdateLesson(mod.id, les.id, 'codeChallenge', { ...curr, initialCode: e.target.value });
-                            }}
-                            rows={3}
-                            className="bg-[#12141c] border border-[#2b3044] rounded-lg p-2.5 font-mono text-xs text-emerald-300 focus:outline-none resize-none"
-                            placeholder="// Código inicial para o estudante..."
-                          />
-                        </div>
-                      )}
-
-                      {/* TYPE 3: Rich Article with Callouts */}
-                      {les.type === 'text' && (
-                        <div className="p-3 rounded-xl bg-[#181a24] border border-[#262a3b] flex flex-col gap-2">
-                          <textarea
-                            value={les.richArticle?.markdown || les.content}
-                            onChange={(e) => {
-                              const curr = les.richArticle || { markdown: '', calloutType: 'tip', calloutTitle: 'Dica', calloutText: '', checklist: [] };
-                              handleUpdateLesson(mod.id, les.id, 'richArticle', { ...curr, markdown: e.target.value });
-                            }}
-                            rows={2}
-                            className="bg-[#12141c] border border-[#2b3044] rounded-lg p-2 text-xs text-zinc-200 focus:outline-none resize-none"
-                            placeholder="Texto markdown da aula..."
-                          />
-                        </div>
-                      )}
-
-                      {/* TYPE 4: Downloadable Resource Pack */}
-                      {les.type === 'resource' && (
-                        <div className="p-3 rounded-xl bg-[#181a24] border border-[#262a3b] flex flex-col gap-2">
-                          <span className="text-xs font-bold text-blue-400 flex items-center gap-1">
-                            <Download className="w-3.5 h-3.5" />
-                            Ficheiros & Assets de Apoio ({les.resources?.length || 0})
-                          </span>
-                          <div className="flex flex-wrap gap-2">
-                            {(les.resources || []).map(res => (
-                              <span key={res.id} className="px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-300 border border-blue-500/20 text-xs flex items-center gap-1.5">
-                                <FolderArchive className="w-3 h-3" />
-                                {res.name} ({res.size})
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                    </div>
-                  ))}
-
-                  {/* Add Lesson Quick Buttons */}
-                  <div className="flex flex-wrap items-center gap-2 pt-2">
-                    <span className="text-[11px] font-bold text-zinc-400">Adicionar Lição:</span>
-                    <button
-                      type="button"
-                      onClick={() => handleAddLesson(mod.id, 'video')}
-                      className="px-2.5 py-1 rounded-lg bg-[#181a24] hover:bg-[#222638] text-indigo-300 border border-[#262a3b] text-xs font-bold cursor-pointer"
-                    >
-                      + Vídeo
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleAddLesson(mod.id, 'code')}
-                      className="px-2.5 py-1 rounded-lg bg-[#181a24] hover:bg-[#222638] text-emerald-300 border border-[#262a3b] text-xs font-bold cursor-pointer"
-                    >
-                      + Código Desafio
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleAddLesson(mod.id, 'text')}
-                      className="px-2.5 py-1 rounded-lg bg-[#181a24] hover:bg-[#222638] text-zinc-300 border border-[#262a3b] text-xs font-bold cursor-pointer"
-                    >
-                      + Artigo
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleAddLesson(mod.id, 'quiz')}
-                      className="px-2.5 py-1 rounded-lg bg-[#181a24] hover:bg-[#222638] text-amber-300 border border-[#262a3b] text-xs font-bold cursor-pointer"
-                    >
-                      + Quiz
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleAddLesson(mod.id, 'resource')}
-                      className="px-2.5 py-1 rounded-lg bg-[#181a24] hover:bg-[#222638] text-blue-300 border border-[#262a3b] text-xs font-bold cursor-pointer"
-                    >
-                      + Recursos
-                    </button>
-                  </div>
+                <h3 className="font-extrabold text-slate-900 dark:text-white text-base">Nenhum módulo criado ainda</h3>
+                <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-md">
+                  O curso está limpo. Comece a construir o programa pedagógico adicionando o seu primeiro módulo.
+                </p>
+                <div className="flex items-center gap-3 mt-2">
+                  <Button
+                    variant="primary"
+                    onClick={handleAddModule}
+                    leftIcon={<Plus className="w-4 h-4" />}
+                    className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl"
+                  >
+                    + Criar Primeiro Módulo
+                  </Button>
                 </div>
               </Card>
-            ))}
+            ) : (
+              modules.map((mod, mIdx) => (
+                <Card key={mod.id} className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-3xl flex flex-col gap-5 shadow-xs transition-colors">
+                  
+                  {/* Module Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-[#222636]">
+                    <div className="flex-1 min-w-0">
+                      <input
+                        type="text"
+                        value={mod.title}
+                        onChange={(e) => handleUpdateModule(mod.id, 'title', e.target.value)}
+                        placeholder="Nome do Módulo..."
+                        className="bg-white dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-xl px-3.5 py-2 text-sm font-black text-slate-900 dark:text-white w-full max-w-md"
+                      />
+                      <input
+                        type="text"
+                        value={mod.description}
+                        onChange={(e) => handleUpdateModule(mod.id, 'description', e.target.value)}
+                        placeholder="Breve descrição dos tópicos do módulo..."
+                        className="bg-transparent border-0 text-xs text-slate-500 dark:text-zinc-400 mt-1 w-full focus:outline-none placeholder:text-slate-400"
+                      />
+                    </div>
 
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={mod.dripMode || 'instant'}
+                        onChange={(e) => handleUpdateModule(mod.id, 'dripMode', e.target.value)}
+                        className="bg-white dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-zinc-300 font-bold cursor-pointer"
+                        title="Regra de desbloqueio"
+                      >
+                        <option value="instant">Desbloqueio Imediato</option>
+                        <option value="sequential">Sequencial (Pré-requisito)</option>
+                        <option value="drip">Programado por Dias (Drip)</option>
+                      </select>
+
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveModule(mod.id)}
+                        className="p-2 rounded-xl text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
+                        title="Eliminar Módulo"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Lessons List in Module */}
+                  <div className="flex flex-col gap-3">
+                    {mod.lessons.length === 0 ? (
+                      <p className="text-center py-4 text-xs text-slate-400 dark:text-zinc-500">
+                        Nenhuma aula adicionada neste módulo. Escolha um tipo abaixo.
+                      </p>
+                    ) : (
+                      mod.lessons.map((les, lIdx) => (
+                        <div key={les.id} className="p-4 rounded-2xl bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-3 transition-colors">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2.5 flex-1 min-w-0 mr-3">
+                              <span className="w-6 h-6 rounded-lg bg-white dark:bg-[#202433] border border-slate-200 dark:border-[#2b3144] text-slate-700 dark:text-zinc-300 text-xs font-bold flex items-center justify-center shrink-0">
+                                {lIdx + 1}
+                              </span>
+                              <input
+                                type="text"
+                                value={les.title}
+                                onChange={(e) => handleUpdateLesson(mod.id, les.id, 'title', e.target.value)}
+                                className="bg-white dark:bg-[#141620] border border-slate-300 dark:border-[#2b3044] rounded-lg px-3 py-1.5 text-xs font-bold text-slate-900 dark:text-white flex-1"
+                              />
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <select
+                                value={les.type}
+                                onChange={(e) => handleUpdateLesson(mod.id, les.id, 'type', e.target.value as any)}
+                                className="bg-white dark:bg-[#141620] border border-slate-300 dark:border-[#2b3044] rounded-lg px-2.5 py-1.5 text-xs text-indigo-600 dark:text-indigo-400 font-bold cursor-pointer"
+                              >
+                                <option value="video">Vídeo & Capítulos</option>
+                                <option value="text">Artigo Técnico</option>
+                                <option value="code">Desafio de Código</option>
+                                <option value="quiz">Questionário / Avaliação</option>
+                                <option value="resource">Pacote de Recursos</option>
+                              </select>
+
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveLesson(mod.id, les.id)}
+                                className="p-1.5 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Lesson Type Specific Editor */}
+                          {les.type === 'video' && (
+                            <div className="p-3 rounded-xl bg-white dark:bg-[#141620] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-2">
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={les.videoUrl || ''}
+                                  onChange={(e) => handleUpdateLesson(mod.id, les.id, 'videoUrl', e.target.value)}
+                                  placeholder="URL do Vídeo (ex: https://... ou YouTube / Vimeo)"
+                                  className="flex-1 bg-slate-50 dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white font-mono"
+                                />
+                                <input
+                                  type="number"
+                                  value={les.durationMin}
+                                  onChange={(e) => handleUpdateLesson(mod.id, les.id, 'durationMin', Number(e.target.value))}
+                                  placeholder="Minutos"
+                                  className="w-24 bg-slate-50 dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white text-center"
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          {les.type === 'code' && (
+                            <div className="p-3 rounded-xl bg-white dark:bg-[#141620] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-2">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                                  <Code2 className="w-3.5 h-3.5" />
+                                  Sandbox de Código ({les.codeChallenge?.language || 'typescript'})
+                                </span>
+                              </div>
+                              <textarea
+                                value={les.codeChallenge?.initialCode || ''}
+                                onChange={(e) => {
+                                  const curr = les.codeChallenge || { language: 'typescript', initialCode: '', solutionCode: '', instructions: '', hints: [] };
+                                  handleUpdateLesson(mod.id, les.id, 'codeChallenge', { ...curr, initialCode: e.target.value });
+                                }}
+                                rows={3}
+                                className="bg-slate-50 dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-lg p-2.5 font-mono text-xs text-emerald-600 dark:text-emerald-300 focus:outline-none resize-none"
+                                placeholder="// Código inicial para os alunos..."
+                              />
+                            </div>
+                          )}
+
+                          {les.type === 'text' && (
+                            <div className="p-3 rounded-xl bg-white dark:bg-[#141620] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-2">
+                              <textarea
+                                value={les.richArticle?.markdown || les.content}
+                                onChange={(e) => {
+                                  const curr = les.richArticle || { markdown: '', calloutType: 'tip', calloutTitle: 'Dica', calloutText: '', checklist: [] };
+                                  handleUpdateLesson(mod.id, les.id, 'richArticle', { ...curr, markdown: e.target.value });
+                                }}
+                                rows={2}
+                                className="bg-slate-50 dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-lg p-2 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none resize-none"
+                                placeholder="Conteúdo explicativo e instruções de estudo..."
+                              />
+                            </div>
+                          )}
+
+                          {les.type === 'quiz' && (
+                            <div className="p-3 rounded-xl bg-white dark:bg-[#141620] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-2">
+                              <span className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                <HelpCircle className="w-3.5 h-3.5" />
+                                Questionário com {les.quiz?.questions.length || 0} pergunta(s)
+                              </span>
+                            </div>
+                          )}
+
+                          {les.type === 'resource' && (
+                            <div className="p-3 rounded-xl bg-white dark:bg-[#141620] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-2">
+                              <span className="text-xs font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                                <Download className="w-3.5 h-3.5" />
+                                Ficheiros e Documentação de Apoio
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
+
+                    {/* Add Lesson buttons */}
+                    <div className="flex flex-wrap items-center gap-2 pt-2">
+                      <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400">Adicionar à aula:</span>
+                      <button
+                        type="button"
+                        onClick={() => handleAddLesson(mod.id, 'video')}
+                        className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-[#181a24] hover:bg-slate-200 dark:hover:bg-[#222638] text-indigo-600 dark:text-indigo-300 border border-slate-200 dark:border-[#262a3b] text-xs font-bold cursor-pointer"
+                      >
+                        + Vídeo
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAddLesson(mod.id, 'text')}
+                        className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-[#181a24] hover:bg-slate-200 dark:hover:bg-[#222638] text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-[#262a3b] text-xs font-bold cursor-pointer"
+                      >
+                        + Artigo
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAddLesson(mod.id, 'code')}
+                        className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-[#181a24] hover:bg-slate-200 dark:hover:bg-[#222638] text-emerald-600 dark:text-emerald-300 border border-slate-200 dark:border-[#262a3b] text-xs font-bold cursor-pointer"
+                      >
+                        + Desafio de Código
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAddLesson(mod.id, 'quiz')}
+                        className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-[#181a24] hover:bg-slate-200 dark:hover:bg-[#222638] text-amber-600 dark:text-amber-300 border border-slate-200 dark:border-[#262a3b] text-xs font-bold cursor-pointer"
+                      >
+                        + Questionário
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAddLesson(mod.id, 'resource')}
+                        className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-[#181a24] hover:bg-slate-200 dark:hover:bg-[#222638] text-blue-600 dark:text-blue-300 border border-slate-200 dark:border-[#262a3b] text-xs font-bold cursor-pointer"
+                      >
+                        + Recursos
+                      </button>
+                    </div>
+                  </div>
+                </Card>
+              ))
+            )}
+
+            {/* Navigation */}
             <div className="flex justify-between pt-4">
               <Button
                 variant="secondary"
                 onClick={() => { soundEffects.play('click'); setActiveStep(2); }}
                 leftIcon={<ArrowLeft className="w-4 h-4" />}
-                className="bg-[#181a24] border-[#262a3b] text-zinc-300"
+                className="bg-white dark:bg-[#181a24] border-slate-300 dark:border-[#262a3b] text-slate-700 dark:text-zinc-300"
               >
                 Voltar
               </Button>
@@ -1512,7 +1710,7 @@ export const CourseBuilder: React.FC = () => {
                 variant="primary"
                 onClick={() => { soundEffects.play('click'); setActiveStep(4); }}
                 rightIcon={<ArrowRight className="w-4 h-4" />}
-                className="bg-indigo-600 hover:bg-indigo-500 font-bold px-6 py-3 rounded-xl"
+                className="bg-indigo-600 hover:bg-indigo-500 font-bold px-6 py-3 rounded-xl shadow-md cursor-pointer"
               >
                 Rever & Publicar
               </Button>
@@ -1521,78 +1719,96 @@ export const CourseBuilder: React.FC = () => {
         )}
 
         {/* ======================================================================= */}
-        {/* PASSO 4: REVISÃO & PUBLICAÇÃO INTERATIVA */}
+        {/* PASSO 4: REVISÃO & CONFIRMAÇÃO */}
         {/* ======================================================================= */}
         {activeStep === 4 && (
           <div className="flex flex-col gap-6 animate-fade-in">
-            <Card className="p-6 bg-[#11131a] border-[#1e2230] rounded-3xl flex flex-col gap-6">
-              <div className="flex items-center justify-between pb-3 border-b border-[#1e2230]">
+            <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-3xl flex flex-col gap-6 shadow-xs transition-colors">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-[#222636]">
                 <div>
-                  <h2 className="text-lg font-black text-white flex items-center gap-2">
-                    <CheckCircle2 className="w-6 h-6 text-emerald-400" />
-                    Revisão Completa do Curso
+                  <h2 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                    <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+                    Revisão e Lançamento do Curso
                   </h2>
-                  <p className="text-xs text-zinc-400 mt-0.5">
-                    Confirme todos os detalhes antes de lançar para os estudantes.
+                  <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+                    Verifique os parâmetros configurados antes de disponibilizar para a comunidade de estudantes.
                   </p>
                 </div>
-                <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 font-bold text-xs border border-emerald-500/20">
+                <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-xs border border-emerald-500/20">
                   Pronto para Publicar
                 </span>
               </div>
 
-              {/* Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 rounded-2xl bg-[#141620] border border-[#222638] flex flex-col gap-1">
-                  <span className="text-[11px] font-bold text-zinc-400">Estrutura Curricular</span>
-                  <p className="text-lg font-black text-white">{modules.length} Módulos</p>
-                  <p className="text-xs text-indigo-400 font-bold">{modules.reduce((acc, m) => acc + m.lessons.length, 0)} Lições Ricas</p>
+              {/* Summary Metrics */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-1">
+                  <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400">Conteúdo Programático</span>
+                  <p className="text-lg font-black text-slate-900 dark:text-white">{modules.length} Módulos</p>
+                  <p className="text-xs text-indigo-600 dark:text-indigo-400 font-bold">{modules.reduce((acc, m) => acc + m.lessons.length, 0)} Lições</p>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-[#141620] border border-[#222638] flex flex-col gap-1">
-                  <span className="text-[11px] font-bold text-zinc-400">Comunidade da Turma</span>
-                  <p className="text-lg font-black text-white">{channels.length} Canais</p>
-                  <p className="text-xs text-emerald-400 font-bold">Salas de Voz, Q&A e Texto</p>
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-1">
+                  <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400">Canais da Turma</span>
+                  <p className="text-lg font-black text-slate-900 dark:text-white">{channels.length} Canais</p>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">
+                    {channels.filter(c => c.accessMode === 'announcement').length} Informativos • {channels.filter(c => c.type === 'voice').length} Salas de Voz
+                  </p>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-[#141620] border border-[#222638] flex flex-col gap-1">
-                  <span className="text-[11px] font-bold text-zinc-400">Gamificação & Certificado</span>
-                  <p className="text-lg font-black text-white">+{courseCompletionXp} XP</p>
-                  <p className="text-xs text-amber-400 font-bold">Badge {badgeRarity} + Certificado QR</p>
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-1">
+                  <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400">Regras de Chamadas</span>
+                  <p className="text-lg font-black text-slate-900 dark:text-white capitalize">
+                    {defaultCallMode === 'stage' ? 'Modo Palco' : defaultCallMode === 'qa' ? 'Fila de Dúvidas' : 'Modo Aberto'}
+                  </p>
+                  <p className="text-xs text-blue-600 dark:text-blue-400 font-bold">
+                    {defaultCallMode === 'stage' ? 'Silêncio Inicial' : 'Conversação Livre'}
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-1">
+                  <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400">Cargos & Permissões</span>
+                  <p className="text-lg font-black text-slate-900 dark:text-white">{customRoles.length} Cargos</p>
+                  <p className="text-xs text-amber-600 dark:text-amber-400 font-bold">Regras personalizáveis</p>
                 </div>
               </div>
 
-              {/* Course Identity Card Preview */}
-              <div className="p-5 rounded-2xl bg-[#141620] border border-[#222638] flex items-center gap-4">
-                <img
-                  src={thumbnailUrl}
-                  alt={title}
-                  className="w-24 h-24 rounded-xl object-cover"
-                />
+              {/* Course Identity Preview */}
+              <div className="p-5 rounded-2xl bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                {thumbnailUrl ? (
+                  <img
+                    src={thumbnailUrl}
+                    alt={title}
+                    className="w-24 h-24 rounded-xl object-cover shrink-0"
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-xl bg-slate-200 dark:bg-[#202433] flex items-center justify-center text-slate-400 shrink-0">
+                    <BookOpen className="w-8 h-8" />
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-base font-black text-white truncate">{title || 'Título do Curso'}</h3>
-                  <p className="text-xs text-zinc-400 mt-1 line-clamp-2">{description || 'Sem descrição.'}</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-bold">
+                  <h3 className="text-base font-black text-slate-900 dark:text-white truncate">{title || 'Título do Curso'}</h3>
+                  <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1 line-clamp-2">{description || 'Sem descrição.'}</p>
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    <span className="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold border border-indigo-500/20">
                       {category}
                     </span>
-                    <span className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 text-[10px]">
+                    <span className="px-2 py-0.5 rounded bg-slate-200 dark:bg-[#252a3b] text-slate-700 dark:text-zinc-300 text-[10px] font-bold">
                       {difficulty}
                     </span>
-                    <span className="text-xs font-bold text-emerald-400 font-mono">
-                      {isFree ? 'Gratuito' : `€${price}`}
+                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+                      {isFree ? 'Gratuito' : `€${price || 0}`}
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex justify-between pt-4 border-t border-[#1e2230]">
+              {/* Publish Action Buttons */}
+              <div className="flex justify-between pt-4 border-t border-slate-200 dark:border-[#222636]">
                 <Button
                   variant="secondary"
                   onClick={() => { soundEffects.play('click'); setActiveStep(3); }}
                   leftIcon={<ArrowLeft className="w-4 h-4" />}
-                  className="bg-[#181a24] border-[#262a3b] text-zinc-300"
+                  className="bg-white dark:bg-[#181a24] border-slate-300 dark:border-[#262a3b] text-slate-700 dark:text-zinc-300"
                 >
                   Voltar às Aulas
                 </Button>
@@ -1603,7 +1819,7 @@ export const CourseBuilder: React.FC = () => {
                   isLoading={isSubmitting}
                   onClick={handlePublish}
                   leftIcon={<Check className="w-5 h-5" />}
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-black px-8 py-3.5 rounded-2xl shadow-xl shadow-indigo-600/40 cursor-pointer"
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-black px-8 py-3.5 rounded-2xl shadow-xl shadow-indigo-600/30 cursor-pointer"
                 >
                   Confirmar & Publicar Curso
                 </Button>
@@ -1613,6 +1829,208 @@ export const CourseBuilder: React.FC = () => {
         )}
 
       </main>
+
+      {/* ======================================================================= */}
+      {/* MODAL: CRIAR NOVO CARGO PERSONALIZADO */}
+      {/* ======================================================================= */}
+      {showNewRoleModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white dark:bg-[#151720] border border-slate-200 dark:border-[#222636] rounded-3xl max-w-lg w-full p-6 shadow-2xl flex flex-col gap-5 text-slate-900 dark:text-white transition-colors">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-[#222636]">
+              <div className="flex items-center gap-2 font-black text-base">
+                <Shield className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                <span>Criar Novo Cargo & Regras</span>
+              </div>
+              <button
+                onClick={() => setShowNewRoleModal(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateCustomRole} className="flex flex-col gap-4 text-xs">
+              <div>
+                <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">Nome do Cargo *</label>
+                <input
+                  type="text"
+                  required
+                  value={newRoleName}
+                  onChange={(e) => setNewRoleName(e.target.value)}
+                  placeholder="ex: Co-Instrutor, Monitor Técnico, Líder de Grupo"
+                  className="w-full mt-1 bg-slate-50 dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">Cor do Cargo</label>
+                <div className="flex items-center gap-2 mt-1.5">
+                  {(['indigo', 'emerald', 'amber', 'purple', 'cyan', 'rose', 'zinc'] as const).map(color => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => setNewRoleColor(color)}
+                      className={`w-7 h-7 rounded-full border-2 cursor-pointer transition-all flex items-center justify-center ${
+                        newRoleColor === color ? 'border-slate-900 dark:border-white scale-110' : 'border-transparent'
+                      } ${
+                        color === 'indigo' ? 'bg-indigo-600' :
+                        color === 'emerald' ? 'bg-emerald-500' :
+                        color === 'amber' ? 'bg-amber-500' :
+                        color === 'purple' ? 'bg-purple-600' :
+                        color === 'cyan' ? 'bg-cyan-500' :
+                        color === 'rose' ? 'bg-rose-500' : 'bg-slate-500'
+                      }`}
+                    >
+                      {newRoleColor === color && <Check className="w-3.5 h-3.5 text-white" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-2.5">
+                <span className="font-bold text-slate-900 dark:text-white">Permissões Especiais:</span>
+
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newRoleAnnouncements}
+                    onChange={(e) => setNewRoleAnnouncements(e.target.checked)}
+                    className="rounded text-indigo-600"
+                  />
+                  <div>
+                    <span className="font-bold text-slate-800 dark:text-zinc-200">Publicar em Canais Informativos</span>
+                    <p className="text-[10px] text-slate-500 dark:text-zinc-400">Pode emitir avisos oficiais em canais de apenas leitura.</p>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newRoleSpeakStage}
+                    onChange={(e) => setNewRoleSpeakStage(e.target.checked)}
+                    className="rounded text-indigo-600"
+                  />
+                  <div>
+                    <span className="font-bold text-slate-800 dark:text-zinc-200">Falar no Palco sem Pedir Palavra</span>
+                    <p className="text-[10px] text-slate-500 dark:text-zinc-400">Em salas no Modo Palco, entra com permissão ativa de microfone.</p>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newRoleShareScreen}
+                    onChange={(e) => setNewRoleShareScreen(e.target.checked)}
+                    className="rounded text-indigo-600"
+                  />
+                  <div>
+                    <span className="font-bold text-slate-800 dark:text-zinc-200">Partilhar Ecrã nas Sessões ao Vivo</span>
+                    <p className="text-[10px] text-slate-500 dark:text-zinc-400">Pode partilhar janela ou ecrã inteiro com a turma.</p>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newRoleManageVoice}
+                    onChange={(e) => setNewRoleManageVoice(e.target.checked)}
+                    className="rounded text-indigo-600"
+                  />
+                  <div>
+                    <span className="font-bold text-slate-800 dark:text-zinc-200">Gerir Chamadas e Pedidos de Palco</span>
+                    <p className="text-[10px] text-slate-500 dark:text-zinc-400">Pode silenciar outros participantes e autorizar oradores.</p>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newRoleModerateChat}
+                    onChange={(e) => setNewRoleModerateChat(e.target.checked)}
+                    className="rounded text-indigo-600"
+                  />
+                  <div>
+                    <span className="font-bold text-slate-800 dark:text-zinc-200">Moderar Mensagens do Chat</span>
+                    <p className="text-[10px] text-slate-500 dark:text-zinc-400">Pode fixar anúncios e eliminar mensagens impróprias.</p>
+                  </div>
+                </label>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-[#222636]">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setShowNewRoleModal(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold"
+                >
+                  Criar Cargo
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================================= */}
+      {/* MODAL: PRÉ-VISUALIZAÇÃO DO CURSO */}
+      {/* ======================================================================= */}
+      {previewOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white dark:bg-[#151720] border border-slate-200 dark:border-[#222636] rounded-3xl max-w-2xl w-full p-6 shadow-2xl flex flex-col gap-4 text-slate-900 dark:text-white transition-colors max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-[#222636]">
+              <div className="flex items-center gap-2 font-black text-base">
+                <Eye className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                <span>Pré-visualização do Aluno</span>
+              </div>
+              <button
+                onClick={() => setPreviewOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e]">
+                <h3 className="font-extrabold text-base text-slate-900 dark:text-white">{title || 'Título do Curso'}</h3>
+                <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">{description || 'Sem descrição definida.'}</p>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <span className="text-xs font-bold text-slate-700 dark:text-zinc-300">Canais que o Aluno verá:</span>
+                <div className="grid grid-cols-2 gap-2">
+                  {channels.map(c => (
+                    <div key={c.id} className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex items-center justify-between text-xs font-bold">
+                      <span className="flex items-center gap-1.5">
+                        {c.type === 'voice' ? <Volume2 className="w-3.5 h-3.5 text-emerald-500" /> : <Hash className="w-3.5 h-3.5 text-slate-400" />}
+                        #{c.name}
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        {c.accessMode === 'announcement' ? 'Apenas Leitura' : c.type === 'voice' ? 'Voz / Vídeo' : 'Aberto'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <Button
+              variant="secondary"
+              onClick={() => setPreviewOpen(false)}
+              className="mt-3 w-full"
+            >
+              Fechar Pré-visualização
+            </Button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

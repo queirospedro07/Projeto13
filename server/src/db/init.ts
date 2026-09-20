@@ -336,6 +336,33 @@ export function initializeSchemaAndSeed(db: any) {
       FOREIGN KEY(receiverId) REFERENCES users(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS course_roles (
+      id TEXT PRIMARY KEY,
+      courseId TEXT NOT NULL,
+      name TEXT NOT NULL,
+      color TEXT NOT NULL DEFAULT 'indigo',
+      canPostAnnouncements INTEGER NOT NULL DEFAULT 0,
+      canSpeakInStage INTEGER NOT NULL DEFAULT 0,
+      canShareScreen INTEGER NOT NULL DEFAULT 0,
+      canModerateChat INTEGER NOT NULL DEFAULT 0,
+      canManageVoice INTEGER NOT NULL DEFAULT 0,
+      orderIndex INTEGER NOT NULL DEFAULT 0,
+      createdAt TEXT NOT NULL,
+      FOREIGN KEY(courseId) REFERENCES courses(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS course_member_roles (
+      id TEXT PRIMARY KEY,
+      courseId TEXT NOT NULL,
+      userId TEXT NOT NULL,
+      roleId TEXT NOT NULL,
+      assignedAt TEXT NOT NULL,
+      FOREIGN KEY(courseId) REFERENCES courses(id) ON DELETE CASCADE,
+      FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY(roleId) REFERENCES course_roles(id) ON DELETE CASCADE,
+      UNIQUE(courseId, userId, roleId)
+    );
+
     -- Indices for high performance queries
     CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
     CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
@@ -350,7 +377,16 @@ export function initializeSchemaAndSeed(db: any) {
     CREATE INDEX IF NOT EXISTS idx_friendships_users ON friendships(requesterId, addresseeId);
     CREATE INDEX IF NOT EXISTS idx_follows_users ON follows(followerId, followingId);
     CREATE INDEX IF NOT EXISTS idx_dm_users ON direct_messages(senderId, receiverId);
+    CREATE INDEX IF NOT EXISTS idx_course_roles ON course_roles(courseId);
+    CREATE INDEX IF NOT EXISTS idx_course_member_roles ON course_member_roles(courseId, userId);
   `);
+
+  // Column migrations for course calls and channel access modes
+  try { db.exec(`ALTER TABLE courses ADD COLUMN defaultCallMode TEXT DEFAULT 'open'`); } catch (_) {}
+  try { db.exec(`ALTER TABLE courses ADD COLUMN allowStudentScreenShare INTEGER DEFAULT 1`); } catch (_) {}
+  try { db.exec(`ALTER TABLE courses ADD COLUMN allowStudentCamera INTEGER DEFAULT 1`); } catch (_) {}
+  try { db.exec(`ALTER TABLE channels ADD COLUMN accessMode TEXT DEFAULT 'discussion'`); } catch (_) {}
+  try { db.exec(`ALTER TABLE channels ADD COLUMN voiceMode TEXT DEFAULT 'open'`); } catch (_) {}
 
   // 2. Check if seeding is needed
   const userCount = (db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number }).count;

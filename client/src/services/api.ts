@@ -119,6 +119,11 @@ export const api = {
   createCourse: (data: any) => request<any>('/creator/courses', { method: 'POST', body: JSON.stringify(data) }),
   deleteCourse: (id: string) => request<any>(`/creator/courses/${id}`, { method: 'DELETE' }),
   getCreatorMembers: () => request<any[]>('/creator/members'),
+  getCourseRoles: (courseId: string) => request<any[]>(`/creator/courses/${courseId}/roles`),
+  createCourseRole: (courseId: string, data: any) =>
+    request<any>(`/creator/courses/${courseId}/roles`, { method: 'POST', body: JSON.stringify(data) }),
+  assignCourseMemberRole: (courseId: string, userId: string, roleId: string | null) =>
+    request<any>(`/creator/courses/${courseId}/members/${userId}/role`, { method: 'PUT', body: JSON.stringify({ roleId }) }),
 
   // Admin
   getAdminStats: () => request<any>('/admin/stats'),

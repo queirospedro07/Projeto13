@@ -117,6 +117,7 @@ const io = new Server(server, {
 });
 
 setupSocketIO(io);
+app.set('io', io);
 
 // 6. Health Check Endpoint
 app.get('/api/health', (req: Request, res: Response) => {

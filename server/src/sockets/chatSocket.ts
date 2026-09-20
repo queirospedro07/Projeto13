@@ -62,9 +62,27 @@ export function setupSocketIO(io: Server) {
       if (messageData.channelId) {
         // Broadcast to channel room
         io.to(`channel_${messageData.channelId}`).emit('new-message', messageData);
-      } else if (messageData.recipientId) {
-        // Broadcast to direct message recipients
-        io.to(`user_${messageData.recipientId}`).emit('new-direct-message', messageData);
+      } else {
+        const targetId = messageData.recipientId || messageData.receiverId;
+        if (targetId) {
+          io.to(`user_${targetId}`).emit('direct-message', messageData);
+          io.to(`user_${targetId}`).emit('new-direct-message', messageData);
+        }
+        if (messageData.senderId) {
+          io.to(`user_${messageData.senderId}`).emit('direct-message', messageData);
+          io.to(`user_${messageData.senderId}`).emit('new-direct-message', messageData);
+        }
+      }
+    });
+
+    socket.on('direct-message', (messageData: any) => {
+      const targetId = messageData.recipientId || messageData.receiverId;
+      if (targetId) {
+        io.to(`user_${targetId}`).emit('direct-message', messageData);
+        io.to(`user_${targetId}`).emit('new-direct-message', messageData);
+      }
+      if (messageData.senderId) {
+        io.to(`user_${messageData.senderId}`).emit('direct-message', messageData);
         io.to(`user_${messageData.senderId}`).emit('new-direct-message', messageData);
       }
     });
@@ -131,9 +149,18 @@ export function setupSocketIO(io: Server) {
 
       socket.to(`voice_${roomId}`).emit('user-voice-state-changed', {
         userId,
+        socketId: socket.id,
         isMuted,
         isCameraOn,
         isScreenSharing,
+      });
+    });
+
+    socket.on('voice-speaking-state', ({ roomId, userId, isSpeaking }: any) => {
+      socket.to(`voice_${roomId}`).emit('user-voice-speaking-changed', {
+        userId,
+        socketId: socket.id,
+        isSpeaking
       });
     });
 

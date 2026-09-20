@@ -106,6 +106,10 @@ router.post('/courses', authenticate, requireRole('CREATOR', 'ADMIN'), async (re
       spaceId: customSpaceId,
       channels,
       modules,
+      defaultCallMode,
+      allowStudentScreenShare,
+      allowStudentCamera,
+      customRoles,
     } = req.body;
 
     if (!title || !category) {
@@ -158,9 +162,13 @@ router.post('/courses', authenticate, requireRole('CREATOR', 'ADMIN'), async (re
 
         channelsToInsert.forEach((ch: any, chIdx: number) => {
           const chId = `ch-${Date.now()}-${chIdx}`;
+          const isVoiceChan = ch.type === 'voice' || ch.isVoice ? 1 : 0;
+          const chanAccess = ch.accessMode || (ch.type === 'announcement' ? 'announcement' : 'discussion');
+          const chanVoiceMode = ch.voiceMode || defaultCallMode || 'open';
+
           execute(
-            `INSERT INTO channels (id, spaceId, name, type, topic, orderIndex, isVoice, isLocked, guidingQuestion, guidelines)
-             VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+            `INSERT INTO channels (id, spaceId, name, type, topic, orderIndex, isVoice, isLocked, guidingQuestion, guidelines, accessMode, voiceMode)
+             VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)`,
             [
               chId,
               resolvedSpaceId,
@@ -168,18 +176,24 @@ router.post('/courses', authenticate, requireRole('CREATOR', 'ADMIN'), async (re
               ch.type || 'text',
               ch.topic || '',
               chIdx,
-              ch.type === 'voice' || ch.isVoice ? 1 : 0,
+              isVoiceChan,
               ch.guidingQuestion || '',
               ch.guidelines || '',
+              chanAccess,
+              chanVoiceMode,
             ]
           );
         });
       }
 
-      // 2. Insert Course
+      // 2. Insert Course with Call Settings
+      const defCallMode = defaultCallMode || 'open';
+      const allowScreen = allowStudentScreenShare !== false ? 1 : 0;
+      const allowCam = allowStudentCamera !== false ? 1 : 0;
+
       execute(
-        `INSERT INTO courses (id, title, slug, description, category, difficulty, thumbnailUrl, bannerUrl, price, isFree, isPublished, featured, durationHours, language, creatorId, spaceId, createdAt, updatedAt)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO courses (id, title, slug, description, category, difficulty, thumbnailUrl, bannerUrl, price, isFree, isPublished, featured, durationHours, language, creatorId, spaceId, defaultCallMode, allowStudentScreenShare, allowStudentCamera, createdAt, updatedAt)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           courseId,
           title,
@@ -195,10 +209,84 @@ router.post('/courses', authenticate, requireRole('CREATOR', 'ADMIN'), async (re
           language || 'Português',
           creatorId,
           resolvedSpaceId,
+          defCallMode,
+          allowScreen,
+          allowCam,
           now,
           now,
         ]
       );
+
+      // 2.1 Insert Custom Course Roles & Permissions
+      const rolesToInsert = Array.isArray(customRoles) && customRoles.length > 0
+        ? customRoles
+        : [
+            {
+              name: 'Instrutor',
+              color: 'indigo',
+              canPostAnnouncements: 1,
+              canSpeakInStage: 1,
+              canShareScreen: 1,
+              canModerateChat: 1,
+              canManageVoice: 1,
+            },
+            {
+              name: 'Tutor / Moderador',
+              color: 'emerald',
+              canPostAnnouncements: 1,
+              canSpeakInStage: 1,
+              canShareScreen: 1,
+              canModerateChat: 1,
+              canManageVoice: 1,
+            },
+            {
+              name: 'Monitor de Dúvidas',
+              color: 'amber',
+              canPostAnnouncements: 0,
+              canSpeakInStage: 1,
+              canShareScreen: 0,
+              canModerateChat: 0,
+              canManageVoice: 0,
+            },
+            {
+              name: 'Estudante',
+              color: 'zinc',
+              canPostAnnouncements: 0,
+              canSpeakInStage: 0,
+              canShareScreen: allowScreen,
+              canModerateChat: 0,
+              canManageVoice: 0,
+            }
+          ];
+
+      rolesToInsert.forEach((role: any, rIdx: number) => {
+        const roleId = role.id || `role-${Date.now()}-${rIdx}`;
+        execute(
+          `INSERT INTO course_roles (id, courseId, name, color, canPostAnnouncements, canSpeakInStage, canShareScreen, canModerateChat, canManageVoice, orderIndex, createdAt)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            roleId,
+            courseId,
+            role.name,
+            role.color || 'indigo',
+            role.canPostAnnouncements ? 1 : 0,
+            role.canSpeakInStage ? 1 : 0,
+            role.canShareScreen !== undefined ? (role.canShareScreen ? 1 : 0) : allowScreen,
+            role.canModerateChat ? 1 : 0,
+            role.canManageVoice ? 1 : 0,
+            rIdx,
+            now
+          ]
+        );
+
+        // Assign creator to first role (Instrutor)
+        if (rIdx === 0) {
+          execute(
+            `INSERT OR IGNORE INTO course_member_roles (id, courseId, userId, roleId, assignedAt) VALUES (?, ?, ?, ?, ?)`,
+            [`cmr-${Date.now()}`, courseId, creatorId, roleId, now]
+          );
+        }
+      });
 
       // 3. Insert Modules & Lessons
       if (Array.isArray(modules)) {
@@ -288,6 +376,130 @@ router.post('/courses', authenticate, requireRole('CREATOR', 'ADMIN'), async (re
   } catch (err) {
     console.error('Create course error:', err);
     return res.status(500).json({ error: 'Falha ao criar curso' });
+  }
+});
+
+// GET /api/creator/members
+router.get('/members', authenticate, requireRole('CREATOR', 'ADMIN'), async (req: AuthRequest, res: Response) => {
+  try {
+    const creatorId = req.user!.id;
+    const members = queryAll<any>(
+      `SELECT e.id, e.userId, e.courseId, e.enrolledAt, e.progressPercent,
+              u.id as user_id, u.name, u.username, u.avatarUrl, u.email, u.level, u.xp,
+              c.id as course_id, c.title as course_title,
+              s.name as space_name,
+              cr.name as role_name, cr.color as role_color, cr.id as role_id
+       FROM enrollments e
+       JOIN courses c ON e.courseId = c.id
+       JOIN users u ON e.userId = u.id
+       LEFT JOIN spaces s ON c.spaceId = s.id
+       LEFT JOIN course_member_roles cmr ON cmr.courseId = c.id AND cmr.userId = u.id
+       LEFT JOIN course_roles cr ON cmr.roleId = cr.id
+       WHERE c.creatorId = ?
+       ORDER BY e.enrolledAt DESC`,
+      [creatorId]
+    );
+
+    const formatted = members.map(m => ({
+      id: m.id,
+      role: m.role_name || (m.userId === creatorId ? 'INSTRUTOR' : 'STUDENT'),
+      roleId: m.role_id,
+      roleColor: m.role_color || 'zinc',
+      progressPercent: m.progressPercent,
+      enrolledAt: m.enrolledAt,
+      course: { id: m.course_id, title: m.course_title },
+      space: { name: m.space_name || m.course_title },
+      user: {
+        id: m.user_id,
+        name: m.name,
+        username: m.username,
+        avatarUrl: m.avatarUrl,
+        email: m.email,
+        level: m.level,
+        xp: m.xp
+      }
+    }));
+
+    return res.json(formatted);
+  } catch (err) {
+    console.error('Get creator members error:', err);
+    return res.status(500).json({ error: 'Falha ao carregar lista de membros' });
+  }
+});
+
+// GET /api/creator/courses/:courseId/roles
+router.get('/courses/:courseId/roles', authenticate, requireRole('CREATOR', 'ADMIN'), async (req: AuthRequest, res: Response) => {
+  try {
+    const { courseId } = req.params;
+    const roles = queryAll<any>(
+      `SELECT * FROM course_roles WHERE courseId = ? ORDER BY orderIndex ASC`,
+      [courseId]
+    );
+    return res.json(roles);
+  } catch (err) {
+    return res.status(500).json({ error: 'Falha ao carregar cargos do curso' });
+  }
+});
+
+// POST /api/creator/courses/:courseId/roles
+router.post('/courses/:courseId/roles', authenticate, requireRole('CREATOR', 'ADMIN'), async (req: AuthRequest, res: Response) => {
+  try {
+    const { courseId } = req.params;
+    const { name, color, canPostAnnouncements, canSpeakInStage, canShareScreen, canModerateChat, canManageVoice } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ error: 'Nome do cargo é obrigatório' });
+    }
+
+    const roleId = `role-${Date.now()}`;
+    const now = new Date().toISOString();
+
+    execute(
+      `INSERT INTO course_roles (id, courseId, name, color, canPostAnnouncements, canSpeakInStage, canShareScreen, canModerateChat, canManageVoice, orderIndex, createdAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 99, ?)`,
+      [
+        roleId,
+        courseId,
+        name,
+        color || 'indigo',
+        canPostAnnouncements ? 1 : 0,
+        canSpeakInStage ? 1 : 0,
+        canShareScreen ? 1 : 0,
+        canModerateChat ? 1 : 0,
+        canManageVoice ? 1 : 0,
+        now
+      ]
+    );
+
+    const created = queryOne('SELECT * FROM course_roles WHERE id = ?', [roleId]);
+    return res.status(201).json(created);
+  } catch (err) {
+    return res.status(500).json({ error: 'Falha ao criar cargo' });
+  }
+});
+
+// PUT /api/creator/courses/:courseId/members/:userId/role
+router.put('/courses/:courseId/members/:userId/role', authenticate, requireRole('CREATOR', 'ADMIN'), async (req: AuthRequest, res: Response) => {
+  try {
+    const { courseId, userId } = req.params;
+    const { roleId } = req.body;
+    const now = new Date().toISOString();
+
+    execute(
+      `DELETE FROM course_member_roles WHERE courseId = ? AND userId = ?`,
+      [courseId, userId]
+    );
+
+    if (roleId) {
+      execute(
+        `INSERT INTO course_member_roles (id, courseId, userId, roleId, assignedAt) VALUES (?, ?, ?, ?, ?)`,
+        [`cmr-${Date.now()}`, courseId, userId, roleId, now]
+      );
+    }
+
+    return res.json({ success: true, message: 'Cargo atualizado com sucesso' });
+  } catch (err) {
+    return res.status(500).json({ error: 'Falha ao atribuir cargo' });
   }
 });
 

@@ -78,6 +78,17 @@ export const SpaceChat: React.FC = () => {
       if (msg.channelId === currentChannel?.id) {
         setMessages(prev => {
           if (prev.some(m => m.id === msg.id)) return prev;
+          // Check if this incoming message matches a temporary optimistic message by this user
+          const optimisticIdx = prev.findIndex(m => 
+            m.id.startsWith('temp-') && 
+            (m.senderId === msg.senderId || m.sender?.username === msg.sender?.username) &&
+            m.content === msg.content
+          );
+          if (optimisticIdx !== -1) {
+            const next = [...prev];
+            next[optimisticIdx] = msg;
+            return next;
+          }
           return [...prev, msg];
         });
       }
@@ -106,26 +117,61 @@ export const SpaceChat: React.FC = () => {
     };
   }, [socket, currentChannel?.id, user?.name, user?.username]);
 
-  // 4. Send Message Handler
+  // 4. Send Message Handler (Instant Optimistic Display)
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputContent.trim() || !currentChannel) return;
 
     const contentToSend = inputContent.trim();
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+    const currentReply = replyingTo;
+
+    const optimisticMsg: Message = {
+      id: tempId,
+      channelId: currentChannel.id,
+      senderId: user?.id || 'temp-user',
+      content: contentToSend,
+      isPinned: false,
+      createdAt: new Date().toISOString(),
+      sender: {
+        id: user?.id || 'temp-user',
+        name: user?.name || 'Eu',
+        username: user?.username || 'eu',
+        avatarUrl: user?.avatarUrl,
+        role: user?.role || 'STUDENT'
+      },
+      replyTo: currentReply ? {
+        id: currentReply.id,
+        content: currentReply.content,
+        sender: currentReply.sender
+      } : undefined,
+      reactions: []
+    };
+
+    // 1. Instant optimistic visual display (0ms lag)
     setInputContent('');
+    setReplyingTo(null);
+    setMessages(prev => [...prev, optimisticMsg]);
+    soundEffects.playMessage();
     sendStopTyping(currentChannel.id);
 
+    // 2. Immediate socket broadcast
+    socket?.emit('send-message', optimisticMsg);
+
+    // 3. Persist to server
     try {
       const newMsg = await api.sendMessage(currentChannel.id, {
         content: contentToSend,
-        replyToId: replyingTo?.id,
+        replyToId: currentReply?.id,
       });
 
-      setMessages(prev => [...prev, newMsg]);
+      // Update the optimistic item with true server data
+      setMessages(prev => prev.map(m => (m.id === tempId ? newMsg : m)));
       socket?.emit('send-message', newMsg);
-      soundEffects.playMessage();
-      setReplyingTo(null);
     } catch (err) {
+      // Revert optimistic message if network fails
+      setMessages(prev => prev.filter(m => m.id !== tempId));
+      setInputContent(contentToSend);
       toast({ title: 'Erro', message: 'Não foi possível enviar a mensagem', type: 'error' });
     }
   };
@@ -197,7 +243,7 @@ export const SpaceChat: React.FC = () => {
   return (
     <div className="flex h-[calc(100vh-4rem)] overflow-hidden bg-white border border-slate-200 rounded-3xl shadow-sm">
       
-      {/* 1. DISCORD-STYLE CHANNELS & VOICE SIDEBAR */}
+      {/* 1. INTERACTIVE CHANNELS & VOICE SIDEBAR */}
       <SpaceChannelList
         space={space}
         channels={channels}

@@ -200,8 +200,8 @@ export const LandingPage: React.FC = () => {
                   {/* Stream Controls */}
                   <div className="flex items-center justify-between bg-slate-950/80 backdrop-blur-md px-4 py-2 rounded-xl border border-slate-700/60">
                     <div className="flex items-center gap-2 text-xs text-slate-300">
-                      <Avatar src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&auto=format&fit=crop&q=80" name="Sarah Jenkins" size="xs" />
-                      <span>Sarah Jenkins (Instrutora)</span>
+                      <Avatar src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80" name="Inês Silva" size="xs" />
+                      <span>Prof. Inês Silva (Instrutora)</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-300">

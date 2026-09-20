@@ -28,11 +28,16 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   useEffect(() => {
     const envSocketUrl = (import.meta as any).env?.VITE_SOCKET_URL || (import.meta as any).env?.VITE_API_URL;
-    const socketServerUrl = envSocketUrl ? envSocketUrl.replace(/\/$/, '') : window.location.origin;
+    let socketServerUrl = envSocketUrl ? envSocketUrl.replace(/\/api\/?$/, '').replace(/\/$/, '') : window.location.origin;
+    if (!envSocketUrl && window.location.hostname === 'localhost') {
+      socketServerUrl = 'http://localhost:5000';
+    }
 
     const newSocket = io(socketServerUrl, {
       transports: ['websocket', 'polling'],
-      reconnectionAttempts: 5,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      timeout: 10000,
     });
 
     newSocket.on('connect', () => {
@@ -56,6 +61,12 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       newSocket.disconnect();
     };
   }, [user?.id]);
+
+  useEffect(() => {
+    if (socket && isConnected && user) {
+      socket.emit('user-connected', { userId: user.id, username: user.username });
+    }
+  }, [socket, isConnected, user?.id]);
 
   const joinChannel = (channelId: string) => {
     socket?.emit('join-channel', channelId);

@@ -73,36 +73,72 @@ export const MessagesPage: React.FC = () => {
   useEffect(() => {
     if (!socket) return;
     const handleDM = (msg: any) => {
+      const targetId = msg.receiverId || msg.recipientId;
       if (
-        (msg.senderId === activePeer?.id && msg.receiverId === user?.id) ||
-        (msg.senderId === user?.id && msg.receiverId === activePeer?.id)
+        (msg.senderId === activePeer?.id && targetId === user?.id) ||
+        (msg.senderId === user?.id && targetId === activePeer?.id)
       ) {
-        setMessages(prev => (prev.some(m => m.id === msg.id) ? prev : [...prev, msg]));
+        setMessages(prev => {
+          if (prev.some(m => m.id === msg.id)) return prev;
+          const optimisticIdx = prev.findIndex(m => 
+            m.id.startsWith('temp-') && m.senderId === msg.senderId && m.content === msg.content
+          );
+          if (optimisticIdx !== -1) {
+            const next = [...prev];
+            next[optimisticIdx] = msg;
+            return next;
+          }
+          return [...prev, msg];
+        });
       }
       loadConversations();
     };
 
     socket.on('direct-message', handleDM);
+    socket.on('new-direct-message', handleDM);
     return () => {
       socket.off('direct-message', handleDM);
+      socket.off('new-direct-message', handleDM);
     };
   }, [socket, activePeer?.id, user?.id]);
 
-  // Send Direct Message
+  // Send Direct Message (Instant Optimistic Display)
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!draft.trim() || !activePeer) return;
 
     const content = draft.trim();
-    setDraft('');
+    const tempId = `temp-dm-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
 
+    const optimisticDM = {
+      id: tempId,
+      senderId: user?.id,
+      receiverId: activePeer.id,
+      content,
+      isRead: false,
+      createdAt: new Date().toISOString(),
+      sender: user
+    };
+
+    // 1. Instant optimistic visual display
+    setDraft('');
+    setMessages(prev => [...prev, optimisticDM]);
+    soundEffects.playMessage();
+
+    // 2. Immediate socket broadcast
+    socket?.emit('direct-message', optimisticDM);
+    socket?.emit('send-message', optimisticDM);
+
+    // 3. Persist to server
     try {
       const res = await api.sendDirectMessage(activePeer.id, content);
-      setMessages(prev => [...prev, res]);
+      setMessages(prev => prev.map(m => (m.id === tempId ? res : m)));
       socket?.emit('direct-message', res);
-      soundEffects.playMessage();
+      socket?.emit('send-message', res);
       loadConversations();
     } catch (err: any) {
+      setMessages(prev => prev.filter(m => m.id !== tempId));
+      setDraft(content);
       toast({ title: 'Erro ao enviar mensagem', message: err.message, type: 'error' });
     }
   };

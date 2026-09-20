@@ -497,7 +497,7 @@ router.post('/dm/send', authenticate, async (req: AuthRequest, res: Response) =>
 
     const sender = queryOne<any>('SELECT id, name, username, avatarUrl, role FROM users WHERE id = ?', [senderId]);
 
-    return res.status(201).json({
+    const dmResponse = {
       id: dmId,
       senderId,
       receiverId,
@@ -505,7 +505,15 @@ router.post('/dm/send', authenticate, async (req: AuthRequest, res: Response) =>
       isRead: false,
       createdAt: now,
       sender,
-    });
+    };
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${receiverId}`).emit('direct-message', dmResponse);
+      io.to(`user_${senderId}`).emit('direct-message', dmResponse);
+    }
+
+    return res.status(201).json(dmResponse);
   } catch (err) {
     console.error('Send DM error:', err);
     return res.status(500).json({ error: 'Falha ao enviar mensagem direta' });

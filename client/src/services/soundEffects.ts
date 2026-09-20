@@ -199,7 +199,7 @@ class SoundService {
   }
 
   // ==========================================
-  // DISCORD SOUNDBOARD SYNTHESIZED SOUNDS
+  // PLATFORM SOUNDBOARD SYNTHESIZED SOUNDS
   // ==========================================
 
   // Airhorn: Classic celebration blast

@@ -8,6 +8,7 @@ import {
   MonitorOff, 
   Headphones, 
   VolumeX, 
+  Volume2,
   PhoneOff, 
   MessageSquare, 
   Users, 
@@ -61,12 +62,55 @@ export interface CallStageProps {
   onDisconnect: () => void;
 }
 
+// Multi-STUN public servers for robust NAT traversal across different networks
 const RTC_CONFIG: RTCConfiguration = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' }
-  ]
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' },
+    { urls: 'stun:stun.services.mozilla.com' },
+    { urls: 'stun:stun.relay.metered.ca:80' }
+  ],
+  iceCandidatePoolSize: 10
+};
+
+// Safe video player component that attaches MediaStream cleanly to HTMLVideoElement
+const VideoStreamPlayer: React.FC<{
+  stream: MediaStream | null;
+  isMirrored?: boolean;
+  className?: string;
+  objectFit?: 'cover' | 'contain';
+}> = ({ stream, isMirrored = false, className = '', objectFit = 'cover' }) => {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (stream && stream.active && stream.getVideoTracks().length > 0) {
+      if (video.srcObject !== stream) {
+        video.srcObject = stream;
+      }
+      video.play().catch(e => {
+        // Autoplay may be deferred until user interaction
+        console.warn('Video playback notice:', e);
+      });
+    } else {
+      video.srcObject = null;
+    }
+  }, [stream]);
+
+  return (
+    <video
+      ref={videoRef}
+      autoPlay
+      playsInline
+      muted
+      className={`w-full h-full ${objectFit === 'contain' ? 'object-contain bg-black' : 'object-cover'} ${isMirrored ? 'scale-x-[-1]' : ''} ${className}`}
+    />
+  );
 };
 
 export const CallStage: React.FC<CallStageProps> = ({
@@ -98,6 +142,7 @@ export const CallStage: React.FC<CallStageProps> = ({
   const [layoutMode, setLayoutMode] = useState<'grid' | 'spotlight'>('grid');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [activeSideDrawer, setActiveSideDrawer] = useState<'none' | 'chat' | 'members' | 'requests'>('none');
+  const [isAudioAutoplayBlocked, setIsAudioAutoplayBlocked] = useState(false);
 
   // Audio level & Settings
   const [micLevel, setMicLevel] = useState(0);
@@ -105,6 +150,9 @@ export const CallStage: React.FC<CallStageProps> = ({
   const [selectedParticipantVolume, setSelectedParticipantVolume] = useState<string | null>(null);
   const [userVolumes, setUserVolumes] = useState<Record<string, number>>({});
   const [callDurationSeconds, setCallDurationSeconds] = useState(0);
+
+  // Remote streams dictionary: targetSocketId -> MediaStream
+  const [remoteVideoStreams, setRemoteVideoStreams] = useState<Record<string, MediaStream>>({});
 
   // Speaker Requests (Stage Mode Queue)
   const [speakerRequests, setSpeakerRequests] = useState<Array<{ id: string; name: string; username: string; avatarUrl?: string; time: string }>>([]);
@@ -114,7 +162,7 @@ export const CallStage: React.FC<CallStageProps> = ({
     {
       id: 'init-msg',
       sender: 'Sistema',
-      content: `Conectado ao canal de voz "${roomName}". Modo atual: ${
+      content: `Conectado à sala "${roomName}". Formato atual: ${
         roomMode === 'stage' ? 'Palco Restrito' : roomMode === 'qa' ? 'Fila de Dúvidas' : 'Convívio Aberto'
       }.`,
       time: 'Agora',
@@ -123,10 +171,8 @@ export const CallStage: React.FC<CallStageProps> = ({
   ]);
   const [chatInput, setChatInput] = useState('');
 
-  // Media references
+  // Media stream references
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const localCameraRef = useRef<HTMLVideoElement | null>(null);
-  const localScreenRef = useRef<HTMLVideoElement | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const cameraStreamRef = useRef<MediaStream | null>(null);
   const screenStreamRef = useRef<MediaStream | null>(null);
@@ -134,13 +180,15 @@ export const CallStage: React.FC<CallStageProps> = ({
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animFrameRef = useRef<number | null>(null);
 
-  // WebRTC maps & state synchronization refs
+  // WebRTC maps & socket associations
   const peerConnectionsRef = useRef<Map<string, RTCPeerConnection>>(new Map());
   const remoteAudiosRef = useRef<Map<string, HTMLAudioElement>>(new Map());
   const pendingIceCandidatesRef = useRef<Map<string, RTCIceCandidateInit[]>>(new Map());
+  const socketToUserRef = useRef<Map<string, string>>(new Map());
+  const userToSocketRef = useRef<Map<string, string>>(new Map());
   const lastSpeakingRef = useRef<boolean>(false);
 
-  // Stable references to prevent reconnect loops
+  // Stable references
   const userRef = useRef(user);
   userRef.current = user;
   const roomModeRef = useRef(roomMode);
@@ -151,8 +199,12 @@ export const CallStage: React.FC<CallStageProps> = ({
   toastRef.current = toast;
   const onDisconnectRef = useRef(onDisconnect);
   onDisconnectRef.current = onDisconnect;
+  const isMicMutedRef = useRef(isMicMuted);
+  isMicMutedRef.current = isMicMuted;
+  const userVolumesRef = useRef(userVolumes);
+  userVolumesRef.current = userVolumes;
 
-  // Real participants only (no mock data!)
+  // Real participants
   const [participants, setParticipants] = useState<CallParticipant[]>(() => {
     if (initialParticipants.length > 0) return initialParticipants;
     if (!user) return [];
@@ -177,7 +229,19 @@ export const CallStage: React.FC<CallStageProps> = ({
   const canSelfSpeak = roomMode !== 'stage' || isHostOrModerator || !!selfParticipant?.canSpeak;
   const canSelfShareScreen = roomMode !== 'stage' || isHostOrModerator || !!selfParticipant?.canShareScreen;
 
-  // Call timer ticking
+  // Helper: Retrieve remote video stream for a participant
+  const getRemoteStreamForUser = (userId: string, socketId?: string): MediaStream | null => {
+    if (socketId && remoteVideoStreams[socketId]) {
+      return remoteVideoStreams[socketId];
+    }
+    const sId = userToSocketRef.current.get(userId);
+    if (sId && remoteVideoStreams[sId]) {
+      return remoteVideoStreams[sId];
+    }
+    return null;
+  };
+
+  // 1. Call timer
   useEffect(() => {
     const interval = setInterval(() => {
       setCallDurationSeconds(prev => prev + 1);
@@ -185,7 +249,68 @@ export const CallStage: React.FC<CallStageProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  // 1. Real Hardware Microphone Setup
+  // 2. Unblock audio playback if blocked by browser policy
+  const handleUnblockAudio = useCallback(() => {
+    if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+      audioContextRef.current.resume().catch(() => {});
+    }
+    remoteAudiosRef.current.forEach(audio => {
+      audio.play().catch(e => console.warn('Unblock audio error:', e));
+    });
+    setIsAudioAutoplayBlocked(false);
+  }, []);
+
+  // 3. Update Audio Sender on all active peer connections without renegotiation
+  const updateActiveAudioTrack = useCallback((track: MediaStreamTrack | null) => {
+    peerConnectionsRef.current.forEach((pc) => {
+      try {
+        const senders = pc.getSenders();
+        const transceivers = pc.getTransceivers();
+        const audioSender = senders.find(s => {
+          if (s.track && s.track.kind === 'audio') return true;
+          const matchTransceiver = transceivers.find(t => t.sender === s && t.receiver.track.kind === 'audio');
+          return !!matchTransceiver;
+        });
+
+        if (audioSender) {
+          audioSender.replaceTrack(track).catch(err => {
+            console.warn('replaceTrack audio error:', err);
+          });
+        } else if (track && localStreamRef.current) {
+          pc.addTrack(track, localStreamRef.current);
+        }
+      } catch (err) {
+        console.warn('Error updating audio track sender:', err);
+      }
+    });
+  }, []);
+
+  // 4. Update Video Sender on all active peer connections without renegotiation
+  const updateActiveVideoTrack = useCallback((track: MediaStreamTrack | null, stream?: MediaStream | null) => {
+    peerConnectionsRef.current.forEach((pc) => {
+      try {
+        const senders = pc.getSenders();
+        const transceivers = pc.getTransceivers();
+        const videoSender = senders.find(s => {
+          if (s.track && s.track.kind === 'video') return true;
+          const matchTransceiver = transceivers.find(t => t.sender === s && t.receiver.track.kind === 'video');
+          return !!matchTransceiver;
+        });
+
+        if (videoSender) {
+          videoSender.replaceTrack(track).catch(err => {
+            console.warn('replaceTrack video error:', err);
+          });
+        } else if (track && stream) {
+          pc.addTrack(track, stream);
+        }
+      } catch (err) {
+        console.warn('Error updating video track sender:', err);
+      }
+    });
+  }, []);
+
+  // 5. Hardware Microphone Capture
   const initHardwareMicrophone = useCallback(async () => {
     try {
       if (localStreamRef.current && localStreamRef.current.getAudioTracks().length > 0) {
@@ -202,21 +327,18 @@ export const CallStage: React.FC<CallStageProps> = ({
       });
       localStreamRef.current = stream;
 
-      // Attach audio tracks to any peer connections that were created while mic was initializing
-      peerConnectionsRef.current.forEach((pc) => {
-        try {
-          const senders = pc.getSenders();
-          stream.getAudioTracks().forEach(track => {
-            const existingSender = senders.find(s => s.track?.kind === 'audio');
-            if (existingSender) {
-              existingSender.replaceTrack(track).catch(() => {});
-            } else {
-              pc.addTrack(track, stream);
-            }
-          });
-        } catch (_) {}
-      });
+      const audioTrack = stream.getAudioTracks()[0];
+      if (audioTrack) {
+        if (roomModeRef.current === 'stage' && !isHostOrModeratorRef.current) {
+          audioTrack.enabled = false;
+          setIsMicMuted(true);
+        } else {
+          audioTrack.enabled = !isMicMutedRef.current;
+        }
+        updateActiveAudioTrack(audioTrack);
+      }
 
+      // Web Audio API for real-time speech meter and voice activity detection
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       if (AudioCtx) {
         const audioCtx = new AudioCtx();
@@ -240,36 +362,37 @@ export const CallStage: React.FC<CallStageProps> = ({
           for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
           const avg = sum / dataArray.length;
           const level = Math.min(100, Math.round((avg / 35) * 100));
+          setMicLevel(level);
 
-          // Only trigger state update when speaking state changes (avoids 60fps render storm)
-          const isSpeakingNow = level > 12;
+          const isSpeakingNow = level > 12 && !isMicMutedRef.current;
           if (lastSpeakingRef.current !== isSpeakingNow) {
             lastSpeakingRef.current = isSpeakingNow;
             setParticipants(prev => prev.map(p => 
               p.id === userRef.current?.id ? { ...p, isSpeaking: isSpeakingNow } : p
             ));
+
+            if (socket) {
+              socket.emit('voice-speaking-state', {
+                roomId: roomName,
+                userId: userRef.current?.id,
+                isSpeaking: isSpeakingNow
+              });
+            }
           }
 
           animFrameRef.current = requestAnimationFrame(checkVolume);
         };
         checkVolume();
       }
-
-      // If stage mode and not host, mute audio track initially
-      if (roomModeRef.current === 'stage' && !isHostOrModeratorRef.current) {
-        stream.getAudioTracks().forEach(t => { t.enabled = false; });
-        setIsMicMuted(true);
-      } else {
-        setIsMicMuted(false);
-      }
     } catch (err) {
-      console.warn('Microphone passive mode:', err);
+      console.warn('Microphone access notice (passive mode active):', err);
     }
-  }, []);
+  }, [roomName, socket, updateActiveAudioTrack]);
 
-  // Clean up all streams and connections
+  // 6. Clean up all media hardware & connections
   const stopAllMedia = useCallback(() => {
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach(t => t.stop());
       localStreamRef.current = null;
@@ -295,9 +418,10 @@ export const CallStage: React.FC<CallStageProps> = ({
       audio.remove();
     });
     remoteAudiosRef.current.clear();
+    setRemoteVideoStreams({});
   }, []);
 
-  // WebRTC Peer Connection Helper
+  // 7. WebRTC Peer Connection Factory with Transceivers
   const createPeerConnection = useCallback((targetSocketId: string) => {
     if (peerConnectionsRef.current.has(targetSocketId)) {
       return peerConnectionsRef.current.get(targetSocketId)!;
@@ -306,16 +430,36 @@ export const CallStage: React.FC<CallStageProps> = ({
     const pc = new RTCPeerConnection(RTC_CONFIG);
     peerConnectionsRef.current.set(targetSocketId, pc);
 
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach(track => {
-        try { pc.addTrack(track, localStreamRef.current!); } catch (_) {}
-      });
+    // Audio sender/transceiver
+    const audioTrack = localStreamRef.current?.getAudioTracks()[0] || null;
+    if (audioTrack && localStreamRef.current) {
+      try {
+        pc.addTrack(audioTrack, localStreamRef.current);
+      } catch (_) {
+        try { pc.addTransceiver('audio', { direction: 'sendrecv' }); } catch (_) {}
+      }
     } else {
       try {
         pc.addTransceiver('audio', { direction: 'sendrecv' });
       } catch (_) {}
     }
 
+    // Video sender/transceiver (Camera or Screen share)
+    const activeVideoTrack = screenStreamRef.current?.getVideoTracks()[0] || cameraStreamRef.current?.getVideoTracks()[0] || null;
+    const activeVideoStream = screenStreamRef.current || cameraStreamRef.current || null;
+    if (activeVideoTrack && activeVideoStream) {
+      try {
+        pc.addTrack(activeVideoTrack, activeVideoStream);
+      } catch (_) {
+        try { pc.addTransceiver('video', { direction: 'sendrecv' }); } catch (_) {}
+      }
+    } else {
+      try {
+        pc.addTransceiver('video', { direction: 'sendrecv' });
+      } catch (_) {}
+    }
+
+    // ICE Candidate generation
     pc.onicecandidate = (event) => {
       if (event.candidate && socket) {
         socket.emit('voice-signal-ice', {
@@ -325,26 +469,50 @@ export const CallStage: React.FC<CallStageProps> = ({
       }
     };
 
+    // Remote Track Reception (Audio and Video)
     pc.ontrack = (event) => {
-      const [remoteStream] = event.streams;
-      if (remoteStream) {
+      const { track } = event;
+      const stream = (event.streams && event.streams[0]) ? event.streams[0] : new MediaStream([track]);
+
+      if (track.kind === 'audio') {
         let audioEl = remoteAudiosRef.current.get(targetSocketId);
         if (!audioEl) {
-          audioEl = new Audio();
+          audioEl = document.createElement('audio');
           audioEl.autoplay = true;
           (audioEl as any).playsInline = true;
-          remoteAudiosRef.current.set(targetSocketId, audioEl);
           document.body.appendChild(audioEl);
+          remoteAudiosRef.current.set(targetSocketId, audioEl);
         }
-        audioEl.srcObject = remoteStream;
-        audioEl.play().catch(() => {});
+        audioEl.srcObject = stream;
+        
+        const mappedUserId = socketToUserRef.current.get(targetSocketId);
+        const vol = mappedUserId ? (userVolumesRef.current[mappedUserId] ?? 100) : 100;
+        audioEl.volume = Math.min(1, Math.max(0, vol / 100));
+
+        audioEl.play().catch(err => {
+          console.warn('Audio autoplay blocked by browser:', err);
+          setIsAudioAutoplayBlocked(true);
+        });
+      } else if (track.kind === 'video') {
+        setRemoteVideoStreams(prev => ({
+          ...prev,
+          [targetSocketId]: stream
+        }));
+
+        track.onended = () => {
+          setRemoteVideoStreams(prev => {
+            const next = { ...prev };
+            delete next[targetSocketId];
+            return next;
+          });
+        };
       }
     };
 
     return pc;
   }, [socket]);
 
-  // 2. Real-Time Socket.IO Synchronization
+  // 8. Real-Time Socket.IO Synchronization & Signaling
   useEffect(() => {
     initHardwareMicrophone();
 
@@ -362,15 +530,21 @@ export const CallStage: React.FC<CallStageProps> = ({
 
       socket.emit('join-voice-room', roomPayload);
 
-      // 1. Existing participants in the room: new joiner initiates offer to all of them
+      // 1. Existing users in the room
       socket.on('voice-room-existing-users', async (existingList: any[]) => {
         if (!Array.isArray(existingList)) return;
+
         setParticipants(prev => {
           const next = [...prev];
           for (const item of existingList) {
             const remoteUser = item.user;
-            if (remoteUser && remoteUser.id !== userRef.current?.id && !next.some(p => p.id === remoteUser.id)) {
-              next.push({
+            if (remoteUser && remoteUser.id !== userRef.current?.id) {
+              if (item.socketId) {
+                socketToUserRef.current.set(item.socketId, remoteUser.id);
+                userToSocketRef.current.set(remoteUser.id, item.socketId);
+              }
+              const existingIndex = next.findIndex(p => p.id === remoteUser.id);
+              const participantData: CallParticipant = {
                 id: remoteUser.id,
                 socketId: item.socketId,
                 name: remoteUser.name,
@@ -383,7 +557,12 @@ export const CallStage: React.FC<CallStageProps> = ({
                 isScreenSharing: !!item.isScreenSharing,
                 canSpeak: true,
                 canShareScreen: true
-              });
+              };
+              if (existingIndex >= 0) {
+                next[existingIndex] = { ...next[existingIndex], ...participantData };
+              } else {
+                next.push(participantData);
+              }
             }
           }
           return next;
@@ -402,18 +581,25 @@ export const CallStage: React.FC<CallStageProps> = ({
                 callerUser: userRef.current
               });
             } catch (e) {
-              console.warn('Error creating offer for existing peer:', e);
+              console.warn('Error creating WebRTC offer for peer:', e);
             }
           }
         }
       });
 
-      // 2. Remote user joined after us: add them to participant list (they will send us an offer)
+      // 2. New user joined the room
       socket.on('user-joined-voice', ({ user: remoteUser, socketId: remoteSocketId }: any) => {
         if (!remoteUser || remoteUser.id === userRef.current?.id) return;
 
+        if (remoteSocketId) {
+          socketToUserRef.current.set(remoteSocketId, remoteUser.id);
+          userToSocketRef.current.set(remoteUser.id, remoteSocketId);
+        }
+
         setParticipants(prev => {
-          if (prev.some(p => p.id === remoteUser.id)) return prev;
+          if (prev.some(p => p.id === remoteUser.id)) {
+            return prev.map(p => p.id === remoteUser.id ? { ...p, socketId: remoteSocketId } : p);
+          }
           return [...prev, {
             id: remoteUser.id,
             socketId: remoteSocketId,
@@ -430,16 +616,21 @@ export const CallStage: React.FC<CallStageProps> = ({
           }];
         });
 
-        toastRef.current({ title: 'Entrada na Sala', message: `${remoteUser.name} entrou no canal de voz.`, type: 'info' });
+        toastRef.current({ title: 'Entrada na Sala', message: `${remoteUser.name} entrou na chamada.`, type: 'info' });
       });
 
       // 3. WebRTC Offer received
       socket.on('voice-signal-offer', async ({ callerSocketId, offer, callerUser }: any) => {
         try {
+          if (callerUser?.id && callerSocketId) {
+            socketToUserRef.current.set(callerSocketId, callerUser.id);
+            userToSocketRef.current.set(callerUser.id, callerSocketId);
+          }
+
           const pc = createPeerConnection(callerSocketId);
           await pc.setRemoteDescription(new RTCSessionDescription(offer));
 
-          // Drain queued ICE candidates for this caller
+          // Drain queued ICE candidates
           const pending = pendingIceCandidatesRef.current.get(callerSocketId) || [];
           for (const cand of pending) {
             try { await pc.addIceCandidate(new RTCIceCandidate(cand)); } catch (_) {}
@@ -456,7 +647,9 @@ export const CallStage: React.FC<CallStageProps> = ({
 
           if (callerUser && callerUser.id !== userRef.current?.id) {
             setParticipants(prev => {
-              if (prev.some(p => p.id === callerUser.id)) return prev;
+              if (prev.some(p => p.id === callerUser.id)) {
+                return prev.map(p => p.id === callerUser.id ? { ...p, socketId: callerSocketId } : p);
+              }
               return [...prev, {
                 id: callerUser.id,
                 socketId: callerSocketId,
@@ -497,7 +690,7 @@ export const CallStage: React.FC<CallStageProps> = ({
         }
       });
 
-      // 5. WebRTC ICE Candidate received with queuing protection
+      // 5. WebRTC ICE Candidate received
       socket.on('voice-signal-ice', async ({ candidate, fromSocketId }: any) => {
         try {
           const pc = peerConnectionsRef.current.get(fromSocketId);
@@ -513,26 +706,37 @@ export const CallStage: React.FC<CallStageProps> = ({
         }
       });
 
-      // Remote User Left
+      // 6. Remote User Left
       socket.on('user-left-voice', ({ userId, socketId }: any) => {
         setParticipants(prev => prev.filter(p => p.id !== userId && p.socketId !== socketId));
-        if (socketId) {
-          const pc = peerConnectionsRef.current.get(socketId);
+        const effectiveSocketId = socketId || userToSocketRef.current.get(userId);
+        if (effectiveSocketId) {
+          const pc = peerConnectionsRef.current.get(effectiveSocketId);
           if (pc) {
             pc.close();
-            peerConnectionsRef.current.delete(socketId);
+            peerConnectionsRef.current.delete(effectiveSocketId);
           }
-          const audio = remoteAudiosRef.current.get(socketId);
+          const audio = remoteAudiosRef.current.get(effectiveSocketId);
           if (audio) {
             audio.remove();
-            remoteAudiosRef.current.delete(socketId);
+            remoteAudiosRef.current.delete(effectiveSocketId);
           }
-          pendingIceCandidatesRef.current.delete(socketId);
+          pendingIceCandidatesRef.current.delete(effectiveSocketId);
+          setRemoteVideoStreams(prev => {
+            const next = { ...prev };
+            delete next[effectiveSocketId];
+            return next;
+          });
         }
       });
 
-      // Remote State Changed (mute, camera, screen)
-      socket.on('user-voice-state-changed', ({ userId, isMuted: rMuted, isCameraOn: rCam, isScreenSharing: rScreen }: any) => {
+      // 7. Remote State Changed (Mute, Camera, Screen share)
+      socket.on('user-voice-state-changed', ({ userId, socketId: sId, isMuted: rMuted, isCameraOn: rCam, isScreenSharing: rScreen }: any) => {
+        if (sId && userId) {
+          socketToUserRef.current.set(sId, userId);
+          userToSocketRef.current.set(userId, sId);
+        }
+
         setParticipants(prev => prev.map(p => {
           if (p.id !== userId) return p;
           return {
@@ -544,7 +748,15 @@ export const CallStage: React.FC<CallStageProps> = ({
         }));
       });
 
-      // Room Mode Changed by Host (Palco / Convívio / Dúvidas)
+      // 8. Remote Speaking Indicator changed
+      socket.on('user-voice-speaking-changed', ({ userId, isSpeaking: rSpeaking }: any) => {
+        setParticipants(prev => prev.map(p => {
+          if (p.id !== userId) return p;
+          return { ...p, isSpeaking: !!rSpeaking };
+        }));
+      });
+
+      // 9. Room Mode Changed
       socket.on('voice-room-mode-changed', ({ mode }: { mode: RoomMode }) => {
         setRoomMode(mode);
         const modeLabel = mode === 'stage' ? 'Modo Palco' : mode === 'qa' ? 'Fila de Dúvidas' : 'Convívio Aberto';
@@ -567,7 +779,7 @@ export const CallStage: React.FC<CallStageProps> = ({
         }
       });
 
-      // Individual Permissions Updated
+      // 10. Individual Permissions Updated
       socket.on('voice-permissions-updated', ({ targetUserId, canSpeak, canShareScreen }: any) => {
         setParticipants(prev => prev.map(p => {
           if (p.id !== targetUserId) return p;
@@ -586,12 +798,12 @@ export const CallStage: React.FC<CallStageProps> = ({
             if (localStreamRef.current) {
               localStreamRef.current.getAudioTracks().forEach(t => { t.enabled = false; });
             }
-            toastRef.current({ title: 'Palco Revogado', message: 'O seu microfone foi bloqueado pelo anfitrião.', type: 'info' });
+            toastRef.current({ title: 'Palco Revogado', message: 'O seu microfone foi silenciado pelo moderador.', type: 'info' });
           }
         }
       });
 
-      // Speaker Request (Stage Mode)
+      // 11. Speaker Requests & Decisions
       socket.on('voice-speaker-request', ({ user: reqUser }: any) => {
         if (isHostOrModeratorRef.current && reqUser) {
           soundEffects.play('click');
@@ -609,11 +821,10 @@ export const CallStage: React.FC<CallStageProps> = ({
         }
       });
 
-      // Speaker Decision (Approve / Deny)
       socket.on('voice-speaker-decision', ({ targetUserId, approved }: any) => {
         if (targetUserId === userRef.current?.id) {
           if (approved) {
-            toastRef.current({ title: 'Pedido Aceite', message: 'O anfitrião autorizou a sua intervenção. Já pode desmutar o microfone.', type: 'success' });
+            toastRef.current({ title: 'Pedido Aceite', message: 'O anfitrião autorizou a sua intervenção. Já pode ativar o microfone.', type: 'success' });
           } else {
             setIsHandRaised(false);
             toastRef.current({ title: 'Pedido Não Autorizado', message: 'O anfitrião manteve o palco restrito no momento.', type: 'info' });
@@ -621,7 +832,7 @@ export const CallStage: React.FC<CallStageProps> = ({
         }
       });
 
-      // Kicked from Voice Room
+      // 12. User Kicked
       socket.on('voice-user-kicked', ({ targetUserId }: any) => {
         if (targetUserId === userRef.current?.id) {
           stopAllMedia();
@@ -632,7 +843,7 @@ export const CallStage: React.FC<CallStageProps> = ({
         }
       });
 
-      // In-Room Chat Message
+      // 13. Chat messages
       socket.on('voice-chat-message', (msg: any) => {
         setChatMessages(prev => [...prev, msg]);
       });
@@ -648,6 +859,7 @@ export const CallStage: React.FC<CallStageProps> = ({
         socket.off('voice-signal-ice');
         socket.off('user-left-voice');
         socket.off('user-voice-state-changed');
+        socket.off('user-voice-speaking-changed');
         socket.off('voice-room-mode-changed');
         socket.off('voice-permissions-updated');
         socket.off('voice-speaker-request');
@@ -659,57 +871,7 @@ export const CallStage: React.FC<CallStageProps> = ({
     };
   }, [roomName, user?.id, socket, initHardwareMicrophone, createPeerConnection, stopAllMedia]);
 
-  // Host: Change Room Mode
-  const handleChangeRoomMode = (newMode: RoomMode) => {
-    if (!isHostOrModerator) return;
-    setRoomMode(newMode);
-    if (socket) {
-      socket.emit('voice-set-room-mode', { roomId: roomName, mode: newMode });
-    }
-    const label = newMode === 'stage' ? 'Modo Palco' : newMode === 'qa' ? 'Fila de Dúvidas' : 'Convívio Aberto';
-    toast({ title: 'Modo de Sala Atualizado', message: `O formato agora é: ${label}.`, type: 'success' });
-  };
-
-  // Host: Authorize or Revoke Speaker
-  const handleToggleSpeakerPermission = (targetUserId: string, allow: boolean) => {
-    if (!isHostOrModerator) return;
-    setParticipants(prev => prev.map(p => p.id === targetUserId ? { ...p, canSpeak: allow } : p));
-    if (socket) {
-      socket.emit('voice-update-permissions', {
-        roomId: roomName,
-        targetUserId,
-        canSpeak: allow
-      });
-    }
-    setSpeakerRequests(prev => prev.filter(r => r.id !== targetUserId));
-    toast({ title: allow ? 'Permissão Concedida' : 'Permissão Revogada', message: `Permissão de microfone atualizada.`, type: 'info' });
-  };
-
-  // Host: Authorize or Revoke Screen Share Permission
-  const handleToggleScreenPermission = (targetUserId: string, allow: boolean) => {
-    if (!isHostOrModerator) return;
-    setParticipants(prev => prev.map(p => p.id === targetUserId ? { ...p, canShareScreen: allow } : p));
-    if (socket) {
-      socket.emit('voice-update-permissions', {
-        roomId: roomName,
-        targetUserId,
-        canShareScreen: allow
-      });
-    }
-    toast({ title: allow ? 'Partilha Autorizada' : 'Partilha Bloqueada', message: `Permissão de ecrã atualizada.`, type: 'info' });
-  };
-
-  // Host: Kick user
-  const handleKickParticipant = (targetUserId: string, participantName: string) => {
-    if (!isHostOrModerator) return;
-    if (socket) {
-      socket.emit('voice-kick-user', { roomId: roomName, targetUserId });
-    }
-    setParticipants(prev => prev.filter(p => p.id !== targetUserId));
-    toast({ title: 'Participante Removido', message: `${participantName} foi expulso da sala.`, type: 'info' });
-  };
-
-  // Student: Toggle Mic with Stage Protection
+  // Microphone Toggle
   const handleToggleMic = () => {
     if (!canSelfSpeak) {
       toast({ 
@@ -742,18 +904,25 @@ export const CallStage: React.FC<CallStageProps> = ({
         userId: user?.id || 'me',
         isMuted: nextMuted
       });
+      if (nextMuted) {
+        socket.emit('voice-speaking-state', {
+          roomId: roomName,
+          userId: user?.id || 'me',
+          isSpeaking: false
+        });
+      }
     }
 
     if (nextMuted) {
       soundEffects.playMute();
-      toast({ title: 'Microfone Mutado' });
+      toast({ title: 'Microfone Silenciado' });
     } else {
       soundEffects.playUnmute();
       toast({ title: 'Microfone Ativo' });
     }
   };
 
-  // Toggle Deafen
+  // Deafen Toggle
   const handleToggleDeafen = () => {
     const next = !isDeafened;
     setIsDeafened(next);
@@ -775,7 +944,7 @@ export const CallStage: React.FC<CallStageProps> = ({
     }
   };
 
-  // Toggle Camera
+  // Camera Toggle
   const handleToggleCamera = async () => {
     if (isCameraActive) {
       if (cameraStreamRef.current) {
@@ -784,6 +953,10 @@ export const CallStage: React.FC<CallStageProps> = ({
       }
       setIsCameraActive(false);
       setParticipants(prev => prev.map(p => p.id === user?.id ? { ...p, isCameraOn: false } : p));
+
+      // Revert video track to screen share track if sharing, else null
+      const activeVideoTrack = screenStreamRef.current?.getVideoTracks()[0] || null;
+      updateActiveVideoTrack(activeVideoTrack);
 
       if (socket) {
         socket.emit('voice-state-update', {
@@ -795,14 +968,24 @@ export const CallStage: React.FC<CallStageProps> = ({
       toast({ title: 'Câmara Desligada' });
     } else {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } },
+          audio: false
+        });
         cameraStreamRef.current = stream;
+        const videoTrack = stream.getVideoTracks()[0];
+
+        // If not actively sharing screen, attach camera track to peer senders
+        if (!isScreenSharing) {
+          updateActiveVideoTrack(videoTrack, stream);
+        }
+
+        videoTrack.onended = () => {
+          handleToggleCamera();
+        };
+
         setIsCameraActive(true);
         setParticipants(prev => prev.map(p => p.id === user?.id ? { ...p, isCameraOn: true } : p));
-
-        setTimeout(() => {
-          if (localCameraRef.current) localCameraRef.current.srcObject = stream;
-        }, 50);
 
         if (socket) {
           socket.emit('voice-state-update', {
@@ -818,10 +1001,10 @@ export const CallStage: React.FC<CallStageProps> = ({
     }
   };
 
-  // Toggle Screen Sharing with Stage Protection
+  // Screen Sharing Toggle
   const handleToggleScreenShare = async () => {
     if (!canSelfShareScreen) {
-      toast({ title: 'Partilha Restrita', message: 'Apenas anfitriões ou oradores autorizados podem partilhar ecrã nesta sala.', type: 'info' });
+      toast({ title: 'Partilha Restrita', message: 'Apenas oradores autorizados podem partilhar ecrã nesta sala.', type: 'info' });
       return;
     }
 
@@ -832,6 +1015,10 @@ export const CallStage: React.FC<CallStageProps> = ({
       }
       setIsScreenSharing(false);
       setParticipants(prev => prev.map(p => p.id === user?.id ? { ...p, isScreenSharing: false } : p));
+
+      // Revert video sender to camera track if active, else null
+      const activeVideoTrack = cameraStreamRef.current?.getVideoTracks()[0] || null;
+      updateActiveVideoTrack(activeVideoTrack);
 
       if (socket) {
         socket.emit('voice-state-update', {
@@ -845,19 +1032,32 @@ export const CallStage: React.FC<CallStageProps> = ({
       try {
         const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
         screenStreamRef.current = stream;
+        const screenTrack = stream.getVideoTracks()[0];
+
+        // Send screen video track to peers
+        updateActiveVideoTrack(screenTrack, stream);
+
         setIsScreenSharing(true);
         setLayoutMode('spotlight');
-
         setParticipants(prev => prev.map(p => p.id === user?.id ? { ...p, isScreenSharing: true } : p));
 
-        stream.getVideoTracks()[0].onended = () => {
+        screenTrack.onended = () => {
+          if (screenStreamRef.current) {
+            screenStreamRef.current.getTracks().forEach(t => t.stop());
+            screenStreamRef.current = null;
+          }
           setIsScreenSharing(false);
           setParticipants(prev => prev.map(p => p.id === user?.id ? { ...p, isScreenSharing: false } : p));
+          const camTrack = cameraStreamRef.current?.getVideoTracks()[0] || null;
+          updateActiveVideoTrack(camTrack);
+          if (socket) {
+            socket.emit('voice-state-update', {
+              roomId: roomName,
+              userId: user?.id || 'me',
+              isScreenSharing: false
+            });
+          }
         };
-
-        setTimeout(() => {
-          if (localScreenRef.current) localScreenRef.current.srcObject = stream;
-        }, 50);
 
         if (socket) {
           socket.emit('voice-state-update', {
@@ -868,12 +1068,12 @@ export const CallStage: React.FC<CallStageProps> = ({
         }
         toast({ title: 'A partilhar ecrã', type: 'success' });
       } catch (e) {
-        // User closed prompt
+        // User cancelled selection dialog
       }
     }
   };
 
-  // Toggle Hand Raise (Pedir Palavra no Palco)
+  // Hand Raise Toggle
   const handleToggleHand = () => {
     const next = !isHandRaised;
     setIsHandRaised(next);
@@ -889,7 +1089,7 @@ export const CallStage: React.FC<CallStageProps> = ({
           avatarUrl: user?.avatarUrl
         }
       });
-      toast({ title: 'Pedido Enviado', message: 'O moderador recebeu a sua solicitação para falar.', type: 'info' });
+      toast({ title: 'Pedido Enviado', message: 'O moderador recebeu a sua solicitação para intervir.', type: 'info' });
     }
   };
 
@@ -916,14 +1116,64 @@ export const CallStage: React.FC<CallStageProps> = ({
     }
   };
 
-  // Adjust Individual User Volume
+  // Individual Participant Volume
   const handleSetUserVolume = (participantId: string, volume: number) => {
     setUserVolumes(prev => ({ ...prev, [participantId]: volume }));
-    const targetSocketId = participants.find(p => p.id === participantId)?.socketId;
+    const targetSocketId = participants.find(p => p.id === participantId)?.socketId || userToSocketRef.current.get(participantId);
     if (targetSocketId) {
       const audio = remoteAudiosRef.current.get(targetSocketId);
       if (audio) audio.volume = Math.min(1, Math.max(0, volume / 100));
     }
+  };
+
+  // Host: Change Room Mode
+  const handleChangeRoomMode = (newMode: RoomMode) => {
+    if (!isHostOrModerator) return;
+    setRoomMode(newMode);
+    if (socket) {
+      socket.emit('voice-set-room-mode', { roomId: roomName, mode: newMode });
+    }
+    const label = newMode === 'stage' ? 'Modo Palco' : newMode === 'qa' ? 'Fila de Dúvidas' : 'Convívio Aberto';
+    toast({ title: 'Modo de Sala Atualizado', message: `O formato agora é: ${label}.`, type: 'success' });
+  };
+
+  // Host: Authorize or Revoke Speaker
+  const handleToggleSpeakerPermission = (targetUserId: string, allow: boolean) => {
+    if (!isHostOrModerator) return;
+    setParticipants(prev => prev.map(p => p.id === targetUserId ? { ...p, canSpeak: allow } : p));
+    if (socket) {
+      socket.emit('voice-update-permissions', {
+        roomId: roomName,
+        targetUserId,
+        canSpeak: allow
+      });
+    }
+    setSpeakerRequests(prev => prev.filter(r => r.id !== targetUserId));
+    toast({ title: allow ? 'Permissão Concedida' : 'Permissão Revogada', message: 'Permissão de microfone atualizada.', type: 'info' });
+  };
+
+  // Host: Authorize or Revoke Screen Share
+  const handleToggleScreenPermission = (targetUserId: string, allow: boolean) => {
+    if (!isHostOrModerator) return;
+    setParticipants(prev => prev.map(p => p.id === targetUserId ? { ...p, canShareScreen: allow } : p));
+    if (socket) {
+      socket.emit('voice-update-permissions', {
+        roomId: roomName,
+        targetUserId,
+        canShareScreen: allow
+      });
+    }
+    toast({ title: allow ? 'Partilha Autorizada' : 'Partilha Bloqueada', message: 'Permissão de ecrã atualizada.', type: 'info' });
+  };
+
+  // Host: Kick user
+  const handleKickParticipant = (targetUserId: string, participantName: string) => {
+    if (!isHostOrModerator) return;
+    if (socket) {
+      socket.emit('voice-kick-user', { roomId: roomName, targetUserId });
+    }
+    setParticipants(prev => prev.filter(p => p.id !== targetUserId));
+    toast({ title: 'Participante Removido', message: `${participantName} foi expulso da chamada.`, type: 'info' });
   };
 
   // Copy Room Link to Invite
@@ -963,7 +1213,25 @@ export const CallStage: React.FC<CallStageProps> = ({
       className="flex-1 flex flex-col h-full bg-slate-100 dark:bg-[#0c0d12] text-slate-900 dark:text-slate-100 select-none font-sans overflow-hidden relative transition-colors duration-200"
     >
       {/* ======================================================================= */}
-      {/* 1. TOP BAR: Mode Selector (Host), Quality Indicator, Fullscreen */}
+      {/* 0. AUDIO AUTOPLAY RESTRICTION BANNER */}
+      {/* ======================================================================= */}
+      {isAudioAutoplayBlocked && (
+        <div className="bg-amber-500 text-slate-950 px-4 py-2 text-xs font-bold flex items-center justify-between z-30 shrink-0 shadow-sm animate-fade-in">
+          <div className="flex items-center gap-2">
+            <VolumeX className="w-4 h-4 shrink-0" />
+            <span>O seu navegador bloqueou a reprodução automática de áudio dos participantes.</span>
+          </div>
+          <button
+            onClick={handleUnblockAudio}
+            className="px-3 py-1 bg-slate-950 text-white rounded-lg text-xs font-bold hover:bg-slate-900 cursor-pointer shadow-xs transition-colors shrink-0 ml-3"
+          >
+            Ativar Som
+          </button>
+        </div>
+      )}
+
+      {/* ======================================================================= */}
+      {/* 1. TOP BAR: Mode Selector (Host), Room Title, Fullscreen */}
       {/* ======================================================================= */}
       <header className="h-14 bg-white dark:bg-[#151720] border-b border-slate-200 dark:border-[#222636] px-4 sm:px-6 flex items-center justify-between shrink-0 z-20 transition-colors">
         <div className="flex items-center gap-3 min-w-0">
@@ -974,7 +1242,7 @@ export const CallStage: React.FC<CallStageProps> = ({
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-bold text-slate-900 dark:text-white truncate">{roomName}</h2>
               
-              {/* Room Mode Selector (Anfitrião) / Badge (Alunos) */}
+              {/* Room Mode Selector (Host) / Badge (Participants) */}
               {isHostOrModerator ? (
                 <select
                   value={roomMode}
@@ -1038,7 +1306,7 @@ export const CallStage: React.FC<CallStageProps> = ({
                   ? 'bg-white dark:bg-[#2c3246] text-slate-900 dark:text-white shadow-xs font-bold' 
                   : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
               }`}
-              title="Grelha"
+              title="Vista em Grelha"
             >
               <Grid className="w-4 h-4" />
             </button>
@@ -1049,7 +1317,7 @@ export const CallStage: React.FC<CallStageProps> = ({
                   ? 'bg-white dark:bg-[#2c3246] text-slate-900 dark:text-white shadow-xs font-bold' 
                   : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
               }`}
-              title="Destaque"
+              title="Vista em Destaque"
             >
               <Layout className="w-4 h-4" />
             </button>
@@ -1071,11 +1339,11 @@ export const CallStage: React.FC<CallStageProps> = ({
       <div className="flex-1 flex min-h-0 relative overflow-hidden">
         <main className="flex-1 flex flex-col p-4 sm:p-6 overflow-y-auto custom-scrollbar justify-center items-center">
           
-          {/* Solo user state (Waiting for others) */}
+          {/* Solo user state */}
           {participants.length <= 1 && (
-            <div className="mb-4 py-2 px-4 rounded-xl bg-white/80 dark:bg-[#151720]/80 border border-slate-200 dark:border-[#222636] text-xs text-slate-500 dark:text-zinc-400 flex items-center gap-2 shadow-xs">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-              <span>Conectado. A aguardar a entrada de outros participantes...</span>
+            <div className="mb-4 py-2 px-4 rounded-xl bg-white/90 dark:bg-[#151720]/90 border border-slate-200 dark:border-[#222636] text-xs text-slate-500 dark:text-zinc-400 flex items-center gap-2 shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>Conectado à sala. A aguardar a entrada de outros participantes...</span>
               <button 
                 onClick={handleCopyInvite}
                 className="ml-2 font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
@@ -1092,40 +1360,44 @@ export const CallStage: React.FC<CallStageProps> = ({
               <div className="flex-1 bg-white dark:bg-[#151720] border border-slate-200 dark:border-[#222636] rounded-2xl relative overflow-hidden flex items-center justify-center shadow-xs">
                 {activeScreenSharer ? (
                   activeScreenSharer.id === user?.id ? (
-                    <video ref={localScreenRef} autoPlay playsInline muted className="w-full h-full object-contain bg-black" />
+                    <VideoStreamPlayer stream={screenStreamRef.current} objectFit="contain" />
                   ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">
-                      <Monitor className="w-14 h-14 text-indigo-500 mb-2 animate-pulse" />
-                      <p className="text-sm font-bold text-slate-900 dark:text-white">{activeScreenSharer.name}</p>
-                      <p className="text-xs text-slate-500 dark:text-zinc-400">Partilha de ecrã em direto</p>
-                    </div>
+                    <VideoStreamPlayer 
+                      stream={getRemoteStreamForUser(activeScreenSharer.id, activeScreenSharer.socketId)} 
+                      objectFit="contain" 
+                    />
                   )
                 ) : spotlightUser?.isCameraOn ? (
                   spotlightUser.id === user?.id ? (
-                    <video ref={localCameraRef} autoPlay playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
+                    <VideoStreamPlayer stream={cameraStreamRef.current} isMirrored objectFit="cover" />
                   ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center">
-                      <Avatar src={spotlightUser.avatarUrl} name={spotlightUser.name} size="xl" className="mb-3" />
-                      <p className="font-bold text-slate-900 dark:text-white text-sm">{spotlightUser.name}</p>
-                    </div>
+                    <VideoStreamPlayer 
+                      stream={getRemoteStreamForUser(spotlightUser.id, spotlightUser.socketId)} 
+                      objectFit="cover" 
+                    />
                   )
                 ) : (
                   <div className="flex flex-col items-center justify-center p-6 text-center">
-                    <Avatar src={spotlightUser?.avatarUrl} name={spotlightUser?.name} size="xl" className="mb-3" />
+                    <div className="relative mb-3">
+                      <Avatar src={spotlightUser?.avatarUrl} name={spotlightUser?.name} size="xl" />
+                      {spotlightUser?.isSpeaking && !spotlightUser?.isMuted && (
+                        <span className="absolute -inset-2 rounded-full border-2 border-emerald-500 animate-ping opacity-75 pointer-events-none"></span>
+                      )}
+                    </div>
                     <p className="font-bold text-slate-900 dark:text-white text-sm">{spotlightUser?.name}</p>
                     <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">Orador Ativo</p>
                   </div>
                 )}
 
-                <div className="absolute top-3 left-3">
-                  <span className="px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-xs text-white font-bold text-xs flex items-center gap-1.5">
+                <div className="absolute top-3 left-3 z-10">
+                  <span className="px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-xs text-white font-bold text-xs flex items-center gap-1.5 shadow-sm">
                     {activeScreenSharer ? <Monitor className="w-3.5 h-3.5 text-indigo-400" /> : <Crown className="w-3.5 h-3.5 text-amber-400" />}
                     <span>{activeScreenSharer ? `Ecrã: ${activeScreenSharer.name}` : spotlightUser?.name}</span>
                   </span>
                 </div>
               </div>
 
-              {/* Thumbnails row */}
+              {/* Spotlight Thumbnails row */}
               <div className="h-24 flex items-center gap-2.5 overflow-x-auto pb-1 shrink-0">
                 {participants.map(p => {
                   const isTalking = p.isSpeaking && !p.isMuted;
@@ -1162,6 +1434,7 @@ export const CallStage: React.FC<CallStageProps> = ({
               {participants.map((p) => {
                 const isTalking = p.isSpeaking && !p.isMuted;
                 const isSelf = p.id === user?.id;
+                const remoteStream = isSelf ? null : getRemoteStreamForUser(p.id, p.socketId);
 
                 return (
                   <div
@@ -1172,13 +1445,18 @@ export const CallStage: React.FC<CallStageProps> = ({
                         : 'border-slate-200 dark:border-[#222636] shadow-xs'
                     }`}
                   >
-                    {p.isCameraOn ? (
+                    {/* Video / Screen share or Avatar */}
+                    {p.isScreenSharing ? (
                       isSelf ? (
-                        <video ref={localCameraRef} autoPlay playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
+                        <VideoStreamPlayer stream={screenStreamRef.current} objectFit="contain" />
                       ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center bg-slate-50 dark:bg-[#12141c]">
-                          <Avatar src={p.avatarUrl} name={p.name} size="lg" className="mb-2" />
-                        </div>
+                        <VideoStreamPlayer stream={remoteStream} objectFit="contain" />
+                      )
+                    ) : p.isCameraOn ? (
+                      isSelf ? (
+                        <VideoStreamPlayer stream={cameraStreamRef.current} isMirrored objectFit="cover" />
+                      ) : (
+                        <VideoStreamPlayer stream={remoteStream} objectFit="cover" />
                       )
                     ) : (
                       <div className="flex flex-col items-center justify-center p-4">
@@ -1207,7 +1485,7 @@ export const CallStage: React.FC<CallStageProps> = ({
                     )}
 
                     {/* Bottom Status Bar */}
-                    <div className="absolute bottom-2.5 inset-x-2.5 flex items-center justify-between pointer-events-none">
+                    <div className="absolute bottom-2.5 inset-x-2.5 flex items-center justify-between pointer-events-none z-10">
                       <span className="text-[11px] font-bold text-white bg-black/75 px-2 py-0.5 rounded-md backdrop-blur-xs truncate max-w-[70%]">
                         {p.name}
                       </span>
@@ -1245,13 +1523,13 @@ export const CallStage: React.FC<CallStageProps> = ({
                       <div className="absolute inset-x-3 bottom-12 p-3 bg-white dark:bg-[#181a24] border border-slate-200 dark:border-[#2b3144] rounded-xl shadow-xl z-30 flex flex-col gap-2 animate-scale-in">
                         <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white">
                           <span>Volume ({p.name.split(' ')[0]})</span>
-                          <span className="text-indigo-600 dark:text-indigo-400 font-mono">{userVolumes[p.id] || 100}%</span>
+                          <span className="text-indigo-600 dark:text-indigo-400 font-mono">{userVolumes[p.id] ?? 100}%</span>
                         </div>
                         <input
                           type="range"
                           min="0"
                           max="200"
-                          value={userVolumes[p.id] || 100}
+                          value={userVolumes[p.id] ?? 100}
                           onChange={(e) => handleSetUserVolume(p.id, Number(e.target.value))}
                           className="w-full accent-indigo-600 h-1.5 bg-slate-200 dark:bg-[#262b3b] rounded-lg cursor-pointer"
                         />
@@ -1276,7 +1554,7 @@ export const CallStage: React.FC<CallStageProps> = ({
                 {activeSideDrawer === 'chat' && (
                   <>
                     <MessageSquare className="w-4 h-4 text-indigo-500" />
-                    <span>Chat de Voz da Sala</span>
+                    <span>Chat da Sala</span>
                   </>
                 )}
                 {activeSideDrawer === 'members' && (
@@ -1295,7 +1573,7 @@ export const CallStage: React.FC<CallStageProps> = ({
 
               <button
                 onClick={() => setActiveSideDrawer('none')}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#222636] transition-colors"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#222636] transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1338,7 +1616,7 @@ export const CallStage: React.FC<CallStageProps> = ({
               </div>
             )}
 
-            {/* TAB 2: MEMBERS & PERMISSIONS MANAGEMENT */}
+            {/* TAB 2: MEMBERS & PERMISSIONS */}
             {activeSideDrawer === 'members' && (
               <div className="flex-1 p-3 overflow-y-auto custom-scrollbar flex flex-col gap-2.5">
                 {participants.map(p => {
@@ -1371,10 +1649,9 @@ export const CallStage: React.FC<CallStageProps> = ({
                         </div>
                       </div>
 
-                      {/* Moderator Actions Toolbar per participant */}
+                      {/* Moderator Toolbar per participant */}
                       {isHostOrModerator && !isSelf && !isCreator && (
                         <div className="pt-2 border-t border-slate-200 dark:border-[#282d3e] grid grid-cols-3 gap-1.5 text-[10px] font-bold">
-                          {/* Speak permission toggle */}
                           <button
                             onClick={() => handleToggleSpeakerPermission(p.id, !p.canSpeak)}
                             className={`py-1 px-1.5 rounded-md flex items-center justify-center gap-1 transition-colors cursor-pointer ${
@@ -1388,7 +1665,6 @@ export const CallStage: React.FC<CallStageProps> = ({
                             <span>{p.canSpeak ? 'Falar: Sim' : 'Falar: Não'}</span>
                           </button>
 
-                          {/* Screen permission toggle */}
                           <button
                             onClick={() => handleToggleScreenPermission(p.id, !p.canShareScreen)}
                             className={`py-1 px-1.5 rounded-md flex items-center justify-center gap-1 transition-colors cursor-pointer ${
@@ -1402,11 +1678,10 @@ export const CallStage: React.FC<CallStageProps> = ({
                             <span>{p.canShareScreen ? 'Ecrã: Sim' : 'Ecrã: Não'}</span>
                           </button>
 
-                          {/* Kick button */}
                           <button
                             onClick={() => handleKickParticipant(p.id, p.name)}
                             className="py-1 px-1.5 rounded-md bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/20 flex items-center justify-center gap-1 transition-colors cursor-pointer"
-                            title="Expulsar da chamada"
+                            title="Remover da chamada"
                           >
                             <UserX className="w-3 h-3" />
                             <span>Expulsar</span>
@@ -1419,7 +1694,7 @@ export const CallStage: React.FC<CallStageProps> = ({
               </div>
             )}
 
-            {/* TAB 3: STAGE SPEAKER REQUESTS QUEUE (Host only) */}
+            {/* TAB 3: STAGE REQUESTS (Host only) */}
             {activeSideDrawer === 'requests' && isHostOrModerator && (
               <div className="flex-1 p-3 overflow-y-auto custom-scrollbar flex flex-col gap-2.5">
                 {speakerRequests.length === 0 ? (
@@ -1495,7 +1770,7 @@ export const CallStage: React.FC<CallStageProps> = ({
                 ? 'bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30'
                 : 'bg-white dark:bg-[#1e2230] text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-[#2b3144] hover:bg-slate-50 dark:hover:bg-[#252a3b]'
             }`}
-            title={isDeafened ? 'Reativar Áudio da Sala' : 'Silenciar Todo o Áudio (Deafen)'}
+            title={isDeafened ? 'Reativar Áudio da Sala' : 'Silenciar Todo o Áudio'}
           >
             {isDeafened ? <VolumeX className="w-5 h-5" /> : <Headphones className="w-5 h-5" />}
           </button>
@@ -1526,7 +1801,7 @@ export const CallStage: React.FC<CallStageProps> = ({
             {isScreenSharing ? <Monitor className="w-5 h-5" /> : <MonitorOff className="w-5 h-5" />}
           </button>
 
-          {/* 5. Hand Raise (Stage / Q&A Mode) */}
+          {/* 5. Hand Raise */}
           <button
             onClick={handleToggleHand}
             className={`p-3 rounded-xl transition-all cursor-pointer ${
@@ -1534,7 +1809,7 @@ export const CallStage: React.FC<CallStageProps> = ({
                 ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/30' 
                 : 'bg-white dark:bg-[#1e2230] text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-[#2b3144] hover:bg-slate-50 dark:hover:bg-[#252a3b]'
             }`}
-            title={isHandRaised ? 'Baixar Mão' : 'Pedir a Palavra no Palco (Levantar Mão)'}
+            title={isHandRaised ? 'Baixar Mão' : 'Pedir a Palavra (Levantar Mão)'}
           >
             <Hand className="w-5 h-5" />
           </button>
@@ -1545,7 +1820,7 @@ export const CallStage: React.FC<CallStageProps> = ({
           <button
             onClick={() => setShowSettingsModal(true)}
             className="p-3 rounded-xl bg-white dark:bg-[#1e2230] text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-[#2b3144] hover:bg-slate-50 dark:hover:bg-[#252a3b] transition-colors cursor-pointer"
-            title="Definições de Áudio"
+            title="Definições de Voz e Áudio"
           >
             <Settings className="w-5 h-5" />
           </button>

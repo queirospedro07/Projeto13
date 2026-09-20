@@ -89,7 +89,7 @@ router.post('/channels/:channelId/messages', authenticate, async (req: AuthReque
 
     const user = queryOne<any>('SELECT id, name, username, avatarUrl, role FROM users WHERE id = ?', [userId]);
 
-    return res.status(201).json({
+    const newMsgObj = {
       id: messageId,
       channelId,
       senderId: userId,
@@ -101,7 +101,14 @@ router.post('/channels/:channelId/messages', authenticate, async (req: AuthReque
       updatedAt: now,
       sender: user,
       reactions: [],
-    });
+    };
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`channel_${channelId}`).emit('new-message', newMsgObj);
+    }
+
+    return res.status(201).json(newMsgObj);
   } catch (err) {
     console.error('Post message error:', err);
     return res.status(500).json({ error: 'Falha ao enviar mensagem' });
