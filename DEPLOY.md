@@ -52,12 +52,13 @@ Se preferir criar manualmente sem usar Blueprint:
    - **Region**: Frankfurt (ou a mais próxima)
    - **Root Directory**: `server`
    - **Runtime**: `Node`
-   - **Build Command**: `npm install && npm run build`
+   - **Build Command**: `npm install --include=dev && npm run build`
    - **Start Command**: `npm start`
    - **Instance Type**: `Free`
 4. Na secção **Environment Variables**, adicione:
    | Chave | Valor |
    | :--- | :--- |
+   | `NODE_VERSION` | `20.18.0` |
    | `NODE_ENV` | `production` |
    | `PORT` | `10000` |
    | `JWT_SECRET` | *(Gere uma chave segura aleatória ou use uma string longa com mais de 32 caracteres)* |
