@@ -52,7 +52,7 @@ Se preferir criar manualmente sem usar Blueprint:
    - **Region**: Frankfurt (ou a mais próxima)
    - **Root Directory**: `server`
    - **Runtime**: `Node`
-   - **Build Command**: `npm install --include=dev && npm run build`
+   - **Build Command**: `npm install --include=dev && npm rebuild better-sqlite3 && npm run build`
    - **Start Command**: `npm start`
    - **Instance Type**: `Free`
 4. Na secção **Environment Variables**, adicione:
