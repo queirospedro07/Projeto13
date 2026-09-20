@@ -134,9 +134,23 @@ export const CallStage: React.FC<CallStageProps> = ({
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animFrameRef = useRef<number | null>(null);
 
-  // WebRTC maps
+  // WebRTC maps & state synchronization refs
   const peerConnectionsRef = useRef<Map<string, RTCPeerConnection>>(new Map());
   const remoteAudiosRef = useRef<Map<string, HTMLAudioElement>>(new Map());
+  const pendingIceCandidatesRef = useRef<Map<string, RTCIceCandidateInit[]>>(new Map());
+  const lastSpeakingRef = useRef<boolean>(false);
+
+  // Stable references to prevent reconnect loops
+  const userRef = useRef(user);
+  userRef.current = user;
+  const roomModeRef = useRef(roomMode);
+  roomModeRef.current = roomMode;
+  const isHostOrModeratorRef = useRef(isHostOrModerator);
+  isHostOrModeratorRef.current = isHostOrModerator;
+  const toastRef = useRef(toast);
+  toastRef.current = toast;
+  const onDisconnectRef = useRef(onDisconnect);
+  onDisconnectRef.current = onDisconnect;
 
   // Real participants only (no mock data!)
   const [participants, setParticipants] = useState<CallParticipant[]>(() => {
@@ -174,6 +188,10 @@ export const CallStage: React.FC<CallStageProps> = ({
   // 1. Real Hardware Microphone Setup
   const initHardwareMicrophone = useCallback(async () => {
     try {
+      if (localStreamRef.current && localStreamRef.current.getAudioTracks().length > 0) {
+        return;
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
@@ -184,12 +202,27 @@ export const CallStage: React.FC<CallStageProps> = ({
       });
       localStreamRef.current = stream;
 
+      // Attach audio tracks to any peer connections that were created while mic was initializing
+      peerConnectionsRef.current.forEach((pc) => {
+        try {
+          const senders = pc.getSenders();
+          stream.getAudioTracks().forEach(track => {
+            const existingSender = senders.find(s => s.track?.kind === 'audio');
+            if (existingSender) {
+              existingSender.replaceTrack(track).catch(() => {});
+            } else {
+              pc.addTrack(track, stream);
+            }
+          });
+        } catch (_) {}
+      });
+
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       if (AudioCtx) {
         const audioCtx = new AudioCtx();
         audioContextRef.current = audioCtx;
         if (audioCtx.state === 'suspended') {
-          await audioCtx.resume();
+          await audioCtx.resume().catch(() => {});
         }
 
         const source = audioCtx.createMediaStreamSource(stream);
@@ -207,12 +240,15 @@ export const CallStage: React.FC<CallStageProps> = ({
           for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
           const avg = sum / dataArray.length;
           const level = Math.min(100, Math.round((avg / 35) * 100));
-          setMicLevel(level);
 
-          const isSpeakingNow = level > 10;
-          setParticipants(prev => prev.map(p => 
-            p.id === user?.id ? { ...p, isSpeaking: isSpeakingNow } : p
-          ));
+          // Only trigger state update when speaking state changes (avoids 60fps render storm)
+          const isSpeakingNow = level > 12;
+          if (lastSpeakingRef.current !== isSpeakingNow) {
+            lastSpeakingRef.current = isSpeakingNow;
+            setParticipants(prev => prev.map(p => 
+              p.id === userRef.current?.id ? { ...p, isSpeaking: isSpeakingNow } : p
+            ));
+          }
 
           animFrameRef.current = requestAnimationFrame(checkVolume);
         };
@@ -220,7 +256,7 @@ export const CallStage: React.FC<CallStageProps> = ({
       }
 
       // If stage mode and not host, mute audio track initially
-      if (roomMode === 'stage' && !isHostOrModerator) {
+      if (roomModeRef.current === 'stage' && !isHostOrModeratorRef.current) {
         stream.getAudioTracks().forEach(t => { t.enabled = false; });
         setIsMicMuted(true);
       } else {
@@ -229,7 +265,7 @@ export const CallStage: React.FC<CallStageProps> = ({
     } catch (err) {
       console.warn('Microphone passive mode:', err);
     }
-  }, [user?.id, roomMode, isHostOrModerator]);
+  }, []);
 
   // Clean up all streams and connections
   const stopAllMedia = useCallback(() => {
@@ -272,8 +308,12 @@ export const CallStage: React.FC<CallStageProps> = ({
 
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach(track => {
-        pc.addTrack(track, localStreamRef.current!);
+        try { pc.addTrack(track, localStreamRef.current!); } catch (_) {}
       });
+    } else {
+      try {
+        pc.addTransceiver('audio', { direction: 'sendrecv' });
+      } catch (_) {}
     }
 
     pc.onicecandidate = (event) => {
@@ -292,10 +332,12 @@ export const CallStage: React.FC<CallStageProps> = ({
         if (!audioEl) {
           audioEl = new Audio();
           audioEl.autoplay = true;
+          (audioEl as any).playsInline = true;
           remoteAudiosRef.current.set(targetSocketId, audioEl);
           document.body.appendChild(audioEl);
         }
         audioEl.srcObject = remoteStream;
+        audioEl.play().catch(() => {});
       }
     };
 
@@ -306,7 +348,7 @@ export const CallStage: React.FC<CallStageProps> = ({
   useEffect(() => {
     initHardwareMicrophone();
 
-    if (socket && user) {
+    if (socket && user?.id) {
       const roomPayload = {
         roomId: roomName,
         user: {
@@ -320,48 +362,90 @@ export const CallStage: React.FC<CallStageProps> = ({
 
       socket.emit('join-voice-room', roomPayload);
 
-      // Remote user joined
-      socket.on('user-joined-voice', async ({ user: remoteUser, socketId }: any) => {
-        if (!remoteUser || remoteUser.id === user.id) return;
+      // 1. Existing participants in the room: new joiner initiates offer to all of them
+      socket.on('voice-room-existing-users', async (existingList: any[]) => {
+        if (!Array.isArray(existingList)) return;
+        setParticipants(prev => {
+          const next = [...prev];
+          for (const item of existingList) {
+            const remoteUser = item.user;
+            if (remoteUser && remoteUser.id !== userRef.current?.id && !next.some(p => p.id === remoteUser.id)) {
+              next.push({
+                id: remoteUser.id,
+                socketId: item.socketId,
+                name: remoteUser.name,
+                username: remoteUser.username,
+                avatarUrl: remoteUser.avatarUrl,
+                role: remoteUser.role,
+                isSpeaking: false,
+                isMuted: !!item.isMuted,
+                isCameraOn: !!item.isCameraOn,
+                isScreenSharing: !!item.isScreenSharing,
+                canSpeak: true,
+                canShareScreen: true
+              });
+            }
+          }
+          return next;
+        });
+
+        // Initiate WebRTC offer to each existing participant
+        for (const item of existingList) {
+          if (item.socketId && item.socketId !== socket.id) {
+            try {
+              const pc = createPeerConnection(item.socketId);
+              const offer = await pc.createOffer();
+              await pc.setLocalDescription(offer);
+              socket.emit('voice-signal-offer', {
+                targetSocketId: item.socketId,
+                offer,
+                callerUser: userRef.current
+              });
+            } catch (e) {
+              console.warn('Error creating offer for existing peer:', e);
+            }
+          }
+        }
+      });
+
+      // 2. Remote user joined after us: add them to participant list (they will send us an offer)
+      socket.on('user-joined-voice', ({ user: remoteUser, socketId: remoteSocketId }: any) => {
+        if (!remoteUser || remoteUser.id === userRef.current?.id) return;
 
         setParticipants(prev => {
           if (prev.some(p => p.id === remoteUser.id)) return prev;
           return [...prev, {
             id: remoteUser.id,
-            socketId,
+            socketId: remoteSocketId,
             name: remoteUser.name,
             username: remoteUser.username,
             avatarUrl: remoteUser.avatarUrl,
             role: remoteUser.role,
             isSpeaking: false,
-            isMuted: roomMode === 'stage' && remoteUser.role !== 'CREATOR' && remoteUser.role !== 'ADMIN',
+            isMuted: false,
             isCameraOn: false,
-            canSpeak: roomMode !== 'stage' || remoteUser.role === 'CREATOR' || remoteUser.role === 'ADMIN',
-            canShareScreen: roomMode !== 'stage' || remoteUser.role === 'CREATOR' || remoteUser.role === 'ADMIN'
+            isScreenSharing: false,
+            canSpeak: true,
+            canShareScreen: true
           }];
         });
 
-        toast({ title: 'Entrada na Sala', message: `${remoteUser.name} entrou no canal de voz.`, type: 'info' });
-
-        try {
-          const pc = createPeerConnection(socketId);
-          const offer = await pc.createOffer();
-          await pc.setLocalDescription(offer);
-          socket.emit('voice-signal-offer', {
-            targetSocketId: socketId,
-            offer,
-            callerUser: user
-          });
-        } catch (e) {
-          console.error('Error creating WebRTC offer:', e);
-        }
+        toastRef.current({ title: 'Entrada na Sala', message: `${remoteUser.name} entrou no canal de voz.`, type: 'info' });
       });
 
-      // WebRTC Offer received
+      // 3. WebRTC Offer received
       socket.on('voice-signal-offer', async ({ callerSocketId, offer, callerUser }: any) => {
         try {
           const pc = createPeerConnection(callerSocketId);
           await pc.setRemoteDescription(new RTCSessionDescription(offer));
+
+          // Drain queued ICE candidates for this caller
+          const pending = pendingIceCandidatesRef.current.get(callerSocketId) || [];
+          for (const cand of pending) {
+            try { await pc.addIceCandidate(new RTCIceCandidate(cand)); } catch (_) {}
+          }
+          pendingIceCandidatesRef.current.delete(callerSocketId);
+
           const answer = await pc.createAnswer();
           await pc.setLocalDescription(answer);
 
@@ -370,7 +454,7 @@ export const CallStage: React.FC<CallStageProps> = ({
             answer
           });
 
-          if (callerUser && callerUser.id !== user.id) {
+          if (callerUser && callerUser.id !== userRef.current?.id) {
             setParticipants(prev => {
               if (prev.some(p => p.id === callerUser.id)) return prev;
               return [...prev, {
@@ -382,33 +466,50 @@ export const CallStage: React.FC<CallStageProps> = ({
                 role: callerUser.role,
                 isSpeaking: false,
                 isMuted: false,
-                canSpeak: roomMode !== 'stage' || callerUser.role === 'CREATOR' || callerUser.role === 'ADMIN',
-                canShareScreen: roomMode !== 'stage' || callerUser.role === 'CREATOR' || callerUser.role === 'ADMIN'
+                isCameraOn: false,
+                isScreenSharing: false,
+                canSpeak: true,
+                canShareScreen: true
               }];
             });
           }
         } catch (e) {
-          console.error('Error handling WebRTC offer:', e);
+          console.warn('Error handling WebRTC offer:', e);
         }
       });
 
-      // WebRTC Answer
+      // 4. WebRTC Answer received
       socket.on('voice-signal-answer', async ({ responderSocketId, answer }: any) => {
         try {
           const pc = peerConnectionsRef.current.get(responderSocketId);
-          if (pc) await pc.setRemoteDescription(new RTCSessionDescription(answer));
+          if (pc) {
+            await pc.setRemoteDescription(new RTCSessionDescription(answer));
+
+            // Drain queued ICE candidates
+            const pending = pendingIceCandidatesRef.current.get(responderSocketId) || [];
+            for (const cand of pending) {
+              try { await pc.addIceCandidate(new RTCIceCandidate(cand)); } catch (_) {}
+            }
+            pendingIceCandidatesRef.current.delete(responderSocketId);
+          }
         } catch (e) {
-          console.error('Error handling WebRTC answer:', e);
+          console.warn('Error handling WebRTC answer:', e);
         }
       });
 
-      // WebRTC ICE Candidate
+      // 5. WebRTC ICE Candidate received with queuing protection
       socket.on('voice-signal-ice', async ({ candidate, fromSocketId }: any) => {
         try {
           const pc = peerConnectionsRef.current.get(fromSocketId);
-          if (pc && candidate) await pc.addIceCandidate(new RTCIceCandidate(candidate));
+          if (pc && pc.remoteDescription && pc.remoteDescription.type) {
+            await pc.addIceCandidate(new RTCIceCandidate(candidate));
+          } else {
+            const queue = pendingIceCandidatesRef.current.get(fromSocketId) || [];
+            queue.push(candidate);
+            pendingIceCandidatesRef.current.set(fromSocketId, queue);
+          }
         } catch (e) {
-          console.error('Error handling ICE candidate:', e);
+          console.warn('Error handling ICE candidate:', e);
         }
       });
 
@@ -426,6 +527,7 @@ export const CallStage: React.FC<CallStageProps> = ({
             audio.remove();
             remoteAudiosRef.current.delete(socketId);
           }
+          pendingIceCandidatesRef.current.delete(socketId);
         }
       });
 
@@ -476,22 +578,22 @@ export const CallStage: React.FC<CallStageProps> = ({
           };
         }));
 
-        if (targetUserId === user.id) {
+        if (targetUserId === userRef.current?.id) {
           if (canSpeak) {
-            toast({ title: 'Palco Concedido', message: 'Tem autorização para falar no microfone.', type: 'success' });
+            toastRef.current({ title: 'Palco Concedido', message: 'Tem autorização para falar no microfone.', type: 'success' });
           } else if (canSpeak === false) {
             setIsMicMuted(true);
             if (localStreamRef.current) {
               localStreamRef.current.getAudioTracks().forEach(t => { t.enabled = false; });
             }
-            toast({ title: 'Palco Revogado', message: 'O seu microfone foi bloqueado pelo anfitrião.', type: 'info' });
+            toastRef.current({ title: 'Palco Revogado', message: 'O seu microfone foi bloqueado pelo anfitrião.', type: 'info' });
           }
         }
       });
 
       // Speaker Request (Stage Mode)
       socket.on('voice-speaker-request', ({ user: reqUser }: any) => {
-        if (isHostOrModerator && reqUser) {
+        if (isHostOrModeratorRef.current && reqUser) {
           soundEffects.play('click');
           setSpeakerRequests(prev => {
             if (prev.some(r => r.id === reqUser.id)) return prev;
@@ -503,28 +605,28 @@ export const CallStage: React.FC<CallStageProps> = ({
               time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             }];
           });
-          toast({ title: 'Pedido de Palavra', message: `${reqUser.name} pediu a palavra no palco.`, type: 'info' });
+          toastRef.current({ title: 'Pedido de Palavra', message: `${reqUser.name} pediu a palavra no palco.`, type: 'info' });
         }
       });
 
       // Speaker Decision (Approve / Deny)
       socket.on('voice-speaker-decision', ({ targetUserId, approved }: any) => {
-        if (targetUserId === user.id) {
+        if (targetUserId === userRef.current?.id) {
           if (approved) {
-            toast({ title: 'Pedido Aceite', message: 'O anfitrião autorizou a sua intervenção. Já pode desmutar o microfone.', type: 'success' });
+            toastRef.current({ title: 'Pedido Aceite', message: 'O anfitrião autorizou a sua intervenção. Já pode desmutar o microfone.', type: 'success' });
           } else {
             setIsHandRaised(false);
-            toast({ title: 'Pedido Não Autorizado', message: 'O anfitrião manteve o palco restrito no momento.', type: 'info' });
+            toastRef.current({ title: 'Pedido Não Autorizado', message: 'O anfitrião manteve o palco restrito no momento.', type: 'info' });
           }
         }
       });
 
       // Kicked from Voice Room
       socket.on('voice-user-kicked', ({ targetUserId }: any) => {
-        if (targetUserId === user.id) {
+        if (targetUserId === userRef.current?.id) {
           stopAllMedia();
-          toast({ title: 'Desconectado', message: 'Foi removido da chamada pelo moderador.', type: 'error' });
-          onDisconnect();
+          toastRef.current({ title: 'Desconectado', message: 'Foi removido da chamada pelo moderador.', type: 'error' });
+          onDisconnectRef.current();
         } else {
           setParticipants(prev => prev.filter(p => p.id !== targetUserId));
         }
@@ -537,8 +639,9 @@ export const CallStage: React.FC<CallStageProps> = ({
     }
 
     return () => {
-      if (socket && user) {
-        socket.emit('leave-voice-room', { roomId: roomName, userId: user.id });
+      if (socket && userRef.current) {
+        socket.emit('leave-voice-room', { roomId: roomName, userId: userRef.current.id });
+        socket.off('voice-room-existing-users');
         socket.off('user-joined-voice');
         socket.off('voice-signal-offer');
         socket.off('voice-signal-answer');
@@ -554,7 +657,7 @@ export const CallStage: React.FC<CallStageProps> = ({
       }
       stopAllMedia();
     };
-  }, [roomName, user, socket, initHardwareMicrophone, createPeerConnection, stopAllMedia, isHostOrModerator, toast, onDisconnect]);
+  }, [roomName, user?.id, socket, initHardwareMicrophone, createPeerConnection, stopAllMedia]);
 
   // Host: Change Room Mode
   const handleChangeRoomMode = (newMode: RoomMode) => {

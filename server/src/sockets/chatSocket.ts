@@ -7,7 +7,17 @@ interface UserPresence {
   socketId: string;
 }
 
+interface VoiceUser {
+  socketId: string;
+  user: any;
+  roomId: string;
+  isMuted?: boolean;
+  isCameraOn?: boolean;
+  isScreenSharing?: boolean;
+}
+
 const onlineUsers = new Map<string, UserPresence>();
+const voiceRooms = new Map<string, Map<string, VoiceUser>>();
 
 export function setupSocketIO(io: Server) {
   io.on('connection', (socket: Socket) => {
@@ -68,16 +78,57 @@ export function setupSocketIO(io: Server) {
 
     // Voice & Video Room events
     socket.on('join-voice-room', ({ roomId, user }: { roomId: string; user: any }) => {
+      if (!roomId || !user) return;
       socket.join(`voice_${roomId}`);
+
+      if (!voiceRooms.has(roomId)) {
+        voiceRooms.set(roomId, new Map());
+      }
+      const roomMap = voiceRooms.get(roomId)!;
+
+      // 1. Send existing participants in the room to the newly joined user
+      const existingParticipants = Array.from(roomMap.values()).map(p => ({
+        user: p.user,
+        socketId: p.socketId,
+        isMuted: p.isMuted,
+        isCameraOn: p.isCameraOn,
+        isScreenSharing: p.isScreenSharing
+      }));
+      socket.emit('voice-room-existing-users', existingParticipants);
+
+      // 2. Register current user in voice room map
+      roomMap.set(socket.id, {
+        socketId: socket.id,
+        user,
+        roomId,
+        isMuted: false,
+        isCameraOn: false,
+        isScreenSharing: false
+      });
+
+      // 3. Notify other participants in the room
       socket.to(`voice_${roomId}`).emit('user-joined-voice', { user, socketId: socket.id });
     });
 
     socket.on('leave-voice-room', ({ roomId, userId }: { roomId: string; userId: string }) => {
       socket.leave(`voice_${roomId}`);
+      const room = voiceRooms.get(roomId);
+      if (room) {
+        room.delete(socket.id);
+        if (room.size === 0) voiceRooms.delete(roomId);
+      }
       socket.to(`voice_${roomId}`).emit('user-left-voice', { userId, socketId: socket.id });
     });
 
     socket.on('voice-state-update', ({ roomId, userId, isMuted, isCameraOn, isScreenSharing }: any) => {
+      const room = voiceRooms.get(roomId);
+      if (room && room.has(socket.id)) {
+        const current = room.get(socket.id)!;
+        if (isMuted !== undefined) current.isMuted = isMuted;
+        if (isCameraOn !== undefined) current.isCameraOn = isCameraOn;
+        if (isScreenSharing !== undefined) current.isScreenSharing = isScreenSharing;
+      }
+
       socket.to(`voice_${roomId}`).emit('user-voice-state-changed', {
         userId,
         isMuted,
@@ -144,6 +195,19 @@ export function setupSocketIO(io: Server) {
 
     // Disconnect
     socket.on('disconnect', () => {
+      // Clean up voice rooms
+      for (const [roomId, room] of voiceRooms.entries()) {
+        const participant = room.get(socket.id);
+        if (participant) {
+          room.delete(socket.id);
+          socket.to(`voice_${roomId}`).emit('user-left-voice', {
+            userId: participant.user?.id,
+            socketId: socket.id
+          });
+          if (room.size === 0) voiceRooms.delete(roomId);
+        }
+      }
+
       for (const [userId, user] of onlineUsers.entries()) {
         if (user.socketId === socket.id) {
           onlineUsers.delete(userId);
