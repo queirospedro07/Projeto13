@@ -635,6 +635,7 @@ export const CoursePlayer: React.FC = () => {
           <div className="flex-1 flex flex-col min-w-0 bg-slate-100 dark:bg-slate-950 overflow-hidden">
             <CallStage
               roomName={liveRoomName || 'Sala ao Vivo do Curso'}
+              roomId={`course_${course?.id || courseId}_${(liveRoomName || 'live').toLowerCase().replace(/[^a-z0-9]/g, '_')}`}
               isStageMode={liveRoomName.toLowerCase().includes('dúvida') || liveRoomName.toLowerCase().includes('duvidas') || liveRoomName.toLowerCase().includes('mentoria')}
               onDisconnect={() => {
                 setInLiveRoom(false);
@@ -675,6 +676,7 @@ export const CoursePlayer: React.FC = () => {
             creatorUser={course.creator}
             currentUserId={user?.id}
             onInsertGuidingPrompt={(prompt) => setChatInput(`[Resposta ao Desafio]: `)}
+            classmates={course?.classmates || []}
           />
         )}
 
@@ -890,30 +892,22 @@ export const CoursePlayer: React.FC = () => {
                   xpReward={currentLesson?.xpReward || 25}
                 />
 
-                {/* Video Chapters Quick Bar */}
-                {(currentLesson.videoChapters || [
-                  { id: 'c1', time: '00:00', title: 'Visão Geral & Setup' },
-                  { id: 'c2', time: '04:15', title: 'Implementação Passo a Passo' },
-                  { id: 'c3', time: '11:30', title: 'Testes & Conclusão' }
-                ]).length > 0 && (
-                  <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col gap-2">
-                    <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-blue-600" />
+                {/* Video Chapters Quick Bar (only if real chapters exist) */}
+                {Array.isArray(currentLesson.videoChapters) && currentLesson.videoChapters.length > 0 && (
+                  <div className="p-4 rounded-2xl bg-white dark:bg-[#12141c] border border-slate-200 dark:border-[#222636] shadow-xs flex flex-col gap-2">
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                       Capítulos & Marcadores de Tempo da Lição
                     </span>
                     <div className="flex flex-wrap gap-2">
-                      {(currentLesson.videoChapters || [
-                        { id: 'c1', time: '00:00', title: 'Visão Geral & Setup' },
-                        { id: 'c2', time: '04:15', title: 'Implementação Passo a Passo' },
-                        { id: 'c3', time: '11:30', title: 'Testes & Conclusão' }
-                      ]).map((chap: any) => (
+                      {currentLesson.videoChapters.map((chap: any) => (
                         <button
                           key={chap.id}
                           type="button"
                           onClick={() => toast({ title: `Avançado para ${chap.time}`, message: chap.title, type: 'info' })}
-                          className="px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-xs text-slate-800 font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
+                          className="px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-[#171a24] hover:bg-slate-100 dark:hover:bg-[#202534] border border-slate-200 dark:border-[#222636] text-xs text-slate-800 dark:text-slate-200 font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
                         >
-                          <span className="text-blue-600 font-mono text-[11px]">{chap.time}</span>
+                          <span className="text-blue-600 dark:text-blue-400 font-mono text-[11px]">{chap.time}</span>
                           <span>{chap.title}</span>
                         </button>
                       ))}
@@ -925,52 +919,52 @@ export const CoursePlayer: React.FC = () => {
 
             {/* 6. RICH TEXT ARTICLE LESSON WITH CALLOUTS */}
             {currentLesson?.type === 'text' && (
-              <div className="flex flex-col gap-4 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm text-slate-900">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex flex-col gap-4 bg-white dark:bg-[#12141c] p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-[#222636] shadow-sm text-slate-900 dark:text-white">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-[#222636]">
                   <div>
-                    <h2 className="text-lg font-black text-slate-950">{currentLesson.title}</h2>
-                    <span className="text-xs text-slate-500 font-medium">Guia de Estudo & Artigo Técnico</span>
+                    <h2 className="text-lg font-black text-slate-950 dark:text-white">{currentLesson.title}</h2>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Guia de Estudo & Artigo Técnico</span>
                   </div>
-                  <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold border border-blue-200">
+                  <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-bold border border-blue-200 dark:border-blue-800/40">
                     +{currentLesson.xpReward || 25} XP
                   </span>
                 </div>
 
-                {/* Callout Box */}
-                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs leading-relaxed flex items-start gap-3">
-                  <Lightbulb className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-bold text-amber-950 mb-0.5">Dica Pro do Instrutor:</p>
-                    <p>Mantenha sempre o código limpo, componentizado e aplique testes contínuos antes de avançar para o próximo módulo.</p>
+                {/* Callout Box (only if instructor provided a callout tip) */}
+                {(currentLesson.richArticle?.calloutText || currentLesson.calloutText) && (
+                  <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 text-amber-900 dark:text-amber-200 text-xs leading-relaxed flex items-start gap-3">
+                    <Lightbulb className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold text-amber-950 dark:text-amber-100 mb-0.5">Dica Pro do Instrutor:</p>
+                      <p>{currentLesson.richArticle?.calloutText || currentLesson.calloutText}</p>
+                    </div>
                   </div>
+                )}
+
+                <div className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line py-2">
+                  {currentLesson.content || 'Sem conteúdo adicional nesta aula.'}
                 </div>
 
-                <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-line py-2">
-                  {currentLesson.content || 'Este artigo técnico explora detalhadamente os padrões e métodos necessários para construir aplicações escaláveis.'}
-                </div>
-
-                {/* Interactive Study Checklist */}
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col gap-2.5">
-                  <span className="text-xs font-bold text-slate-900">Checklist de Aprendizagem:</span>
-                  {[
-                    { id: 'chk1', text: 'Compreender a arquitetura do projeto' },
-                    { id: 'chk2', text: 'Instalar as dependências e testar no terminal' },
-                    { id: 'chk3', text: 'Publicar o primeiro commit no GitHub' }
-                  ].map(chk => (
-                    <label
-                      key={chk.id}
-                      onClick={() => setCheckedItems(prev => ({ ...prev, [chk.id]: !prev[chk.id] }))}
-                      className="flex items-center gap-2.5 text-xs text-slate-700 cursor-pointer select-none"
-                    >
-                      {checkedItems[chk.id] ? (
-                        <CheckSquare className="w-4 h-4 text-blue-600" />
-                      ) : (
-                        <Square className="w-4 h-4 text-slate-400" />
-                      )}
-                      <span className={checkedItems[chk.id] ? 'line-through text-slate-400' : 'font-medium'}>{chk.text}</span>
-                    </label>
-                  ))}
-                </div>
+                {/* Interactive Study Checklist (only if defined by instructor) */}
+                {Array.isArray(currentLesson.richArticle?.checklist || currentLesson.checklist) && (currentLesson.richArticle?.checklist || currentLesson.checklist).length > 0 && (
+                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#171a24] border border-slate-200 dark:border-[#222636] flex flex-col gap-2.5">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white">Checklist de Aprendizagem:</span>
+                    {(currentLesson.richArticle?.checklist || currentLesson.checklist).map((chk: any) => (
+                      <label
+                        key={chk.id || chk}
+                        onClick={() => setCheckedItems(prev => ({ ...prev, [chk.id || chk]: !prev[chk.id || chk] }))}
+                        className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none"
+                      >
+                        {checkedItems[chk.id || chk] ? (
+                          <CheckSquare className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        ) : (
+                          <Square className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                        )}
+                        <span className={checkedItems[chk.id || chk] ? 'line-through text-slate-400 dark:text-slate-500' : 'font-medium'}>{chk.text || chk}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -979,7 +973,7 @@ export const CoursePlayer: React.FC = () => {
               {prevLesson ? (
                 <button
                   onClick={() => setCurrentLesson(prevLesson)}
-                  className="px-5 py-2.5 rounded-xl text-sm font-bold bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 flex items-center gap-2 cursor-pointer shadow-xs"
+                  className="px-5 py-2.5 rounded-xl text-sm font-bold bg-white dark:bg-[#12141c] hover:bg-slate-100 dark:hover:bg-[#1f2330] text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-[#222636] flex items-center gap-2 cursor-pointer shadow-xs"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   <span>Anterior: {prevLesson.title}</span>
@@ -1007,7 +1001,7 @@ export const CoursePlayer: React.FC = () => {
 
             {/* Tabs (Visão Geral, Recursos, Notas Pessoais, Discussão) */}
             <div>
-              <div className="flex items-center gap-2 border-b border-slate-200 pb-3 text-sm font-bold text-slate-500">
+              <div className="flex items-center gap-2 border-b border-slate-200 dark:border-[#222636] pb-3 text-sm font-bold text-slate-500 dark:text-slate-400 overflow-x-auto">
                 {[
                   { id: 'overview', label: 'Visão Geral da Lição' },
                   { id: 'resources', label: `Recursos (${course.resources?.length || 0})` },
@@ -1017,10 +1011,10 @@ export const CoursePlayer: React.FC = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveLessonTab(tab.id as any)}
-                    className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
+                    className={`px-4 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
                       activeLessonTab === tab.id
-                        ? 'text-blue-700 bg-blue-50 border border-blue-200 font-extrabold shadow-xs'
-                        : 'hover:text-slate-900 hover:bg-slate-100'
+                        ? 'text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800/50 font-extrabold shadow-xs'
+                        : 'hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#171a24]'
                     }`}
                   >
                     {tab.label}
@@ -1030,8 +1024,8 @@ export const CoursePlayer: React.FC = () => {
 
               <div className="pt-6">
                 {activeLessonTab === 'overview' && (
-                  <div className="text-base text-slate-700 leading-relaxed whitespace-pre-line bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                    {currentLesson?.content || 'Esta lição aborda a implementação técnica modular de componentes concorrentes com sincronização de estado.'}
+                  <div className="text-base text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line bg-white dark:bg-[#12141c] p-6 rounded-3xl border border-slate-200 dark:border-[#222636] shadow-sm">
+                    {currentLesson?.content || 'Sem notas ou introdução adicional para esta lição.'}
                   </div>
                 )}
 

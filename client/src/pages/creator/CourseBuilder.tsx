@@ -91,7 +91,448 @@ export interface QuizQuestionItem {
   explanation: string;
   points?: number;
   options: QuizOptionItem[];
+  gradingMode?: 'auto' | 'teacher';
+  keywords?: string[];
+  minWords?: number;
+  expectedAnswer?: string;
 }
+
+export const QuizLessonEditor: React.FC<{
+  quiz?: LessonItem['quiz'];
+  onChange: (quiz: NonNullable<LessonItem['quiz']>) => void;
+}> = ({ quiz, onChange }) => {
+  const currentQuiz: NonNullable<LessonItem['quiz']> = quiz || {
+    title: 'Questionário de Avaliação',
+    description: 'Responda às questões para validar a sua compreensão da aula.',
+    passingScore: 70,
+    xpReward: 50,
+    questions: []
+  };
+
+  const handleUpdateField = <K extends keyof NonNullable<LessonItem['quiz']>>(
+    field: K,
+    value: NonNullable<LessonItem['quiz']>[K]
+  ) => {
+    onChange({
+      ...currentQuiz,
+      [field]: value
+    });
+  };
+
+  const handleAddQuestion = (type: QuizQuestionType = 'single') => {
+    soundEffects.play('click');
+    const newQ: QuizQuestionItem = {
+      id: `q-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      question: '',
+      type,
+      explanation: '',
+      points: 10,
+      options:
+        type === 'true-false'
+          ? [
+              { id: 'opt-tf-1', text: 'Verdadeiro', isCorrect: true },
+              { id: 'opt-tf-2', text: 'Falso', isCorrect: false }
+            ]
+          : type === 'open-ended'
+          ? []
+          : [
+              { id: 'opt-1', text: 'Opção 1 (Correta)', isCorrect: true },
+              { id: 'opt-2', text: 'Opção 2', isCorrect: false }
+            ],
+      gradingMode: type === 'open-ended' ? 'auto' : undefined,
+      keywords: type === 'open-ended' ? [] : undefined,
+      minWords: type === 'open-ended' ? 10 : undefined,
+      expectedAnswer: ''
+    };
+
+    handleUpdateField('questions', [...currentQuiz.questions, newQ]);
+  };
+
+  const handleUpdateQuestion = (qId: string, updates: Partial<QuizQuestionItem>) => {
+    const updated = currentQuiz.questions.map(q => {
+      if (q.id !== qId) return q;
+      const nextQ = { ...q, ...updates };
+
+      if (updates.type === 'true-false' && (!nextQ.options || nextQ.options.length !== 2)) {
+        nextQ.options = [
+          { id: 'opt-tf-1', text: 'Verdadeiro', isCorrect: true },
+          { id: 'opt-tf-2', text: 'Falso', isCorrect: false }
+        ];
+      } else if (
+        updates.type &&
+        updates.type !== 'true-false' &&
+        updates.type !== 'open-ended' &&
+        (!nextQ.options || nextQ.options.length === 0)
+      ) {
+        nextQ.options = [
+          { id: 'opt-1', text: 'Opção 1', isCorrect: true },
+          { id: 'opt-2', text: 'Opção 2', isCorrect: false }
+        ];
+      }
+
+      return nextQ;
+    });
+    handleUpdateField('questions', updated);
+  };
+
+  const handleRemoveQuestion = (qId: string) => {
+    soundEffects.play('click');
+    handleUpdateField('questions', currentQuiz.questions.filter(q => q.id !== qId));
+  };
+
+  const handleAddOption = (qId: string) => {
+    soundEffects.play('click');
+    const question = currentQuiz.questions.find(q => q.id === qId);
+    if (!question) return;
+
+    const optCount = question.options.length + 1;
+    const newOpt: QuizOptionItem = {
+      id: `opt-${Date.now()}-${optCount}`,
+      text: `Opção ${optCount}`,
+      isCorrect: false
+    };
+
+    handleUpdateQuestion(qId, {
+      options: [...question.options, newOpt]
+    });
+  };
+
+  const handleUpdateOption = (qId: string, optId: string, text: string) => {
+    const question = currentQuiz.questions.find(q => q.id === qId);
+    if (!question) return;
+
+    const options = question.options.map(o => (o.id === optId ? { ...o, text } : o));
+    handleUpdateQuestion(qId, { options });
+  };
+
+  const handleToggleOptionCorrect = (qId: string, optId: string) => {
+    soundEffects.play('click');
+    const question = currentQuiz.questions.find(q => q.id === qId);
+    if (!question) return;
+
+    let options: QuizOptionItem[];
+    if (question.type === 'single' || question.type === 'find-incorrect' || question.type === 'true-false') {
+      options = question.options.map(o => ({
+        ...o,
+        isCorrect: o.id === optId
+      }));
+    } else {
+      options = question.options.map(o => (o.id === optId ? { ...o, isCorrect: !o.isCorrect } : o));
+      if (!options.some(o => o.isCorrect)) {
+        options = options.map(o => (o.id === optId ? { ...o, isCorrect: true } : o));
+      }
+    }
+
+    handleUpdateQuestion(qId, { options });
+  };
+
+  const handleRemoveOption = (qId: string, optId: string) => {
+    soundEffects.play('click');
+    const question = currentQuiz.questions.find(q => q.id === qId);
+    if (!question || question.options.length <= 2) return;
+
+    let remaining = question.options.filter(o => o.id !== optId);
+    if (!remaining.some(o => o.isCorrect)) {
+      remaining = remaining.map((o, idx) => (idx === 0 ? { ...o, isCorrect: true } : o));
+    }
+
+    handleUpdateQuestion(qId, { options: remaining });
+  };
+
+  return (
+    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#12141c] border border-slate-200 dark:border-[#242838] flex flex-col gap-4 text-xs">
+      {/* Quiz Global Settings */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-xl bg-white dark:bg-[#181a24] border border-slate-200 dark:border-[#2b3044]">
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-300">Título do Questionário</label>
+          <input
+            type="text"
+            value={currentQuiz.title}
+            onChange={(e) => handleUpdateField('title', e.target.value)}
+            placeholder="Ex: Avaliação de React e TypeScript"
+            className="px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-[#12141c] border border-slate-200 dark:border-[#2b3044] text-slate-900 dark:text-zinc-100 text-xs focus:outline-none"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-300">Nota Mínima Aprovação (%)</label>
+          <input
+            type="number"
+            min={0}
+            max={100}
+            value={currentQuiz.passingScore}
+            onChange={(e) => handleUpdateField('passingScore', Number(e.target.value) || 0)}
+            className="px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-[#12141c] border border-slate-200 dark:border-[#2b3044] text-slate-900 dark:text-zinc-100 text-xs focus:outline-none"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-300">Recompensa (XP)</label>
+          <input
+            type="number"
+            min={0}
+            value={currentQuiz.xpReward}
+            onChange={(e) => handleUpdateField('xpReward', Number(e.target.value) || 0)}
+            className="px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-[#12141c] border border-slate-200 dark:border-[#2b3044] text-slate-900 dark:text-zinc-100 text-xs focus:outline-none"
+          />
+        </div>
+        <div className="sm:col-span-3 flex flex-col gap-1">
+          <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-300">Instruções aos Alunos</label>
+          <input
+            type="text"
+            value={currentQuiz.description}
+            onChange={(e) => handleUpdateField('description', e.target.value)}
+            placeholder="Ex: Responda com atenção a todas as perguntas para desbloquear a lição seguinte."
+            className="px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-[#12141c] border border-slate-200 dark:border-[#2b3044] text-slate-900 dark:text-zinc-100 text-xs focus:outline-none"
+          />
+        </div>
+      </div>
+
+      {/* Questions List */}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold text-slate-800 dark:text-zinc-200">
+            Perguntas ({currentQuiz.questions.length})
+          </span>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => handleAddQuestion('single')}
+              className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Adicionar Pergunta</span>
+            </button>
+          </div>
+        </div>
+
+        {currentQuiz.questions.length === 0 ? (
+          <div className="p-6 rounded-xl border border-dashed border-slate-300 dark:border-[#2b3044] text-center text-slate-500 dark:text-zinc-400">
+            <p className="text-xs font-semibold">Nenhuma pergunta adicionada a este questionário.</p>
+            <p className="text-[11px] mt-0.5">Clique em "Adicionar Pergunta" acima para começar.</p>
+          </div>
+        ) : (
+          currentQuiz.questions.map((q, qIdx) => (
+            <div
+              key={q.id}
+              className="p-4 rounded-xl bg-white dark:bg-[#161822] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-3 transition-colors shadow-xs"
+            >
+              {/* Question Header */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100 dark:border-[#222636]">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-md bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 font-black text-[11px] flex items-center justify-center border border-indigo-200 dark:border-indigo-800/40">
+                    {qIdx + 1}
+                  </span>
+                  <select
+                    value={q.type}
+                    onChange={(e) => handleUpdateQuestion(q.id, { type: e.target.value as QuizQuestionType })}
+                    className="px-2 py-1 rounded-lg bg-slate-50 dark:bg-[#1c1f2b] border border-slate-200 dark:border-[#2e3346] text-slate-900 dark:text-zinc-100 text-xs font-bold cursor-pointer focus:outline-none"
+                  >
+                    <option value="single">Escolha Única (1 Correta)</option>
+                    <option value="multiple">Múltipla Seleção (Várias Corretas)</option>
+                    <option value="find-incorrect">Encontre o Erro (Assinalar a Incorreta)</option>
+                    <option value="true-false">Verdadeiro ou Falso</option>
+                    <option value="open-ended">Resposta por Extenso / Aberta</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 dark:text-zinc-400">
+                    <span>Pontos:</span>
+                    <input
+                      type="number"
+                      min={1}
+                      value={q.points || 10}
+                      onChange={(e) => handleUpdateQuestion(q.id, { points: Number(e.target.value) || 1 })}
+                      className="w-12 px-1.5 py-0.5 rounded bg-slate-50 dark:bg-[#1c1f2b] border border-slate-200 dark:border-[#2e3346] text-center text-slate-900 dark:text-zinc-100 text-xs font-mono focus:outline-none"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveQuestion(q.id)}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
+                    title="Remover pergunta"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Question Text */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-300">Enunciado da Pergunta</label>
+                <textarea
+                  value={q.question}
+                  onChange={(e) => handleUpdateQuestion(q.id, { question: e.target.value })}
+                  rows={2}
+                  placeholder="Introduza aqui o enunciado da questão..."
+                  className="px-3 py-2 rounded-lg bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#2b3044] text-slate-900 dark:text-zinc-100 text-xs focus:outline-none resize-none"
+                />
+              </div>
+
+              {/* Explanation / Pedagogy */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-300">Explicação / Feedback Pedagógico (após responder)</label>
+                <input
+                  type="text"
+                  value={q.explanation}
+                  onChange={(e) => handleUpdateQuestion(q.id, { explanation: e.target.value })}
+                  placeholder="Ex: Esta opção é a correta porque as Server Actions executam mutações seguras no servidor."
+                  className="px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#2b3044] text-slate-900 dark:text-zinc-100 text-xs focus:outline-none"
+                />
+              </div>
+
+              {/* Options Section */}
+              {q.type === 'open-ended' ? (
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#2b3044] flex flex-col gap-2.5">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-300">
+                      Palavras-chave para Auto-Correção (separadas por vírgulas)
+                    </label>
+                    <input
+                      type="text"
+                      value={(q.keywords || []).join(', ')}
+                      onChange={(e) => {
+                        const kw = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
+                        handleUpdateQuestion(q.id, { keywords: kw });
+                      }}
+                      placeholder="Ex: servidor, cliente, seguranca, renderizacao"
+                      className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-[#12141c] border border-slate-200 dark:border-[#2b3044] text-slate-900 dark:text-zinc-100 text-xs focus:outline-none font-mono"
+                    />
+                    <p className="text-[10px] text-slate-500 dark:text-zinc-400">
+                      O sistema analisa a resposta do aluno com correspondência semântica e tolerância a acentos destas palavras-chave.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-300">Número Mínimo de Palavras</label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={q.minWords || 10}
+                        onChange={(e) => handleUpdateQuestion(q.id, { minWords: Number(e.target.value) || 5 })}
+                        className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-[#12141c] border border-slate-200 dark:border-[#2b3044] text-slate-900 dark:text-zinc-100 text-xs focus:outline-none"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-300">Critério de Avaliação</label>
+                      <select
+                        value={q.gradingMode || 'auto'}
+                        onChange={(e) => handleUpdateQuestion(q.id, { gradingMode: e.target.value as 'auto' | 'teacher' })}
+                        className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-[#12141c] border border-slate-200 dark:border-[#2b3044] text-slate-900 dark:text-zinc-100 text-xs focus:outline-none"
+                      >
+                        <option value="auto">Automático (Palavras-chave)</option>
+                        <option value="teacher">Avaliação do Instrutor</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-300">Resposta Modelo Sugerida</label>
+                    <textarea
+                      value={q.expectedAnswer || ''}
+                      onChange={(e) => handleUpdateQuestion(q.id, { expectedAnswer: e.target.value })}
+                      rows={2}
+                      placeholder="Exemplo de resposta ideal para referência pedagógica..."
+                      className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-[#12141c] border border-slate-200 dark:border-[#2b3044] text-slate-900 dark:text-zinc-100 text-xs focus:outline-none resize-none"
+                    />
+                  </div>
+                </div>
+              ) : q.type === 'true-false' ? (
+                <div className="flex flex-col gap-2">
+                  <span className="text-[11px] font-bold text-slate-700 dark:text-zinc-300">
+                    Selecione qual é a resposta correta:
+                  </span>
+                  <div className="grid grid-cols-2 gap-2">
+                    {q.options.map((opt) => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => handleToggleOptionCorrect(q.id, opt.id)}
+                        className={`p-3 rounded-xl border flex items-center justify-between font-bold text-xs transition-all cursor-pointer ${
+                          opt.isCorrect
+                            ? 'bg-emerald-500/15 border-emerald-500 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                            : 'bg-slate-50 dark:bg-[#181a24] border-slate-200 dark:border-[#2b3044] text-slate-700 dark:text-zinc-300 hover:border-slate-300 dark:hover:border-[#383f58]'
+                        }`}
+                      >
+                        <span>{opt.text}</span>
+                        {opt.isCorrect && <Check className="w-4 h-4 text-emerald-500 shrink-0" />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-700 dark:text-zinc-300">
+                      {q.type === 'find-incorrect'
+                        ? 'Selecione a afirmação FALSA (o erro que o aluno deve detetar):'
+                        : q.type === 'multiple'
+                        ? 'Selecione todas as opções CORRETAS:'
+                        : 'Selecione a opção CORRETA:'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleAddOption(q.id)}
+                      className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>Adicionar Opção</span>
+                    </button>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    {q.options.map((opt, optIdx) => (
+                      <div
+                        key={opt.id}
+                        className={`p-2.5 rounded-xl border flex items-center gap-2 transition-colors ${
+                          opt.isCorrect
+                            ? 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-800/40'
+                            : 'bg-slate-50 dark:bg-[#181a24] border-slate-200 dark:border-[#2b3044]'
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleToggleOptionCorrect(q.id, opt.id)}
+                          className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 border transition-all cursor-pointer ${
+                            opt.isCorrect
+                              ? 'bg-emerald-500 border-emerald-500 text-white shadow-xs'
+                              : 'bg-white dark:bg-[#1c1f2b] border-slate-300 dark:border-[#3b415a] text-transparent hover:border-slate-400'
+                          }`}
+                          title={opt.isCorrect ? 'Resposta correta' : 'Marcar como resposta correta'}
+                        >
+                          <Check className="w-3.5 h-3.5 stroke-[3]" />
+                        </button>
+
+                        <input
+                          type="text"
+                          value={opt.text}
+                          onChange={(e) => handleUpdateOption(q.id, opt.id, e.target.value)}
+                          placeholder={`Texto da Opção ${optIdx + 1}...`}
+                          className="flex-1 bg-transparent text-xs text-slate-900 dark:text-zinc-100 focus:outline-none"
+                        />
+
+                        {q.options.length > 2 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveOption(q.id, opt.id)}
+                            className="p-1 rounded text-slate-400 hover:text-red-500 transition-colors cursor-pointer shrink-0"
+                            title="Remover opção"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
 
 export interface VideoChapter {
   id: string;
@@ -1632,12 +2073,10 @@ export const CourseBuilder: React.FC = () => {
                           )}
 
                           {les.type === 'quiz' && (
-                            <div className="p-3 rounded-xl bg-white dark:bg-[#141620] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-2">
-                              <span className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                                <HelpCircle className="w-3.5 h-3.5" />
-                                Questionário com {les.quiz?.questions.length || 0} pergunta(s)
-                              </span>
-                            </div>
+                            <QuizLessonEditor
+                              quiz={les.quiz}
+                              onChange={(updatedQuiz) => handleUpdateLesson(mod.id, les.id, 'quiz', updatedQuiz)}
+                            />
                           )}
 
                           {les.type === 'resource' && (

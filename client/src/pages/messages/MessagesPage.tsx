@@ -360,6 +360,7 @@ export const MessagesPage: React.FC = () => {
             isCallOpen ? (
               <CallStage
                 roomName={`Chamada com ${activePeer.name}`}
+                roomId={`call_dm_${[user?.id || 'me', activePeer.id].sort().join('_')}`}
                 isStageMode={false}
                 onDisconnect={() => setIsCallOpen(false)}
               />

@@ -358,17 +358,63 @@ router.get('/:id', optionalAuth, async (req: AuthRequest, res: Response) => {
         [m.id]
       );
 
-      const formattedLessons = lessons.map(l => ({
-        id: l.id,
-        title: l.title,
-        type: l.type,
-        durationMin: l.durationMin,
-        orderIndex: l.orderIndex,
-        xpReward: l.xpReward,
-        videoUrl: l.videoUrl,
-        content: l.content,
-        quiz: l.quiz_id ? { id: l.quiz_id, title: l.quiz_title, xpReward: l.quiz_xpReward } : null,
-      }));
+      const formattedLessons = lessons.map(l => {
+        let quizObj = null;
+        if (l.type === 'quiz' && l.content) {
+          try {
+            const parsed = JSON.parse(l.content);
+            if (parsed && (Array.isArray(parsed.questions) || parsed.title)) {
+              quizObj = parsed;
+            }
+          } catch (_) {}
+        }
+        if (!quizObj && l.quiz_id) {
+          const questions = queryAll<any>(
+            `SELECT * FROM quiz_questions WHERE quizId = ? ORDER BY orderIndex ASC`,
+            [l.quiz_id]
+          );
+          quizObj = {
+            id: l.quiz_id,
+            title: l.quiz_title,
+            xpReward: l.quiz_xpReward,
+            questions: questions.map(q => {
+              let parsedOptions = [];
+              try {
+                parsedOptions = typeof q.options === 'string' ? JSON.parse(q.options) : q.options;
+              } catch (_) {
+                parsedOptions = [];
+              }
+              const formattedOptions = Array.isArray(parsedOptions)
+                ? parsedOptions.map((opt: any, idx: number) => ({
+                    id: `opt-${q.id}-${idx}`,
+                    text: typeof opt === 'string' ? opt : opt.text,
+                    isCorrect: idx === q.correctOptionIndex
+                  }))
+                : [];
+              return {
+                id: q.id,
+                question: q.question,
+                options: formattedOptions,
+                explanation: q.explanation,
+                points: 10,
+                type: 'single'
+              };
+            })
+          };
+        }
+
+        return {
+          id: l.id,
+          title: l.title,
+          type: l.type,
+          durationMin: l.durationMin,
+          orderIndex: l.orderIndex,
+          xpReward: l.xpReward,
+          videoUrl: l.videoUrl,
+          content: l.content,
+          quiz: quizObj,
+        };
+      });
 
       return { ...m, lessons: formattedLessons };
     });
@@ -485,6 +531,21 @@ router.get('/:id', optionalAuth, async (req: AuthRequest, res: Response) => {
       }
     }
 
+    // Query actual classmates enrolled in this course or space members
+    const classmates = queryAll<any>(
+      `SELECT DISTINCT u.id, u.name, u.username, u.avatarUrl, u.role, u.xp, u.level
+       FROM (
+         SELECT userId FROM enrollments WHERE courseId = ?
+         UNION
+         SELECT userId FROM memberships WHERE spaceId = ?
+       ) t
+       JOIN users u ON t.userId = u.id
+       WHERE u.id != ?
+       ORDER BY (CASE WHEN u.role = 'CREATOR' THEN 0 ELSE 1 END), u.name ASC
+       LIMIT 50`,
+      [course.id, targetSpaceId || '', course.creatorId || '']
+    );
+
     return res.json({
       id: course.id,
       title: course.title,
@@ -510,10 +571,44 @@ router.get('/:id', optionalAuth, async (req: AuthRequest, res: Response) => {
       studentsCount: course.studentsCount,
       averageRating: 4.9,
       userEnrollment,
+      classmates,
     });
   } catch (err) {
     console.error('Course details error:', err);
     return res.status(500).json({ error: 'Falha ao carregar detalhes do curso' });
+  }
+});
+
+// GET /api/courses/:id/classmates
+router.get('/:id/classmates', optionalAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const course = queryOne<any>(
+      `SELECT id, creatorId, spaceId FROM courses WHERE id = ? OR slug = ?`,
+      [id, id]
+    );
+    if (!course) return res.status(404).json({ error: 'Curso não encontrado' });
+
+    const classmates = queryAll<any>(
+      `SELECT DISTINCT u.id, u.name, u.username, u.avatarUrl, u.role, u.xp, u.level,
+              COALESCE(e.progressPercent, 0) as progressPercent
+       FROM (
+         SELECT userId FROM enrollments WHERE courseId = ?
+         UNION
+         SELECT userId FROM memberships WHERE spaceId = ?
+       ) t
+       JOIN users u ON t.userId = u.id
+       LEFT JOIN enrollments e ON e.userId = u.id AND e.courseId = ?
+       WHERE u.id != ?
+       ORDER BY u.name ASC
+       LIMIT 50`,
+      [course.id, course.spaceId || '', course.id, course.creatorId || '']
+    );
+
+    return res.json(classmates);
+  } catch (err) {
+    console.error('Failed to load classmates:', err);
+    return res.status(500).json({ error: 'Falha ao carregar colegas de turma' });
   }
 });
 

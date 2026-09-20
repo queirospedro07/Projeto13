@@ -300,7 +300,13 @@ router.post('/courses', authenticate, requireRole('CREATOR', 'ADMIN'), async (re
           if (Array.isArray(mod.lessons)) {
             mod.lessons.forEach((les: any, lIdx: number) => {
               const lesId = `les-${Date.now()}-${mIdx}-${lIdx}`;
-              const contentToStore = typeof les.content === 'object'
+              const contentToStore = les.quiz
+                ? JSON.stringify(les.quiz)
+                : les.richArticle
+                ? JSON.stringify(les.richArticle)
+                : les.codeChallenge
+                ? JSON.stringify(les.codeChallenge)
+                : typeof les.content === 'object'
                 ? JSON.stringify(les.content)
                 : les.customData
                 ? JSON.stringify(les.customData)
@@ -343,15 +349,24 @@ router.post('/courses', authenticate, requireRole('CREATOR', 'ADMIN'), async (re
                     const optionsArray = Array.isArray(q.options)
                       ? q.options.map((opt: any) => (typeof opt === 'string' ? opt : opt.text))
                       : ['Opção A', 'Opção B', 'Opção C', 'Opção D'];
+
+                    let correctOptionIndex = 0;
+                    if (Array.isArray(q.options)) {
+                      const idx = q.options.findIndex((opt: any) => opt && opt.isCorrect);
+                      if (idx >= 0) correctOptionIndex = idx;
+                    } else if (q.correctOptionIndex !== undefined) {
+                      correctOptionIndex = Number(q.correctOptionIndex);
+                    }
+
                     execute(
                       `INSERT INTO quiz_questions (id, quizId, question, options, correctOptionIndex, explanation, orderIndex)
                        VALUES (?, ?, ?, ?, ?, ?, ?)`,
                       [
                         qId,
                         quizId,
-                        q.question || 'Questão de avaliação',
+                        q.question || `Questão ${qIdx + 1}`,
                         JSON.stringify(optionsArray),
-                        Number(q.correctOptionIndex || 0),
+                        correctOptionIndex,
                         q.explanation || '',
                         qIdx,
                       ]

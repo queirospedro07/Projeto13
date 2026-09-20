@@ -272,6 +272,7 @@ export const SpaceChat: React.FC = () => {
       {inVoiceRoom ? (
         <CallStage
           roomName={inVoiceRoom}
+          roomId={`space_${space?.id || 'community'}_${inVoiceRoom.toLowerCase().replace(/[^a-z0-9]/g, '_')}`}
           roomType={
             inVoiceRoom.toLowerCase().includes('palco') || inVoiceRoom.toLowerCase().includes('masterclass')
               ? 'stage'

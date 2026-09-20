@@ -16,6 +16,15 @@ import { Avatar } from '../../../components/ui/Avatar';
 import { Message } from '../../../types';
 import { CourseChannel } from '../../../pages/learn/CoursePlayer';
 
+export interface ClassmateItem {
+  id: string;
+  name: string;
+  username?: string;
+  avatarUrl?: string;
+  role?: string;
+  isOnline?: boolean;
+}
+
 interface CourseChannelChatProps {
   channel: CourseChannel;
   messages: Message[];
@@ -33,6 +42,7 @@ interface CourseChannelChatProps {
   creatorUser?: any;
   currentUserId?: string;
   onInsertGuidingPrompt: (prompt: string) => void;
+  classmates?: ClassmateItem[];
 }
 
 export const CourseChannelChat: React.FC<CourseChannelChatProps> = ({
@@ -51,7 +61,8 @@ export const CourseChannelChat: React.FC<CourseChannelChatProps> = ({
   isCreatorOrAdmin,
   creatorUser,
   currentUserId,
-  onInsertGuidingPrompt
+  onInsertGuidingPrompt,
+  classmates = []
 }) => {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -290,22 +301,25 @@ export const CourseChannelChat: React.FC<CourseChannelChatProps> = ({
             <div className="px-2 pb-2 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               Colegas de Turma
             </div>
-            <div className="flex flex-col gap-1">
-              {[
-                { name: 'Diogo Silva', role: 'Aluno' },
-                { name: 'Inês Ferreira', role: 'Aluno' },
-                { name: 'Mariana Costa', role: 'Aluno' },
-                { name: 'Tiago Santos', role: 'Aluno' }
-              ].map((m, i) => (
-                <div key={i} className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-white dark:hover:bg-[#171a24] transition-colors">
-                  <Avatar name={m.name} size="sm" status="online" />
-                  <div className="min-w-0">
-                    <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm truncate">{m.name}</p>
-                    <p className="text-[11px] text-slate-400 dark:text-slate-500">{m.role}</p>
+            {classmates.length === 0 ? (
+              <div className="p-3 rounded-xl bg-white dark:bg-[#171a24] border border-slate-200 dark:border-[#222636] text-center">
+                <p className="text-xs text-slate-500 dark:text-slate-400">Ainda não há outros colegas matriculados nesta turma.</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1">
+                {classmates.map((m) => (
+                  <div key={m.id} className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-white dark:hover:bg-[#171a24] transition-colors">
+                    <Avatar src={m.avatarUrl} name={m.name} size="sm" status={m.isOnline ? "online" : undefined} />
+                    <div className="min-w-0">
+                      <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm truncate">{m.name}</p>
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                        {m.role === 'admin' ? 'Administrador' : m.role === 'instructor' ? 'Instrutor' : 'Aluno'}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </aside>
       )}

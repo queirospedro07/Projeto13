@@ -162,12 +162,21 @@ router.get('/:id', optionalAuth, async (req: AuthRequest, res: Response) => {
     );
 
     const members = queryAll<any>(
-      `SELECT m.*, u.id as user_id, u.name, u.username, u.avatarUrl, u.role as user_role, u.xp, u.level
-       FROM memberships m
-       JOIN users u ON m.userId = u.id
-       WHERE m.spaceId = ?
-       LIMIT 30`,
-      [space.id]
+      `SELECT DISTINCT u.id as user_id, u.name, u.username, u.avatarUrl, u.role as user_role, u.xp, u.level,
+              COALESCE(m.role, 'MEMBER') as role,
+              COALESCE(m.id, 'mem-' || u.id) as id
+       FROM (
+         SELECT userId FROM memberships WHERE spaceId = ?
+         UNION
+         SELECT e.userId FROM enrollments e 
+         JOIN courses c ON e.courseId = c.id 
+         WHERE c.spaceId = ?
+       ) t
+       JOIN users u ON t.userId = u.id
+       LEFT JOIN memberships m ON m.userId = u.id AND m.spaceId = ?
+       ORDER BY (CASE WHEN u.id = ? THEN 0 ELSE 1 END), u.name ASC
+       LIMIT 50`,
+      [space.id, space.id, space.id, space.owner_id || '']
     );
 
     let isMember = false;

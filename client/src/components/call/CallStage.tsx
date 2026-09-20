@@ -56,6 +56,7 @@ export type RoomMode = 'stage' | 'open' | 'qa';
 
 export interface CallStageProps {
   roomName: string;
+  roomId?: string;
   roomType?: 'voice' | 'video' | 'stage' | 'qa';
   isStageMode?: boolean;
   initialParticipants?: CallParticipant[];
@@ -113,13 +114,44 @@ const VideoStreamPlayer: React.FC<{
   );
 };
 
+// React-managed remote audio player that safely complies with browser autoplay policy
+const RemoteAudioPlayer: React.FC<{
+  stream: MediaStream;
+  volume: number;
+  muted: boolean;
+  onAutoplayBlocked: () => void;
+}> = ({ stream, volume, muted, onAutoplayBlocked }) => {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.srcObject !== stream) {
+      audio.srcObject = stream;
+    }
+    audio.volume = Math.min(1, Math.max(0, volume / 100));
+    audio.muted = muted;
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(err => {
+        console.warn('Remote audio autoplay prevented:', err);
+        onAutoplayBlocked();
+      });
+    }
+  }, [stream, volume, muted, onAutoplayBlocked]);
+
+  return <audio ref={audioRef} autoPlay playsInline />;
+};
+
 export const CallStage: React.FC<CallStageProps> = ({
   roomName,
+  roomId,
   roomType = 'voice',
   isStageMode = false,
   initialParticipants = [],
   onDisconnect
 }) => {
+  const effectiveRoomId = roomId || roomName;
   const { user } = useAuth();
   const { socket } = useSocket();
   const { toast } = useToast();
@@ -153,6 +185,7 @@ export const CallStage: React.FC<CallStageProps> = ({
 
   // Remote streams dictionary: targetSocketId -> MediaStream
   const [remoteVideoStreams, setRemoteVideoStreams] = useState<Record<string, MediaStream>>({});
+  const [remoteAudioStreams, setRemoteAudioStreams] = useState<Record<string, MediaStream>>({});
 
   // Speaker Requests (Stage Mode Queue)
   const [speakerRequests, setSpeakerRequests] = useState<Array<{ id: string; name: string; username: string; avatarUrl?: string; time: string }>>([]);
@@ -373,7 +406,7 @@ export const CallStage: React.FC<CallStageProps> = ({
 
             if (socket) {
               socket.emit('voice-speaking-state', {
-                roomId: roomName,
+                roomId: effectiveRoomId,
                 userId: userRef.current?.id,
                 isSpeaking: isSpeakingNow
               });
@@ -387,7 +420,7 @@ export const CallStage: React.FC<CallStageProps> = ({
     } catch (err) {
       console.warn('Microphone access notice (passive mode active):', err);
     }
-  }, [roomName, socket, updateActiveAudioTrack]);
+  }, [effectiveRoomId, socket, updateActiveAudioTrack]);
 
   // 6. Clean up all media hardware & connections
   const stopAllMedia = useCallback(() => {
@@ -419,6 +452,7 @@ export const CallStage: React.FC<CallStageProps> = ({
     });
     remoteAudiosRef.current.clear();
     setRemoteVideoStreams({});
+    setRemoteAudioStreams({});
   }, []);
 
   // 7. WebRTC Peer Connection Factory with Transceivers
@@ -475,6 +509,11 @@ export const CallStage: React.FC<CallStageProps> = ({
       const stream = (event.streams && event.streams[0]) ? event.streams[0] : new MediaStream([track]);
 
       if (track.kind === 'audio') {
+        setRemoteAudioStreams(prev => ({
+          ...prev,
+          [targetSocketId]: stream
+        }));
+
         let audioEl = remoteAudiosRef.current.get(targetSocketId);
         if (!audioEl) {
           audioEl = document.createElement('audio');
@@ -514,22 +553,31 @@ export const CallStage: React.FC<CallStageProps> = ({
 
   // 8. Real-Time Socket.IO Synchronization & Signaling
   useEffect(() => {
-    initHardwareMicrophone();
+    let isCancelled = false;
+
+    const joinCallSession = async () => {
+      await initHardwareMicrophone();
+      if (isCancelled) return;
+
+      if (socket && user?.id) {
+        const roomPayload = {
+          roomId: effectiveRoomId,
+          user: {
+            id: user.id,
+            name: user.name,
+            username: user.username,
+            avatarUrl: user.avatarUrl,
+            role: user.role
+          }
+        };
+
+        socket.emit('join-voice-room', roomPayload);
+      }
+    };
+
+    joinCallSession();
 
     if (socket && user?.id) {
-      const roomPayload = {
-        roomId: roomName,
-        user: {
-          id: user.id,
-          name: user.name,
-          username: user.username,
-          avatarUrl: user.avatarUrl,
-          role: user.role
-        }
-      };
-
-      socket.emit('join-voice-room', roomPayload);
-
       // 1. Existing users in the room
       socket.on('voice-room-existing-users', async (existingList: any[]) => {
         if (!Array.isArray(existingList)) return;
@@ -727,6 +775,11 @@ export const CallStage: React.FC<CallStageProps> = ({
             delete next[effectiveSocketId];
             return next;
           });
+          setRemoteAudioStreams(prev => {
+            const next = { ...prev };
+            delete next[effectiveSocketId];
+            return next;
+          });
         }
       });
 
@@ -850,8 +903,9 @@ export const CallStage: React.FC<CallStageProps> = ({
     }
 
     return () => {
+      isCancelled = true;
       if (socket && userRef.current) {
-        socket.emit('leave-voice-room', { roomId: roomName, userId: userRef.current.id });
+        socket.emit('leave-voice-room', { roomId: effectiveRoomId, userId: userRef.current.id });
         socket.off('voice-room-existing-users');
         socket.off('user-joined-voice');
         socket.off('voice-signal-offer');
@@ -869,7 +923,7 @@ export const CallStage: React.FC<CallStageProps> = ({
       }
       stopAllMedia();
     };
-  }, [roomName, user?.id, socket, initHardwareMicrophone, createPeerConnection, stopAllMedia]);
+  }, [effectiveRoomId, user?.id, socket, initHardwareMicrophone, createPeerConnection, stopAllMedia]);
 
   // Microphone Toggle
   const handleToggleMic = () => {
@@ -900,13 +954,13 @@ export const CallStage: React.FC<CallStageProps> = ({
 
     if (socket) {
       socket.emit('voice-state-update', {
-        roomId: roomName,
+        roomId: effectiveRoomId,
         userId: user?.id || 'me',
         isMuted: nextMuted
       });
       if (nextMuted) {
         socket.emit('voice-speaking-state', {
-          roomId: roomName,
+          roomId: effectiveRoomId,
           userId: user?.id || 'me',
           isSpeaking: false
         });
@@ -960,7 +1014,7 @@ export const CallStage: React.FC<CallStageProps> = ({
 
       if (socket) {
         socket.emit('voice-state-update', {
-          roomId: roomName,
+          roomId: effectiveRoomId,
           userId: user?.id || 'me',
           isCameraOn: false
         });
@@ -989,7 +1043,7 @@ export const CallStage: React.FC<CallStageProps> = ({
 
         if (socket) {
           socket.emit('voice-state-update', {
-            roomId: roomName,
+            roomId: effectiveRoomId,
             userId: user?.id || 'me',
             isCameraOn: true
           });
@@ -1022,7 +1076,7 @@ export const CallStage: React.FC<CallStageProps> = ({
 
       if (socket) {
         socket.emit('voice-state-update', {
-          roomId: roomName,
+          roomId: effectiveRoomId,
           userId: user?.id || 'me',
           isScreenSharing: false
         });
@@ -1052,7 +1106,7 @@ export const CallStage: React.FC<CallStageProps> = ({
           updateActiveVideoTrack(camTrack);
           if (socket) {
             socket.emit('voice-state-update', {
-              roomId: roomName,
+              roomId: effectiveRoomId,
               userId: user?.id || 'me',
               isScreenSharing: false
             });
@@ -1061,7 +1115,7 @@ export const CallStage: React.FC<CallStageProps> = ({
 
         if (socket) {
           socket.emit('voice-state-update', {
-            roomId: roomName,
+            roomId: effectiveRoomId,
             userId: user?.id || 'me',
             isScreenSharing: true
           });
@@ -1081,7 +1135,7 @@ export const CallStage: React.FC<CallStageProps> = ({
 
     if (next && socket) {
       socket.emit('voice-speaker-request', {
-        roomId: roomName,
+        roomId: effectiveRoomId,
         user: {
           id: user?.id,
           name: user?.name,
@@ -1110,7 +1164,7 @@ export const CallStage: React.FC<CallStageProps> = ({
 
     if (socket) {
       socket.emit('voice-chat-message', {
-        roomId: roomName,
+        roomId: effectiveRoomId,
         message: newMsg
       });
     }
@@ -1131,7 +1185,7 @@ export const CallStage: React.FC<CallStageProps> = ({
     if (!isHostOrModerator) return;
     setRoomMode(newMode);
     if (socket) {
-      socket.emit('voice-set-room-mode', { roomId: roomName, mode: newMode });
+      socket.emit('voice-set-room-mode', { roomId: effectiveRoomId, mode: newMode });
     }
     const label = newMode === 'stage' ? 'Modo Palco' : newMode === 'qa' ? 'Fila de Dúvidas' : 'Convívio Aberto';
     toast({ title: 'Modo de Sala Atualizado', message: `O formato agora é: ${label}.`, type: 'success' });
@@ -1143,7 +1197,7 @@ export const CallStage: React.FC<CallStageProps> = ({
     setParticipants(prev => prev.map(p => p.id === targetUserId ? { ...p, canSpeak: allow } : p));
     if (socket) {
       socket.emit('voice-update-permissions', {
-        roomId: roomName,
+        roomId: effectiveRoomId,
         targetUserId,
         canSpeak: allow
       });
@@ -1158,7 +1212,7 @@ export const CallStage: React.FC<CallStageProps> = ({
     setParticipants(prev => prev.map(p => p.id === targetUserId ? { ...p, canShareScreen: allow } : p));
     if (socket) {
       socket.emit('voice-update-permissions', {
-        roomId: roomName,
+        roomId: effectiveRoomId,
         targetUserId,
         canShareScreen: allow
       });
@@ -1170,7 +1224,7 @@ export const CallStage: React.FC<CallStageProps> = ({
   const handleKickParticipant = (targetUserId: string, participantName: string) => {
     if (!isHostOrModerator) return;
     if (socket) {
-      socket.emit('voice-kick-user', { roomId: roomName, targetUserId });
+      socket.emit('voice-kick-user', { roomId: effectiveRoomId, targetUserId });
     }
     setParticipants(prev => prev.filter(p => p.id !== targetUserId));
     toast({ title: 'Participante Removido', message: `${participantName} foi expulso da chamada.`, type: 'info' });
@@ -1198,6 +1252,14 @@ export const CallStage: React.FC<CallStageProps> = ({
     }
   };
 
+  const handleContainerClick = () => {
+    if (isAudioAutoplayBlocked) {
+      handleUnblockAudio();
+    } else if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+      audioContextRef.current.resume().catch(() => {});
+    }
+  };
+
   const formatTimer = (totalSeconds: number) => {
     const mins = Math.floor(totalSeconds / 60);
     const secs = totalSeconds % 60;
@@ -1210,8 +1272,25 @@ export const CallStage: React.FC<CallStageProps> = ({
   return (
     <div 
       ref={containerRef}
+      onClick={handleContainerClick}
       className="flex-1 flex flex-col h-full bg-slate-100 dark:bg-[#0c0d12] text-slate-900 dark:text-slate-100 select-none font-sans overflow-hidden relative transition-colors duration-200"
     >
+      {/* Hidden React-managed audio elements for all remote streams */}
+      <div className="hidden" aria-hidden="true">
+        {Object.entries(remoteAudioStreams).map(([targetSocketId, stream]) => {
+          const mappedUserId = socketToUserRef.current.get(targetSocketId);
+          const vol = mappedUserId ? (userVolumes[mappedUserId] ?? 100) : 100;
+          return (
+            <RemoteAudioPlayer
+              key={targetSocketId}
+              stream={stream}
+              volume={vol}
+              muted={isDeafened}
+              onAutoplayBlocked={() => setIsAudioAutoplayBlocked(true)}
+            />
+          );
+        })}
+      </div>
       {/* ======================================================================= */}
       {/* 0. AUDIO AUTOPLAY RESTRICTION BANNER */}
       {/* ======================================================================= */}
