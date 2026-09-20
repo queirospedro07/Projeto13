@@ -15,10 +15,20 @@ if (!fs.existsSync(dbDir)) {
 
 export const db: Database.Database = new Database(dbPath);
 
-// Enable WAL mode & Foreign Keys for high concurrency and performance
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
-db.pragma('synchronous = NORMAL');
+// Enable pragmas with fallback for container environments
+try {
+  db.pragma('journal_mode = WAL');
+} catch (err) {
+  console.warn('WAL mode not supported in current environment, using DELETE mode');
+  try { db.pragma('journal_mode = DELETE'); } catch (_) {}
+}
+
+try {
+  db.pragma('foreign_keys = ON');
+  db.pragma('synchronous = NORMAL');
+} catch (_) {}
+
+console.log('📦 Base de dados SQLite aberta em:', dbPath);
 
 /**
  * Executes a SELECT query expecting multiple rows.
