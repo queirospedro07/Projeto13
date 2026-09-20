@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
 import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
@@ -13,22 +13,14 @@ if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });
 }
 
-export const db: Database.Database = new Database(dbPath);
+export const db = new DatabaseSync(dbPath);
 
-// Enable pragmas with fallback for container environments
+// Enable pragmas
 try {
-  db.pragma('journal_mode = WAL');
-} catch (err) {
-  console.warn('WAL mode not supported in current environment, using DELETE mode');
-  try { db.pragma('journal_mode = DELETE'); } catch (_) {}
-}
-
-try {
-  db.pragma('foreign_keys = ON');
-  db.pragma('synchronous = NORMAL');
+  db.exec('PRAGMA foreign_keys = ON;');
 } catch (_) {}
 
-console.log('📦 Base de dados SQLite aberta em:', dbPath);
+console.log('📦 Base de dados SQLite nativa (node:sqlite) pronta em:', dbPath);
 
 /**
  * Executes a SELECT query expecting multiple rows.
@@ -52,7 +44,7 @@ export function queryOne<T = any>(sql: string, params: any[] = []): T | undefine
  * Executes an INSERT, UPDATE, or DELETE statement.
  * Uses prepared statements to guarantee 100% protection against SQL Injection.
  */
-export function execute(sql: string, params: any[] = []): Database.RunResult {
+export function execute(sql: string, params: any[] = []): any {
   const stmt = db.prepare(sql);
   return stmt.run(...params);
 }
@@ -61,8 +53,24 @@ export function execute(sql: string, params: any[] = []): Database.RunResult {
  * Executes a callback within an ACID transaction.
  */
 export function transaction<T>(fn: () => T): T {
-  const txn = db.transaction(fn);
-  return txn();
+  db.exec('BEGIN');
+  try {
+    const result = fn();
+    db.exec('COMMIT');
+    return result;
+  } catch (err) {
+    db.exec('ROLLBACK');
+    throw err;
+  }
+}
+
+// Polyfill db.transaction for any internal caller expecting better-sqlite3 style db.transaction
+if (!(db as any).transaction) {
+  (db as any).transaction = function(fn: Function) {
+    return function(...args: any[]) {
+      return transaction(() => fn(...args));
+    };
+  };
 }
 
 // Auto-initialize tables and seed data on startup

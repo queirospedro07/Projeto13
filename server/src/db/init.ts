@@ -1,7 +1,6 @@
-import Database from 'better-sqlite3';
 import bcrypt from 'bcryptjs';
 
-export function initializeSchemaAndSeed(db: Database.Database) {
+export function initializeSchemaAndSeed(db: any) {
   // 1. Create Tables
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
@@ -360,7 +359,7 @@ export function initializeSchemaAndSeed(db: Database.Database) {
   }
 }
 
-function seedData(db: Database.Database) {
+function seedData(db: any) {
   const passwordHash = bcrypt.hashSync('password123', 10);
   const now = new Date().toISOString();
 
