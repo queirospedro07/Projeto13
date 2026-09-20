@@ -187,6 +187,30 @@ export function setupSocketIO(io: Server) {
       });
     });
 
+    // -----------------------------------------------------------------------
+    // Socket.IO Media Relay — fallback when WebRTC P2P fails (symmetric NAT,
+    // corporate firewalls, etc.).  Clients send encoded MediaRecorder chunks;
+    // the server fan-outs each chunk to every other peer in the same room.
+    // This adds server bandwidth but requires zero third-party services.
+    // -----------------------------------------------------------------------
+    socket.on('voice-relay-chunk', ({ roomId, kind, chunk }: {
+      roomId: string;
+      kind: 'audio' | 'video';
+      chunk: ArrayBuffer;
+    }) => {
+      // Forward to everyone in the room except the sender
+      socket.to(`voice_${roomId}`).emit('voice-relay-chunk', {
+        fromSocketId: socket.id,
+        kind,
+        chunk,
+      });
+    });
+
+    // Peer signals it is switching to relay mode (P2P failed)
+    socket.on('voice-relay-start', ({ roomId }: { roomId: string }) => {
+      socket.to(`voice_${roomId}`).emit('voice-relay-start', { fromSocketId: socket.id });
+    });
+
     // In-room voice chat messaging
     socket.on('voice-chat-message', ({ roomId, message }: any) => {
       io.to(`voice_${roomId}`).emit('voice-chat-message', message);

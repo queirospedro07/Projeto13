@@ -360,47 +360,77 @@ router.get('/:id', optionalAuth, async (req: AuthRequest, res: Response) => {
 
       const formattedLessons = lessons.map(l => {
         let quizObj = null;
-        if (l.type === 'quiz' && l.content) {
-          try {
-            const parsed = JSON.parse(l.content);
-            if (parsed && (Array.isArray(parsed.questions) || parsed.title)) {
-              quizObj = parsed;
-            }
-          } catch (_) {}
-        }
-        if (!quizObj && l.quiz_id) {
-          const questions = queryAll<any>(
-            `SELECT * FROM quiz_questions WHERE quizId = ? ORDER BY orderIndex ASC`,
-            [l.quiz_id]
-          );
-          quizObj = {
-            id: l.quiz_id,
-            title: l.quiz_title,
-            xpReward: l.quiz_xpReward,
-            questions: questions.map(q => {
-              let parsedOptions = [];
-              try {
-                parsedOptions = typeof q.options === 'string' ? JSON.parse(q.options) : q.options;
-              } catch (_) {
-                parsedOptions = [];
+        let cleanContent = l.content || '';
+        let richArticleObj = null;
+        let codeChallengeObj = null;
+
+        if (l.type === 'quiz') {
+          if (l.content) {
+            try {
+              const parsed = JSON.parse(l.content);
+              if (parsed && (Array.isArray(parsed.questions) || parsed.title)) {
+                quizObj = parsed;
+                cleanContent = parsed.description || 'Responda às questões para validar a sua compreensão da matéria.';
               }
-              const formattedOptions = Array.isArray(parsedOptions)
-                ? parsedOptions.map((opt: any, idx: number) => ({
-                    id: `opt-${q.id}-${idx}`,
-                    text: typeof opt === 'string' ? opt : opt.text,
-                    isCorrect: idx === q.correctOptionIndex
-                  }))
-                : [];
-              return {
-                id: q.id,
-                question: q.question,
-                options: formattedOptions,
-                explanation: q.explanation,
-                points: 10,
-                type: 'single'
-              };
-            })
-          };
+            } catch (_) {}
+          }
+          if (!quizObj && l.quiz_id) {
+            const questions = queryAll<any>(
+              `SELECT * FROM quiz_questions WHERE quizId = ? ORDER BY orderIndex ASC`,
+              [l.quiz_id]
+            );
+            quizObj = {
+              id: l.quiz_id,
+              title: l.quiz_title,
+              xpReward: l.quiz_xpReward,
+              questions: questions.map(q => {
+                let parsedOptions = [];
+                try {
+                  parsedOptions = typeof q.options === 'string' ? JSON.parse(q.options) : q.options;
+                } catch (_) {
+                  parsedOptions = [];
+                }
+                const formattedOptions = Array.isArray(parsedOptions)
+                  ? parsedOptions.map((opt: any, idx: number) => ({
+                      id: `opt-${q.id}-${idx}`,
+                      text: typeof opt === 'string' ? opt : opt.text,
+                      isCorrect: idx === q.correctOptionIndex
+                    }))
+                  : [];
+                return {
+                  id: q.id,
+                  question: q.question,
+                  options: formattedOptions,
+                  explanation: q.explanation,
+                  points: 10,
+                  type: 'single'
+                };
+              })
+            };
+            if (!cleanContent || cleanContent.trim().startsWith('{')) {
+              cleanContent = 'Responda às questões práticas para testar os seus conhecimentos desta aula.';
+            }
+          }
+        } else if (l.type === 'text') {
+          if (l.content && l.content.trim().startsWith('{')) {
+            try {
+              const parsed = JSON.parse(l.content);
+              if (parsed && (parsed.markdown || parsed.checklist || parsed.calloutText)) {
+                richArticleObj = parsed;
+                cleanContent = parsed.markdown || '';
+              }
+            } catch (_) {}
+          }
+        } else if (l.type === 'code') {
+          if (l.content && l.content.trim().startsWith('{')) {
+            try {
+              const parsed = JSON.parse(l.content);
+              if (parsed && (parsed.initialCode || parsed.instructions)) {
+                codeChallengeObj = parsed;
+                cleanContent = parsed.instructions || '';
+              }
+            } catch (_) {}
+          }
         }
 
         return {
@@ -411,8 +441,10 @@ router.get('/:id', optionalAuth, async (req: AuthRequest, res: Response) => {
           orderIndex: l.orderIndex,
           xpReward: l.xpReward,
           videoUrl: l.videoUrl,
-          content: l.content,
+          content: cleanContent,
           quiz: quizObj,
+          richArticle: richArticleObj,
+          codeChallenge: codeChallengeObj,
         };
       });
 

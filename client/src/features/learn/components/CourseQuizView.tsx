@@ -110,10 +110,56 @@ export const CourseQuizView: React.FC<CourseQuizViewProps> = ({
   description = 'Responda às questões abaixo para validar os seus conhecimentos e desbloquear pontos de experiência.',
   passingScore = 70,
   xpReward = 50,
-  questions = DEFAULT_SAMPLE_QUESTIONS,
+  questions,
   onCompleteQuiz,
   onNextLesson
 }) => {
+  // If description is a stringified JSON object (as sometimes stored or passed), parse it safely
+  let parsedJsonQuiz: any = null;
+  if (typeof description === 'string' && description.trim().startsWith('{')) {
+    try {
+      parsedJsonQuiz = JSON.parse(description);
+    } catch (_) {}
+  }
+
+  const effectiveTitle = parsedJsonQuiz?.title || quizTitle;
+  const effectiveDescription = parsedJsonQuiz?.description || (parsedJsonQuiz ? 'Responda às questões para validar a sua compreensão da matéria.' : description);
+  const effectivePassingScore = Number(parsedJsonQuiz?.passingScore || passingScore || 70);
+  const effectiveXpReward = Number(parsedJsonQuiz?.xpReward || xpReward || 50);
+  const rawQuestions = (questions && questions.length > 0)
+    ? questions
+    : (parsedJsonQuiz?.questions && parsedJsonQuiz.questions.length > 0)
+    ? parsedJsonQuiz.questions
+    : DEFAULT_SAMPLE_QUESTIONS;
+
+  const effectiveQuestions: QuizQuestion[] = rawQuestions.map((q: any, idx: number) => ({
+    id: q.id || `q-${idx}`,
+    type: q.type || 'single',
+    question: q.question || `Questão ${idx + 1}`,
+    explanation: q.explanation || '',
+    points: q.points || 10,
+    gradingMode: q.gradingMode,
+    keywords: q.keywords,
+    minWords: q.minWords,
+    expectedAnswer: q.expectedAnswer,
+    options: Array.isArray(q.options)
+      ? q.options.map((opt: any, optIdx: number) => {
+          if (typeof opt === 'string') {
+            return {
+              id: `opt-${idx}-${optIdx}`,
+              text: opt,
+              isCorrect: optIdx === (q.correctOptionIndex ?? 0)
+            };
+          }
+          return {
+            id: opt.id || `opt-${idx}-${optIdx}`,
+            text: opt.text || '',
+            isCorrect: Boolean(opt.isCorrect)
+          };
+        })
+      : []
+  }));
+
   // State for single-choice / find-incorrect / true-false (questionId -> optionId)
   const [singleAnswers, setSingleAnswers] = useState<Record<string, string>>({});
   
@@ -137,17 +183,17 @@ export const CourseQuizView: React.FC<CourseQuizViewProps> = ({
   const getQuestionTypeBadge = (type: string, gradingMode?: string) => {
     switch (type) {
       case 'multiple':
-        return { label: 'Múltipla Seleção (Várias Corretas)', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' };
+        return { label: 'Múltipla Seleção (Várias Corretas)', color: 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/50' };
       case 'find-incorrect':
-        return { label: 'Identificar a Incorreta (Encontre o Erro)', color: 'bg-amber-50 text-amber-800 border-amber-200' };
+        return { label: 'Identificar a Incorreta (Encontre o Erro)', color: 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800/50' };
       case 'true-false':
-        return { label: 'Verdadeiro / Falso', color: 'bg-slate-100 text-slate-700 border-slate-200' };
+        return { label: 'Verdadeiro / Falso', color: 'bg-slate-100 dark:bg-[#1f2433] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-[#2a3045]' };
       case 'open-ended':
         return gradingMode === 'teacher'
-          ? { label: 'Resposta por Extenso (Revisão pelo Professor)', color: 'bg-purple-50 text-purple-700 border-purple-200' }
-          : { label: 'Resposta por Extenso (Correção Automática)', color: 'bg-blue-50 text-blue-700 border-blue-200' };
+          ? { label: 'Resposta por Extenso (Revisão pelo Professor)', color: 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/50' }
+          : { label: 'Resposta por Extenso (Correção Automática)', color: 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/50' };
       default:
-        return { label: 'Escolha Única', color: 'bg-slate-100 text-slate-700 border-slate-200' };
+        return { label: 'Escolha Única', color: 'bg-slate-100 dark:bg-[#1f2433] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-[#2a3045]' };
     }
   };
 
@@ -191,24 +237,21 @@ export const CourseQuizView: React.FC<CourseQuizViewProps> = ({
 
   // Check if open-ended answer passes auto-grading with smart normalization
   const evaluateOpenEnded = (q: QuizQuestion, userText: string): boolean => {
-    if (q.gradingMode === 'teacher') return true; // Marked as submitted for teacher
+    if (q.gradingMode === 'teacher') return true;
     const normalizedUser = normalizeTextForGrading(userText);
     
-    // Check required keywords if provided
     if (q.keywords && q.keywords.length > 0) {
       const normalizedKeywords = q.keywords.map(kw => normalizeTextForGrading(kw));
       const matched = normalizedKeywords.filter(kw => normalizedUser.includes(kw));
-      // Pass if at least 60% of keywords matched or at least 2 keywords
       return (matched.length / normalizedKeywords.length) >= 0.5 || matched.length >= Math.min(2, normalizedKeywords.length);
     }
 
-    // Fallback: check expected answer length and non-empty
     return normalizedUser.length >= 15;
   };
 
   // Calculate score and grade
   const handleSubmitQuiz = () => {
-    const unanswered = questions.filter(q => !isQuestionAnswered(q));
+    const unanswered = effectiveQuestions.filter(q => !isQuestionAnswered(q));
     if (unanswered.length > 0) {
       alert(`Por favor, responda a todas as perguntas antes de submeter. Faltam ${unanswered.length} questão(ões).`);
       return;
@@ -217,7 +260,7 @@ export const CourseQuizView: React.FC<CourseQuizViewProps> = ({
     let correctCount = 0;
     let pendingTeacherCount = 0;
 
-    questions.forEach(q => {
+    effectiveQuestions.forEach(q => {
       if (q.type === 'multiple') {
         const userSelected = new Set(multipleAnswers[q.id] || []);
         const correctOptions = new Set(q.options.filter(opt => opt.isCorrect).map(opt => opt.id));
@@ -231,13 +274,12 @@ export const CourseQuizView: React.FC<CourseQuizViewProps> = ({
       } else if (q.type === 'open-ended') {
         if (q.gradingMode === 'teacher') {
           pendingTeacherCount++;
-          correctCount++; // Provisional credit
+          correctCount++;
         } else {
           const passes = evaluateOpenEnded(q, openEndedAnswers[q.id] || '');
           if (passes) correctCount++;
         }
       } else {
-        // Single, find-incorrect, true-false
         const selectedId = singleAnswers[q.id];
         const selectedOption = q.options.find(opt => opt.id === selectedId);
         if (selectedOption?.isCorrect) {
@@ -246,16 +288,16 @@ export const CourseQuizView: React.FC<CourseQuizViewProps> = ({
       }
     });
 
-    const scorePercentage = Math.round((correctCount / questions.length) * 100);
-    const passed = scorePercentage >= passingScore;
-    const earnedXp = passed ? xpReward : Math.round((scorePercentage / 100) * xpReward * 0.5);
+    const scorePercentage = Math.round((correctCount / effectiveQuestions.length) * 100);
+    const passed = scorePercentage >= effectivePassingScore;
+    const earnedXp = passed ? effectiveXpReward : Math.round((scorePercentage / 100) * effectiveXpReward * 0.5);
 
     setQuizSubmitted(true);
     setQuizResults({
       score: scorePercentage,
       passed,
       correctCount,
-      totalCount: questions.length,
+      totalCount: effectiveQuestions.length,
       earnedXp,
       pendingTeacherReviewCount: pendingTeacherCount
     });
@@ -282,34 +324,34 @@ export const CourseQuizView: React.FC<CourseQuizViewProps> = ({
 
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-8 max-w-4xl mx-auto w-full animate-fade-in antialiased">
-      <div className="bg-white border border-slate-200/80 rounded-3xl shadow-xs p-6 sm:p-10 space-y-8">
+      <div className="bg-white dark:bg-[#12141c] border border-slate-200/80 dark:border-[#222636] rounded-3xl shadow-xs p-6 sm:p-10 space-y-8">
         
         {/* Quiz Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100 dark:border-[#222636]">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="px-2.5 py-0.5 rounded-md bg-slate-900 text-white text-[11px] font-semibold uppercase tracking-wider">
+              <span className="px-2.5 py-0.5 rounded-md bg-blue-600 text-white text-[11px] font-bold uppercase tracking-wider">
                 Questionário
               </span>
-              <span className="text-xs text-slate-500 font-medium">
-                {questions.length} Questões • Mínimo {passingScore}%
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                {effectiveQuestions.length} Questões • Mínimo {effectivePassingScore}%
               </span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-950 tracking-tight">
-              {quizTitle}
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-950 dark:text-white tracking-tight">
+              {effectiveTitle}
             </h2>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed">
-              {description}
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+              {effectiveDescription}
             </p>
           </div>
 
-          <div className="text-left sm:text-right shrink-0 bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 sm:min-w-[120px]">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+          <div className="text-left sm:text-right shrink-0 bg-slate-50 dark:bg-[#171a24] border border-slate-200/80 dark:border-[#222636] rounded-2xl p-3.5 sm:min-w-[120px]">
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
               Recompensa
             </span>
             <div className="flex items-center sm:justify-end gap-1.5 mt-0.5">
               <Sparkles className="w-4 h-4 text-amber-500" />
-              <span className="text-lg font-extrabold text-slate-950">+{xpReward} XP</span>
+              <span className="text-lg font-extrabold text-slate-950 dark:text-white">+{effectiveXpReward} XP</span>
             </div>
           </div>
         </div>
@@ -318,8 +360,8 @@ export const CourseQuizView: React.FC<CourseQuizViewProps> = ({
         {quizResults && (
           <div className={`p-6 rounded-2xl border transition-all ${
             quizResults.passed
-              ? 'bg-emerald-50/70 border-emerald-200/80 text-emerald-950 shadow-xs'
-              : 'bg-rose-50/70 border-rose-200/80 text-rose-950 shadow-xs'
+              ? 'bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-200/80 dark:border-emerald-800/50 text-emerald-950 dark:text-emerald-200 shadow-xs'
+              : 'bg-rose-50/80 dark:bg-rose-950/40 border-rose-200/80 dark:border-rose-800/50 text-rose-950 dark:text-rose-200 shadow-xs'
           }`}>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
               
@@ -342,7 +384,7 @@ export const CourseQuizView: React.FC<CourseQuizViewProps> = ({
                   </h3>
                   <p className="text-xs sm:text-sm opacity-80 mt-1">
                     Acertou <strong>{quizResults.correctCount}</strong> de <strong>{quizResults.totalCount}</strong> questões ({quizResults.score}%). 
-                    {quizResults.passed ? ` Ganhou +${quizResults.earnedXp} XP!` : ` Mínimo exigido: ${passingScore}%. Reveja as correções abaixo e tente novamente.`}
+                    {quizResults.passed ? ` Ganhou +${quizResults.earnedXp} XP!` : ` Mínimo exigido: ${effectivePassingScore}%. Reveja as correções abaixo e tente novamente.`}
                   </p>
                 </div>
               </div>
@@ -351,7 +393,7 @@ export const CourseQuizView: React.FC<CourseQuizViewProps> = ({
                 <button
                   type="button"
                   onClick={handleResetQuiz}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-white border border-slate-300/80 text-slate-800 hover:bg-slate-50 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-[#1c202e] border border-slate-300/80 dark:border-[#2a2f42] text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#232838] transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Repetir Quiz</span>
@@ -361,7 +403,7 @@ export const CourseQuizView: React.FC<CourseQuizViewProps> = ({
                   <button
                     type="button"
                     onClick={onNextLesson}
-                    className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-950 hover:bg-slate-800 text-white transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    className="px-4 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
                   >
                     <span>Próxima Aula</span>
                     <ChevronRight className="w-3.5 h-3.5" />
@@ -375,7 +417,7 @@ export const CourseQuizView: React.FC<CourseQuizViewProps> = ({
 
         {/* Questions List */}
         <div className="space-y-8">
-          {questions.map((q, qIdx) => {
+          {effectiveQuestions.map((q, qIdx) => {
             const badge = getQuestionTypeBadge(q.type);
             const isMultiple = q.type === 'multiple';
             const userSelections = isMultiple ? (multipleAnswers[q.id] || []) : [singleAnswers[q.id]].filter(Boolean);
@@ -383,12 +425,12 @@ export const CourseQuizView: React.FC<CourseQuizViewProps> = ({
             return (
               <div
                 key={q.id}
-                className="p-6 rounded-2xl bg-slate-50/50 border border-slate-200/80 space-y-4"
+                className="p-6 rounded-2xl bg-slate-50/50 dark:bg-[#171a24] border border-slate-200/80 dark:border-[#222636] space-y-4"
               >
                 {/* Question Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2">
                   <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-lg bg-slate-900 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                    <span className="w-6 h-6 rounded-lg bg-slate-900 dark:bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
                       {qIdx + 1}
                     </span>
                     <span className={`px-2 py-0.5 rounded-md border text-[11px] font-semibold ${badge.color}`}>
@@ -397,21 +439,21 @@ export const CourseQuizView: React.FC<CourseQuizViewProps> = ({
                   </div>
 
                   {q.type === 'find-incorrect' && (
-                    <span className="text-[11px] font-semibold text-amber-900 bg-amber-100/70 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3 text-amber-700" />
+                    <span className="text-[11px] font-semibold text-amber-900 dark:text-amber-300 bg-amber-100/70 dark:bg-amber-950/40 px-2.5 py-0.5 rounded-full flex items-center gap-1 border border-amber-200 dark:border-amber-800/40">
+                      <AlertCircle className="w-3 h-3 text-amber-700 dark:text-amber-400" />
                       Selecione a opção falsa / com erro
                     </span>
                   )}
 
                   {q.type === 'multiple' && (
-                    <span className="text-[11px] font-medium text-slate-500">
+                    <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
                       Pode selecionar mais do que uma opção
                     </span>
                   )}
                 </div>
 
                 {/* Question Prompt */}
-                <p className="text-sm sm:text-base font-semibold text-slate-950 leading-snug">
+                <p className="text-sm sm:text-base font-semibold text-slate-950 dark:text-white leading-snug">
                   {q.question}
                 </p>
 
@@ -425,9 +467,9 @@ export const CourseQuizView: React.FC<CourseQuizViewProps> = ({
                           value={openEndedAnswers[q.id] || ''}
                           onChange={e => handleOpenEndedChange(q.id, e.target.value)}
                           placeholder="Escreva aqui a sua resposta detalhada por extenso..."
-                          className="w-full bg-white border border-slate-200 focus:border-slate-950 rounded-2xl p-4 text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-950/10 transition-all leading-relaxed"
+                          className="w-full bg-white dark:bg-[#12141c] border border-slate-200 dark:border-[#222636] focus:border-slate-950 dark:focus:border-blue-500 rounded-2xl p-4 text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-950/10 dark:focus:ring-blue-900/30 transition-all leading-relaxed"
                         />
-                        <div className="flex items-center justify-between text-[11px] text-slate-400 px-1">
+                        <div className="flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500 px-1">
                           <span>
                             {q.gradingMode === 'teacher'
                               ? 'Esta resposta será revista e avaliada manualmente pelo professor.'
@@ -441,32 +483,32 @@ export const CourseQuizView: React.FC<CourseQuizViewProps> = ({
                     ) : (
                       <div className="space-y-3">
                         {/* Student submitted answer box */}
-                        <div className="p-4 rounded-xl bg-white border border-slate-200 space-y-1.5 shadow-2xs">
-                          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+                        <div className="p-4 rounded-xl bg-white dark:bg-[#12141c] border border-slate-200 dark:border-[#222636] space-y-1.5 shadow-2xs">
+                          <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
                             A Sua Resposta Submetida:
                           </span>
-                          <p className="text-xs sm:text-sm text-slate-800 leading-relaxed whitespace-pre-line font-medium">
+                          <p className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-line font-medium">
                             {openEndedAnswers[q.id] || '(Sem resposta fornecida)'}
                           </p>
                         </div>
 
                         {/* Grading Status */}
                         {q.gradingMode === 'teacher' ? (
-                          <div className="p-3 rounded-xl bg-purple-50 border border-purple-200 text-purple-900 text-xs flex items-center gap-2 font-medium">
-                            <Clock className="w-4 h-4 text-purple-600 shrink-0" />
+                          <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/40 text-purple-900 dark:text-purple-300 text-xs flex items-center gap-2 font-medium">
+                            <Clock className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
                             <span>Submissão registada com sucesso. O instrutor irá avaliar e atribuir a nota final no painel da turma.</span>
                           </div>
                         ) : (
                           <div className={`p-3 rounded-xl border text-xs flex items-center justify-between gap-2 font-medium ${
                             evaluateOpenEnded(q, openEndedAnswers[q.id] || '')
-                              ? 'bg-emerald-50 border-emerald-200 text-emerald-950'
-                              : 'bg-amber-50 border-amber-200 text-amber-950'
+                              ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/40 text-emerald-950 dark:text-emerald-200'
+                              : 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/40 text-amber-950 dark:text-amber-200'
                           }`}>
                             <div className="flex items-center gap-2">
                               {evaluateOpenEnded(q, openEndedAnswers[q.id] || '') ? (
-                                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                               ) : (
-                                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                                <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
                               )}
                               <span>
                                 {evaluateOpenEnded(q, openEndedAnswers[q.id] || '')
@@ -479,9 +521,9 @@ export const CourseQuizView: React.FC<CourseQuizViewProps> = ({
 
                         {/* Model expected answer */}
                         {q.expectedAnswer && (
-                          <div className="p-3.5 rounded-xl bg-slate-100/70 border border-slate-200 text-slate-700 text-xs space-y-1">
-                            <span className="font-semibold text-slate-900 block">Resposta Modelo Sugerida:</span>
-                            <p className="text-slate-600 leading-relaxed">{q.expectedAnswer}</p>
+                          <div className="p-3.5 rounded-xl bg-slate-100/70 dark:bg-[#1a1d29] border border-slate-200 dark:border-[#222636] text-slate-700 dark:text-slate-300 text-xs space-y-1">
+                            <span className="font-semibold text-slate-900 dark:text-white block">Resposta Modelo Sugerida:</span>
+                            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">{q.expectedAnswer}</p>
                           </div>
                         )}
                       </div>
@@ -495,12 +537,12 @@ export const CourseQuizView: React.FC<CourseQuizViewProps> = ({
                         ? userSelections.includes(opt.id)
                         : singleAnswers[q.id] === opt.id;
 
-                      let optionStyle = 'bg-white border-slate-200 text-slate-800 hover:bg-slate-100/80 hover:border-slate-300';
+                      let optionStyle = 'bg-white dark:bg-[#1c202e] border-slate-200 dark:border-[#282d3f] text-slate-800 dark:text-slate-200 hover:bg-slate-100/80 dark:hover:bg-[#232838] hover:border-slate-300 dark:hover:border-[#373d54]';
                       let statusBadge = null;
 
                       if (quizSubmitted) {
                         if (opt.isCorrect) {
-                          optionStyle = 'bg-emerald-50 border-emerald-300 text-emerald-950 font-medium';
+                          optionStyle = 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800/50 text-emerald-950 dark:text-emerald-200 font-medium';
                           statusBadge = (
                             <span className="px-2 py-0.5 rounded-md bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
                               <Check className="w-3 h-3" />
@@ -508,7 +550,7 @@ export const CourseQuizView: React.FC<CourseQuizViewProps> = ({
                             </span>
                           );
                         } else if (isSelected && !opt.isCorrect) {
-                          optionStyle = 'bg-rose-50 border-rose-300 text-rose-950 font-medium';
+                          optionStyle = 'bg-rose-50 dark:bg-rose-950/40 border-rose-300 dark:border-rose-800/50 text-rose-950 dark:text-rose-200 font-medium';
                           statusBadge = (
                             <span className="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
                               <X className="w-3 h-3" />
@@ -516,10 +558,10 @@ export const CourseQuizView: React.FC<CourseQuizViewProps> = ({
                             </span>
                           );
                         } else {
-                          optionStyle = 'bg-white/60 border-slate-200 text-slate-400 opacity-60';
+                          optionStyle = 'bg-white/60 dark:bg-[#141620]/60 border-slate-200 dark:border-[#222636] text-slate-400 dark:text-slate-600 opacity-60';
                         }
                       } else if (isSelected) {
-                        optionStyle = 'bg-slate-900 border-slate-900 text-white font-medium shadow-xs';
+                        optionStyle = 'bg-slate-900 dark:bg-blue-600 border-slate-900 dark:border-blue-600 text-white font-medium shadow-xs';
                       }
 
                       return (
@@ -540,20 +582,20 @@ export const CourseQuizView: React.FC<CourseQuizViewProps> = ({
                             {isMultiple ? (
                               <div className="shrink-0">
                                 {isSelected ? (
-                                  <CheckSquare className={`w-4 h-4 ${quizSubmitted ? (opt.isCorrect ? 'text-emerald-700' : 'text-rose-700') : 'text-white'}`} />
+                                  <CheckSquare className={`w-4 h-4 ${quizSubmitted ? (opt.isCorrect ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400') : 'text-white'}`} />
                                 ) : (
-                                  <Square className="w-4 h-4 text-slate-400" />
+                                  <Square className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                                 )}
                               </div>
                             ) : (
                               <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
                                 isSelected
                                   ? (quizSubmitted ? (opt.isCorrect ? 'border-emerald-600 bg-emerald-600' : 'border-rose-600 bg-rose-600') : 'border-white bg-white')
-                                  : 'border-slate-300 bg-white'
+                                  : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-[#12141c]'
                               }`}>
                                 {isSelected && (
                                   <div className={`w-1.5 h-1.5 rounded-full ${
-                                    quizSubmitted ? 'bg-white' : 'bg-slate-950'
+                                    quizSubmitted ? 'bg-white' : 'bg-slate-950 dark:bg-blue-600'
                                   }`} />
                                 )}
                               </div>
@@ -571,12 +613,12 @@ export const CourseQuizView: React.FC<CourseQuizViewProps> = ({
 
                 {/* Pedagogical Explanation Box (Shown after submission) */}
                 {quizSubmitted && q.explanation && (
-                  <div className="mt-4 p-4 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs sm:text-sm space-y-1 shadow-2xs animate-fade-in">
-                    <div className="flex items-center gap-1.5 text-slate-900 font-semibold">
-                      <Info className="w-3.5 h-3.5 text-slate-600" />
+                  <div className="mt-4 p-4 rounded-xl bg-white dark:bg-[#12141c] border border-slate-200 dark:border-[#222636] text-slate-700 dark:text-slate-300 text-xs sm:text-sm space-y-1 shadow-2xs animate-fade-in">
+                    <div className="flex items-center gap-1.5 text-slate-900 dark:text-white font-semibold">
+                      <Info className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                       <span>Explicação & Fundamentação:</span>
                     </div>
-                    <p className="text-slate-600 leading-relaxed pl-5">
+                    <p className="text-slate-600 dark:text-slate-400 leading-relaxed pl-5">
                       {q.explanation}
                     </p>
                   </div>
@@ -589,15 +631,15 @@ export const CourseQuizView: React.FC<CourseQuizViewProps> = ({
 
         {/* Bottom Submission Action */}
         {!quizSubmitted && (
-          <div className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-xs text-slate-500 font-medium">
+          <div className="pt-6 border-t border-slate-100 dark:border-[#222636] flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
               Responda a todas as questões antes de submeter para avaliação imediata.
             </p>
 
             <button
               type="button"
               onClick={handleSubmitQuiz}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-xl text-sm font-semibold bg-slate-950 hover:bg-slate-800 text-white shadow-xs transition-all cursor-pointer flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-xl text-sm font-semibold bg-slate-950 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-500 text-white shadow-xs transition-all cursor-pointer flex items-center justify-center gap-2"
             >
               <Check className="w-4 h-4" />
               <span>Submeter Questionário</span>

@@ -119,7 +119,7 @@ const io = new Server(server, {
 setupSocketIO(io);
 app.set('io', io);
 
-// 6. Health Check Endpoint
+// 6. Health Check Endpoint (also used as keepalive ping for Render free tier)
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({
     status: 'ok',
@@ -129,6 +129,19 @@ app.get('/api/health', (req: Request, res: Response) => {
     database: 'SQLite (Direct Prepared Queries - WAL Mode)',
     timestamp: new Date().toISOString(),
   });
+});
+
+// 6a. ICE Server Config Endpoint
+// Returns STUN server list to the client. TURN is not needed because
+// the Socket.IO media relay handles NAT traversal as a fallback.
+app.get('/api/ice-servers', (_req: Request, res: Response) => {
+  const iceServers: object[] = [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun.relay.metered.ca:80' },
+  ];
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+  res.json({ iceServers });
 });
 
 // 7. API Routes

@@ -256,6 +256,29 @@ export const CoursePlayer: React.FC = () => {
         data.modules = modulesList;
       }
 
+      // Sanitize and unpack rich JSON content for lessons
+      modulesList.forEach((mod: any) => {
+        if (Array.isArray(mod.lessons)) {
+          mod.lessons.forEach((les: any) => {
+            if (les.content && typeof les.content === 'string' && les.content.trim().startsWith('{')) {
+              try {
+                const parsed = JSON.parse(les.content);
+                if (les.type === 'quiz') {
+                  les.quiz = les.quiz || parsed;
+                  les.content = parsed.description || 'Responda às questões práticas para testar os seus conhecimentos.';
+                } else if (les.type === 'text') {
+                  les.richArticle = les.richArticle || parsed;
+                  les.content = parsed.markdown || '';
+                } else if (les.type === 'code') {
+                  les.codeChallenge = les.codeChallenge || parsed;
+                  les.content = parsed.instructions || '';
+                }
+              } catch (_) {}
+            }
+          });
+        }
+      });
+
       setCourse(data);
 
       const completed = new Set<string>();
@@ -687,10 +710,28 @@ export const CoursePlayer: React.FC = () => {
             {/* 1. QUIZ LESSON */}
             {currentLesson?.type === 'quiz' && (
               <CourseQuizView
-                quizTitle={currentLesson.title || 'Questionário da Aula'}
-                description={currentLesson.content || 'Responda às questões práticas para testar os seus conhecimentos desta aula.'}
-                xpReward={currentLesson.xpReward || 50}
-                questions={(currentLesson as any).quiz?.questions}
+                quizTitle={currentLesson.quiz?.title || currentLesson.title || 'Questionário da Aula'}
+                description={
+                  currentLesson.quiz?.description ||
+                  (currentLesson.content && !currentLesson.content.trim().startsWith('{')
+                    ? currentLesson.content
+                    : 'Responda às questões práticas para testar os seus conhecimentos desta aula.')
+                }
+                passingScore={currentLesson.quiz?.passingScore || 70}
+                xpReward={currentLesson.quiz?.xpReward || currentLesson.xpReward || 50}
+                questions={
+                  (currentLesson.quiz?.questions && currentLesson.quiz.questions.length > 0)
+                    ? currentLesson.quiz.questions
+                    : (() => {
+                        if (currentLesson.content && currentLesson.content.trim().startsWith('{')) {
+                          try {
+                            const p = JSON.parse(currentLesson.content);
+                            if (p && Array.isArray(p.questions) && p.questions.length > 0) return p.questions;
+                          } catch (_) {}
+                        }
+                        return undefined;
+                      })()
+                }
                 onCompleteQuiz={(score, xp) => {
                   triggerXpCelebration(xp, `+${xp} XP! Quiz Aprovado (${score}%)`);
                   if (!isCurrentCompleted) {

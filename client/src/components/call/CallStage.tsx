@@ -63,19 +63,33 @@ export interface CallStageProps {
   onDisconnect: () => void;
 }
 
-// Multi-STUN public servers for robust NAT traversal across different networks
-const RTC_CONFIG: RTCConfiguration = {
+// Fallback ICE config — only public STUN, no TURN needed.
+// P2P works on most home/office networks. When it fails (symmetric NAT, mobile),
+// the relay fallback kicks in automatically via Socket.IO binary chunks.
+const STUN_ONLY_CONFIG: RTCConfiguration = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:stun3.l.google.com:19302' },
-    { urls: 'stun:stun4.l.google.com:19302' },
-    { urls: 'stun:stun.services.mozilla.com' },
-    { urls: 'stun:stun.relay.metered.ca:80' }
+    { urls: 'stun:stun.relay.metered.ca:80' },
   ],
-  iceCandidatePoolSize: 10
+  iceCandidatePoolSize: 10,
 };
+
+// How long (ms) to wait for a WebRTC connection before switching to relay mode
+const P2P_TIMEOUT_MS = 5000;
+
+// Best audio codec params for MediaRecorder relay chunks
+const RELAY_AUDIO_MIME = (() => {
+  for (const mime of [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/ogg;codecs=opus',
+    'audio/ogg',
+  ]) {
+    if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(mime)) return mime;
+  }
+  return '';
+})();
 
 // Safe video player component that attaches MediaStream cleanly to HTMLVideoElement
 const VideoStreamPlayer: React.FC<{
@@ -221,6 +235,20 @@ export const CallStage: React.FC<CallStageProps> = ({
   const userToSocketRef = useRef<Map<string, string>>(new Map());
   const lastSpeakingRef = useRef<boolean>(false);
 
+  // ── Socket.IO relay fallback ─────────────────────────────────────────────
+  // Used when WebRTC P2P cannot connect (symmetric NAT, mobile, firewalls).
+  // Audio chunks from MediaRecorder are sent as binary frames over Socket.IO
+  // and the server fans them out to all other peers in the room.
+  // Key: sourceSocketId → MediaSource state for playback
+  const relayMediaSourcesRef = useRef<Map<string, { ms: MediaSource; sb: SourceBuffer | null; queue: ArrayBuffer[]; ready: boolean }>>(new Map());
+  const relayAudioElemsRef = useRef<Map<string, HTMLAudioElement>>(new Map());
+  // Which peers we are serving via relay (vs direct P2P)
+  const relayPeersRef = useRef<Set<string>>(new Set());
+  // Our outbound MediaRecorder that broadcasts mic audio to relay
+  const relayRecorderRef = useRef<MediaRecorder | null>(null);
+  // Pending P2P timeout per peer: if not connected within P2P_TIMEOUT_MS → relay
+  const p2pTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
   // Stable references
   const userRef = useRef(user);
   userRef.current = user;
@@ -282,6 +310,8 @@ export const CallStage: React.FC<CallStageProps> = ({
     return () => clearInterval(interval);
   }, []);
 
+  // 1a. (removed — no TURN fetch needed; relay is the fallback)
+
   // 2. Unblock audio playback if blocked by browser policy
   const handleUnblockAudio = useCallback(() => {
     if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
@@ -290,8 +320,190 @@ export const CallStage: React.FC<CallStageProps> = ({
     remoteAudiosRef.current.forEach(audio => {
       audio.play().catch(e => console.warn('Unblock audio error:', e));
     });
+    relayAudioElemsRef.current.forEach(audio => {
+      audio.play().catch(() => {});
+    });
     setIsAudioAutoplayBlocked(false);
   }, []);
+
+  // ── Relay helpers ──────────────────────────────────────────────────────────
+
+  // Start the outbound relay recorder (broadcasts mic chunks to the room)
+  const startRelayRecorder = useCallback((roomId: string, sock: ReturnType<typeof useSocket>['socket']) => {
+    if (!sock) return;
+    if (relayRecorderRef.current && relayRecorderRef.current.state !== 'inactive') return;
+
+    const stream = localStreamRef.current;
+    if (!stream || stream.getAudioTracks().length === 0) return;
+
+    if (!RELAY_AUDIO_MIME) {
+      console.warn('[Relay] MediaRecorder not supported in this browser');
+      return;
+    }
+
+    try {
+      const recorder = new MediaRecorder(stream, {
+        mimeType: RELAY_AUDIO_MIME,
+        audioBitsPerSecond: 32000,
+      });
+
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0 && sock.connected) {
+          e.data.arrayBuffer().then(buf => {
+            sock.emit('voice-relay-chunk', { roomId, kind: 'audio', chunk: buf });
+          });
+        }
+      };
+
+      recorder.start(80); // 80ms chunks — low latency
+      relayRecorderRef.current = recorder;
+    } catch (err) {
+      console.warn('[Relay] Failed to start MediaRecorder:', err);
+    }
+  }, []);
+
+  // Stop the outbound relay recorder
+  const stopRelayRecorder = useCallback(() => {
+    const r = relayRecorderRef.current;
+    if (r && r.state !== 'inactive') {
+      try { r.stop(); } catch (_) {}
+    }
+    relayRecorderRef.current = null;
+  }, []);
+
+  // Set up a MediaSource + hidden <audio> element to play relay chunks from a peer
+  const setupRelayReceiver = useCallback((fromSocketId: string) => {
+    if (relayAudioElemsRef.current.has(fromSocketId)) return;
+
+    const ms = new MediaSource();
+    const audio = document.createElement('audio');
+    audio.autoplay = true;
+    (audio as any).playsInline = true;
+    audio.src = URL.createObjectURL(ms);
+    document.body.appendChild(audio);
+    relayAudioElemsRef.current.set(fromSocketId, audio);
+
+    const state: { ms: MediaSource; sb: SourceBuffer | null; queue: ArrayBuffer[]; ready: boolean } = {
+      ms, sb: null, queue: [], ready: false,
+    };
+    relayMediaSourcesRef.current.set(fromSocketId, state);
+
+    ms.addEventListener('sourceopen', () => {
+      if (!RELAY_AUDIO_MIME) return;
+      try {
+        const sb = ms.addSourceBuffer(RELAY_AUDIO_MIME.split(';')[0]); // strip codecs for addSourceBuffer
+        state.sb = sb;
+        state.ready = true;
+
+        sb.addEventListener('updateend', () => {
+          if (state.queue.length > 0 && !sb.updating) {
+            try { sb.appendBuffer(state.queue.shift()!); } catch (_) {}
+          }
+        });
+
+        // Drain anything that arrived before sourceopen
+        if (state.queue.length > 0 && !sb.updating) {
+          try { sb.appendBuffer(state.queue.shift()!); } catch (_) {}
+        }
+      } catch (err) {
+        console.warn('[Relay] addSourceBuffer failed:', err);
+      }
+    });
+
+    audio.play().catch(() => setIsAudioAutoplayBlocked(true));
+  }, []);
+
+  // Feed an incoming chunk to the correct relay receiver
+  const feedRelayChunk = useCallback((fromSocketId: string, chunk: ArrayBuffer) => {
+    const state = relayMediaSourcesRef.current.get(fromSocketId);
+    if (!state) {
+      setupRelayReceiver(fromSocketId);
+      // Queue the chunk — will be appended once sourceopen fires
+      const newState = relayMediaSourcesRef.current.get(fromSocketId);
+      newState?.queue.push(chunk);
+      return;
+    }
+
+    const { sb, queue } = state;
+    if (!sb || sb.updating) {
+      // Buffer not ready or mid-update — queue and drain later
+      queue.push(chunk);
+      // Prevent unbounded growth: drop oldest chunk if queue is too large
+      if (queue.length > 30) queue.shift();
+      return;
+    }
+
+    try {
+      sb.appendBuffer(chunk);
+    } catch (err) {
+      // QuotaExceededError or similar — skip this chunk
+      console.warn('[Relay] appendBuffer error (chunk dropped):', err);
+    }
+  }, [setupRelayReceiver]);
+
+  // Tear down the relay receiver for a peer that left
+  const teardownRelayReceiver = useCallback((fromSocketId: string) => {
+    const audio = relayAudioElemsRef.current.get(fromSocketId);
+    if (audio) {
+      audio.srcObject = null;
+      if (audio.src) URL.revokeObjectURL(audio.src);
+      audio.remove();
+      relayAudioElemsRef.current.delete(fromSocketId);
+    }
+    relayMediaSourcesRef.current.delete(fromSocketId);
+    relayPeersRef.current.delete(fromSocketId);
+  }, []);
+
+  // Switch a specific peer from P2P to relay mode
+  const switchPeerToRelay = useCallback((peerSocketId: string, roomId: string, sock: ReturnType<typeof useSocket>['socket']) => {
+    if (relayPeersRef.current.has(peerSocketId)) return; // already on relay
+
+    console.info(`[Relay] Switching peer ${peerSocketId} to Socket.IO relay (P2P failed or timed out)`);
+    relayPeersRef.current.add(peerSocketId);
+
+    // Close the failed P2P connection
+    const pc = peerConnectionsRef.current.get(peerSocketId);
+    if (pc) {
+      pc.close();
+      peerConnectionsRef.current.delete(peerSocketId);
+    }
+
+    // Set up inbound relay playback for this peer
+    setupRelayReceiver(peerSocketId);
+
+    // Start outbound relay recorder if not already running
+    startRelayRecorder(roomId, sock);
+
+    // Tell the peer we switched so they start their relay recorder too
+    sock?.emit('voice-relay-start', { roomId });
+  }, [setupRelayReceiver, startRelayRecorder]);
+
+  // Schedule a P2P→relay fallback for a peer connection
+  const schedulePeerFallback = useCallback((peerSocketId: string, pc: RTCPeerConnection, roomId: string, sock: ReturnType<typeof useSocket>['socket']) => {
+    // Cancel any existing timer for this peer
+    const existing = p2pTimeoutsRef.current.get(peerSocketId);
+    if (existing) clearTimeout(existing);
+
+    const timer = setTimeout(() => {
+      p2pTimeoutsRef.current.delete(peerSocketId);
+      if (pc.connectionState !== 'connected') {
+        switchPeerToRelay(peerSocketId, roomId, sock);
+      }
+    }, P2P_TIMEOUT_MS);
+
+    p2pTimeoutsRef.current.set(peerSocketId, timer);
+
+    // Also cancel the timer immediately if P2P succeeds
+    pc.addEventListener('connectionstatechange', () => {
+      if (pc.connectionState === 'connected') {
+        const t = p2pTimeoutsRef.current.get(peerSocketId);
+        if (t) {
+          clearTimeout(t);
+          p2pTimeoutsRef.current.delete(peerSocketId);
+        }
+      }
+    });
+  }, [switchPeerToRelay]);
 
   // 3. Update Audio Sender on all active peer connections without renegotiation
   const updateActiveAudioTrack = useCallback((track: MediaStreamTrack | null) => {
@@ -451,18 +663,64 @@ export const CallStage: React.FC<CallStageProps> = ({
       audio.remove();
     });
     remoteAudiosRef.current.clear();
+
+    // Relay cleanup
+    stopRelayRecorder();
+    p2pTimeoutsRef.current.forEach(t => clearTimeout(t));
+    p2pTimeoutsRef.current.clear();
+    relayPeersRef.current.clear();
+    relayAudioElemsRef.current.forEach(audio => {
+      audio.srcObject = null;
+      if (audio.src) URL.revokeObjectURL(audio.src);
+      audio.remove();
+    });
+    relayAudioElemsRef.current.clear();
+    relayMediaSourcesRef.current.clear();
+
     setRemoteVideoStreams({});
     setRemoteAudioStreams({});
-  }, []);
+  }, [stopRelayRecorder]);
 
-  // 7. WebRTC Peer Connection Factory with Transceivers
+  // 7. WebRTC Peer Connection Factory with Transceivers + auto relay fallback
   const createPeerConnection = useCallback((targetSocketId: string) => {
     if (peerConnectionsRef.current.has(targetSocketId)) {
       return peerConnectionsRef.current.get(targetSocketId)!;
     }
 
-    const pc = new RTCPeerConnection(RTC_CONFIG);
+    const pc = new RTCPeerConnection({
+      iceServers: STUN_ONLY_CONFIG.iceServers,
+      iceCandidatePoolSize: 10,
+    });
     peerConnectionsRef.current.set(targetSocketId, pc);
+
+    // ICE gathering timeout — if gathering isn't done in 8s, proceed with
+    // whatever candidates we have (prevents hanging on slow STUN servers)
+    let iceGatheringTimer: ReturnType<typeof setTimeout> | null = setTimeout(() => {
+      iceGatheringTimer = null;
+      if (pc.iceGatheringState !== 'complete' && pc.signalingState !== 'closed') {
+        pc.dispatchEvent(new Event('icegatheringcomplete'));
+      }
+    }, 8000);
+
+    pc.onicegatheringstatechange = () => {
+      if (pc.iceGatheringState === 'complete' && iceGatheringTimer) {
+        clearTimeout(iceGatheringTimer);
+        iceGatheringTimer = null;
+      }
+    };
+
+    // Connection health: on 'failed' or after P2P_TIMEOUT_MS with no connection,
+    // seamlessly fall back to Socket.IO relay
+    pc.onconnectionstatechange = () => {
+      const state = pc.connectionState;
+      if (state === 'failed') {
+        console.warn(`[WebRTC] P2P to ${targetSocketId} failed → switching to relay`);
+        switchPeerToRelay(targetSocketId, effectiveRoomId, socket);
+      }
+    };
+
+    // Schedule relay fallback if P2P hasn't connected within P2P_TIMEOUT_MS
+    schedulePeerFallback(targetSocketId, pc, effectiveRoomId, socket);
 
     // Audio sender/transceiver
     const audioTrack = localStreamRef.current?.getAudioTracks()[0] || null;
@@ -900,6 +1158,28 @@ export const CallStage: React.FC<CallStageProps> = ({
       socket.on('voice-chat-message', (msg: any) => {
         setChatMessages(prev => [...prev, msg]);
       });
+
+      // 14. Relay: a peer is switching to Socket.IO relay mode
+      socket.on('voice-relay-start', ({ fromSocketId }: { fromSocketId: string }) => {
+        // They're on relay — make sure we are relaying our audio to them too
+        if (!relayPeersRef.current.has(fromSocketId)) {
+          relayPeersRef.current.add(fromSocketId);
+          setupRelayReceiver(fromSocketId);
+        }
+        startRelayRecorder(effectiveRoomId, socket);
+      });
+
+      // 15. Relay: incoming audio/video chunk from a peer via server
+      socket.on('voice-relay-chunk', ({ fromSocketId, kind, chunk }: {
+        fromSocketId: string;
+        kind: 'audio' | 'video';
+        chunk: ArrayBuffer;
+      }) => {
+        if (kind === 'audio') {
+          feedRelayChunk(fromSocketId, chunk);
+        }
+        // video relay is not implemented (bandwidth cost); video still uses P2P
+      });
     }
 
     return () => {
@@ -920,10 +1200,12 @@ export const CallStage: React.FC<CallStageProps> = ({
         socket.off('voice-speaker-decision');
         socket.off('voice-user-kicked');
         socket.off('voice-chat-message');
+        socket.off('voice-relay-start');
+        socket.off('voice-relay-chunk');
       }
       stopAllMedia();
     };
-  }, [effectiveRoomId, user?.id, socket, initHardwareMicrophone, createPeerConnection, stopAllMedia]);
+  }, [effectiveRoomId, user?.id, socket, initHardwareMicrophone, createPeerConnection, stopAllMedia, setupRelayReceiver, startRelayRecorder, feedRelayChunk]);
 
   // Microphone Toggle
   const handleToggleMic = () => {
@@ -946,6 +1228,17 @@ export const CallStage: React.FC<CallStageProps> = ({
 
     if (localStreamRef.current) {
       localStreamRef.current.getAudioTracks().forEach(t => { t.enabled = !nextMuted; });
+    }
+
+    // Pause/resume relay recorder track in sync with mute state
+    if (relayRecorderRef.current) {
+      try {
+        if (nextMuted && relayRecorderRef.current.state === 'recording') {
+          relayRecorderRef.current.pause();
+        } else if (!nextMuted && relayRecorderRef.current.state === 'paused') {
+          relayRecorderRef.current.resume();
+        }
+      } catch (_) {}
     }
 
     setParticipants(prev => prev.map(p => 
