@@ -144,6 +144,21 @@ export const Register: React.FC = () => {
               </div>
             </div>
 
+            <div className="flex items-start gap-3 mt-1 p-1">
+              <input
+                id="accept-terms"
+                type="checkbox"
+                checked={acceptTerms}
+                onChange={(e) => setAcceptTerms(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
+              />
+              <label htmlFor="accept-terms" className="text-sm text-slate-600 cursor-pointer select-none">
+                Li e aceito os{' '}
+                <span className="font-semibold text-blue-600 hover:underline">Termos de Serviço</span> e a{' '}
+                <span className="font-semibold text-blue-600 hover:underline">Política de Privacidade</span> da plataforma LearnSpace.
+              </label>
+            </div>
+
             <button
               type="submit"
               disabled={isLoading}
