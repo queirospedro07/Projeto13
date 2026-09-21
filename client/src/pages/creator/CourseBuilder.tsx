@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, Link, useParams } from 'react-router-dom';
 import { 
   Layers, 
   Hash, 
@@ -41,7 +41,12 @@ import {
   Lock,
   Unlock,
   Copy,
-  Monitor
+  Monitor,
+  Camera,
+  ImagePlus,
+  Loader2,
+  FileEdit,
+  Send
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
@@ -603,12 +608,17 @@ const PRESET_THUMBNAILS = [
 
 export const CourseBuilder: React.FC = () => {
   const navigate = useNavigate();
+  const { courseId: editCourseId } = useParams<{ courseId: string }>();
+  const isEditMode = !!editCourseId;
   const { user } = useAuth();
   const { toast } = useToast();
 
   const [activeStep, setActiveStep] = useState<1 | 2 | 3 | 4>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+
+  // Draft vs Published toggle
+  const [isPublished, setIsPublished] = useState(true);
 
   // Step 1: Identity & Pricing
   const [title, setTitle] = useState('');
@@ -623,6 +633,8 @@ export const CourseBuilder: React.FC = () => {
   const [couponCode, setCouponCode] = useState('');
   const [durationHours, setDurationHours] = useState('10');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
+  const [isCompressingThumb, setIsCompressingThumb] = useState(false);
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const [brandColor, setBrandColor] = useState<'indigo' | 'cyan' | 'emerald' | 'rose' | 'amber' | 'violet' | 'slate'>('indigo');
 
   // Gamification & Certificate
@@ -971,8 +983,108 @@ export const CourseBuilder: React.FC = () => {
     );
   };
 
+  // ── Edit mode: load existing course data ─────────────────────────────────────
+  useEffect(() => {
+    if (!isEditMode || !editCourseId) return;
+
+    api.getCreatorCourse(editCourseId).then(course => {
+      if (!course) return;
+      setTitle(course.title || '');
+      setDescription(course.description || '');
+      setCategory(course.category || 'programming');
+      setDifficulty(course.difficulty || 'Iniciante');
+      setLanguage(course.language || 'Português');
+      setIsFree(course.isFree !== false);
+      setPrice(String(course.price || ''));
+      setDurationHours(String(course.durationHours || 10));
+      setThumbnailUrl(course.thumbnailUrl || '');
+      setBrandColor(course.brandColor || 'indigo');
+      setIsPublished(course.isPublished !== false);
+      setDefaultCallMode(course.defaultCallMode || 'open');
+      setAllowStudentScreenShare(course.allowStudentScreenShare !== false);
+      setAllowStudentCamera(course.allowStudentCamera !== false);
+
+      if (Array.isArray(course.modules) && course.modules.length > 0) {
+        setModules(course.modules.map((m: any) => ({
+          id: m.id,
+          title: m.title || '',
+          description: m.description || '',
+          dripMode: m.dripMode || 'instant',
+          dripDays: m.dripDays || 0,
+          lessons: (m.lessons || []).map((l: any) => ({
+            id: l.id,
+            title: l.title || '',
+            type: l.type || 'video',
+            durationMin: l.durationMin || 15,
+            videoUrl: l.videoUrl || '',
+            content: typeof l.content === 'string' ? l.content : '',
+            xpReward: l.xpReward || 25,
+          })),
+        })));
+      }
+
+      if (Array.isArray(course.channels) && course.channels.length > 0) {
+        setChannels(course.channels.map((ch: any) => ({
+          id: ch.id,
+          name: ch.name || '',
+          type: ch.type || 'text',
+          accessMode: ch.accessMode || 'discussion',
+          voiceMode: ch.voiceMode || 'open',
+          topic: ch.topic || '',
+          guidingQuestion: ch.guidingQuestion || '',
+          guidelines: ch.guidelines || '',
+        })));
+      }
+    }).catch(() => {
+      toast({ title: 'Erro', message: 'Não foi possível carregar o curso para edição.', type: 'error' });
+    });
+  }, [editCourseId, isEditMode]);
+
   // Submit / Publish Course
-  const handlePublish = async () => {
+  const handleThumbnailFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Ficheiro inválido', message: 'Selecione uma imagem (JPG, PNG, WebP).', type: 'error' });
+      return;
+    }
+    setIsCompressingThumb(true);
+    try {
+      // Client-side compression without any library
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let { width, height } = img;
+            const max = 1200;
+            if (width > max || height > max) {
+              if (width > height) { height = Math.round((height / width) * max); width = max; }
+              else { width = Math.round((width / height) * max); height = max; }
+            }
+            canvas.width = width; canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) { reject(new Error('canvas')); return; }
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', 0.82));
+          };
+          img.onerror = reject;
+          img.src = ev.target?.result as string;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      setThumbnailUrl(base64);
+    } catch {
+      toast({ title: 'Erro', message: 'Não foi possível processar a imagem.', type: 'error' });
+    } finally {
+      setIsCompressingThumb(false);
+      if (thumbnailInputRef.current) thumbnailInputRef.current.value = '';
+    }
+  };
+
+  const handlePublish = async (publish = true) => {
     if (!title.trim()) {
       toast({ title: 'Campo Obrigatório', message: 'Por favor, introduza o título do curso no Passo 1.', type: 'error' });
       setActiveStep(1);
@@ -991,6 +1103,7 @@ export const CourseBuilder: React.FC = () => {
         language,
         price: isFree ? 0 : Number(price || 0),
         isFree,
+        isPublished: publish,
         hasDiscount,
         discountPrice: Number(discountPrice || 0),
         couponCode: couponCode.trim(),
@@ -1018,9 +1131,24 @@ export const CourseBuilder: React.FC = () => {
         modules,
       };
 
-      const result = await api.createCourse(payload);
-      toast({ title: 'Curso Criado com Sucesso', message: 'O curso, canais e regras foram publicados com sucesso!', type: 'success' });
-      navigate(`/learn/${result.id || result.slug}`);
+      let resultId: string;
+
+      if (isEditMode && editCourseId) {
+        await api.updateCourse(editCourseId, payload);
+        resultId = editCourseId;
+      } else {
+        const result = await api.createCourse(payload);
+        resultId = result.id || result.slug;
+      }
+
+      toast({
+        title: publish ? (isEditMode ? 'Curso Atualizado!' : 'Curso Publicado!') : 'Rascunho Guardado!',
+        message: publish
+          ? (isEditMode ? 'As alterações foram guardadas e publicadas.' : 'O curso está agora visível para os estudantes.')
+          : 'O curso foi guardado como rascunho.',
+        type: 'success'
+      });
+      navigate(isEditMode ? '/creator' : `/learn/${resultId}`);
     } catch (err: any) {
       toast({ title: 'Erro ao Publicar', message: err.message || 'Não foi possível publicar o curso.', type: 'error' });
     } finally {
@@ -1069,10 +1197,10 @@ export const CourseBuilder: React.FC = () => {
             <div>
               <div className="flex items-center gap-2.5">
                 <h1 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
-                  Criador de Cursos Profissional
+                  {isEditMode ? 'Editar Curso' : 'Criador de Cursos Profissional'}
                 </h1>
                 <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
-                  Estúdio do Professor
+                  {isEditMode ? 'Modo Edição' : 'Estúdio do Professor'}
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
@@ -1095,11 +1223,21 @@ export const CourseBuilder: React.FC = () => {
               Pré-visualizar
             </Button>
             <Button
+              variant="secondary"
+              size="sm"
+              leftIcon={<FileEdit className="w-4 h-4" />}
+              isLoading={isSubmitting}
+              onClick={() => handlePublish(false)}
+              className="font-bold cursor-pointer rounded-xl text-xs border border-slate-200 dark:border-[#2b3144]"
+            >
+              Guardar Rascunho
+            </Button>
+            <Button
               variant="primary"
               size="sm"
-              leftIcon={<Check className="w-4 h-4" />}
+              leftIcon={<Send className="w-4 h-4" />}
               isLoading={isSubmitting}
-              onClick={handlePublish}
+              onClick={() => handlePublish(true)}
               className="font-black rounded-xl text-xs bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/25 cursor-pointer"
             >
               Publicar Curso
@@ -1209,14 +1347,55 @@ export const CourseBuilder: React.FC = () => {
                 </div>
 
                 <div className="flex flex-col gap-1.5 md:col-span-2">
-                  <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">Imagem de Capa (URL)</label>
-                  <input
-                    type="text"
-                    value={thumbnailUrl}
-                    onChange={(e) => setThumbnailUrl(e.target.value)}
-                    placeholder="https://... ou escolha um tema sugerido abaixo"
-                    className="bg-white dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none font-mono text-xs transition-colors"
-                  />
+                  <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">Imagem de Capa</label>
+                  {/* Preview */}
+                  {thumbnailUrl && (
+                    <div className="relative w-full h-32 rounded-xl overflow-hidden border border-slate-200 dark:border-[#2b3044] mb-1">
+                      {isCompressingThumb ? (
+                        <div className="absolute inset-0 bg-slate-100 dark:bg-[#181a24] flex items-center justify-center">
+                          <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
+                        </div>
+                      ) : (
+                        <img
+                          src={thumbnailUrl}
+                          alt="Capa do curso"
+                          className="w-full h-full object-cover"
+                          onError={() => setThumbnailUrl('')}
+                        />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setThumbnailUrl('')}
+                        className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 cursor-pointer transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => thumbnailInputRef.current?.click()}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-[#202433] hover:bg-slate-200 dark:hover:bg-[#2b3144] text-slate-700 dark:text-zinc-300 text-xs font-bold border border-slate-200 dark:border-[#2b3144] cursor-pointer transition-colors shrink-0"
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                      Carregar
+                    </button>
+                    <input
+                      ref={thumbnailInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleThumbnailFileChange}
+                    />
+                    <input
+                      type="text"
+                      value={thumbnailUrl.startsWith('data:') ? '' : thumbnailUrl}
+                      onChange={(e) => setThumbnailUrl(e.target.value)}
+                      placeholder="Ou cole um URL de imagem..."
+                      className="flex-1 bg-white dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none font-mono placeholder:text-slate-400 dark:placeholder:text-zinc-500 transition-colors"
+                    />
+                  </div>
                   <div className="flex flex-wrap items-center gap-2 mt-1">
                     <span className="text-[11px] text-slate-500 dark:text-zinc-400">Sugestões rápidas:</span>
                     {PRESET_THUMBNAILS.map((pt, idx) => (
@@ -2256,7 +2435,7 @@ export const CourseBuilder: React.FC = () => {
                   variant="primary"
                   size="lg"
                   isLoading={isSubmitting}
-                  onClick={handlePublish}
+                  onClick={() => handlePublish(true)}
                   leftIcon={<Check className="w-5 h-5" />}
                   className="bg-indigo-600 hover:bg-indigo-500 text-white font-black px-8 py-3.5 rounded-2xl shadow-xl shadow-indigo-600/30 cursor-pointer"
                 >

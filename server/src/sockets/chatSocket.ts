@@ -14,6 +14,7 @@ interface VoiceUser {
   isMuted?: boolean;
   isCameraOn?: boolean;
   isScreenSharing?: boolean;
+  bannerUrl?: string;
 }
 
 const onlineUsers = new Map<string, UserPresence>();
@@ -110,7 +111,8 @@ export function setupSocketIO(io: Server) {
         socketId: p.socketId,
         isMuted: p.isMuted,
         isCameraOn: p.isCameraOn,
-        isScreenSharing: p.isScreenSharing
+        isScreenSharing: p.isScreenSharing,
+        bannerUrl: p.user?.bannerUrl,
       }));
       socket.emit('voice-room-existing-users', existingParticipants);
 
@@ -121,7 +123,8 @@ export function setupSocketIO(io: Server) {
         roomId,
         isMuted: false,
         isCameraOn: false,
-        isScreenSharing: false
+        isScreenSharing: false,
+        bannerUrl: user?.bannerUrl,
       });
 
       // 3. Notify other participants in the room

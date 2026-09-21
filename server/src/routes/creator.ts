@@ -62,6 +62,113 @@ router.get('/stats', authenticate, requireRole('CREATOR', 'ADMIN'), async (req: 
   }
 });
 
+// GET /api/creator/courses/:courseId — fetch single course for editing
+router.get('/courses/:courseId', authenticate, requireRole('CREATOR', 'ADMIN'), async (req: AuthRequest, res: Response) => {
+  try {
+    const { courseId } = req.params;
+    const creatorId = req.user!.id;
+
+    const course = queryOne<any>(
+      `SELECT c.*,
+              (SELECT COUNT(*) FROM enrollments WHERE courseId = c.id) as studentsCount,
+              (SELECT COUNT(*) FROM course_modules WHERE courseId = c.id) as modulesCount
+       FROM courses c
+       WHERE c.id = ? AND (c.creatorId = ? OR ? = 'ADMIN')`,
+      [courseId, creatorId, req.user!.role]
+    );
+
+    if (!course) return res.status(404).json({ error: 'Curso não encontrado ou sem permissão' });
+
+    // Load modules + lessons
+    const modules = queryAll<any>(
+      `SELECT * FROM course_modules WHERE courseId = ? ORDER BY orderIndex ASC`,
+      [courseId]
+    );
+    for (const mod of modules) {
+      mod.lessons = queryAll<any>(
+        `SELECT * FROM lessons WHERE moduleId = ? ORDER BY orderIndex ASC`,
+        [mod.id]
+      );
+    }
+
+    // Load channels
+    const spaceId = course.spaceId;
+    const channels = spaceId
+      ? queryAll<any>(`SELECT * FROM channels WHERE spaceId = ? ORDER BY orderIndex ASC`, [spaceId])
+      : [];
+
+    return res.json({
+      ...course,
+      isFree: course.isFree === 1,
+      isPublished: course.isPublished === 1,
+      allowStudentScreenShare: course.allowStudentScreenShare === 1,
+      allowStudentCamera: course.allowStudentCamera === 1,
+      modules,
+      channels,
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Falha ao carregar curso' });
+  }
+});
+
+// PUT /api/creator/courses/:courseId — update course (edit mode)
+router.put('/courses/:courseId', authenticate, requireRole('CREATOR', 'ADMIN'), async (req: AuthRequest, res: Response) => {
+  try {
+    const { courseId } = req.params;
+    const creatorId = req.user!.id;
+
+    // Ownership check
+    if (req.user!.role !== 'ADMIN') {
+      const owned = queryOne('SELECT id FROM courses WHERE id = ? AND creatorId = ?', [courseId, creatorId]);
+      if (!owned) return res.status(403).json({ error: 'Sem permissão para editar este curso' });
+    }
+
+    const {
+      title, description, category, difficulty, language,
+      price, isFree, isPublished, thumbnailUrl, bannerUrl,
+      durationHours, defaultCallMode, allowStudentScreenShare, allowStudentCamera,
+    } = req.body;
+
+    const now = new Date().toISOString();
+
+    execute(
+      `UPDATE courses SET
+        title = COALESCE(?, title),
+        description = COALESCE(?, description),
+        category = COALESCE(?, category),
+        difficulty = COALESCE(?, difficulty),
+        language = COALESCE(?, language),
+        price = COALESCE(?, price),
+        isFree = COALESCE(?, isFree),
+        isPublished = COALESCE(?, isPublished),
+        thumbnailUrl = COALESCE(?, thumbnailUrl),
+        bannerUrl = COALESCE(?, bannerUrl),
+        durationHours = COALESCE(?, durationHours),
+        defaultCallMode = COALESCE(?, defaultCallMode),
+        allowStudentScreenShare = COALESCE(?, allowStudentScreenShare),
+        allowStudentCamera = COALESCE(?, allowStudentCamera),
+        updatedAt = ?
+       WHERE id = ?`,
+      [
+        title || null, description || null, category || null, difficulty || null, language || null,
+        price !== undefined ? price : null,
+        isFree !== undefined ? (isFree ? 1 : 0) : null,
+        isPublished !== undefined ? (isPublished ? 1 : 0) : null,
+        thumbnailUrl || null, bannerUrl || null,
+        durationHours !== undefined ? Number(durationHours) : null,
+        defaultCallMode || null,
+        allowStudentScreenShare !== undefined ? (allowStudentScreenShare ? 1 : 0) : null,
+        allowStudentCamera !== undefined ? (allowStudentCamera ? 1 : 0) : null,
+        now, courseId,
+      ]
+    );
+
+    return res.json({ success: true, id: courseId });
+  } catch (err) {
+    return res.status(500).json({ error: 'Falha ao atualizar curso' });
+  }
+});
+
 // GET /api/creator/courses
 router.get('/courses', authenticate, requireRole('CREATOR', 'ADMIN'), async (req: AuthRequest, res: Response) => {
   try {
@@ -446,6 +553,14 @@ router.get('/members', authenticate, requireRole('CREATOR', 'ADMIN'), async (req
 router.get('/courses/:courseId/roles', authenticate, requireRole('CREATOR', 'ADMIN'), async (req: AuthRequest, res: Response) => {
   try {
     const { courseId } = req.params;
+    const creatorId = req.user!.id;
+
+    // Verify the requesting creator owns this course (IDOR protection)
+    if (req.user!.role !== 'ADMIN') {
+      const owned = queryOne('SELECT id FROM courses WHERE id = ? AND creatorId = ?', [courseId, creatorId]);
+      if (!owned) return res.status(403).json({ error: 'Acesso negado a este curso' });
+    }
+
     const roles = queryAll<any>(
       `SELECT * FROM course_roles WHERE courseId = ? ORDER BY orderIndex ASC`,
       [courseId]
@@ -460,6 +575,13 @@ router.get('/courses/:courseId/roles', authenticate, requireRole('CREATOR', 'ADM
 router.post('/courses/:courseId/roles', authenticate, requireRole('CREATOR', 'ADMIN'), async (req: AuthRequest, res: Response) => {
   try {
     const { courseId } = req.params;
+    const creatorId = req.user!.id;
+
+    // Verify ownership (IDOR protection)
+    if (req.user!.role !== 'ADMIN') {
+      const owned = queryOne('SELECT id FROM courses WHERE id = ? AND creatorId = ?', [courseId, creatorId]);
+      if (!owned) return res.status(403).json({ error: 'Acesso negado a este curso' });
+    }
     const { name, color, canPostAnnouncements, canSpeakInStage, canShareScreen, canModerateChat, canManageVoice } = req.body;
 
     if (!name) {
@@ -497,6 +619,14 @@ router.post('/courses/:courseId/roles', authenticate, requireRole('CREATOR', 'AD
 router.put('/courses/:courseId/members/:userId/role', authenticate, requireRole('CREATOR', 'ADMIN'), async (req: AuthRequest, res: Response) => {
   try {
     const { courseId, userId } = req.params;
+    const creatorId = req.user!.id;
+
+    // Verify ownership (IDOR protection)
+    if (req.user!.role !== 'ADMIN') {
+      const owned = queryOne('SELECT id FROM courses WHERE id = ? AND creatorId = ?', [courseId, creatorId]);
+      if (!owned) return res.status(403).json({ error: 'Acesso negado a este curso' });
+    }
+
     const { roleId } = req.body;
     const now = new Date().toISOString();
 

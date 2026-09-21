@@ -19,9 +19,28 @@ router.post('/register', async (req, res: Response) => {
       return res.status(400).json({ error: 'Todos os campos são obrigatórios' });
     }
 
+    // Server-side validation (never trust client-only checks)
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'A palavra-passe deve ter pelo menos 6 caracteres' });
+    }
+    if (password.length > 128) {
+      return res.status(400).json({ error: 'A palavra-passe não pode exceder 128 caracteres' });
+    }
+    if (name.trim().length < 2 || name.trim().length > 80) {
+      return res.status(400).json({ error: 'O nome deve ter entre 2 e 80 caracteres' });
+    }
+    const usernameClean = username.toLowerCase().trim();
+    if (!/^[a-z0-9_]{3,30}$/.test(usernameClean)) {
+      return res.status(400).json({ error: 'O nome de utilizador deve ter 3–30 caracteres (letras, números e _)' });
+    }
+    const emailClean = email.toLowerCase().trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailClean)) {
+      return res.status(400).json({ error: 'Endereço de e-mail inválido' });
+    }
+
     const targetRole = role === 'CREATOR' ? 'CREATOR' : 'STUDENT';
-    const cleanUsername = username.toLowerCase().trim();
-    const cleanEmail = email.toLowerCase().trim();
+    const cleanUsername = usernameClean;
+    const cleanEmail = emailClean;
 
     // Check existing user with direct parameterized query
     const existing = queryOne(
@@ -219,7 +238,7 @@ router.get('/demo/:role', async (req, res: Response) => {
 router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const user = queryOne<any>(
-      `SELECT u.*, p.headline, p.website, p.github, p.twitter, p.linkedin, p.themePreference,
+      `SELECT u.*, p.headline, p.website, p.github, p.twitter, p.linkedin, p.bannerUrl, p.themePreference,
        (SELECT COUNT(*) FROM user_achievements WHERE userId = u.id) as achievementsCount
        FROM users u
        LEFT JOIN profiles p ON u.id = p.userId
@@ -252,6 +271,7 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
         github: user.github,
         twitter: user.twitter,
         linkedin: user.linkedin,
+        bannerUrl: user.bannerUrl,
         themePreference: user.themePreference,
       },
       achievementsCount: user.achievementsCount || 0,
@@ -265,40 +285,111 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
 // PUT /api/auth/profile
 router.put('/profile', authenticate, async (req: AuthRequest, res: Response) => {
   try {
-    const { name, bio, location, avatarUrl, headline, github, twitter, linkedin, themePreference } = req.body;
+    const { name, bio, location, avatarUrl, headline, github, twitter, linkedin, website, bannerUrl, themePreference } = req.body;
     const now = new Date().toISOString();
+
+    // Validate avatarUrl if provided — must be a URL or base64 data URL
+    if (avatarUrl && typeof avatarUrl === 'string') {
+      const isDataUrl = avatarUrl.startsWith('data:image/');
+      const isHttpUrl = avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://');
+      if (!isDataUrl && !isHttpUrl) {
+        return res.status(400).json({ error: 'URL de avatar inválido' });
+      }
+      // Limit base64 size to ~2MB
+      if (isDataUrl && avatarUrl.length > 2_800_000) {
+        return res.status(400).json({ error: 'A imagem de perfil não pode exceder 2MB' });
+      }
+    }
+
+    // Validate bannerUrl if provided
+    if (bannerUrl && typeof bannerUrl === 'string') {
+      const isDataUrl = bannerUrl.startsWith('data:image/');
+      const isHttpUrl = bannerUrl.startsWith('http://') || bannerUrl.startsWith('https://');
+      if (!isDataUrl && !isHttpUrl) {
+        return res.status(400).json({ error: 'URL de banner inválido' });
+      }
+      if (isDataUrl && bannerUrl.length > 2_800_000) {
+        return res.status(400).json({ error: 'A imagem de banner não pode exceder 2MB' });
+      }
+    }
 
     transaction(() => {
       execute(
         `UPDATE users SET name = COALESCE(?, name), bio = COALESCE(?, bio), location = COALESCE(?, location), avatarUrl = COALESCE(?, avatarUrl), updatedAt = ? WHERE id = ?`,
-        [name, bio, location, avatarUrl, now, req.user!.id]
+        [name || null, bio || null, location || null, avatarUrl || null, now, req.user!.id]
       );
+
+      // Run ALTER TABLE migration for bannerUrl column if it doesn't exist yet
+      try {
+        execute(`ALTER TABLE profiles ADD COLUMN bannerUrl TEXT`, []);
+      } catch (_) { /* column already exists — safe to ignore */ }
 
       const profileExists = queryOne('SELECT id FROM profiles WHERE userId = ?', [req.user!.id]);
       if (profileExists) {
         execute(
-          `UPDATE profiles SET headline = COALESCE(?, headline), github = COALESCE(?, github), twitter = COALESCE(?, twitter), linkedin = COALESCE(?, linkedin), themePreference = COALESCE(?, themePreference) WHERE userId = ?`,
-          [headline, github, twitter, linkedin, themePreference, req.user!.id]
+          `UPDATE profiles SET
+            headline = COALESCE(?, headline),
+            github = COALESCE(?, github),
+            twitter = COALESCE(?, twitter),
+            linkedin = COALESCE(?, linkedin),
+            website = COALESCE(?, website),
+            bannerUrl = COALESCE(?, bannerUrl),
+            themePreference = COALESCE(?, themePreference)
+           WHERE userId = ?`,
+          [headline || null, github || null, twitter || null, linkedin || null, website || null, bannerUrl || null, themePreference || null, req.user!.id]
         );
       } else {
         execute(
-          `INSERT INTO profiles (id, userId, headline, github, twitter, linkedin, themePreference) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [`prof-${req.user!.id}`, req.user!.id, headline, github, twitter, linkedin, themePreference || 'light']
+          `INSERT INTO profiles (id, userId, headline, github, twitter, linkedin, website, bannerUrl, themePreference)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [`prof-${req.user!.id}`, req.user!.id, headline, github, twitter, linkedin, website, bannerUrl, themePreference || 'light']
         );
       }
     });
 
     const updated = queryOne<any>(
-      `SELECT u.*, p.headline, p.website, p.github, p.twitter, p.linkedin, p.themePreference
+      `SELECT u.*, p.headline, p.website, p.github, p.twitter, p.linkedin, p.bannerUrl, p.themePreference
        FROM users u
        LEFT JOIN profiles p ON u.id = p.userId
        WHERE u.id = ?`,
       [req.user!.id]
     );
 
-    return res.json({ user: updated });
+    return res.json({
+      user: {
+        ...updated,
+        profile: {
+          headline: updated?.headline,
+          website: updated?.website,
+          github: updated?.github,
+          twitter: updated?.twitter,
+          linkedin: updated?.linkedin,
+          bannerUrl: updated?.bannerUrl,
+          themePreference: updated?.themePreference,
+        }
+      }
+    });
   } catch (err) {
     return res.status(500).json({ error: 'Falha ao atualizar perfil' });
+  }
+});
+
+// POST /api/auth/clear-avatar-field — clear specific profile image fields
+router.post('/profile/clear-field', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { field } = req.body;
+    if (!['avatarUrl', 'bannerUrl'].includes(field)) {
+      return res.status(400).json({ error: 'Campo inválido' });
+    }
+    const now = new Date().toISOString();
+    if (field === 'avatarUrl') {
+      execute(`UPDATE users SET avatarUrl = NULL, updatedAt = ? WHERE id = ?`, [now, req.user!.id]);
+    } else {
+      execute(`UPDATE profiles SET bannerUrl = NULL WHERE userId = ?`, [req.user!.id]);
+    }
+    return res.json({ success: true });
+  } catch (err) {
+    return res.status(500).json({ error: 'Falha ao limpar campo' });
   }
 });
 

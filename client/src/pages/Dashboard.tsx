@@ -275,7 +275,7 @@ export const Dashboard: React.FC = () => {
       </ResponsiveContainer>
      </div>
 
-     <div className="grid grid-cols-4 gap-4 pt-6 mt-4 border-t border-slate-100 dark:border-zinc-800 text-center">
+     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 mt-4 border-t border-slate-100 dark:border-zinc-800 text-center">
       <div>
        <p className="text-slate-400 dark:text-zinc-500 text-xs font-bold uppercase tracking-wider">Inscritos</p>
        <p className="font-black text-slate-900 dark:text-white text-lg mt-1">{myCourses.length}</p>

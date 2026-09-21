@@ -45,6 +45,7 @@ export const api = {
   demoLogin: (role: string) => request<any>(`/auth/demo/${role}`),
   getMe: () => request<any>('/auth/me'),
   updateProfile: (profile: any) => request<any>('/auth/profile', { method: 'PUT', body: JSON.stringify(profile) }),
+  clearProfileField: (field: 'avatarUrl' | 'bannerUrl') => request<any>('/auth/profile/clear-field', { method: 'POST', body: JSON.stringify({ field }) }),
   forgotPassword: (email: string) => request<any>('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
 
   // Courses
@@ -117,6 +118,7 @@ export const api = {
   getCreatorCourses: () => request<any[]>('/creator/courses'),
   getCreatorCourse: (id: string) => request<any>(`/creator/courses/${id}`),
   createCourse: (data: any) => request<any>('/creator/courses', { method: 'POST', body: JSON.stringify(data) }),
+  updateCourse: (id: string, data: any) => request<any>(`/creator/courses/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteCourse: (id: string) => request<any>(`/creator/courses/${id}`, { method: 'DELETE' }),
   getCreatorMembers: () => request<any[]>('/creator/members'),
   getCourseRoles: (courseId: string) => request<any[]>(`/creator/courses/${courseId}/roles`),

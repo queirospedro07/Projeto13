@@ -181,55 +181,59 @@ export const CreatorDashboard: React.FC = () => {
         </div>
 
         <Card className="p-0 overflow-hidden bg-white border-slate-200 shadow-sm">
-          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-500">
-            <span>Nome do Espaço</span>
-            <div className="flex items-center gap-10">
-              <span className="w-16 text-center">Membros</span>
-              <span className="w-16 text-center">Módulos</span>
-              <span className="w-16 text-center">Acesso</span>
-              <span className="w-40 text-right">Ações</span>
-            </div>
-          </div>
-
-          <div className="divide-y divide-slate-100">
-            {courses.length === 0 ? (
-              <div className="p-12 text-center text-sm font-medium text-slate-500">
-                Ainda não criou nenhum espaço. Clique em "Criar Espaço" para lançar a sua primeira comunidade de aprendizagem!
+          <div className="overflow-x-auto">
+            <div className="min-w-[620px]">
+              <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-500">
+                <span>Nome do Espaço</span>
+                <div className="flex items-center gap-8">
+                  <span className="w-16 text-center">Membros</span>
+                  <span className="w-16 text-center">Módulos</span>
+                  <span className="w-16 text-center">Acesso</span>
+                  <span className="w-40 text-right">Ações</span>
+                </div>
               </div>
-            ) : (
-              courses.map(course => (
-                <div key={course.id} className="px-6 py-5 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                  <div className="flex items-center gap-4 min-w-0">
-                    <img src={course.thumbnailUrl} alt={course.title} className="w-14 h-14 rounded-2xl object-cover border border-slate-200 shrink-0" />
-                    <div className="min-w-0">
-                      <h4 className="font-bold text-slate-900 text-base truncate max-w-sm">{course.title}</h4>
-                      <div className="flex items-center gap-2.5 mt-1">
-                        <Badge size="sm" variant="primary">{course.category}</Badge>
-                        <span className="text-xs text-slate-400 font-medium">• {course.difficulty}</span>
+
+              <div className="divide-y divide-slate-100">
+                {courses.length === 0 ? (
+                  <div className="p-12 text-center text-sm font-medium text-slate-500">
+                    Ainda não criou nenhum espaço. Clique em "Criar Espaço" para lançar a sua primeira comunidade de aprendizagem!
+                  </div>
+                ) : (
+                  courses.map(course => (
+                    <div key={course.id} className="px-6 py-5 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                      <div className="flex items-center gap-4 min-w-0">
+                        <img src={course.thumbnailUrl} alt={course.title} className="w-14 h-14 rounded-2xl object-cover border border-slate-200 shrink-0" />
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-slate-900 text-base truncate max-w-[200px] sm:max-w-sm">{course.title}</h4>
+                          <div className="flex items-center gap-2.5 mt-1">
+                            <Badge size="sm" variant="primary">{course.category}</Badge>
+                            <span className="text-xs text-slate-400 font-medium">• {course.difficulty}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-8 text-sm shrink-0">
+                        <span className="w-16 text-center text-slate-800 font-bold">{course._count?.enrollments || 0}</span>
+                        <span className="w-16 text-center text-slate-500">{course._count?.modules || 0}</span>
+                        <span className="w-16 text-center text-slate-900 font-bold">{course.isFree ? 'Grátis' : `€${course.price}`}</span>
+                        <div className="flex items-center justify-end gap-2 w-40">
+                          <Link to={`/learn/${course.id}`}>
+                            <Button variant="secondary" size="sm" leftIcon={<Eye className="w-3.5 h-3.5" />}>
+                              Ver
+                            </Button>
+                          </Link>
+                          <Link to={`/creator/courses/${course.id}/edit`}>
+                            <Button variant="primary" size="sm" leftIcon={<BookOpen className="w-3.5 h-3.5" />}>
+                              Editar
+                            </Button>
+                          </Link>
+                        </div>
                       </div>
                     </div>
-                  </div>
-
-                  <div className="flex items-center gap-10 text-sm">
-                    <span className="w-16 text-center text-slate-800 font-bold">{course._count?.enrollments || 0}</span>
-                    <span className="w-16 text-center text-slate-500">{course._count?.modules || 0}</span>
-                    <span className="w-16 text-center text-slate-900 font-bold">{course.isFree ? 'Grátis' : `€${course.price}`}</span>
-                    <div className="flex items-center justify-end gap-2 w-40">
-                      <Link to={`/learn/${course.id}`}>
-                        <Button variant="secondary" size="sm" leftIcon={<Eye className="w-3.5 h-3.5" />}>
-                          Ver
-                        </Button>
-                      </Link>
-                      <Link to="/creator/courses/new">
-                        <Button variant="primary" size="sm" leftIcon={<BookOpen className="w-3.5 h-3.5" />}>
-                          Editar
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         </Card>
       </div>

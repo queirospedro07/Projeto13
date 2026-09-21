@@ -21,6 +21,7 @@ export interface User {
     github?: string;
     twitter?: string;
     linkedin?: string;
+    bannerUrl?: string;
     isPublic?: boolean;
     showStreak?: boolean;
     showLeaderboard?: boolean;

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
+import { Menu } from 'lucide-react';
 import { Modal } from '../../components/ui/Modal';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
@@ -33,6 +34,8 @@ export const SpaceChat: React.FC = () => {
 
   // Voice room & call screen state
   const [inVoiceRoom, setInVoiceRoom] = useState<string | null>(null);
+  // Mobile: channel sidebar is hidden by default on small screens
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
   // Channel Creation & Configuration Modal
   const [showChannelModal, setShowChannelModal] = useState(false);
@@ -241,32 +244,50 @@ export const SpaceChat: React.FC = () => {
   });
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] overflow-hidden bg-white border border-slate-200 rounded-3xl shadow-sm">
+    <div className="flex h-[calc(100vh-4rem)] overflow-hidden bg-white border border-slate-200 rounded-3xl shadow-sm relative">
       
+      {/* Mobile sidebar backdrop */}
+      {showMobileSidebar && (
+        <div
+          className="fixed inset-0 z-20 bg-black/40 md:hidden"
+          onClick={() => setShowMobileSidebar(false)}
+        />
+      )}
+
       {/* 1. INTERACTIVE CHANNELS & VOICE SIDEBAR */}
-      <SpaceChannelList
-        space={space}
-        channels={channels}
-        currentChannel={currentChannel}
-        inVoiceRoom={inVoiceRoom}
-        isOwnerOrAdmin={isOwnerOrAdmin}
-        onSelectChannel={(ch) => {
-          setInVoiceRoom(null);
-          setCurrentChannel(ch);
-        }}
-        onSelectVoiceRoom={(roomName) => {
-          setInVoiceRoom(roomName);
-          soundEffects.playJoinCall();
-        }}
-        onDisconnectVoiceRoom={() => {
-          setInVoiceRoom(null);
-          soundEffects.playLeaveCall();
-        }}
-        onOpenCreateChannelModal={() => {
-          setNewChType('text');
-          setShowChannelModal(true);
-        }}
-      />
+      {/* On mobile: slide-over drawer. On md+: always visible. */}
+      <div className={`
+        absolute inset-y-0 left-0 z-30 transition-transform duration-200
+        md:relative md:translate-x-0 md:z-auto
+        ${showMobileSidebar ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        <SpaceChannelList
+          space={space}
+          channels={channels}
+          currentChannel={currentChannel}
+          inVoiceRoom={inVoiceRoom}
+          isOwnerOrAdmin={isOwnerOrAdmin}
+          onSelectChannel={(ch) => {
+            setInVoiceRoom(null);
+            setCurrentChannel(ch);
+            setShowMobileSidebar(false);
+          }}
+          onSelectVoiceRoom={(roomName) => {
+            setInVoiceRoom(roomName);
+            soundEffects.playJoinCall();
+            setShowMobileSidebar(false);
+          }}
+          onDisconnectVoiceRoom={() => {
+            setInVoiceRoom(null);
+            soundEffects.playLeaveCall();
+          }}
+          onOpenCreateChannelModal={() => {
+            setNewChType('text');
+            setShowChannelModal(true);
+            setShowMobileSidebar(false);
+          }}
+        />
+      </div>
 
       {/* 2. MAIN VIEW: IN-PAGE CALL STAGE OR TEXT CHAT STREAM */}
       {inVoiceRoom ? (
@@ -285,6 +306,15 @@ export const SpaceChat: React.FC = () => {
         />
       ) : (
         <>
+          {/* Mobile channel sidebar toggle button — visible only on small screens */}
+          <button
+            onClick={() => setShowMobileSidebar(true)}
+            className="md:hidden absolute top-3 left-3 z-10 p-2 rounded-xl bg-white border border-slate-200 shadow-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors cursor-pointer"
+            title="Canais"
+            aria-label="Abrir lista de canais"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
           <SpaceMessageStream
             currentChannel={currentChannel}
             messages={filteredMessages}

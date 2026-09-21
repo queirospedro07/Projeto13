@@ -108,6 +108,11 @@ export const App: React.FC = () => {
                       <CourseBuilder />
                     </ProtectedRoute>
                   } />
+                  <Route path="creator/courses/:courseId/edit" element={
+                    <ProtectedRoute requiredRole="CREATOR">
+                      <CourseBuilder />
+                    </ProtectedRoute>
+                  } />
                   <Route path="creator/members" element={
                     <ProtectedRoute requiredRole="CREATOR">
                       <CreatorMembers />

@@ -33,6 +33,7 @@ export function initializeSchemaAndSeed(db: any) {
       github TEXT,
       twitter TEXT,
       linkedin TEXT,
+      bannerUrl TEXT,
       isPublic INTEGER NOT NULL DEFAULT 1,
       showStreak INTEGER NOT NULL DEFAULT 1,
       showLeaderboard INTEGER NOT NULL DEFAULT 1,

@@ -42,6 +42,7 @@ export interface CallParticipant {
   name: string;
   username: string;
   avatarUrl?: string;
+  bannerUrl?: string;
   role?: string;
   isSpeaking?: boolean;
   isMuted?: boolean;
@@ -274,6 +275,7 @@ export const CallStage: React.FC<CallStageProps> = ({
       name: `${user.name} (Você)`,
       username: user.username,
       avatarUrl: user.avatarUrl,
+      bannerUrl: user.profile?.bannerUrl,
       role: user.role,
       isSpeaking: false,
       isMuted: roomMode === 'stage' && !isHostOrModerator,
@@ -817,6 +819,12 @@ export const CallStage: React.FC<CallStageProps> = ({
       await initHardwareMicrophone();
       if (isCancelled) return;
 
+      // After mic is acquired, start relay recorder for any peers that already
+      // switched to relay mode before getUserMedia finished (race condition fix)
+      if (relayPeersRef.current.size > 0) {
+        startRelayRecorder(effectiveRoomId, socket);
+      }
+
       if (socket && user?.id) {
         const roomPayload = {
           roomId: effectiveRoomId,
@@ -825,6 +833,7 @@ export const CallStage: React.FC<CallStageProps> = ({
             name: user.name,
             username: user.username,
             avatarUrl: user.avatarUrl,
+            bannerUrl: user.profile?.bannerUrl,
             role: user.role
           }
         };
@@ -856,6 +865,7 @@ export const CallStage: React.FC<CallStageProps> = ({
                 name: remoteUser.name,
                 username: remoteUser.username,
                 avatarUrl: remoteUser.avatarUrl,
+                bannerUrl: remoteUser.bannerUrl,
                 role: remoteUser.role,
                 isSpeaking: false,
                 isMuted: !!item.isMuted,
@@ -912,6 +922,7 @@ export const CallStage: React.FC<CallStageProps> = ({
             name: remoteUser.name,
             username: remoteUser.username,
             avatarUrl: remoteUser.avatarUrl,
+            bannerUrl: remoteUser.bannerUrl,
             role: remoteUser.role,
             isSpeaking: false,
             isMuted: false,
@@ -962,6 +973,7 @@ export const CallStage: React.FC<CallStageProps> = ({
                 name: callerUser.name,
                 username: callerUser.username,
                 avatarUrl: callerUser.avatarUrl,
+                bannerUrl: callerUser.bannerUrl,
                 role: callerUser.role,
                 isSpeaking: false,
                 isMuted: false,
@@ -1831,28 +1843,53 @@ export const CallStage: React.FC<CallStageProps> = ({
                         <VideoStreamPlayer stream={remoteStream} objectFit="cover" />
                       )
                     ) : (
-                      <div className="flex flex-col items-center justify-center p-4">
-                        <div className="relative">
-                          <Avatar 
-                            src={p.avatarUrl} 
-                            name={p.name} 
-                            size="lg" 
-                            className={`transition-transform duration-150 ${isTalking ? 'scale-105' : ''}`}
-                          />
-                          {isTalking && (
-                            <span className="absolute -inset-1 rounded-full border-2 border-emerald-500 animate-ping opacity-75 pointer-events-none"></span>
+                      <div
+                        className="flex flex-col items-center justify-center p-4 w-full h-full relative"
+                        style={
+                          p.bannerUrl && !p.bannerUrl.startsWith('gradient-')
+                            ? { backgroundImage: `url(${p.bannerUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                            : undefined
+                        }
+                      >
+                        {/* Gradient preset banner background */}
+                        {p.bannerUrl && p.bannerUrl.startsWith('gradient-') && (() => {
+                          const presetMap: Record<string, string> = {
+                            'gradient-indigo': 'from-blue-600 via-indigo-600 to-blue-700',
+                            'gradient-emerald': 'from-emerald-500 via-teal-500 to-cyan-600',
+                            'gradient-sunset': 'from-rose-500 via-orange-400 to-amber-400',
+                            'gradient-dusk': 'from-violet-600 via-purple-600 to-indigo-700',
+                            'gradient-aurora': 'from-cyan-400 via-blue-500 to-purple-600',
+                            'gradient-midnight': 'from-slate-800 via-slate-900 to-black',
+                          };
+                          const gradClasses = presetMap[p.bannerUrl] || 'from-blue-600 via-indigo-600 to-blue-700';
+                          return <div className={`absolute inset-0 bg-gradient-to-r ${gradClasses}`} />;
+                        })()}
+                        {/* Darkening overlay on top of banner for readability */}
+                        {p.bannerUrl && <div className="absolute inset-0 bg-black/30" />}
+
+                        <div className="relative z-10 flex flex-col items-center">
+                          <div className="relative">
+                            <Avatar
+                              src={p.avatarUrl}
+                              name={p.name}
+                              size="lg"
+                              className={`transition-transform duration-150 ${isTalking ? 'scale-105' : ''} ring-2 ring-white/60`}
+                            />
+                            {isTalking && (
+                              <span className="absolute -inset-1 rounded-full border-2 border-emerald-500 animate-ping opacity-75 pointer-events-none"></span>
+                            )}
+                          </div>
+                          <span className={`font-bold text-xs mt-2.5 truncate max-w-[140px] text-center ${p.bannerUrl ? 'text-white drop-shadow' : 'text-slate-800 dark:text-zinc-100'}`}>{p.name}</span>
+                          {p.role === 'CREATOR' && (
+                            <span className={`text-[10px] font-bold flex items-center gap-1 mt-0.5 ${p.bannerUrl ? 'text-indigo-200' : 'text-indigo-600 dark:text-indigo-400'}`}>
+                              <Crown className="w-3 h-3" />
+                              Instrutor
+                            </span>
+                          )}
+                          {roomMode === 'stage' && !p.canSpeak && p.role !== 'CREATOR' && p.role !== 'ADMIN' && (
+                            <span className={`text-[10px] font-medium mt-0.5 ${p.bannerUrl ? 'text-white/70' : 'text-slate-400'}`}>Ouvinte</span>
                           )}
                         </div>
-                        <span className="font-bold text-slate-800 dark:text-zinc-100 text-xs mt-2.5 truncate max-w-[140px] text-center">{p.name}</span>
-                        {p.role === 'CREATOR' && (
-                          <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1 mt-0.5">
-                            <Crown className="w-3 h-3" />
-                            Instrutor
-                          </span>
-                        )}
-                        {roomMode === 'stage' && !p.canSpeak && p.role !== 'CREATOR' && p.role !== 'ADMIN' && (
-                          <span className="text-[10px] font-medium text-slate-400 mt-0.5">Ouvinte</span>
-                        )}
                       </div>
                     )}
 
@@ -1918,7 +1955,7 @@ export const CallStage: React.FC<CallStageProps> = ({
         {/* RIGHT DRAWER: CHAT / MEMBERS / STAGE REQUESTS */}
         {/* =================================================================== */}
         {activeSideDrawer !== 'none' && (
-          <aside className="w-80 bg-white dark:bg-[#151720] border-l border-slate-200 dark:border-[#222636] flex flex-col shrink-0 z-20 animate-slide-in transition-colors">
+          <aside className="absolute inset-0 sm:relative sm:inset-auto w-full sm:w-80 bg-white dark:bg-[#151720] border-l border-slate-200 dark:border-[#222636] flex flex-col z-20 animate-slide-in transition-colors">
             
             {/* Drawer Header */}
             <div className="h-12 px-4 border-b border-slate-200 dark:border-[#222636] flex items-center justify-between shrink-0">
@@ -2111,24 +2148,25 @@ export const CallStage: React.FC<CallStageProps> = ({
       </div>
 
       {/* ======================================================================= */}
-      {/* 3. ESSENTIAL BOTTOM CONTROL DOCK */}
+      {/* 3. BOTTOM CONTROL DOCK — responsive two-row layout on mobile          */}
       {/* ======================================================================= */}
-      <footer className="h-20 bg-white dark:bg-[#151720] border-t border-slate-200 dark:border-[#222636] px-4 flex items-center justify-center shrink-0 z-30 transition-colors">
-        <div className="flex items-center gap-2 sm:gap-3 bg-slate-100 dark:bg-[#0c0d12] p-1.5 rounded-2xl border border-slate-200 dark:border-[#222636] shadow-sm">
-          
+      <footer className="bg-white dark:bg-[#151720] border-t border-slate-200 dark:border-[#222636] px-2 sm:px-4 py-2 sm:py-0 sm:h-20 flex flex-col sm:flex-row items-center justify-center gap-2 shrink-0 z-30 transition-colors pb-safe">
+        {/* Row 1 (mobile) / Single row (desktop): primary media controls + disconnect */}
+        <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-100 dark:bg-[#0c0d12] p-1.5 rounded-2xl border border-slate-200 dark:border-[#222636] shadow-sm w-full sm:w-auto justify-center">
+
           {/* 1. Microphone Toggle */}
           <button
             onClick={handleToggleMic}
-            className={`p-3 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-2 relative ${
-              isMicMuted 
-                ? 'bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30 hover:bg-red-500/25' 
+            className={`p-2.5 sm:p-3 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1.5 relative min-w-[44px] min-h-[44px] justify-center ${
+              isMicMuted
+                ? 'bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30 hover:bg-red-500/25'
                 : 'bg-white dark:bg-[#1e2230] text-emerald-600 dark:text-emerald-400 border border-slate-200 dark:border-[#2b3144] shadow-xs'
             }`}
-            title={!canSelfSpeak ? 'Microfone bloqueado pelo anfitrião (Modo Palco)' : isMicMuted ? 'Ativar Microfone' : 'Desativar Microfone'}
+            title={!canSelfSpeak ? 'Microfone bloqueado (Modo Palco)' : isMicMuted ? 'Ativar Microfone' : 'Desativar Microfone'}
           >
             {isMicMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
             {!isMicMuted && (
-              <span className="w-1.5 h-5 bg-emerald-500/25 rounded-full overflow-hidden flex flex-col justify-end">
+              <span className="hidden sm:flex w-1.5 h-5 bg-emerald-500/25 rounded-full overflow-hidden flex-col justify-end">
                 <span className="w-full bg-emerald-500 transition-all duration-75" style={{ height: `${micLevel}%` }}></span>
               </span>
             )}
@@ -2137,12 +2175,12 @@ export const CallStage: React.FC<CallStageProps> = ({
           {/* 2. Deafen Audio */}
           <button
             onClick={handleToggleDeafen}
-            className={`p-3 rounded-xl transition-all cursor-pointer ${
+            className={`p-2.5 sm:p-3 rounded-xl transition-all cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center ${
               isDeafened
                 ? 'bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30'
                 : 'bg-white dark:bg-[#1e2230] text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-[#2b3144] hover:bg-slate-50 dark:hover:bg-[#252a3b]'
             }`}
-            title={isDeafened ? 'Reativar Áudio da Sala' : 'Silenciar Todo o Áudio'}
+            title={isDeafened ? 'Reativar Áudio' : 'Silenciar Tudo'}
           >
             {isDeafened ? <VolumeX className="w-5 h-5" /> : <Headphones className="w-5 h-5" />}
           </button>
@@ -2150,9 +2188,9 @@ export const CallStage: React.FC<CallStageProps> = ({
           {/* 3. Camera Toggle */}
           <button
             onClick={handleToggleCamera}
-            className={`p-3 rounded-xl transition-all cursor-pointer ${
-              isCameraActive 
-                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30' 
+            className={`p-2.5 sm:p-3 rounded-xl transition-all cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center ${
+              isCameraActive
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
                 : 'bg-white dark:bg-[#1e2230] text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-[#2b3144] hover:bg-slate-50 dark:hover:bg-[#252a3b]'
             }`}
             title={isCameraActive ? 'Desligar Câmara' : 'Ligar Câmara'}
@@ -2160,15 +2198,15 @@ export const CallStage: React.FC<CallStageProps> = ({
             {isCameraActive ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
           </button>
 
-          {/* 4. Screen Sharing */}
+          {/* 4. Screen Sharing — hidden on mobile (not supported on most mobile browsers) */}
           <button
             onClick={handleToggleScreenShare}
-            className={`p-3 rounded-xl transition-all cursor-pointer ${
-              isScreenSharing 
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30' 
+            className={`hidden sm:flex p-3 rounded-xl transition-all cursor-pointer min-w-[44px] min-h-[44px] items-center justify-center ${
+              isScreenSharing
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
                 : 'bg-white dark:bg-[#1e2230] text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-[#2b3144] hover:bg-slate-50 dark:hover:bg-[#252a3b]'
             }`}
-            title={!canSelfShareScreen ? 'Partilha de ecrã restrita aos oradores' : isScreenSharing ? 'Parar Partilha' : 'Partilhar Ecrã'}
+            title={!canSelfShareScreen ? 'Partilha restrita' : isScreenSharing ? 'Parar Partilha' : 'Partilhar Ecrã'}
           >
             {isScreenSharing ? <Monitor className="w-5 h-5" /> : <MonitorOff className="w-5 h-5" />}
           </button>
@@ -2176,22 +2214,22 @@ export const CallStage: React.FC<CallStageProps> = ({
           {/* 5. Hand Raise */}
           <button
             onClick={handleToggleHand}
-            className={`p-3 rounded-xl transition-all cursor-pointer ${
-              isHandRaised 
-                ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/30' 
+            className={`p-2.5 sm:p-3 rounded-xl transition-all cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center ${
+              isHandRaised
+                ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/30'
                 : 'bg-white dark:bg-[#1e2230] text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-[#2b3144] hover:bg-slate-50 dark:hover:bg-[#252a3b]'
             }`}
-            title={isHandRaised ? 'Baixar Mão' : 'Pedir a Palavra (Levantar Mão)'}
+            title={isHandRaised ? 'Baixar Mão' : 'Pedir a Palavra'}
           >
             <Hand className="w-5 h-5" />
           </button>
 
-          <div className="w-px h-6 bg-slate-300 dark:bg-[#2b3144] mx-0.5"></div>
+          <div className="w-px h-6 bg-slate-300 dark:bg-[#2b3144] mx-0.5 hidden sm:block"></div>
 
-          {/* 6. Settings Modal */}
+          {/* 6. Settings — hidden on mobile to save space */}
           <button
             onClick={() => setShowSettingsModal(true)}
-            className="p-3 rounded-xl bg-white dark:bg-[#1e2230] text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-[#2b3144] hover:bg-slate-50 dark:hover:bg-[#252a3b] transition-colors cursor-pointer"
+            className="hidden sm:flex p-3 rounded-xl bg-white dark:bg-[#1e2230] text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-[#2b3144] hover:bg-slate-50 dark:hover:bg-[#252a3b] transition-colors cursor-pointer min-w-[44px] min-h-[44px] items-center justify-center"
             title="Definições de Voz e Áudio"
           >
             <Settings className="w-5 h-5" />
@@ -2200,9 +2238,9 @@ export const CallStage: React.FC<CallStageProps> = ({
           {/* 7. Text Chat Drawer */}
           <button
             onClick={() => setActiveSideDrawer(activeSideDrawer === 'chat' ? 'none' : 'chat')}
-            className={`p-3 rounded-xl transition-all cursor-pointer ${
-              activeSideDrawer === 'chat' 
-                ? 'bg-indigo-600 text-white shadow-xs' 
+            className={`p-2.5 sm:p-3 rounded-xl transition-all cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center ${
+              activeSideDrawer === 'chat'
+                ? 'bg-indigo-600 text-white shadow-xs'
                 : 'bg-white dark:bg-[#1e2230] text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-[#2b3144] hover:bg-slate-50 dark:hover:bg-[#252a3b]'
             }`}
             title="Chat da Sala"
@@ -2210,26 +2248,26 @@ export const CallStage: React.FC<CallStageProps> = ({
             <MessageSquare className="w-5 h-5" />
           </button>
 
-          {/* 8. Participants & Permissions Drawer */}
+          {/* 8. Participants Drawer */}
           <button
             onClick={() => setActiveSideDrawer(activeSideDrawer === 'members' ? 'none' : 'members')}
-            className={`p-3 rounded-xl transition-all cursor-pointer ${
-              activeSideDrawer === 'members' 
-                ? 'bg-indigo-600 text-white shadow-xs' 
+            className={`p-2.5 sm:p-3 rounded-xl transition-all cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center ${
+              activeSideDrawer === 'members'
+                ? 'bg-indigo-600 text-white shadow-xs'
                 : 'bg-white dark:bg-[#1e2230] text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-[#2b3144] hover:bg-slate-50 dark:hover:bg-[#252a3b]'
             }`}
-            title="Gestão de Participantes"
+            title="Participantes"
           >
             <Users className="w-5 h-5" />
           </button>
 
           <div className="w-px h-6 bg-slate-300 dark:bg-[#2b3144] mx-0.5"></div>
 
-          {/* 9. Disconnect Button */}
+          {/* 9. Disconnect */}
           <button
             onClick={handleDisconnect}
-            className="px-4 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold transition-all flex items-center gap-2 cursor-pointer shadow-md shadow-red-600/30"
-            title="Sair da Sala de Voz"
+            className="px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-red-600/30 min-h-[44px]"
+            title="Sair da Sala"
           >
             <PhoneOff className="w-5 h-5" />
             <span className="hidden sm:inline text-xs font-black uppercase tracking-wider">Desconectar</span>

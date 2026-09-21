@@ -88,22 +88,22 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Tabs */}
-        <div className="flex items-center gap-1.5 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-xs">
+        <div className="flex items-center gap-1.5 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-xs overflow-x-auto shrink-0">
           <button
             onClick={() => setActiveTab('overview')}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${activeTab === 'overview' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
+            className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap ${activeTab === 'overview' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
           >
             Visão Geral
           </button>
           <button
             onClick={() => setActiveTab('users')}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${activeTab === 'users' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
+            className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap ${activeTab === 'users' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
           >
             Utilizadores ({users.length})
           </button>
           <button
             onClick={() => setActiveTab('reports')}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${activeTab === 'reports' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
+            className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap ${activeTab === 'reports' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
           >
             Denúncias ({reports.filter(r => r.status === 'Pending').length})
           </button>
@@ -153,53 +153,57 @@ export const AdminDashboard: React.FC = () => {
 
       {/* USERS MANAGEMENT TAB */}
       {activeTab === 'users' && (
-        <Card className="p-0 overflow-hidden bg-white border-slate-200 shadow-sm">
-          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-500">
-            <span>Utilizador / Email</span>
-            <div className="flex items-center gap-10">
-              <span className="w-24 text-center">Cargo</span>
-              <span className="w-32 text-center">Nível / XP</span>
-              <span className="w-24 text-center">Estado</span>
-              <span className="w-28 text-right">Ação</span>
-            </div>
-          </div>
-
-          <div className="divide-y divide-slate-100">
-            {users.map(u => (
-              <div key={u.id} className="px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                <div className="flex items-center gap-3.5">
-                  <Avatar src={u.avatarUrl} name={u.name} size="md" />
-                  <div>
-                    <span className="font-bold text-slate-900 text-sm">{u.name}</span>
-                    <p className="text-xs text-slate-400 font-medium">@{u.username} • {u.email}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-10 text-sm">
-                  <div className="w-24 flex justify-center">
-                    <Badge variant={u.role === 'ADMIN' ? 'primary' : u.role === 'CREATOR' ? 'accent' : 'outline'} size="sm" className="font-bold">
-                      {u.role}
-                    </Badge>
-                  </div>
-                  <span className="w-32 text-center text-slate-700 font-bold text-xs">Nvl {u.level} ({u.xp} XP)</span>
-                  <span className={`w-24 text-center text-xs font-bold ${u.isSuspended ? 'text-red-600' : 'text-emerald-600'}`}>
-                    {u.isSuspended ? 'Suspenso' : 'Ativo'}
-                  </span>
-                  <div className="w-28 flex justify-end">
-                    <button
-                      onClick={() => handleToggleSuspend(u.id, u.isSuspended)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
-                        u.isSuspended
-                          ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                          : 'border-red-200 bg-red-50 text-red-600 hover:bg-red-100'
-                      }`}
-                    >
-                      {u.isSuspended ? 'Reativar' : 'Suspender'}
-                    </button>
-                  </div>
+        <Card className="p-0 overflow-hidden bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-700 shadow-sm">
+          <div className="overflow-x-auto">
+            <div className="min-w-[640px]">
+              <div className="px-6 py-4 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/80 dark:bg-zinc-800/50 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+                <span>Utilizador / Email</span>
+                <div className="flex items-center gap-6">
+                  <span className="w-20 text-center">Cargo</span>
+                  <span className="w-28 text-center">Nível / XP</span>
+                  <span className="w-20 text-center">Estado</span>
+                  <span className="w-24 text-right">Ação</span>
                 </div>
               </div>
-            ))}
+
+              <div className="divide-y divide-slate-100 dark:divide-zinc-800">
+                {users.map(u => (
+                  <div key={u.id} className="px-6 py-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <Avatar src={u.avatarUrl} name={u.name} size="md" />
+                      <div className="min-w-0">
+                        <span className="font-bold text-slate-900 dark:text-white text-sm block truncate">{u.name}</span>
+                        <p className="text-xs text-slate-400 dark:text-zinc-500 font-medium truncate">@{u.username} • {u.email}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-6 text-sm shrink-0">
+                      <div className="w-20 flex justify-center">
+                        <Badge variant={u.role === 'ADMIN' ? 'primary' : u.role === 'CREATOR' ? 'accent' : 'outline'} size="sm" className="font-bold">
+                          {u.role}
+                        </Badge>
+                      </div>
+                      <span className="w-28 text-center text-slate-700 dark:text-zinc-300 font-bold text-xs">Nvl {u.level} ({u.xp} XP)</span>
+                      <span className={`w-20 text-center text-xs font-bold ${u.isSuspended ? 'text-red-600' : 'text-emerald-600'}`}>
+                        {u.isSuspended ? 'Suspenso' : 'Ativo'}
+                      </span>
+                      <div className="w-24 flex justify-end">
+                        <button
+                          onClick={() => handleToggleSuspend(u.id, u.isSuspended)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
+                            u.isSuspended
+                              ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                              : 'border-red-200 bg-red-50 text-red-600 hover:bg-red-100'
+                          }`}
+                        >
+                          {u.isSuspended ? 'Reativar' : 'Suspender'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </Card>
       )}
