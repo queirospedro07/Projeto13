@@ -70,7 +70,7 @@ The platform is pre-seeded with realistic courses, spaces, channels, messages, a
 ## 🏗️ Architecture & Tech Stack
 
 ### Frontend (`/client`)
-- **Framework**: React 18 + JavaScript (JSX) + Vite 5
+- **Framework**: React 18 + TypeScript + Vite 5
 - **Styling**: Tailwind CSS with custom SaaS dark theme (`#090a0f` base, `#11131a` cards, `#232733` borders, indigo `#6366f1` accent, cyan `#06b6d4` highlight)
 - **Icons**: Lucide React
 - **Animations & Effects**: Canvas Confetti (celebration on XP gain and level up)
@@ -78,9 +78,9 @@ The platform is pre-seeded with realistic courses, spaces, channels, messages, a
 - **Real-time Client**: Socket.IO client for live channel chat, typing indicators, and presence
 
 ### Backend (`/server`)
-- **Runtime**: Node.js (>=22) + Express (Native ES Modules)
+- **Runtime**: Node.js + Express
 - **Real-Time**: Socket.IO WebSockets server
-- **Database Engine**: Direct SQL with native `node:sqlite` (WAL mode, prepared statements, zero ORM overhead)
+- **Database Engine**: Direct SQL with `better-sqlite3` (WAL mode, prepared statements, zero ORM overhead)
 - **Authentication**: JWT token authentication with bcrypt password hashing and role authorization
 - **Database Tables**: `users`, `profiles`, `courses`, `course_modules`, `lessons`, `quizzes`, `quiz_questions`, `quiz_options`, `quiz_attempts`, `enrollments`, `lesson_progress`, `certificates`, `reviews`, `spaces`, `channels`, `messages`, `reactions`, `memberships`, `achievements`, `user_achievements`, `xp_transactions`, `notifications`, `events`, `event_participants`, `resources`, `notes`, `qa_questions`, `qa_answers`, `reports`, `categories`, `subscriptions`, `friendships`, `follows`, `direct_messages`.
 

@@ -2,11 +2,11 @@
   "name": "learnspace-server",
   "version": "1.0.0",
   "description": "LearnSpace backend API and Socket.IO server with high-performance direct SQL queries",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "build": "node -e \"console.log('Build ready (JavaScript)')\"",
-    "start": "node --experimental-sqlite src/index.js",
-    "dev": "node --experimental-sqlite --watch src/index.js"
+    "build": "tsc",
+    "start": "node --experimental-sqlite dist/index.js",
+    "dev": "tsx --node-flag --experimental-sqlite watch src/index.ts"
   },
   "engines": {
     "node": ">=22.0.0"
@@ -21,6 +21,11 @@
   "author": "LearnSpace Team",
   "license": "MIT",
   "dependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^20.17.6",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -28,7 +33,10 @@
     "express-rate-limit": "^8.7.0",
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.2",
-    "socket.io": "^4.8.1"
+    "socket.io": "^4.8.1",
+    "typescript": "^5.6.3"
   },
-  "type": "module"
+  "devDependencies": {
+    "tsx": "^4.19.2"
+  }
 }

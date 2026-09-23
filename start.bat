@@ -8,7 +8,7 @@ echo ===================================================
 set "PATH=C:\Users\pedro\.nodejs\node-v20.18.0-win-x64;%PATH%"
 
 echo [1/2] Starting LearnSpace Backend API & WebSockets Server on Port 5000...
-start "LearnSpace Backend" cmd /k "cd server && node --experimental-sqlite src/index.js"
+start "LearnSpace Backend" cmd /k "cd server && node dist/index.js"
 
 timeout /t 2 /nobreak > nul
 
