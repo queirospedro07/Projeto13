@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import {
   Home,
@@ -12,7 +12,6 @@ import {
   ChevronLeft,
   ChevronRight,
   BarChart3,
-  Sparkles,
   UserPlus
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -35,9 +34,7 @@ export const Sidebar = () => {
 
   const fetchSidebarData = () => {
     if (user) {
-      if (!isCreator) {
-        api.getMyCourses().then(data => setEnrolledCourses(data || [])).catch(() => {});
-      }
+      api.getMyCourses().then(data => setEnrolledCourses(data || [])).catch(() => {});
       api.getDirectConversations().then(convs => {
         const total = (convs || []).reduce((acc, c) => acc + (c.unreadCount || 0), 0);
         setUnreadDms(total);
@@ -70,19 +67,60 @@ export const Sidebar = () => {
     };
   }, [socket]);
 
-  const navClass = ({ isActive }) =>
+  const sortedEnrolledCourses = useMemo(() => {
+    if (!enrolledCourses || enrolledCourses.length === 0) return [];
+    return [...enrolledCourses].sort((a, b) => {
+      const progA = Math.round(a.progressPercent || a.progressPercentage || 0);
+      const progB = Math.round(b.progressPercent || b.progressPercentage || 0);
+      const isCompletedA = progA >= 100;
+      const isCompletedB = progB >= 100;
+
+      // Cursos incompletos têm prioridade sobre cursos já terminados
+      if (!isCompletedA && isCompletedB) return -1;
+      if (isCompletedA && !isCompletedB) return 1;
+
+      // Se ambos incompletos: prioriza maior progresso ("quase a acabar")
+      if (!isCompletedA && !isCompletedB) {
+        if (progA !== progB) {
+          return progB - progA;
+        }
+        // Se empate no progresso, prioriza os que começou mais cedo
+        const dateA = new Date(a.enrolledAt || 0).getTime();
+        const dateB = new Date(b.enrolledAt || 0).getTime();
+        return dateA - dateB;
+      }
+
+      // Se ambos completos
+      const compA = new Date(a.completedAt || a.enrolledAt || 0).getTime();
+      const compB = new Date(b.completedAt || b.enrolledAt || 0).getTime();
+      return compB - compA;
+    });
+  }, [enrolledCourses]);
+
+  const isFriendsActive =
+    location.pathname === '/messages' &&
+    (location.search.includes('tab=friends') || location.search.includes('tab=add'));
+
+  const isMessagesActive =
+    location.pathname === '/messages' && !isFriendsActive;
+
+  const getNavItemClass = (isActive) =>
     `group flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all select-none ${
       isActive
         ? 'bg-slate-900 text-white dark:bg-white dark:text-black shadow-xs font-bold'
         : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-zinc-900/80'
     }`;
 
-  const iconClass = (isActive) =>
+  const getIconClass = (isActive) =>
     `w-4 h-4 shrink-0 transition-colors ${
       isActive
         ? 'text-white dark:text-black'
         : 'text-slate-400 group-hover:text-slate-900 dark:text-zinc-400 dark:group-hover:text-white'
     }`;
+
+  const navClass = ({ isActive }) => getNavItemClass(isActive);
+
+  const iconClass = (isActive) => getIconClass(isActive);
 
   return (
     <aside
@@ -91,26 +129,7 @@ export const Sidebar = () => {
       }`}
     >
       <div className="flex-1 py-4 px-3 overflow-y-auto custom-scrollbar flex flex-col gap-5">
-        <div className="flex items-center justify-between px-1">
-          <Link
-            to="/dashboard"
-            className="flex items-center gap-2.5 min-w-0 group"
-          >
-            <div className="w-9 h-9 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-black flex items-center justify-center font-black shadow-sm shrink-0 group-hover:scale-105 transition-transform">
-              <Sparkles className="w-5 h-5 text-indigo-500 dark:text-indigo-600" />
-            </div>
-            {!collapsed && (
-              <div className="min-w-0">
-                <span className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-white truncate block">
-                  LearnSpace
-                </span>
-                <p className="text-[10px] text-slate-400 dark:text-zinc-500 truncate font-medium">
-                  Aprender & Conectar
-                </p>
-              </div>
-            )}
-          </Link>
-
+        <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-end'} px-1`}>
           <button
             onClick={() => setCollapsed(!collapsed)}
             className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800/60 transition-colors cursor-pointer"
@@ -182,64 +201,57 @@ export const Sidebar = () => {
             </div>
           )}
 
-          <NavLink to="/messages" end className={navClass}>
-            {({ isActive }) => (
-              <>
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <MessageSquare className={iconClass(isActive)} />
-                  {!collapsed && <span className="truncate">Mensagens</span>}
-                </div>
-                {unreadDms > 0 && (
-                  <span className="px-1.5 py-0.5 rounded-full bg-blue-600 text-white font-black text-[10px] shadow-xs">
-                    {unreadDms}
-                  </span>
-                )}
-              </>
+          <Link to="/messages" className={getNavItemClass(isMessagesActive)}>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <MessageSquare className={getIconClass(isMessagesActive)} />
+              {!collapsed && <span className="truncate">Mensagens</span>}
+            </div>
+            {unreadDms > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full bg-blue-600 text-white font-black text-[10px] shadow-xs">
+                {unreadDms}
+              </span>
             )}
-          </NavLink>
+          </Link>
 
-          <NavLink to="/messages?tab=friends" className={navClass}>
-            {({ isActive }) => (
-              <>
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <Users className={iconClass(isActive)} />
-                  {!collapsed && <span className="truncate">Redes & Amigos</span>}
-                </div>
-                {pendingRequestsCount > 0 && (
-                  <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-white font-black text-[10px] shadow-xs">
-                    {pendingRequestsCount}
-                  </span>
-                )}
-              </>
+          <Link to="/messages?tab=friends" className={getNavItemClass(isFriendsActive)}>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Users className={getIconClass(isFriendsActive)} />
+              {!collapsed && <span className="truncate">Redes & Amigos</span>}
+            </div>
+            {pendingRequestsCount > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-white font-black text-[10px] shadow-xs">
+                {pendingRequestsCount}
+              </span>
             )}
-          </NavLink>
+          </Link>
 
           {!collapsed && recentPeers.length > 0 && (
             <div className="flex flex-col gap-0.5 mt-1">
-              {recentPeers.map(p => (
-                <NavLink
-                  key={p.id}
-                  to={`/messages?userId=${p.id}`}
-                  className={({ isActive }) =>
-                    `flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs transition-colors ${
-                      isActive
+              {recentPeers.map(p => {
+                const isPeerActive = location.pathname === '/messages' && location.search.includes(`userId=${p.id}`);
+                return (
+                  <Link
+                    key={p.id}
+                    to={`/messages?userId=${p.id}`}
+                    className={`flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs transition-colors ${
+                      isPeerActive
                         ? 'bg-slate-100 dark:bg-zinc-800 text-slate-900 dark:text-white font-bold'
                         : 'text-slate-600 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-zinc-900/60 hover:text-slate-900 dark:hover:text-white'
-                    }`
-                  }
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="relative shrink-0">
-                      <Avatar src={p.avatarUrl} name={p.name} size="xs" />
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 border border-white dark:border-black absolute -bottom-0.5 -right-0.5" />
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="relative shrink-0">
+                        <Avatar src={p.avatarUrl} name={p.name} size="xs" />
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 border border-white dark:border-black absolute -bottom-0.5 -right-0.5" />
+                      </div>
+                      <span className="truncate text-xs">{p.name}</span>
                     </div>
-                    <span className="truncate text-xs">{p.name}</span>
-                  </div>
-                  {p.unreadCount > 0 && (
-                    <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0" />
-                  )}
-                </NavLink>
-              ))}
+                    {p.unreadCount > 0 && (
+                      <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0" />
+                    )}
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>
@@ -300,11 +312,11 @@ export const Sidebar = () => {
           </div>
         )}
 
-        {!isCreator && enrolledCourses.length > 0 && !collapsed && (
+        {sortedEnrolledCourses.length > 0 && !collapsed && (
           <div className="flex flex-col gap-1.5 pt-3 border-t border-slate-100 dark:border-zinc-800/80">
             <div className="px-3 flex items-center justify-between mb-1">
               <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
-                Continuar Aulas
+                Os Meus Cursos
               </span>
               <Link to="/library" className="text-[10px] text-blue-600 dark:text-blue-400 font-bold hover:underline">
                 Ver todos
@@ -312,7 +324,7 @@ export const Sidebar = () => {
             </div>
 
             <div className="flex flex-col gap-1">
-              {enrolledCourses.slice(0, 3).map((e) => {
+              {sortedEnrolledCourses.slice(0, 4).map((e) => {
                 const course = e.course;
                 if (!course) return null;
                 const progress = Math.round(e.progressPercent || e.progressPercentage || 0);

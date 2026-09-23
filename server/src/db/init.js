@@ -31,6 +31,7 @@ export function initializeSchemaAndSeed(db) {
       github TEXT,
       twitter TEXT,
       linkedin TEXT,
+      instagram TEXT,
       bannerUrl TEXT,
       isPublic INTEGER NOT NULL DEFAULT 1,
       showStreak INTEGER NOT NULL DEFAULT 1,
@@ -404,6 +405,12 @@ export function initializeSchemaAndSeed(db) {
   } catch (_) {}
   try {
     db.exec(`ALTER TABLE channels ADD COLUMN voiceMode TEXT DEFAULT 'open'`);
+  } catch (_) {}
+  try {
+    db.exec(`ALTER TABLE profiles ADD COLUMN instagram TEXT`);
+  } catch (_) {}
+  try {
+    db.exec(`ALTER TABLE profiles ADD COLUMN bannerUrl TEXT`);
   } catch (_) {}
   const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
   if (userCount === 0) {

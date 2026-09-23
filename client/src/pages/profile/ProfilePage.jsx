@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { MapPin, Award, BookOpen, Flame, Users, Edit3, MessageSquare, UserPlus, UserCheck, Clock, Globe, Github, Twitter, Linkedin, Camera, ImagePlus, X, ExternalLink, Loader2 } from 'lucide-react';
+import { MapPin, Award, BookOpen, Flame, Users, Edit3, MessageSquare, UserPlus, UserCheck, Clock, Globe, Github, Instagram, Camera, ImagePlus, X, ExternalLink, Loader2 } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -10,6 +10,13 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/ui/Toast';
 import { soundEffects } from '../../services/soundEffects';
 import { api } from '../../services/api';
+
+const XIcon = ({ className = 'w-3.5 h-3.5' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
+
 const BANNER_PRESETS = [{
   label: 'Azul Índigo',
   value: 'gradient-indigo',
@@ -35,20 +42,39 @@ const BANNER_PRESETS = [{
   value: 'gradient-midnight',
   style: 'bg-gradient-to-br from-slate-800 via-slate-900 to-black'
 }];
+
 function getBannerStyle(bannerUrl) {
   if (!bannerUrl) return {};
   const preset = BANNER_PRESETS.find(p => p.value === bannerUrl);
   if (preset) return {};
+  if (
+    bannerUrl.startsWith('#') ||
+    bannerUrl.startsWith('rgb') ||
+    bannerUrl.startsWith('hsl') ||
+    bannerUrl.startsWith('linear-gradient')
+  ) {
+    return { background: bannerUrl };
+  }
   return {
     backgroundImage: `url(${bannerUrl})`,
     backgroundSize: 'cover',
     backgroundPosition: 'center'
   };
 }
+
 function getBannerClass(bannerUrl) {
   if (!bannerUrl) return 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700';
   const preset = BANNER_PRESETS.find(p => p.value === bannerUrl);
-  return preset ? preset.style : '';
+  if (preset) return preset.style;
+  if (
+    bannerUrl.startsWith('#') ||
+    bannerUrl.startsWith('rgb') ||
+    bannerUrl.startsWith('hsl') ||
+    bannerUrl.startsWith('linear-gradient')
+  ) {
+    return '';
+  }
+  return '';
 }
 function compressImageToBase64(file, maxDimension = 800, quality = 0.82) {
   return new Promise((resolve, reject) => {
@@ -123,6 +149,7 @@ export const ProfilePage = () => {
   const [editGithub, setEditGithub] = useState('');
   const [editTwitter, setEditTwitter] = useState('');
   const [editLinkedin, setEditLinkedin] = useState('');
+  const [editInstagram, setEditInstagram] = useState('');
   const [editWebsite, setEditWebsite] = useState('');
   const [editAvatarUrl, setEditAvatarUrl] = useState('');
   const [editBannerUrl, setEditBannerUrl] = useState('');
@@ -164,6 +191,7 @@ export const ProfilePage = () => {
     setEditGithub(u?.profile?.github || '');
     setEditTwitter(u?.profile?.twitter || '');
     setEditLinkedin(u?.profile?.linkedin || '');
+    setEditInstagram(u?.profile?.instagram || '');
     setEditWebsite(u?.profile?.website || '');
     setEditAvatarUrl(u?.avatarUrl || '');
     setEditBannerUrl(u?.profile?.bannerUrl || '');
@@ -238,6 +266,7 @@ export const ProfilePage = () => {
         github: editGithub,
         twitter: editTwitter,
         linkedin: editLinkedin,
+        instagram: editInstagram,
         website: editWebsite,
         bannerUrl: editBannerUrl
       });
@@ -414,7 +443,7 @@ export const ProfilePage = () => {
             </p>}
 
           
-          {(u?.location || u?.profile?.website || u?.profile?.github || u?.profile?.twitter || u?.profile?.linkedin) && <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-500 dark:text-zinc-400 mb-4">
+          {(u?.location || u?.profile?.website || u?.profile?.github || u?.profile?.instagram || u?.profile?.twitter) && <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-500 dark:text-zinc-400 mb-4">
               {u?.location && <span className="flex items-center gap-1.5">
                   <MapPin className="w-3.5 h-3.5 shrink-0" />
                   {u.location}
@@ -424,16 +453,17 @@ export const ProfilePage = () => {
                   {u.profile.website.replace(/^https?:\/\//, '')}
                   <ExternalLink className="w-3 h-3 opacity-60" />
                 </a>}
-              {u?.profile?.github && <a href={`https://github.com/${u.profile.github}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-slate-900 dark:hover:text-white transition-colors">
+              {u?.profile?.github && <a href={`https://github.com/${u.profile.github.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-slate-900 dark:hover:text-white transition-colors">
                   <Github className="w-3.5 h-3.5 shrink-0" />
-                  {u.profile.github}
+                  {u.profile.github.replace(/^@/, '')}
                 </a>}
-              {u?.profile?.twitter && <a href={`https://twitter.com/${u.profile.twitter}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-sky-500 transition-colors">
-                  <Twitter className="w-3.5 h-3.5 shrink-0" />@{u.profile.twitter}
+              {u?.profile?.instagram && <a href={`https://instagram.com/${u.profile.instagram.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-pink-500 transition-colors">
+                  <Instagram className="w-3.5 h-3.5 shrink-0 text-pink-500" />
+                  @{u.profile.instagram.replace(/^@/, '')}
                 </a>}
-              {u?.profile?.linkedin && <a href={`https://linkedin.com/in/${u.profile.linkedin}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-blue-700 transition-colors">
-                  <Linkedin className="w-3.5 h-3.5 shrink-0" />
-                  {u.profile.linkedin}
+              {u?.profile?.twitter && <a href={`https://x.com/${u.profile.twitter.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-slate-900 dark:hover:text-white transition-colors">
+                  <XIcon className="w-3.5 h-3.5 shrink-0" />
+                  @{u.profile.twitter.replace(/^@/, '')}
                 </a>}
             </div>}
 
@@ -467,7 +497,7 @@ export const ProfilePage = () => {
       </div>
 
       
-      <div className="flex items-center gap-1.5 border-b border-slate-200 dark:border-zinc-800 pb-0 overflow-x-auto">
+      <div className="flex items-center gap-1.5 border-b border-slate-200 dark:border-zinc-800 pb-0 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {[{
         id: 'courses',
         icon: BookOpen,
@@ -639,9 +669,35 @@ export const ProfilePage = () => {
               </button>
               <input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={handleBannerFileChange} />
             </div>
+
+            <div className="flex items-center gap-2 mt-1">
+              <label className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 cursor-pointer hover:border-slate-300 dark:hover:border-zinc-500 transition-colors shrink-0">
+                <input
+                  type="color"
+                  value={editBannerUrl.startsWith('#') ? editBannerUrl : '#3b82f6'}
+                  onChange={e => {
+                    setEditBannerUrl(e.target.value);
+                    setBannerPreview(e.target.value);
+                  }}
+                  className="w-5 h-5 rounded cursor-pointer border-0 bg-transparent p-0"
+                />
+                <span className="text-xs font-semibold text-slate-700 dark:text-zinc-200">
+                  Qualquer Cor
+                </span>
+              </label>
+              <input
+                type="text"
+                placeholder="Código de cor (ex: #3b82f6 ou #e11d48)"
+                value={editBannerUrl.startsWith('data:') ? '' : editBannerUrl}
+                onChange={e => {
+                  setEditBannerUrl(e.target.value);
+                  setBannerPreview(e.target.value);
+                }}
+                className="flex-1 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl px-3 py-1.5 text-xs text-slate-900 dark:text-white font-mono focus:outline-none focus:border-blue-500"
+              />
+            </div>
             <p className="text-[11px] text-slate-400 dark:text-zinc-500">
-              Este banner também aparece como fundo nos tiles de chamada quando a câmara está
-              desligada.
+              Escolha uma cor personalizada, gradiente ou carregue uma imagem para o banner.
             </p>
           </div>
 
@@ -689,15 +745,15 @@ export const ProfilePage = () => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <div className="flex items-center gap-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl px-3 py-2.5">
                 <Github className="w-4 h-4 text-slate-400 shrink-0" />
-                <input type="text" placeholder="utilizador" value={editGithub} onChange={e => setEditGithub(e.target.value)} className="flex-1 bg-transparent text-sm text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 min-w-0" />
+                <input type="text" placeholder="GitHub" value={editGithub} onChange={e => setEditGithub(e.target.value)} className="flex-1 bg-transparent text-sm text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 min-w-0" />
               </div>
               <div className="flex items-center gap-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl px-3 py-2.5">
-                <Twitter className="w-4 h-4 text-sky-400 shrink-0" />
-                <input type="text" placeholder="@handle" value={editTwitter} onChange={e => setEditTwitter(e.target.value)} className="flex-1 bg-transparent text-sm text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 min-w-0" />
+                <Instagram className="w-4 h-4 text-pink-500 shrink-0" />
+                <input type="text" placeholder="Instagram" value={editInstagram} onChange={e => setEditInstagram(e.target.value)} className="flex-1 bg-transparent text-sm text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 min-w-0" />
               </div>
               <div className="flex items-center gap-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl px-3 py-2.5">
-                <Linkedin className="w-4 h-4 text-blue-600 shrink-0" />
-                <input type="text" placeholder="utilizador" value={editLinkedin} onChange={e => setEditLinkedin(e.target.value)} className="flex-1 bg-transparent text-sm text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 min-w-0" />
+                <XIcon className="w-4 h-4 text-slate-900 dark:text-white shrink-0" />
+                <input type="text" placeholder="X (Twitter)" value={editTwitter} onChange={e => setEditTwitter(e.target.value)} className="flex-1 bg-transparent text-sm text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 min-w-0" />
               </div>
             </div>
           </div>

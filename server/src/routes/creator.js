@@ -18,43 +18,23 @@ router.get('/stats', authenticate, requireRole('CREATOR', 'ADMIN'), async (req, 
        WHERE c.creatorId = ?
        ORDER BY e.enrolledAt DESC
        LIMIT 6`, [creatorId]);
-    const revenueData = [{
-      month: 'Jan',
-      revenue: 1200,
-      students: 45
-    }, {
-      month: 'Fev',
-      revenue: 1900,
-      students: 78
-    }, {
-      month: 'Mar',
-      revenue: 2400,
-      students: 110
-    }, {
-      month: 'Abr',
-      revenue: 3100,
-      students: 145
-    }, {
-      month: 'Mai',
-      revenue: 4200,
-      students: 210
-    }, {
-      month: 'Jun',
-      revenue: 5800,
-      students: 290
-    }, {
-      month: 'Jul',
-      revenue: 6400,
-      students: 340
-    }];
+    const completedEnrollments = queryOne(`SELECT COUNT(*) as c FROM enrollments e JOIN courses c ON e.courseId = c.id WHERE c.creatorId = ? AND e.progressPercent >= 100`, [creatorId])?.c || 0;
+    const completionRate = totalStudents > 0 ? Math.round((completedEnrollments / totalStudents) * 100) : 0;
+
+    const ratingRow = queryOne(`SELECT AVG(r.rating) as avgRating FROM reviews r JOIN courses c ON r.courseId = c.id WHERE c.creatorId = ?`, [creatorId]);
+    const averageRating = ratingRow?.avgRating ? Number(ratingRow.avgRating).toFixed(1) : '0.0';
+
+    const quizRow = queryOne(`SELECT AVG(qa.score) as avgScore FROM quiz_attempts qa JOIN quizzes q ON qa.quizId = q.id JOIN lessons l ON q.lessonId = l.id JOIN course_modules cm ON l.moduleId = cm.id JOIN courses c ON cm.courseId = c.id WHERE c.creatorId = ?`, [creatorId]);
+    const averageQuizScore = quizRow?.avgScore ? Math.round(Number(quizRow.avgScore)) : 0;
+
     return res.json({
-      totalRevenue: totalRevenue > 0 ? totalRevenue : 14850,
-      totalStudents: totalStudents > 0 ? totalStudents : 342,
-      completionRate: 78,
-      averageRating: '4.9',
-      averageQuizScore: 88,
+      totalRevenue: totalRevenue || 0,
+      totalStudents: totalStudents || 0,
+      completionRate,
+      averageRating,
+      averageQuizScore,
       coursesCount: courses.length,
-      revenueData,
+      revenueData: [],
       recentEnrollments: recentEnrollments.map(e => ({
         id: e.id,
         enrolledAt: e.enrolledAt,
@@ -173,7 +153,8 @@ router.get('/courses', authenticate, requireRole('CREATOR', 'ADMIN'), async (req
     const creatorId = req.user.id;
     const courses = queryAll(`SELECT c.*,
               (SELECT COUNT(*) FROM enrollments WHERE courseId = c.id) as studentsCount,
-              (SELECT COUNT(*) FROM course_modules WHERE courseId = c.id) as modulesCount
+              (SELECT COUNT(*) FROM course_modules WHERE courseId = c.id) as modulesCount,
+              (SELECT COUNT(*) FROM reviews WHERE courseId = c.id) as reviewsCount
        FROM courses c
        WHERE c.creatorId = ?
        ORDER BY c.createdAt DESC`, [creatorId]);
@@ -181,9 +162,9 @@ router.get('/courses', authenticate, requireRole('CREATOR', 'ADMIN'), async (req
       ...c,
       isFree: c.isFree === 1,
       _count: {
-        enrollments: c.studentsCount,
-        modules: c.modulesCount,
-        reviews: 8
+        enrollments: c.studentsCount || 0,
+        modules: c.modulesCount || 0,
+        reviews: c.reviewsCount || 0
       }
     })));
   } catch (err) {

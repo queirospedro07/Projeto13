@@ -104,7 +104,7 @@ router.post('/login', async (req, res) => {
       });
     }
     const cleanLogin = login.toLowerCase().trim();
-    const user = queryOne(`SELECT u.*, p.headline, p.website, p.github, p.twitter, p.linkedin, p.themePreference
+    const user = queryOne(`SELECT u.*, p.headline, p.website, p.github, p.twitter, p.linkedin, p.instagram, p.themePreference
        FROM users u
        LEFT JOIN profiles p ON u.id = p.userId
        WHERE u.email = ? OR u.username = ?`, [cleanLogin, cleanLogin]);
@@ -221,7 +221,7 @@ router.get('/demo/:role', async (req, res) => {
 });
 router.get('/me', authenticate, async (req, res) => {
   try {
-    const user = queryOne(`SELECT u.*, p.headline, p.website, p.github, p.twitter, p.linkedin, p.bannerUrl, p.themePreference,
+    const user = queryOne(`SELECT u.*, p.headline, p.website, p.github, p.twitter, p.linkedin, p.instagram, p.bannerUrl, p.themePreference,
        (SELECT COUNT(*) FROM user_achievements WHERE userId = u.id) as achievementsCount
        FROM users u
        LEFT JOIN profiles p ON u.id = p.userId
@@ -252,6 +252,7 @@ router.get('/me', authenticate, async (req, res) => {
         github: user.github,
         twitter: user.twitter,
         linkedin: user.linkedin,
+        instagram: user.instagram,
         bannerUrl: user.bannerUrl,
         themePreference: user.themePreference
       },
@@ -273,7 +274,7 @@ router.get('/user/:identifier', optionalAuth, async (req, res) => {
     }
     const cleanLower = cleanId.toLowerCase();
     const user = queryOne(`SELECT u.id, u.name, u.username, u.role, u.avatarUrl, u.bio, u.location, u.streakDays, u.xp, u.level, u.dailyGoalMinutes, u.minutesToday, u.totalMinutes, u.createdAt,
-       p.headline, p.website, p.github, p.twitter, p.linkedin, p.bannerUrl, p.themePreference,
+       p.headline, p.website, p.github, p.twitter, p.linkedin, p.instagram, p.bannerUrl, p.themePreference,
        (SELECT COUNT(*) FROM user_achievements WHERE userId = u.id) as achievementsCount
        FROM users u
        LEFT JOIN profiles p ON u.id = p.userId
@@ -301,6 +302,7 @@ router.get('/user/:identifier', optionalAuth, async (req, res) => {
         github: user.github,
         twitter: user.twitter,
         linkedin: user.linkedin,
+        instagram: user.instagram,
         bannerUrl: user.bannerUrl,
         themePreference: user.themePreference
       },
@@ -322,6 +324,7 @@ router.put('/profile', authenticate, async (req, res) => {
       github,
       twitter,
       linkedin,
+      instagram,
       website,
       bannerUrl,
       themePreference
@@ -345,9 +348,14 @@ router.put('/profile', authenticate, async (req, res) => {
       const isDataUrl = bannerUrl.startsWith('data:image/');
       const isHttpUrl = bannerUrl.startsWith('http://') || bannerUrl.startsWith('https://');
       const isPreset = bannerUrl.startsWith('gradient-');
-      if (!isDataUrl && !isHttpUrl && !isPreset) {
+      const isColor =
+        bannerUrl.startsWith('#') ||
+        bannerUrl.startsWith('rgb') ||
+        bannerUrl.startsWith('hsl') ||
+        bannerUrl.startsWith('linear-gradient');
+      if (!isDataUrl && !isHttpUrl && !isPreset && !isColor) {
         return res.status(400).json({
-          error: 'URL de banner inválido'
+          error: 'URL ou cor de banner inválida'
         });
       }
       if (isDataUrl && bannerUrl.length > 2_800_000) {
@@ -361,6 +369,9 @@ router.put('/profile', authenticate, async (req, res) => {
       try {
         execute(`ALTER TABLE profiles ADD COLUMN bannerUrl TEXT`, []);
       } catch (_) {}
+      try {
+        execute(`ALTER TABLE profiles ADD COLUMN instagram TEXT`, []);
+      } catch (_) {}
       const profileExists = queryOne('SELECT id FROM profiles WHERE userId = ?', [req.user.id]);
       if (profileExists) {
         execute(`UPDATE profiles SET
@@ -368,16 +379,17 @@ router.put('/profile', authenticate, async (req, res) => {
             github = COALESCE(?, github),
             twitter = COALESCE(?, twitter),
             linkedin = COALESCE(?, linkedin),
+            instagram = COALESCE(?, instagram),
             website = COALESCE(?, website),
             bannerUrl = COALESCE(?, bannerUrl),
             themePreference = COALESCE(?, themePreference)
-           WHERE userId = ?`, [headline || null, github || null, twitter || null, linkedin || null, website || null, bannerUrl || null, themePreference || null, req.user.id]);
+           WHERE userId = ?`, [headline !== undefined ? headline : null, github !== undefined ? github : null, twitter !== undefined ? twitter : null, linkedin !== undefined ? linkedin : null, instagram !== undefined ? instagram : null, website !== undefined ? website : null, bannerUrl !== undefined ? bannerUrl : null, themePreference || null, req.user.id]);
       } else {
-        execute(`INSERT INTO profiles (id, userId, headline, github, twitter, linkedin, website, bannerUrl, themePreference)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, [`prof-${req.user.id}`, req.user.id, headline, github, twitter, linkedin, website, bannerUrl, themePreference || 'light']);
+        execute(`INSERT INTO profiles (id, userId, headline, github, twitter, linkedin, instagram, website, bannerUrl, themePreference)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [`prof-${req.user.id}`, req.user.id, headline, github, twitter, linkedin, instagram, website, bannerUrl, themePreference || 'light']);
       }
     });
-    const updated = queryOne(`SELECT u.*, p.headline, p.website, p.github, p.twitter, p.linkedin, p.bannerUrl, p.themePreference
+    const updated = queryOne(`SELECT u.*, p.headline, p.website, p.github, p.twitter, p.linkedin, p.instagram, p.bannerUrl, p.themePreference
        FROM users u
        LEFT JOIN profiles p ON u.id = p.userId
        WHERE u.id = ?`, [req.user.id]);
@@ -390,6 +402,7 @@ router.put('/profile', authenticate, async (req, res) => {
           github: updated?.github,
           twitter: updated?.twitter,
           linkedin: updated?.linkedin,
+          instagram: updated?.instagram,
           bannerUrl: updated?.bannerUrl,
           themePreference: updated?.themePreference
         }

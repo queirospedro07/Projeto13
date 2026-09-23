@@ -9,91 +9,34 @@ router.get('/my-learning', authenticate, async (req, res) => {
               c.id as course_id, c.title, c.slug, c.description, c.category, c.difficulty, c.thumbnailUrl, c.bannerUrl, c.price, c.isFree, c.durationHours, c.language, c.creatorId, c.spaceId,
               e.id as enrollment_id, e.userId as enrollment_userId, e.enrolledAt, e.completedAt, e.progressPercent, e.lastLessonId,
               u.id as creator_id, u.name as creator_name, u.username as creator_username, u.avatarUrl as creator_avatarUrl
-       FROM courses c
+       FROM enrollments e
+       JOIN courses c ON e.courseId = c.id
        LEFT JOIN users u ON c.creatorId = u.id
-       LEFT JOIN enrollments e ON e.courseId = c.id AND e.userId = ?
-       LEFT JOIN memberships m ON m.spaceId = c.spaceId AND m.userId = ?
-       WHERE e.userId = ? OR c.creatorId = ? OR m.userId = ?
-       ORDER BY COALESCE(e.enrolledAt, c.createdAt) DESC`, [userId, userId, userId, userId, userId]);
-    const existingCourseIds = new Set(rows.map(r => r.course_id));
-    const extraSpaces = queryAll(`SELECT s.*, 
-              m.id as membership_id, m.joinedAt,
-              u.id as owner_id, u.name as owner_name, u.username as owner_username, u.avatarUrl as owner_avatarUrl
-       FROM spaces s
-       LEFT JOIN users u ON s.ownerId = u.id
-       LEFT JOIN memberships m ON m.spaceId = s.id AND m.userId = ?
-       WHERE m.userId = ? OR s.ownerId = ?`, [userId, userId, userId]);
-    for (const s of extraSpaces) {
-      if (!existingCourseIds.has(s.id) && !rows.some(r => r.spaceId === s.id || r.slug === s.slug)) {
-        rows.push({
-          course_id: s.id,
-          title: s.name,
-          slug: s.slug,
-          description: s.description,
-          category: s.category || 'Geral',
-          difficulty: 'Iniciante',
-          thumbnailUrl: s.iconUrl || s.bannerUrl,
-          bannerUrl: s.bannerUrl,
-          price: 0,
-          isFree: 1,
-          durationHours: 10,
-          language: 'Português',
-          creatorId: s.owner_id,
-          spaceId: s.id,
-          enrollment_id: `mem-enr-${s.id}`,
-          enrollment_userId: userId,
-          enrolledAt: s.joinedAt || s.createdAt || new Date().toISOString(),
-          completedAt: null,
-          progressPercent: s.ownerId === userId ? 100 : 0,
-          lastLessonId: null,
-          creator_id: s.owner_id,
-          creator_name: s.owner_name,
-          creator_username: s.owner_username,
-          creator_avatarUrl: s.owner_avatarUrl
-        });
-      }
-    }
+       WHERE e.userId = ?
+       ORDER BY e.enrolledAt DESC`, [userId]);
+
     const formatted = rows.map(r => {
       const courseId = r.course_id;
       const isCreator = r.creatorId === userId;
-      const enrollmentId = r.enrollment_id || `creator-enr-${courseId}`;
-      const progressPercent = r.progressPercent !== null && r.progressPercent !== undefined ? r.progressPercent : isCreator ? 100 : 0;
+      const enrollmentId = r.enrollment_id;
+      const progressPercent = r.progressPercent !== null && r.progressPercent !== undefined ? r.progressPercent : 0;
       const modules = queryAll(`SELECT m.id, m.title, m.description, m.orderIndex
          FROM course_modules m
          WHERE m.courseId = ?
          ORDER BY m.orderIndex ASC`, [courseId]);
-      let modulesWithLessons = modules.map(m => {
+      const modulesWithLessons = modules.map(m => {
         const lessons = queryAll(`SELECT id, title, durationMin, type, orderIndex FROM lessons WHERE moduleId = ? ORDER BY orderIndex ASC`, [m.id]);
         return {
           ...m,
           lessons
         };
       });
-      if (modulesWithLessons.length === 0) {
-        modulesWithLessons = [{
-          id: `mod-1-${courseId}`,
-          title: 'Módulo 1: Introdução & Fundamentos',
-          description: 'Aulas e materiais de boas-vindas ao espaço da turma.',
-          orderIndex: 0,
-          lessons: [{
-            id: `les-1-${courseId}`,
-            title: '1.1 Boas-vindas ao Curso & Apresentação da Turma',
-            type: 'video',
-            durationMin: 12,
-            orderIndex: 0,
-            xpReward: 25,
-            videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-            content: 'Bem-vindo ao espaço! Explore os canais da comunidade na barra lateral e acompanhe as aulas.',
-            quiz: null
-          }]
-        }];
-      }
-      const lessonProgresses = r.enrollment_id && !r.enrollment_id.startsWith('mem-enr-') ? queryAll(`SELECT * FROM lesson_progress WHERE enrollmentId = ?`, [r.enrollment_id]) : [];
+      const lessonProgresses = queryAll(`SELECT * FROM lesson_progress WHERE enrollmentId = ?`, [enrollmentId]);
       return {
         id: enrollmentId,
         userId: userId,
         courseId: courseId,
-        enrolledAt: r.enrolledAt || new Date().toISOString(),
+        enrolledAt: r.enrolledAt,
         completedAt: r.completedAt,
         progressPercent: progressPercent,
         lastLessonId: r.lastLessonId,
@@ -144,7 +87,7 @@ router.get('/', optionalAuth, async (req, res) => {
              u.id as creator_id, u.name as creator_name, u.username as creator_username, u.avatarUrl as creator_avatarUrl,
              (SELECT COUNT(*) FROM enrollments WHERE courseId = c.id) as studentsCount,
              (SELECT COUNT(*) FROM course_modules WHERE courseId = c.id) as modulesCount,
-             5.0 as averageRating
+             COALESCE((SELECT ROUND(AVG(rating), 1) FROM reviews WHERE courseId = c.id), 0.0) as averageRating
       FROM courses c
       JOIN users u ON c.creatorId = u.id
       WHERE c.isPublished = 1

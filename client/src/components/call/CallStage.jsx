@@ -1217,7 +1217,6 @@ export const CallStage = ({
                             src={p.avatarUrl}
                             name={p.name}
                             size="md"
-                            className={p.isSpeaking ? 'ring-2 ring-emerald-500' : ''}
                           />
                           <span className="text-[10px] font-medium text-slate-300 max-w-[90px] truncate">{p.name}</span>
                         </div>
@@ -1261,7 +1260,7 @@ export const CallStage = ({
                             src={p.avatarUrl}
                             name={p.name}
                             size="xl"
-                            className={p.isSpeaking ? 'ring-4 ring-emerald-500' : 'ring-4 ring-white/10'}
+                            className="ring-4 ring-white/10"
                           />
                           {p.role === 'ADMIN' && (
                             <span className="absolute -top-1 -right-1 p-1 rounded-full bg-amber-500 text-white shadow-xs">

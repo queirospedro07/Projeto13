@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, BookOpen, User, X, ArrowRight, Loader2 } from 'lucide-react';
+import { Search, BookOpen, User, X, ArrowRight, Loader2, MessageSquare } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import { api } from '../../services/api';
 

@@ -353,6 +353,7 @@ export const MessagesPage = () => {
               onClick={() => {
                 soundEffects.play('click');
                 setMainTab('chat');
+                setSearchParams({});
               }}
               className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                 mainTab === 'chat'
@@ -367,6 +368,7 @@ export const MessagesPage = () => {
               onClick={() => {
                 soundEffects.play('click');
                 setMainTab('friends');
+                setSearchParams({ tab: 'friends' });
               }}
               className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 relative ${
                 mainTab === 'friends'
