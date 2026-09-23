@@ -24,14 +24,27 @@ import { SettingsPage } from './pages/SettingsPage';
 import { MessagesPage } from './pages/messages/MessagesPage';
 import { ProfilePage } from './pages/profile/ProfilePage';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { IncomingCallModal } from './components/call/IncomingCallModal';
+import { CallRoomModal } from './components/call/CallRoomModal';
 
 export const App = () => {
+  const [activeDirectCall, setActiveDirectCall] = React.useState(null);
+
   return (
     <ThemeProvider>
       <AuthProvider>
         <SocketProvider>
           <ToastProvider>
             <BrowserRouter>
+              <IncomingCallModal onAcceptCall={(call) => setActiveDirectCall(call)} />
+              {activeDirectCall && (
+                <CallRoomModal
+                  isOpen={!!activeDirectCall}
+                  roomName={`Chamada com ${activeDirectCall.caller?.name || 'Utilizador'}`}
+                  roomId={activeDirectCall.roomId}
+                  onClose={() => setActiveDirectCall(null)}
+                />
+              )}
               <Routes>
                 <Route path="/" element={<AppLayout />}>
                   <Route index element={<LandingPage />} />

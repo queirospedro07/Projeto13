@@ -102,6 +102,10 @@ export function setupSocketIO(io) {
         isMuted: p.isMuted,
         isCameraOn: p.isCameraOn,
         isScreenSharing: p.isScreenSharing,
+        cameraTrackId: p.cameraTrackId,
+        screenTrackId: p.screenTrackId,
+        cameraStreamId: p.cameraStreamId,
+        screenStreamId: p.screenStreamId,
         bannerUrl: p.user?.bannerUrl
       }));
       socket.emit('voice-room-existing-users', existingParticipants);
@@ -112,6 +116,10 @@ export function setupSocketIO(io) {
         isMuted: false,
         isCameraOn: false,
         isScreenSharing: false,
+        cameraTrackId: null,
+        screenTrackId: null,
+        cameraStreamId: null,
+        screenStreamId: null,
         bannerUrl: user?.bannerUrl
       });
       socket.to(`voice_${roomId}`).emit('user-joined-voice', {
@@ -141,7 +149,9 @@ export function setupSocketIO(io) {
       isCameraOn,
       isScreenSharing,
       cameraTrackId,
-      screenTrackId
+      screenTrackId,
+      cameraStreamId,
+      screenStreamId
     }) => {
       const room = voiceRooms.get(roomId);
       if (room && room.has(socket.id)) {
@@ -151,6 +161,8 @@ export function setupSocketIO(io) {
         if (isScreenSharing !== undefined) current.isScreenSharing = isScreenSharing;
         if (cameraTrackId !== undefined) current.cameraTrackId = cameraTrackId;
         if (screenTrackId !== undefined) current.screenTrackId = screenTrackId;
+        if (cameraStreamId !== undefined) current.cameraStreamId = cameraStreamId;
+        if (screenStreamId !== undefined) current.screenStreamId = screenStreamId;
       }
       socket.to(`voice_${roomId}`).emit('user-voice-state-changed', {
         userId,
@@ -159,7 +171,9 @@ export function setupSocketIO(io) {
         isCameraOn,
         isScreenSharing,
         cameraTrackId,
-        screenTrackId
+        screenTrackId,
+        cameraStreamId,
+        screenStreamId
       });
     });
     socket.on('voice-speaking-state', ({
@@ -248,6 +262,39 @@ export function setupSocketIO(io) {
         targetUserId
       });
     });
+
+    // Chamadas Diretas (DMs)
+    socket.on('direct-call-start', ({ targetUserId, caller, roomId }) => {
+      if (!targetUserId || !caller) return;
+      io.to(`user_${targetUserId}`).emit('direct-call-incoming', {
+        caller,
+        roomId
+      });
+    });
+
+    socket.on('direct-call-accepted', ({ callerId, roomId, acceptor }) => {
+      if (!callerId) return;
+      io.to(`user_${callerId}`).emit('direct-call-accepted', {
+        roomId,
+        acceptor
+      });
+    });
+
+    socket.on('direct-call-rejected', ({ callerId, roomId, rejector }) => {
+      if (!callerId) return;
+      io.to(`user_${callerId}`).emit('direct-call-rejected', {
+        roomId,
+        rejector
+      });
+    });
+
+    socket.on('direct-call-ended', ({ targetUserId, roomId }) => {
+      if (!targetUserId) return;
+      io.to(`user_${targetUserId}`).emit('direct-call-ended', {
+        roomId
+      });
+    });
+
     socket.on('disconnect', () => {
       for (const [roomId, room] of voiceRooms.entries()) {
         const participant = room.get(socket.id);

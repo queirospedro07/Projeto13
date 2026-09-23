@@ -109,6 +109,12 @@ class SoundService {
   playQuizWrong() {
     this.playTone(220, 'sawtooth', 0.15, 0.04);
   }
+
+  playRingtone() {
+    this.playTone(440, 'sine', 0.12, 0.08);
+    setTimeout(() => this.playTone(554.37, 'sine', 0.12, 0.08), 130);
+    setTimeout(() => this.playTone(659.25, 'sine', 0.25, 0.08), 260);
+  }
 }
 
 export const soundEffects = new SoundService();

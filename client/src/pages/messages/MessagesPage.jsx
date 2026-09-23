@@ -149,11 +149,24 @@ export const MessagesPage = () => {
 
     socket.on('direct-message', handleDM);
     socket.on('new-direct-message', handleDM);
+
+    const handleCallRejected = ({ rejector }) => {
+      toast({
+        title: 'Chamada Recusada',
+        message: `${rejector?.name || 'O utilizador'} recusou a chamada.`,
+        type: 'info'
+      });
+      setIsCallOpen(false);
+    };
+
+    socket.on('direct-call-rejected', handleCallRejected);
+
     return () => {
       socket.off('direct-message', handleDM);
       socket.off('new-direct-message', handleDM);
+      socket.off('direct-call-rejected', handleCallRejected);
     };
-  }, [socket, activePeer?.id, user?.id]);
+  }, [socket, activePeer?.id, user?.id, toast]);
 
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -529,7 +542,13 @@ export const MessagesPage = () => {
               key={`call_dm_${[user?.id || 'me', activePeer.id].sort().join('_')}`}
               roomName={`Chamada com ${activePeer.name}`}
               roomId={`call_dm_${[user?.id || 'me', activePeer.id].sort().join('_')}`}
-              onDisconnect={() => setIsCallOpen(false)}
+              onDisconnect={() => {
+                setIsCallOpen(false);
+                socket?.emit('direct-call-ended', {
+                  targetUserId: activePeer.id,
+                  roomId: `call_dm_${[user?.id || 'me', activePeer.id].sort().join('_')}`
+                });
+              }}
             />
           ) : (
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -559,6 +578,17 @@ export const MessagesPage = () => {
                   <button
                     onClick={() => {
                       soundEffects.playJoinCall();
+                      const dmRoomId = `call_dm_${[user?.id || 'me', activePeer.id].sort().join('_')}`;
+                      socket?.emit('direct-call-start', {
+                        targetUserId: activePeer.id,
+                        caller: {
+                          id: user.id,
+                          name: user.name,
+                          username: user.username,
+                          avatarUrl: user.avatarUrl
+                        },
+                        roomId: dmRoomId
+                      });
                       setIsCallOpen(true);
                     }}
                     className="p-2 rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold"
