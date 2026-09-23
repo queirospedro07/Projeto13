@@ -196,24 +196,7 @@ export function setupSocketIO(io) {
         fromSocketId: socket.id
       });
     });
-    socket.on('voice-relay-chunk', ({
-      roomId,
-      kind,
-      chunk
-    }) => {
-      socket.to(`voice_${roomId}`).emit('voice-relay-chunk', {
-        fromSocketId: socket.id,
-        kind,
-        chunk
-      });
-    });
-    socket.on('voice-relay-start', ({
-      roomId
-    }) => {
-      socket.to(`voice_${roomId}`).emit('voice-relay-start', {
-        fromSocketId: socket.id
-      });
-    });
+
     socket.on('voice-chat-message', ({
       roomId,
       message
