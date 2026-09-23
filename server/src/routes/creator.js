@@ -74,9 +74,32 @@ router.get('/courses/:courseId', authenticate, requireRole('CREATOR', 'ADMIN'), 
     const modules = queryAll(`SELECT * FROM course_modules WHERE courseId = ? ORDER BY orderIndex ASC`, [courseId]);
     for (const mod of modules) {
       mod.lessons = queryAll(`SELECT * FROM lessons WHERE moduleId = ? ORDER BY orderIndex ASC`, [mod.id]);
+      for (const les of mod.lessons) {
+        if (typeof les.content === 'string' && (les.content.startsWith('{') || les.content.startsWith('['))) {
+          try {
+            const parsed = JSON.parse(les.content);
+            if (les.type === 'quiz') les.quiz = parsed;
+            else if (les.type === 'article') les.richArticle = parsed;
+            else if (les.type === 'code') les.codeChallenge = parsed;
+            else les.customData = parsed;
+          } catch {}
+        }
+        if (les.type === 'quiz' && !les.quiz) {
+          const q = queryOne('SELECT * FROM quizzes WHERE lessonId = ?', [les.id]);
+          if (q) {
+            const questions = queryAll('SELECT * FROM quiz_questions WHERE quizId = ? ORDER BY orderIndex ASC', [q.id]);
+            q.questions = questions.map(qq => ({
+              ...qq,
+              options: typeof qq.options === 'string' ? JSON.parse(qq.options) : qq.options
+            }));
+            les.quiz = q;
+          }
+        }
+      }
     }
     const spaceId = course.spaceId;
     const channels = spaceId ? queryAll(`SELECT * FROM channels WHERE spaceId = ? ORDER BY orderIndex ASC`, [spaceId]) : [];
+    const customRoles = queryAll(`SELECT * FROM course_roles WHERE courseId = ? ORDER BY orderIndex ASC`, [courseId]);
     return res.json({
       ...course,
       isFree: course.isFree === 1,
@@ -84,7 +107,15 @@ router.get('/courses/:courseId', authenticate, requireRole('CREATOR', 'ADMIN'), 
       allowStudentScreenShare: course.allowStudentScreenShare === 1,
       allowStudentCamera: course.allowStudentCamera === 1,
       modules,
-      channels
+      channels,
+      customRoles: customRoles.map(r => ({
+        ...r,
+        canPostAnnouncements: r.canPostAnnouncements === 1,
+        canSpeakInStage: r.canSpeakInStage === 1,
+        canShareScreen: r.canShareScreen === 1,
+        canModerateChat: r.canModerateChat === 1,
+        canManageVoice: r.canManageVoice === 1,
+      }))
     });
   } catch (err) {
     return res.status(500).json({
@@ -98,11 +129,14 @@ router.put('/courses/:courseId', authenticate, requireRole('CREATOR', 'ADMIN'), 
       courseId
     } = req.params;
     const creatorId = req.user.id;
+    let owned = null;
     if (req.user.role !== 'ADMIN') {
-      const owned = queryOne('SELECT id FROM courses WHERE id = ? AND creatorId = ?', [courseId, creatorId]);
+      owned = queryOne('SELECT id, spaceId FROM courses WHERE id = ? AND creatorId = ?', [courseId, creatorId]);
       if (!owned) return res.status(403).json({
         error: 'Sem permissão para editar este curso'
       });
+    } else {
+      owned = queryOne('SELECT id, spaceId FROM courses WHERE id = ?', [courseId]);
     }
     const {
       title,
@@ -118,31 +152,137 @@ router.put('/courses/:courseId', authenticate, requireRole('CREATOR', 'ADMIN'), 
       durationHours,
       defaultCallMode,
       allowStudentScreenShare,
-      allowStudentCamera
+      allowStudentCamera,
+      modules,
+      channels
     } = req.body;
     const now = new Date().toISOString();
-    execute(`UPDATE courses SET
-        title = COALESCE(?, title),
-        description = COALESCE(?, description),
-        category = COALESCE(?, category),
-        difficulty = COALESCE(?, difficulty),
-        language = COALESCE(?, language),
-        price = COALESCE(?, price),
-        isFree = COALESCE(?, isFree),
-        isPublished = COALESCE(?, isPublished),
-        thumbnailUrl = COALESCE(?, thumbnailUrl),
-        bannerUrl = COALESCE(?, bannerUrl),
-        durationHours = COALESCE(?, durationHours),
-        defaultCallMode = COALESCE(?, defaultCallMode),
-        allowStudentScreenShare = COALESCE(?, allowStudentScreenShare),
-        allowStudentCamera = COALESCE(?, allowStudentCamera),
-        updatedAt = ?
-       WHERE id = ?`, [title || null, description || null, category || null, difficulty || null, language || null, price !== undefined ? price : null, isFree !== undefined ? isFree ? 1 : 0 : null, isPublished !== undefined ? isPublished ? 1 : 0 : null, thumbnailUrl || null, bannerUrl || null, durationHours !== undefined ? Number(durationHours) : null, defaultCallMode || null, allowStudentScreenShare !== undefined ? allowStudentScreenShare ? 1 : 0 : null, allowStudentCamera !== undefined ? allowStudentCamera ? 1 : 0 : null, now, courseId]);
+
+    transaction(() => {
+      execute(`UPDATE courses SET
+          title = COALESCE(?, title),
+          description = COALESCE(?, description),
+          category = COALESCE(?, category),
+          difficulty = COALESCE(?, difficulty),
+          language = COALESCE(?, language),
+          price = COALESCE(?, price),
+          isFree = COALESCE(?, isFree),
+          isPublished = COALESCE(?, isPublished),
+          thumbnailUrl = COALESCE(?, thumbnailUrl),
+          bannerUrl = COALESCE(?, bannerUrl),
+          durationHours = COALESCE(?, durationHours),
+          defaultCallMode = COALESCE(?, defaultCallMode),
+          allowStudentScreenShare = COALESCE(?, allowStudentScreenShare),
+          allowStudentCamera = COALESCE(?, allowStudentCamera),
+          updatedAt = ?
+         WHERE id = ?`, [title || null, description || null, category || null, difficulty || null, language || null, price !== undefined ? price : null, isFree !== undefined ? isFree ? 1 : 0 : null, isPublished !== undefined ? isPublished ? 1 : 0 : null, thumbnailUrl || null, bannerUrl || null, durationHours !== undefined ? Number(durationHours) : null, defaultCallMode || null, allowStudentScreenShare !== undefined ? allowStudentScreenShare ? 1 : 0 : null, allowStudentCamera !== undefined ? allowStudentCamera ? 1 : 0 : null, now, courseId]);
+
+      if (Array.isArray(modules)) {
+        const existingModules = queryAll('SELECT id FROM course_modules WHERE courseId = ?', [courseId]);
+        const incomingModIds = new Set(modules.filter(m => m.id && !String(m.id).startsWith('mod-temp-')).map(m => m.id));
+
+        for (const exMod of existingModules) {
+          if (!incomingModIds.has(exMod.id)) {
+            const exLessons = queryAll('SELECT id FROM lessons WHERE moduleId = ?', [exMod.id]);
+            for (const el of exLessons) {
+              execute('DELETE FROM quiz_questions WHERE quizId IN (SELECT id FROM quizzes WHERE lessonId = ?)', [el.id]);
+              execute('DELETE FROM quizzes WHERE lessonId = ?', [el.id]);
+              execute('DELETE FROM lesson_progress WHERE lessonId = ?', [el.id]);
+              execute('DELETE FROM notes WHERE lessonId = ?', [el.id]);
+            }
+            execute('DELETE FROM lessons WHERE moduleId = ?', [exMod.id]);
+            execute('DELETE FROM course_modules WHERE id = ?', [exMod.id]);
+          }
+        }
+
+        modules.forEach((mod, mIdx) => {
+          let modId = mod.id;
+          const exists = modId ? queryOne('SELECT id FROM course_modules WHERE id = ?', [modId]) : null;
+          if (exists) {
+            execute('UPDATE course_modules SET title = ?, description = ?, orderIndex = ? WHERE id = ?', [mod.title || `Módulo ${mIdx + 1}`, mod.description || '', mIdx, modId]);
+          } else {
+            modId = modId || `mod-${Date.now()}-${mIdx}`;
+            execute('INSERT INTO course_modules (id, courseId, title, description, orderIndex) VALUES (?, ?, ?, ?, ?)', [modId, courseId, mod.title || `Módulo ${mIdx + 1}`, mod.description || '', mIdx]);
+          }
+
+          if (Array.isArray(mod.lessons)) {
+            const existingLessons = queryAll('SELECT id FROM lessons WHERE moduleId = ?', [modId]);
+            const incomingLesIds = new Set(mod.lessons.filter(l => l.id && !String(l.id).startsWith('les-temp-')).map(l => l.id));
+
+            for (const exLes of existingLessons) {
+              if (!incomingLesIds.has(exLes.id)) {
+                execute('DELETE FROM quiz_questions WHERE quizId IN (SELECT id FROM quizzes WHERE lessonId = ?)', [exLes.id]);
+                execute('DELETE FROM quizzes WHERE lessonId = ?', [exLes.id]);
+                execute('DELETE FROM lesson_progress WHERE lessonId = ?', [exLes.id]);
+                execute('DELETE FROM notes WHERE lessonId = ?', [exLes.id]);
+                execute('DELETE FROM lessons WHERE id = ?', [exLes.id]);
+              }
+            }
+
+            mod.lessons.forEach((les, lIdx) => {
+              let lesId = les.id;
+              const contentToStore = les.quiz ? JSON.stringify(les.quiz) : les.richArticle ? JSON.stringify(les.richArticle) : les.codeChallenge ? JSON.stringify(les.codeChallenge) : typeof les.content === 'object' ? JSON.stringify(les.content) : les.customData ? JSON.stringify(les.customData) : les.content || '';
+              const lesExists = lesId ? queryOne('SELECT id FROM lessons WHERE id = ?', [lesId]) : null;
+
+              if (lesExists) {
+                execute('UPDATE lessons SET title = ?, type = ?, content = ?, videoUrl = ?, durationMin = ?, orderIndex = ?, xpReward = ? WHERE id = ?', [les.title || `Lição ${lIdx + 1}`, les.type || 'video', contentToStore, les.videoUrl || '', Number(les.durationMin || 15), lIdx, Number(les.xpReward || 25), lesId]);
+              } else {
+                lesId = lesId || `les-${Date.now()}-${mIdx}-${lIdx}`;
+                execute('INSERT INTO lessons (id, moduleId, title, type, content, videoUrl, durationMin, orderIndex, xpReward) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [lesId, modId, les.title || `Lição ${lIdx + 1}`, les.type || 'video', contentToStore, les.videoUrl || '', Number(les.durationMin || 15), lIdx, Number(les.xpReward || 25)]);
+              }
+
+              if (les.quiz) {
+                const quizId = `quiz-${lesId}`;
+                const qExists = queryOne('SELECT id FROM quizzes WHERE lessonId = ?', [lesId]);
+                if (qExists) {
+                  execute('UPDATE quizzes SET title = ?, description = ?, passingScore = ?, xpReward = ? WHERE id = ?', [les.quiz.title || `Questionário: ${les.title}`, les.quiz.description || '', Number(les.quiz.passingScore || 70), Number(les.quiz.xpReward || 50), qExists.id]);
+                  execute('DELETE FROM quiz_questions WHERE quizId = ?', [qExists.id]);
+                } else {
+                  execute('INSERT INTO quizzes (id, lessonId, title, description, passingScore, xpReward) VALUES (?, ?, ?, ?, ?, ?)', [quizId, lesId, les.quiz.title || `Questionário: ${les.title}`, les.quiz.description || '', Number(les.quiz.passingScore || 70), Number(les.quiz.xpReward || 50)]);
+                }
+                const activeQuizId = qExists ? qExists.id : quizId;
+                if (Array.isArray(les.quiz.questions)) {
+                  les.quiz.questions.forEach((q, qIdx) => {
+                    const qId = `qq-${Date.now()}-${qIdx}`;
+                    const optionsArray = Array.isArray(q.options) ? q.options.map(opt => typeof opt === 'string' ? opt : opt.text) : ['Opção A', 'Opção B'];
+                    let correctOptionIndex = 0;
+                    if (Array.isArray(q.options)) {
+                      const idx = q.options.findIndex(opt => opt && opt.isCorrect);
+                      if (idx >= 0) correctOptionIndex = idx;
+                    } else if (q.correctOptionIndex !== undefined) {
+                      correctOptionIndex = Number(q.correctOptionIndex);
+                    }
+                    execute('INSERT INTO quiz_questions (id, quizId, question, options, correctOptionIndex, explanation, orderIndex) VALUES (?, ?, ?, ?, ?, ?, ?)', [qId, activeQuizId, q.question || `Questão ${qIdx + 1}`, JSON.stringify(optionsArray), correctOptionIndex, q.explanation || '', qIdx]);
+                  });
+                }
+              }
+            });
+          }
+        });
+      }
+
+      if (Array.isArray(channels) && owned?.spaceId) {
+        channels.forEach((ch, chIdx) => {
+          const isVoiceChan = ch.type === 'voice' || ch.isVoice ? 1 : 0;
+          const chanAccess = ch.accessMode || (ch.type === 'announcement' ? 'announcement' : 'discussion');
+          const chanVoiceMode = ch.voiceMode || defaultCallMode || 'open';
+          const chExists = ch.id ? queryOne('SELECT id FROM channels WHERE id = ? AND spaceId = ?', [ch.id, owned.spaceId]) : null;
+          if (chExists) {
+            execute('UPDATE channels SET name = ?, type = ?, topic = ?, orderIndex = ?, isVoice = ?, accessMode = ?, voiceMode = ? WHERE id = ?', [ch.name, ch.type || 'text', ch.topic || '', chIdx, isVoiceChan, chanAccess, chanVoiceMode, ch.id]);
+          } else {
+            const newChId = ch.id || `ch-${Date.now()}-${chIdx}`;
+            execute('INSERT INTO channels (id, spaceId, name, type, topic, orderIndex, isVoice, isLocked, guidingQuestion, guidelines, accessMode, voiceMode) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)', [newChId, owned.spaceId, ch.name || `canal-${chIdx + 1}`, ch.type || 'text', ch.topic || '', chIdx, isVoiceChan, ch.guidingQuestion || '', ch.guidelines || '', chanAccess, chanVoiceMode]);
+          }
+        });
+      }
+    });
+
     return res.json({
       success: true,
       id: courseId
     });
   } catch (err) {
+    console.error('Update course error:', err);
     return res.status(500).json({
       error: 'Falha ao atualizar curso'
     });
@@ -214,28 +354,9 @@ router.post('/courses', authenticate, requireRole('CREATOR', 'ADMIN'), async (re
         const channelsToInsert = Array.isArray(channels) && channels.length > 0 ? channels : [{
           name: 'geral',
           type: 'text',
-          topic: 'Discussão geral sobre o curso e apresentações.',
-          guidingQuestion: 'Qual é o seu objetivo de aprendizagem neste curso?',
-          guidelines: 'Mantenha o respeito e colabore com os colegas.'
-        }, {
-          name: 'duvidas-exercicios',
-          type: 'text',
-          topic: 'Canal de resolução de dúvidas e código.',
-          guidingQuestion: 'Em que lição ou exercício encontrou dificuldade?',
-          guidelines: 'Partilhe o excerto de código com formatação clara.'
-        }, {
-          name: 'projetos-showcase',
-          type: 'text',
-          topic: 'Partilhe os projetos construídos ao longo do curso.',
-          guidingQuestion: 'Que funcionalidade desenvolveu no seu projeto?',
-          guidelines: 'Adicione links de pré-visualização ou repositório.'
-        }, {
-          name: 'Sala de Estudo 01 (Voz/Vídeo)',
-          type: 'voice',
-          topic: 'Sala ao vivo para estudo em grupo e partilha de ecrã.',
-          isVoice: 1,
-          guidingQuestion: 'Que lição estão a rever em conjunto?',
-          guidelines: 'Silencie o microfone quando não estiver a falar.'
+          topic: '',
+          guidingQuestion: '',
+          guidelines: ''
         }];
         channelsToInsert.forEach((ch, chIdx) => {
           const chId = `ch-${Date.now()}-${chIdx}`;
@@ -301,7 +422,7 @@ router.post('/courses', authenticate, requireRole('CREATOR', 'ADMIN'), async (re
               const lesId = `les-${Date.now()}-${mIdx}-${lIdx}`;
               const contentToStore = les.quiz ? JSON.stringify(les.quiz) : les.richArticle ? JSON.stringify(les.richArticle) : les.codeChallenge ? JSON.stringify(les.codeChallenge) : typeof les.content === 'object' ? JSON.stringify(les.content) : les.customData ? JSON.stringify(les.customData) : les.content || '';
               execute(`INSERT INTO lessons (id, moduleId, title, type, content, videoUrl, durationMin, orderIndex, xpReward)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, [lesId, modId, les.title || `Lição ${lIdx + 1}`, les.type || 'video', contentToStore, les.videoUrl || (les.type === 'video' ? 'https://www.w3schools.com/html/mov_bbb.mp4' : ''), Number(les.durationMin || 15), lIdx, Number(les.xpReward || 25)]);
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, [lesId, modId, les.title || `Lição ${lIdx + 1}`, les.type || 'video', contentToStore, les.videoUrl || '', Number(les.durationMin || 15), lIdx, Number(les.xpReward || 25)]);
               if (les.quiz) {
                 const quizId = `quiz-${Date.now()}-${mIdx}-${lIdx}`;
                 execute(`INSERT INTO quizzes (id, lessonId, title, description, passingScore, xpReward)
@@ -474,4 +595,21 @@ router.put('/courses/:courseId/members/:userId/role', authenticate, requireRole(
     });
   }
 });
+
+router.delete('/courses/:courseId/members/:userId', authenticate, requireRole('CREATOR', 'ADMIN'), async (req, res) => {
+  try {
+    const { courseId, userId } = req.params;
+    const creatorId = req.user.id;
+    if (req.user.role !== 'ADMIN') {
+      const owned = queryOne('SELECT id FROM courses WHERE id = ? AND creatorId = ?', [courseId, creatorId]);
+      if (!owned) return res.status(403).json({ error: 'Acesso negado a este curso' });
+    }
+    execute('DELETE FROM enrollments WHERE courseId = ? AND userId = ?', [courseId, userId]);
+    execute('DELETE FROM course_member_roles WHERE courseId = ? AND userId = ?', [courseId, userId]);
+    return res.json({ success: true, message: 'Membro removido do curso com sucesso' });
+  } catch (err) {
+    return res.status(500).json({ error: 'Falha ao remover membro do curso' });
+  }
+});
+
 export default router;

@@ -321,35 +321,6 @@ router.get('/:id', optionalAuth, async (req, res) => {
         lessons: formattedLessons
       };
     });
-    if (modulesWithLessons.length === 0) {
-      modulesWithLessons = [{
-        id: `mod-welcome-${course.id}`,
-        title: 'Módulo 1: Introdução & Fundamentos',
-        description: 'Aulas e materiais de boas-vindas ao espaço da turma.',
-        orderIndex: 0,
-        lessons: [{
-          id: `les-welcome-${course.id}`,
-          title: '1.1 Boas-vindas ao Curso & Apresentação da Turma',
-          type: 'video',
-          durationMin: 12,
-          orderIndex: 0,
-          xpReward: 25,
-          videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-          content: 'Bem-vindo ao espaço! Explore os canais da comunidade na barra lateral e acompanhe as aulas.',
-          quiz: null
-        }, {
-          id: `les-guide-${course.id}`,
-          title: '1.2 Guia Prático e Metodologia de Estudo',
-          type: 'text',
-          durationMin: 10,
-          orderIndex: 1,
-          xpReward: 15,
-          videoUrl: '',
-          content: 'Participe ativamente nos canais de dúvida e tire partido das salas de mentoria ao vivo.',
-          quiz: null
-        }]
-      }];
-    }
     let space = null;
     const targetSpaceId = course.spaceId || (resolvedSpaceRow ? resolvedSpaceRow.id : null);
     if (targetSpaceId) {
