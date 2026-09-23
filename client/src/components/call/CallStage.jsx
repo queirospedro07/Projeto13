@@ -83,16 +83,24 @@ export const CallStage = ({
     if (!user) return [];
     return [{
       id: user.id,
+      socketId: 'self',
       name: `${user.name} (Você)`,
       username: user.username,
       avatarUrl: user.avatarUrl,
       role: user.role,
+      isSelf: true,
       isSpeaking: false,
       isMuted: false,
       isCameraOn: false,
       isScreenSharing: false
     }];
   });
+
+  useEffect(() => {
+    if (socket?.id) {
+      setParticipants(prev => prev.map(p => p.isSelf ? { ...p, socketId: socket.id } : p));
+    }
+  }, [socket?.id]);
 
   const [localCameraStream, setLocalCameraStream] = useState(null);
   const [localScreenStream, setLocalScreenStream] = useState(null);
@@ -398,42 +406,50 @@ export const CallStage = ({
   useEffect(() => {
     let isMounted = true;
 
-    const joinSession = async () => {
-      await initLocalAudio();
-      if (!isMounted) return;
+    // 1. Emit join immediately to enter the room without waiting for microphone permission
+    if (socket && userRef.current?.id) {
+      socket.emit('join-voice-room', {
+        roomId: effectiveRoomId,
+        user: {
+          id: userRef.current.id,
+          name: userRef.current.name,
+          username: userRef.current.username,
+          avatarUrl: userRef.current.avatarUrl,
+          role: userRef.current.role
+        }
+      });
+    }
 
-      if (socket && userRef.current?.id) {
-        socket.emit('join-voice-room', {
-          roomId: effectiveRoomId,
-          user: {
-            id: userRef.current.id,
-            name: userRef.current.name,
-            username: userRef.current.username,
-            avatarUrl: userRef.current.avatarUrl,
-            role: userRef.current.role
+    // 2. Initialize local audio stream in background and add to any open peer connections
+    initLocalAudio().then(stream => {
+      if (stream && isMounted) {
+        const audioTrack = stream.getAudioTracks()[0];
+        if (audioTrack) {
+          for (const [targetSocketId, pc] of peerConnectionsRef.current.entries()) {
+            try {
+              const sender = pc.addTrack(audioTrack, stream);
+              audioSendersRef.current.set(targetSocketId, sender);
+              sendOfferToPeer(targetSocketId);
+            } catch (_) {}
           }
-        });
+        }
       }
-    };
-
-    joinSession();
+    });
 
     if (socket && userRef.current?.id) {
       // 1. Existing participants in the room
       socket.on('voice-room-existing-users', async (existingList) => {
         if (!Array.isArray(existingList) || !isMounted) return;
 
-        const currentUserId = userRef.current?.id;
-
         setParticipants(prev => {
           const next = [...prev];
           for (const item of existingList) {
             const remoteUser = item.user;
-            if (remoteUser && remoteUser.id !== currentUserId) {
-              if (item.socketId) {
-                socketToUserRef.current.set(item.socketId, remoteUser.id);
-                userToSocketRef.current.set(remoteUser.id, item.socketId);
-              }
+            // Identify remote peer by their socketId (must be different from my current socket)
+            if (remoteUser && item.socketId && item.socketId !== socket.id) {
+              socketToUserRef.current.set(item.socketId, remoteUser.id);
+              userToSocketRef.current.set(remoteUser.id, item.socketId);
+
               if (item.screenStreamId) {
                 peerScreenStreamIdsRef.current.set(remoteUser.id, item.screenStreamId);
               }
@@ -447,7 +463,7 @@ export const CallStage = ({
                 peerCameraTrackIdsRef.current.set(remoteUser.id, item.cameraTrackId);
               }
 
-              const existingIdx = next.findIndex(p => p.id === remoteUser.id);
+              const existingIdx = next.findIndex(p => p.socketId === item.socketId);
               const pData = {
                 id: remoteUser.id,
                 socketId: item.socketId,
@@ -455,6 +471,7 @@ export const CallStage = ({
                 username: remoteUser.username,
                 avatarUrl: remoteUser.avatarUrl,
                 role: remoteUser.role,
+                isSelf: false,
                 isSpeaking: false,
                 isMuted: !!item.isMuted,
                 isCameraOn: !!item.isCameraOn,
@@ -486,15 +503,13 @@ export const CallStage = ({
 
       // 2. New remote user joined
       socket.on('user-joined-voice', ({ user: remoteUser, socketId: remoteSocketId }) => {
-        if (!remoteUser || remoteUser.id === userRef.current?.id || !isMounted) return;
+        if (!remoteUser || !remoteSocketId || remoteSocketId === socket.id || !isMounted) return;
 
-        if (remoteSocketId) {
-          socketToUserRef.current.set(remoteSocketId, remoteUser.id);
-          userToSocketRef.current.set(remoteUser.id, remoteSocketId);
-        }
+        socketToUserRef.current.set(remoteSocketId, remoteUser.id);
+        userToSocketRef.current.set(remoteUser.id, remoteSocketId);
 
         setParticipants(prev => {
-          const existingIdx = prev.findIndex(p => p.id === remoteUser.id);
+          const existingIdx = prev.findIndex(p => p.socketId === remoteSocketId);
           const pData = {
             id: remoteUser.id,
             socketId: remoteSocketId,
@@ -502,6 +517,7 @@ export const CallStage = ({
             username: remoteUser.username,
             avatarUrl: remoteUser.avatarUrl,
             role: remoteUser.role,
+            isSelf: false,
             isSpeaking: false,
             isMuted: false,
             isCameraOn: false,
@@ -695,7 +711,8 @@ export const CallStage = ({
         }
 
         setParticipants(prev => prev.map(p => {
-          if (p.id !== userId) return p;
+          const isTarget = socketId ? p.socketId === socketId : (p.id === userId && !p.isSelf);
+          if (!isTarget) return p;
           return {
             ...p,
             socketId: p.socketId || socketId,
@@ -709,13 +726,16 @@ export const CallStage = ({
       });
 
       // 7. Speaking state changed
-      socket.on('user-voice-speaking-changed', ({ userId, isSpeaking }) => {
-        setParticipants(prev => prev.map(p => p.id === userId ? { ...p, isSpeaking: !!isSpeaking } : p));
+      socket.on('user-voice-speaking-changed', ({ userId, socketId, isSpeaking }) => {
+        setParticipants(prev => prev.map(p => {
+          const isTarget = socketId ? p.socketId === socketId : (p.id === userId && !p.isSelf);
+          return isTarget ? { ...p, isSpeaking: !!isSpeaking } : p;
+        }));
       });
 
       // 8. Remote user left voice
       socket.on('user-left-voice', ({ userId, socketId }) => {
-        setParticipants(prev => prev.filter(p => p.id !== userId && p.socketId !== socketId));
+        setParticipants(prev => prev.filter(p => p.isSelf || (socketId ? p.socketId !== socketId : p.id !== userId)));
         const sId = socketId || userToSocketRef.current.get(userId);
         if (sId) {
           const pc = peerConnectionsRef.current.get(sId);
@@ -1178,13 +1198,13 @@ export const CallStage = ({
               {/* Participants Strip Below Screen Share */}
               <div className="h-24 sm:h-28 flex items-center gap-3 overflow-x-auto py-1 shrink-0">
                 {participants.map(p => {
-                  const isSelf = p.id === userRef.current?.id;
+                  const isSelf = p.isSelf || p.socketId === socket?.id;
                   const camStream = isSelf ? localCameraStream : remoteCameraStreams[p.id];
                   const hasCamera = !!camStream && (isSelf ? isCameraOn : p.isCameraOn);
 
                   return (
                     <div
-                      key={p.id}
+                      key={p.socketId || p.id}
                       className={`h-full aspect-video rounded-xl bg-zinc-900 border overflow-hidden relative shrink-0 flex items-center justify-center transition-all ${
                         p.isSpeaking ? 'border-emerald-500/80 ring-2 ring-emerald-500/30' : 'border-white/10'
                       }`}
@@ -1221,13 +1241,13 @@ export const CallStage = ({
               'grid-cols-2 md:grid-cols-4 max-w-6xl'
             }`}>
               {participants.map(p => {
-                const isSelf = p.id === userRef.current?.id;
+                const isSelf = p.isSelf || p.socketId === socket?.id;
                 const camStream = isSelf ? localCameraStream : remoteCameraStreams[p.id];
                 const hasCamera = !!camStream && (isSelf ? isCameraOn : p.isCameraOn);
 
                 return (
                   <div
-                    key={p.id}
+                    key={p.socketId || p.id}
                     className={`aspect-video w-full rounded-2xl overflow-hidden relative flex flex-col items-center justify-center bg-zinc-900/90 border transition-all duration-200 ${
                       p.isSpeaking ? 'border-emerald-500/80 ring-2 ring-emerald-500/30 shadow-lg shadow-emerald-500/10' : 'border-white/10 hover:border-white/20'
                     }`}
@@ -1345,7 +1365,7 @@ export const CallStage = ({
             ) : (
               <div className="flex-1 p-3 space-y-2 overflow-y-auto custom-scrollbar">
                 {participants.map(p => (
-                  <div key={p.id} className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-900/60 border border-white/5">
+                  <div key={p.socketId || p.id} className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-900/60 border border-white/5">
                     <div className="flex items-center gap-2.5">
                       <Avatar src={p.avatarUrl} name={p.name} size="sm" />
                       <div>

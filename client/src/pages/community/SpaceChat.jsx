@@ -137,14 +137,12 @@ export const SpaceChat = () => {
     setMessages(prev => [...prev, optimisticMsg]);
     soundEffects.playMessage();
     sendStopTyping(currentChannel.id);
-    socket?.emit('send-message', optimisticMsg);
     try {
       const newMsg = await api.sendMessage(currentChannel.id, {
         content: contentToSend,
         replyToId: currentReply?.id
       });
       setMessages(prev => prev.map(m => m.id === tempId ? newMsg : m));
-      socket?.emit('send-message', newMsg);
     } catch (err) {
       setMessages(prev => prev.filter(m => m.id !== tempId));
       setInputContent(contentToSend);
@@ -254,7 +252,7 @@ export const SpaceChat = () => {
       </div>
 
       
-      {inVoiceRoom ? <CallStage key={inVoiceRoom} roomName={inVoiceRoom} roomId={`space_${space?.id || 'community'}_${inVoiceRoom.toLowerCase().replace(/[^a-z0-9]/g, '_')}`} roomType={inVoiceRoom.toLowerCase().includes('palco') || inVoiceRoom.toLowerCase().includes('masterclass') ? 'stage' : inVoiceRoom.toLowerCase().includes('dúvida') || inVoiceRoom.toLowerCase().includes('duvidas') ? 'qa' : 'voice'} isStageMode={inVoiceRoom.toLowerCase().includes('palco') || inVoiceRoom.toLowerCase().includes('masterclass')} onDisconnect={() => setInVoiceRoom(null)} /> : <>
+      {inVoiceRoom ? <CallStage key={`${space?.id || id || 'community'}_${inVoiceRoom}`} roomName={inVoiceRoom} roomId={`space_${space?.id || id || 'community'}_${inVoiceRoom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '_')}`} roomType={inVoiceRoom.toLowerCase().includes('palco') || inVoiceRoom.toLowerCase().includes('masterclass') ? 'stage' : inVoiceRoom.toLowerCase().includes('dúvida') || inVoiceRoom.toLowerCase().includes('duvidas') ? 'qa' : 'voice'} isStageMode={inVoiceRoom.toLowerCase().includes('palco') || inVoiceRoom.toLowerCase().includes('masterclass')} onDisconnect={() => setInVoiceRoom(null)} /> : <>
           
           <button onClick={() => setShowMobileSidebar(true)} className="md:hidden absolute top-3 left-3 z-10 p-2 rounded-xl bg-white border border-slate-200 shadow-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors cursor-pointer" title="Canais" aria-label="Abrir lista de canais">
             <Menu className="w-5 h-5" />

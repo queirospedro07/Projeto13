@@ -102,10 +102,10 @@ export const Sidebar = () => {
             {!collapsed && (
               <div className="min-w-0">
                 <span className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-white truncate block">
-                  Comunidade
+                  LearnSpace
                 </span>
                 <p className="text-[10px] text-slate-400 dark:text-zinc-500 truncate font-medium">
-                  Espaço Principal
+                  Aprender & Conectar
                 </p>
               </div>
             )}
@@ -203,7 +203,7 @@ export const Sidebar = () => {
               <>
                 <div className="flex items-center gap-2.5 min-w-0">
                   <Users className={iconClass(isActive)} />
-                  {!collapsed && <span className="truncate">Amigos & Rede</span>}
+                  {!collapsed && <span className="truncate">Redes & Amigos</span>}
                 </div>
                 {pendingRequestsCount > 0 && (
                   <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-white font-black text-[10px] shadow-xs">

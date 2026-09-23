@@ -102,6 +102,8 @@ export const MessagesPage = () => {
     } else if (tabParam === 'add') {
       setMainTab('friends');
       setFriendsSubTab('add');
+    } else {
+      setMainTab('chat');
     }
   }, [searchParams]);
 
@@ -148,7 +150,6 @@ export const MessagesPage = () => {
     };
 
     socket.on('direct-message', handleDM);
-    socket.on('new-direct-message', handleDM);
 
     const handleCallRejected = ({ rejector }) => {
       toast({
@@ -163,7 +164,6 @@ export const MessagesPage = () => {
 
     return () => {
       socket.off('direct-message', handleDM);
-      socket.off('new-direct-message', handleDM);
       socket.off('direct-call-rejected', handleCallRejected);
     };
   }, [socket, activePeer?.id, user?.id, toast]);

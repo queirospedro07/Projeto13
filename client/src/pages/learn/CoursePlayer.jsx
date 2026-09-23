@@ -352,14 +352,12 @@ export const CoursePlayer = () => {
     setReplyingTo(null);
     setChannelMessages(prev => [...prev, optimisticMsg]);
     soundEffects.playMessage();
-    socket?.emit('send-message', optimisticMsg);
     try {
       const newMsg = await api.sendMessage(currentTextChannel.id, {
         content,
         replyToId: currentReply?.id
       });
       setChannelMessages(prev => prev.map(m => m.id === tempId ? newMsg : m));
-      socket?.emit('send-message', newMsg);
     } catch {
       console.warn('Network issue saving message, retaining local view');
     }
