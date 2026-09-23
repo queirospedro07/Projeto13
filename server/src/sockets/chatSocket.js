@@ -139,7 +139,9 @@ export function setupSocketIO(io) {
       userId,
       isMuted,
       isCameraOn,
-      isScreenSharing
+      isScreenSharing,
+      cameraTrackId,
+      screenTrackId
     }) => {
       const room = voiceRooms.get(roomId);
       if (room && room.has(socket.id)) {
@@ -147,13 +149,17 @@ export function setupSocketIO(io) {
         if (isMuted !== undefined) current.isMuted = isMuted;
         if (isCameraOn !== undefined) current.isCameraOn = isCameraOn;
         if (isScreenSharing !== undefined) current.isScreenSharing = isScreenSharing;
+        if (cameraTrackId !== undefined) current.cameraTrackId = cameraTrackId;
+        if (screenTrackId !== undefined) current.screenTrackId = screenTrackId;
       }
       socket.to(`voice_${roomId}`).emit('user-voice-state-changed', {
         userId,
         socketId: socket.id,
         isMuted,
         isCameraOn,
-        isScreenSharing
+        isScreenSharing,
+        cameraTrackId,
+        screenTrackId
       });
     });
     socket.on('voice-speaking-state', ({
@@ -167,24 +173,16 @@ export function setupSocketIO(io) {
         isSpeaking
       });
     });
-    socket.on('voice-signal-offer', ({
-      targetSocketId,
-      offer,
-      callerUser
-    }) => {
-      io.to(targetSocketId).emit('voice-signal-offer', {
-        callerSocketId: socket.id,
-        offer,
-        callerUser
+    socket.on('voice-signal-offer', payload => {
+      io.to(payload.targetSocketId).emit('voice-signal-offer', {
+        ...payload,
+        callerSocketId: socket.id
       });
     });
-    socket.on('voice-signal-answer', ({
-      targetSocketId,
-      answer
-    }) => {
-      io.to(targetSocketId).emit('voice-signal-answer', {
-        responderSocketId: socket.id,
-        answer
+    socket.on('voice-signal-answer', payload => {
+      io.to(payload.targetSocketId).emit('voice-signal-answer', {
+        ...payload,
+        responderSocketId: socket.id
       });
     });
     socket.on('voice-signal-ice', ({

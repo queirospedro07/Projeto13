@@ -101,6 +101,8 @@ export const ProfilePage = () => {
   const navigate = useNavigate();
   const isMe = !username || username === 'me' || username === currentUser?.username;
   const [profileUser, setProfileUser] = useState(null);
+  const [loading, setLoading] = useState(!isMe);
+  const [notFound, setNotFound] = useState(false);
   const [socialStatus, setSocialStatus] = useState({
     isFollowing: false,
     friendshipStatus: 'NONE',
@@ -133,21 +135,28 @@ export const ProfilePage = () => {
   useEffect(() => {
     if (isMe && currentUser) {
       setProfileUser(currentUser);
+      setLoading(false);
+      setNotFound(false);
       api.getMyCourses().then(d => setMyCourses(d || [])).catch(() => {});
       api.getAchievements().then(d => setAchievements((d || []).filter(a => a.isUnlocked))).catch(() => {});
       api.getSocialStatus(currentUser.id).then(st => setSocialStatus(st)).catch(() => {});
     } else if (!isMe && username) {
-      api.searchSocialUsers(username).then(users => {
-        const found = (users || []).find(u => u.username?.toLowerCase() === username.toLowerCase()) || users?.[0];
-        if (found) {
-          setProfileUser(found);
-          api.getSocialStatus(found.id).then(st => setSocialStatus(st)).catch(() => {});
+      setLoading(true);
+      setNotFound(false);
+      api.getUserProfile(username).then(userData => {
+        setProfileUser(userData);
+        setLoading(false);
+        if (userData?.id) {
+          api.getSocialStatus(userData.id).then(st => setSocialStatus(st)).catch(() => {});
         }
-      }).catch(() => {});
+      }).catch(() => {
+        setNotFound(true);
+        setLoading(false);
+      });
     }
   }, [username, currentUser, isMe]);
   const openEditModal = useCallback(() => {
-    const u = isMe ? (currentUser || profileUser) : (profileUser || currentUser);
+    const u = currentUser;
     setEditName(u?.name || '');
     setEditBio(u?.bio || '');
     setEditLocation(u?.location || '');
@@ -308,7 +317,24 @@ export const ProfilePage = () => {
       });
     }
   };
-  const u = isMe ? (currentUser || profileUser) : (profileUser || currentUser);
+  if (loading) {
+    return (
+      <div className="max-w-5xl mx-auto flex flex-col items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+  if (notFound || (!isMe && !profileUser)) {
+    return (
+      <div className="max-w-xl mx-auto flex flex-col items-center justify-center min-h-[400px] text-center p-8 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-sm">
+        <Users className="w-12 h-12 text-slate-400 mb-3" />
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-1">Utilizador não encontrado</h2>
+        <p className="text-sm text-slate-500 dark:text-zinc-400 mb-6">O perfil solicitado não existe ou pode ter sido alterado.</p>
+        <Button onClick={() => navigate(-1)} variant="secondary">Voltar</Button>
+      </div>
+    );
+  }
+  const u = isMe ? currentUser : profileUser;
   const bannerClass = getBannerClass(u?.profile?.bannerUrl);
   const bannerStyle = getBannerStyle(u?.profile?.bannerUrl);
   return <div className="max-w-5xl mx-auto flex flex-col gap-8 animate-fade-in pb-16">
@@ -359,7 +385,7 @@ export const ProfilePage = () => {
                   <Button onClick={handleFriendAction} variant="secondary" size="md" leftIcon={socialStatus.friendshipStatus === 'ACCEPTED' ? <UserCheck className="w-4 h-4 text-emerald-600" /> : socialStatus.friendshipStatus === 'PENDING' ? <Clock className="w-4 h-4 text-amber-600" /> : <UserPlus className="w-4 h-4" />} className="font-bold cursor-pointer">
                     {socialStatus.friendshipStatus === 'ACCEPTED' ? 'Amigos' : socialStatus.friendshipStatus === 'PENDING' ? 'Pendente' : 'Adicionar'}
                   </Button>
-                  <Button onClick={() => navigate('/messages')} variant="secondary" size="md" leftIcon={<MessageSquare className="w-4 h-4" />} className="font-bold cursor-pointer">
+                  <Button onClick={() => navigate(`/messages?userId=${u.id}`, { state: { peer: u } })} variant="secondary" size="md" leftIcon={<MessageSquare className="w-4 h-4" />} className="font-bold cursor-pointer">
                     Mensagem
                   </Button>
                 </>}

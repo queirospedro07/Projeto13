@@ -13,6 +13,7 @@ import { Dashboard } from './pages/Dashboard';
 import { CourseDetails } from './pages/CourseDetails';
 import { CoursePlayer } from './pages/learn/CoursePlayer';
 import { DiscoverSpaces } from './pages/community/DiscoverSpaces';
+import { SpaceChat } from './pages/community/SpaceChat';
 import { LibraryPage } from './pages/LibraryPage';
 import { CreatorDashboard } from './pages/creator/CreatorDashboard';
 import { CourseBuilder } from './pages/creator/CourseBuilder';
@@ -20,6 +21,8 @@ import { CreatorMembers } from './pages/creator/CreatorMembers';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { CertificateView } from './pages/certificates/CertificateView';
 import { SettingsPage } from './pages/SettingsPage';
+import { MessagesPage } from './pages/messages/MessagesPage';
+import { ProfilePage } from './pages/profile/ProfilePage';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
 export const App = () => {
@@ -31,7 +34,6 @@ export const App = () => {
             <BrowserRouter>
               <Routes>
                 <Route path="/" element={<AppLayout />}>
-                  
                   <Route index element={<LandingPage />} />
                   <Route path="login" element={<Login />} />
                   <Route path="register" element={<Register />} />
@@ -61,6 +63,38 @@ export const App = () => {
                     element={
                       <ProtectedRoute>
                         <LibraryPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="messages"
+                    element={
+                      <ProtectedRoute>
+                        <MessagesPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="profile"
+                    element={
+                      <ProtectedRoute>
+                        <ProfilePage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="profile/:username"
+                    element={
+                      <ProtectedRoute>
+                        <ProfilePage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="community/:id"
+                    element={
+                      <ProtectedRoute>
+                        <SpaceChat />
                       </ProtectedRoute>
                     }
                   />
@@ -117,11 +151,9 @@ export const App = () => {
                   />
 
                   <Route path="community" element={<Navigate to="/explore" replace />} />
-                  <Route path="community/:id" element={<Navigate to="/explore" replace />} />
-                  <Route path="progress" element={<Navigate to="/dashboard" replace />} />
-                  <Route path="achievements" element={<Navigate to="/dashboard" replace />} />
-                  <Route path="leaderboard" element={<Navigate to="/dashboard" replace />} />
-                  <Route path="messages" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="progress" element={<Navigate to="/library" replace />} />
+                  <Route path="achievements" element={<Navigate to="/profile" replace />} />
+                  <Route path="leaderboard" element={<Navigate to="/explore" replace />} />
 
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Route>

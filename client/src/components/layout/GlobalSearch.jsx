@@ -159,23 +159,39 @@ export const GlobalSearch = () => {
               </div>
               <div className="space-y-1">
                 {users.map((u) => (
-                  <button
+                  <div
                     key={u.id || u.username}
-                    type="button"
                     onClick={() => handleSelectUser(u)}
-                    className="w-full p-2 rounded-xl flex items-center gap-3 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer group"
+                    className="w-full p-2 rounded-xl flex items-center justify-between gap-3 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer group"
                   >
-                    <Avatar src={u.avatarUrl} alt={u.name} size="sm" fallbackText={u.name} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
-                        {u.name}
-                      </p>
-                      <p className="text-[11px] text-slate-500 dark:text-zinc-400 truncate">
-                        @{u.username} • {u.role === 'CREATOR' ? 'Instrutor' : u.role === 'ADMIN' ? 'Administrador' : 'Estudante'}
-                      </p>
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <Avatar src={u.avatarUrl} alt={u.name} size="sm" fallbackText={u.name} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                          {u.name}
+                        </p>
+                        <p className="text-[11px] text-slate-500 dark:text-zinc-400 truncate">
+                          @{u.username} • {u.role === 'CREATOR' ? 'Instrutor' : u.role === 'ADMIN' ? 'Administrador' : 'Estudante'}
+                        </p>
+                      </div>
                     </div>
-                    <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-500 group-hover:translate-x-0.5 transition-all" />
-                  </button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsOpen(false);
+                          setQuery('');
+                          navigate(`/messages?userId=${u.id}`, { state: { peer: u } });
+                        }}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors"
+                        title="Enviar mensagem direta"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                      </button>
+                      <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-500 group-hover:translate-x-0.5 transition-all" />
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>

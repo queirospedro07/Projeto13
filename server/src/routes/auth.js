@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { queryOne, execute, transaction } from '../db/index.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, optionalAuth } from '../middleware/auth.js';
 import { signJwtToken } from '../config/jwt.js';
 const router = Router();
 function generateToken(user) {
@@ -262,6 +262,53 @@ router.get('/me', authenticate, async (req, res) => {
     return res.status(500).json({
       error: 'Falha ao obter perfil'
     });
+  }
+});
+router.get('/user/:identifier', optionalAuth, async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    const cleanId = (identifier || '').trim();
+    if (!cleanId) {
+      return res.status(400).json({ error: 'Identificador obrigatório' });
+    }
+    const cleanLower = cleanId.toLowerCase();
+    const user = queryOne(`SELECT u.id, u.name, u.username, u.role, u.avatarUrl, u.bio, u.location, u.streakDays, u.xp, u.level, u.dailyGoalMinutes, u.minutesToday, u.totalMinutes, u.createdAt,
+       p.headline, p.website, p.github, p.twitter, p.linkedin, p.bannerUrl, p.themePreference,
+       (SELECT COUNT(*) FROM user_achievements WHERE userId = u.id) as achievementsCount
+       FROM users u
+       LEFT JOIN profiles p ON u.id = p.userId
+       WHERE LOWER(u.username) = ? OR u.id = ?`, [cleanLower, cleanId]);
+    if (!user) {
+      return res.status(404).json({ error: 'Utilizador não encontrado' });
+    }
+    return res.json({
+      id: user.id,
+      name: user.name,
+      username: user.username,
+      role: user.role,
+      avatarUrl: user.avatarUrl,
+      bio: user.bio,
+      location: user.location,
+      xp: user.xp,
+      level: user.level,
+      streakDays: user.streakDays,
+      dailyGoalMinutes: user.dailyGoalMinutes,
+      minutesToday: user.minutesToday,
+      totalMinutes: user.totalMinutes,
+      profile: {
+        headline: user.headline,
+        website: user.website,
+        github: user.github,
+        twitter: user.twitter,
+        linkedin: user.linkedin,
+        bannerUrl: user.bannerUrl,
+        themePreference: user.themePreference
+      },
+      achievementsCount: user.achievementsCount || 0,
+      createdAt: user.createdAt
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Falha ao carregar perfil do utilizador' });
   }
 });
 router.put('/profile', authenticate, async (req, res) => {

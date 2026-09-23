@@ -39,6 +39,7 @@ export const api = {
   }),
   demoLogin: role => request(`/auth/demo/${role}`),
   getMe: () => request('/auth/me'),
+  getUserProfile: identifier => request(`/auth/user/${encodeURIComponent(identifier)}`),
   updateProfile: profile => request('/auth/profile', {
     method: 'PUT',
     body: JSON.stringify(profile)

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Mic, MicOff, Video, VideoOff, Monitor, MonitorOff,
   PhoneOff, MessageSquare, Users, Maximize2, Minimize2,
-  X, Send, Volume2, ShieldCheck, Crown, LayoutGrid
+  X, Send, Volume2, ShieldCheck, Crown, LayoutGrid, Check
 } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import { useAuth } from '../../context/AuthContext';
@@ -49,7 +49,7 @@ const VideoPlayer = ({ stream, isMirrored = false, isContain = false }) => {
       autoPlay
       playsInline
       muted
-      className={`w-full h-full ${isContain ? 'object-contain bg-black/95' : 'object-cover'} ${isMirrored ? 'scale-x-[-1]' : ''}`}
+      className={`w-full h-full ${isContain ? 'object-contain bg-black' : 'object-cover bg-black'} ${isMirrored ? 'scale-x-[-1]' : ''}`}
     />
   );
 };
@@ -58,7 +58,6 @@ export const CallStage = ({
   roomName,
   roomId,
   roomType = 'voice',
-  isStageMode = false,
   initialParticipants = [],
   onDisconnect
 }) => {
@@ -98,7 +97,7 @@ export const CallStage = ({
   const [selectedScreenUserId, setSelectedScreenUserId] = useState(null);
 
   const [chatMessages, setChatMessages] = useState([
-    { id: '1', sender: 'Sistema', content: `Conectado à sala "${roomName}".`, time: 'Agora', isSystem: true }
+    { id: '1', sender: 'Sistema', content: `Conectado ao canal de voz "${roomName}".`, time: 'Agora', isSystem: true }
   ]);
   const [chatInput, setChatInput] = useState('');
 
@@ -107,6 +106,8 @@ export const CallStage = ({
   const localCameraStreamRef = useRef(null);
   const localScreenStreamRef = useRef(null);
   const peerConnectionsRef = useRef(new Map());
+  const cameraSendersRef = useRef(new Map());
+  const screenSendersRef = useRef(new Map());
   const remoteAudioElementsRef = useRef(new Map());
   const pendingIceCandidatesRef = useRef(new Map());
   const socketToUserRef = useRef(new Map());
@@ -156,7 +157,7 @@ export const CallStage = ({
         let sum = 0;
         for (let i = 0; i < data.length; i++) sum += data[i];
         const avg = sum / data.length;
-        const isSpeakingNow = avg > 15 && !localAudioStreamRef.current?.getAudioTracks()[0]?.muted && localAudioStreamRef.current?.getAudioTracks()[0]?.enabled;
+        const isSpeakingNow = avg > 14 && !localAudioStreamRef.current?.getAudioTracks()[0]?.muted && localAudioStreamRef.current?.getAudioTracks()[0]?.enabled;
 
         if (lastSpeakingRef.current !== isSpeakingNow) {
           lastSpeakingRef.current = isSpeakingNow;
@@ -186,7 +187,7 @@ export const CallStage = ({
     }
   };
 
-  const createPeerConnection = useCallback((targetSocketId) => {
+  const getOrCreatePeerConnection = useCallback((targetSocketId, remoteUser) => {
     if (peerConnectionsRef.current.has(targetSocketId)) {
       return peerConnectionsRef.current.get(targetSocketId);
     }
@@ -198,22 +199,22 @@ export const CallStage = ({
       localAudioStreamRef.current.getAudioTracks().forEach(track => {
         pc.addTrack(track, localAudioStreamRef.current);
       });
-    } else {
-      pc.addTransceiver('audio', { direction: 'sendrecv' });
     }
 
-    const camTrack = localCameraStreamRef.current?.getVideoTracks()[0];
-    if (camTrack && localCameraStreamRef.current) {
-      pc.addTrack(camTrack, localCameraStreamRef.current);
-    } else {
-      pc.addTransceiver('video', { direction: 'sendrecv' });
+    if (localCameraStreamRef.current) {
+      const camTrack = localCameraStreamRef.current.getVideoTracks()[0];
+      if (camTrack) {
+        const sender = pc.addTrack(camTrack, localCameraStreamRef.current);
+        cameraSendersRef.current.set(targetSocketId, sender);
+      }
     }
 
-    const screenTrack = localScreenStreamRef.current?.getVideoTracks()[0];
-    if (screenTrack && localScreenStreamRef.current) {
-      pc.addTrack(screenTrack, localScreenStreamRef.current);
-    } else {
-      pc.addTransceiver('video', { direction: 'sendrecv' });
+    if (localScreenStreamRef.current) {
+      const screenTrack = localScreenStreamRef.current.getVideoTracks()[0];
+      if (screenTrack) {
+        const sender = pc.addTrack(screenTrack, localScreenStreamRef.current);
+        screenSendersRef.current.set(targetSocketId, sender);
+      }
     }
 
     pc.onicecandidate = (event) => {
@@ -226,9 +227,9 @@ export const CallStage = ({
     };
 
     pc.ontrack = (event) => {
-      const { track, transceiver } = event;
-      const targetUserId = socketToUserRef.current.get(targetSocketId);
-      const stream = new MediaStream([track]);
+      const { track } = event;
+      const targetUserId = socketToUserRef.current.get(targetSocketId) || remoteUser?.id;
+      const stream = event.streams && event.streams[0] ? event.streams[0] : new MediaStream([track]);
 
       if (track.kind === 'audio') {
         let audio = remoteAudioElementsRef.current.get(targetSocketId);
@@ -242,8 +243,9 @@ export const CallStage = ({
         audio.srcObject = stream;
         audio.play().catch(() => setAutoplayBlocked(true));
       } else if (track.kind === 'video') {
-        const videoTransceivers = pc.getTransceivers().filter(t => t.receiver?.track?.kind === 'video');
-        const isScreen = transceiver === videoTransceivers[1] || event.streams?.[0]?.id?.includes('screen');
+        const isScreen = stream.id.toLowerCase().includes('screen') ||
+          track.label.toLowerCase().includes('screen') ||
+          track.label.toLowerCase().includes('display');
 
         if (isScreen) {
           if (targetUserId) {
@@ -277,6 +279,19 @@ export const CallStage = ({
 
     return pc;
   }, [socket]);
+
+  const sendOfferToPeer = useCallback(async (targetSocketId, callerUser) => {
+    try {
+      const pc = getOrCreatePeerConnection(targetSocketId, callerUser);
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      socket?.emit('voice-signal-offer', {
+        targetSocketId,
+        offer: pc.localDescription,
+        callerUser: user
+      });
+    } catch (_) {}
+  }, [getOrCreatePeerConnection, socket, user]);
 
   useEffect(() => {
     let isMounted = true;
@@ -339,20 +354,11 @@ export const CallStage = ({
 
         for (const item of existingList) {
           if (item.socketId && item.socketId !== socket.id) {
-            try {
-              if (item.user?.id) {
-                socketToUserRef.current.set(item.socketId, item.user.id);
-                userToSocketRef.current.set(item.user.id, item.socketId);
-              }
-              const pc = createPeerConnection(item.socketId);
-              const offer = await pc.createOffer();
-              await pc.setLocalDescription(offer);
-              socket.emit('voice-signal-offer', {
-                targetSocketId: item.socketId,
-                offer,
-                callerUser: user
-              });
-            } catch (_) {}
+            if (item.user?.id) {
+              socketToUserRef.current.set(item.socketId, item.user.id);
+              userToSocketRef.current.set(item.user.id, item.socketId);
+            }
+            sendOfferToPeer(item.socketId, item.user);
           }
         }
       });
@@ -388,7 +394,7 @@ export const CallStage = ({
         });
 
         toast({
-          title: 'Entrada na Sala',
+          title: 'Canal de Voz',
           message: `${remoteUser.name} juntou-se à chamada.`,
           type: 'info'
         });
@@ -401,7 +407,7 @@ export const CallStage = ({
             userToSocketRef.current.set(callerUser.id, callerSocketId);
           }
 
-          const pc = createPeerConnection(callerSocketId);
+          const pc = getOrCreatePeerConnection(callerSocketId, callerUser);
           await pc.setRemoteDescription(new RTCSessionDescription(offer));
 
           const pending = pendingIceCandidatesRef.current.get(callerSocketId) || [];
@@ -415,7 +421,7 @@ export const CallStage = ({
 
           socket.emit('voice-signal-answer', {
             targetSocketId: callerSocketId,
-            answer
+            answer: pc.localDescription
           });
         } catch (_) {}
       });
@@ -423,7 +429,7 @@ export const CallStage = ({
       socket.on('voice-signal-answer', async ({ responderSocketId, answer }) => {
         try {
           const pc = peerConnectionsRef.current.get(responderSocketId);
-          if (pc) {
+          if (pc && pc.signalingState !== 'stable') {
             await pc.setRemoteDescription(new RTCSessionDescription(answer));
             const pending = pendingIceCandidatesRef.current.get(responderSocketId) || [];
             for (const cand of pending) {
@@ -438,11 +444,7 @@ export const CallStage = ({
         try {
           const pc = peerConnectionsRef.current.get(fromSocketId);
           if (pc && pc.remoteDescription && pc.remoteDescription.type) {
-            await pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {
-              const queue = pendingIceCandidatesRef.current.get(fromSocketId) || [];
-              queue.push(candidate);
-              pendingIceCandidatesRef.current.set(fromSocketId, queue);
-            });
+            await pc.addIceCandidate(new RTCIceCandidate(candidate));
           } else {
             const queue = pendingIceCandidatesRef.current.get(fromSocketId) || [];
             queue.push(candidate);
@@ -456,6 +458,22 @@ export const CallStage = ({
           socketToUserRef.current.set(socketId, userId);
           userToSocketRef.current.set(userId, socketId);
         }
+
+        if (isCameraOn === false && userId) {
+          setRemoteCameraStreams(prev => {
+            const next = { ...prev };
+            delete next[userId];
+            return next;
+          });
+        }
+        if (isScreenSharing === false && userId) {
+          setRemoteScreenStreams(prev => {
+            const next = { ...prev };
+            delete next[userId];
+            return next;
+          });
+        }
+
         setParticipants(prev => prev.map(p => {
           if (p.id !== userId) return p;
           return {
@@ -481,6 +499,9 @@ export const CallStage = ({
             pc.close();
             peerConnectionsRef.current.delete(sId);
           }
+          cameraSendersRef.current.delete(sId);
+          screenSendersRef.current.delete(sId);
+
           const audio = remoteAudioElementsRef.current.get(sId);
           if (audio) {
             audio.srcObject = null;
@@ -536,6 +557,8 @@ export const CallStage = ({
 
       peerConnectionsRef.current.forEach(pc => pc.close());
       peerConnectionsRef.current.clear();
+      cameraSendersRef.current.clear();
+      screenSendersRef.current.clear();
 
       remoteAudioElementsRef.current.forEach(audio => {
         audio.srcObject = null;
@@ -543,7 +566,7 @@ export const CallStage = ({
       });
       remoteAudioElementsRef.current.clear();
     };
-  }, [effectiveRoomId, socket, user?.id, createPeerConnection, toast]);
+  }, [effectiveRoomId, socket, user?.id, getOrCreatePeerConnection, sendOfferToPeer, toast]);
 
   const toggleMic = () => {
     const nextMuted = !isMicMuted;
@@ -553,6 +576,12 @@ export const CallStage = ({
       localAudioStreamRef.current.getAudioTracks().forEach(t => {
         t.enabled = !nextMuted;
       });
+    }
+
+    if (nextMuted) {
+      soundEffects.playMute();
+    } else {
+      soundEffects.playUnmute();
     }
 
     setParticipants(prev => prev.map(p => p.id === user?.id ? { ...p, isMuted: nextMuted } : p));
@@ -573,13 +602,14 @@ export const CallStage = ({
       setIsCameraOn(false);
 
       for (const [targetSocketId, pc] of peerConnectionsRef.current.entries()) {
-        try {
-          const videoTransceivers = pc.getTransceivers().filter(t => t.receiver?.track?.kind === 'video');
-          const camSender = videoTransceivers[0]?.sender;
-          if (camSender) {
-            await camSender.replaceTrack(null);
-          }
-        } catch (_) {}
+        const sender = cameraSendersRef.current.get(targetSocketId);
+        if (sender) {
+          try {
+            pc.removeTrack(sender);
+          } catch (_) {}
+          cameraSendersRef.current.delete(targetSocketId);
+        }
+        sendOfferToPeer(targetSocketId);
       }
 
       setParticipants(prev => prev.map(p => p.id === user?.id ? { ...p, isCameraOn: false } : p));
@@ -591,7 +621,8 @@ export const CallStage = ({
     } else {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }
+          video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+          audio: false
         });
         localCameraStreamRef.current = stream;
         setLocalCameraStream(stream);
@@ -600,16 +631,9 @@ export const CallStage = ({
 
         for (const [targetSocketId, pc] of peerConnectionsRef.current.entries()) {
           try {
-            const videoTransceivers = pc.getTransceivers().filter(t => t.receiver?.track?.kind === 'video');
-            const camSender = videoTransceivers[0]?.sender;
-            if (camSender) {
-              await camSender.replaceTrack(camTrack);
-            } else {
-              pc.addTrack(camTrack, stream);
-              const offer = await pc.createOffer();
-              await pc.setLocalDescription(offer);
-              socket?.emit('voice-signal-offer', { targetSocketId, offer, callerUser: user });
-            }
+            const sender = pc.addTrack(camTrack, stream);
+            cameraSendersRef.current.set(targetSocketId, sender);
+            sendOfferToPeer(targetSocketId);
           } catch (_) {}
         }
 
@@ -635,13 +659,14 @@ export const CallStage = ({
       setIsScreenSharing(false);
 
       for (const [targetSocketId, pc] of peerConnectionsRef.current.entries()) {
-        try {
-          const videoTransceivers = pc.getTransceivers().filter(t => t.receiver?.track?.kind === 'video');
-          const screenSender = videoTransceivers[1]?.sender;
-          if (screenSender) {
-            await screenSender.replaceTrack(null);
-          }
-        } catch (_) {}
+        const sender = screenSendersRef.current.get(targetSocketId);
+        if (sender) {
+          try {
+            pc.removeTrack(sender);
+          } catch (_) {}
+          screenSendersRef.current.delete(targetSocketId);
+        }
+        sendOfferToPeer(targetSocketId);
       }
 
       setParticipants(prev => prev.map(p => p.id === user?.id ? { ...p, isScreenSharing: false } : p));
@@ -669,16 +694,9 @@ export const CallStage = ({
 
         for (const [targetSocketId, pc] of peerConnectionsRef.current.entries()) {
           try {
-            const videoTransceivers = pc.getTransceivers().filter(t => t.receiver?.track?.kind === 'video');
-            const screenSender = videoTransceivers[1]?.sender;
-            if (screenSender) {
-              await screenSender.replaceTrack(screenTrack);
-            } else {
-              pc.addTrack(screenTrack, stream);
-              const offer = await pc.createOffer();
-              await pc.setLocalDescription(offer);
-              socket?.emit('voice-signal-offer', { targetSocketId, offer, callerUser: user });
-            }
+            const sender = pc.addTrack(screenTrack, stream);
+            screenSendersRef.current.set(targetSocketId, sender);
+            sendOfferToPeer(targetSocketId);
           } catch (_) {}
         }
 
@@ -762,47 +780,51 @@ export const CallStage = ({
   return (
     <div
       ref={containerRef}
-      className="relative flex-1 w-full h-full bg-[#0a0c10] text-slate-100 flex flex-col overflow-hidden select-none"
+      className="relative flex-1 w-full h-full bg-[#000000] text-zinc-100 flex flex-col overflow-hidden select-none font-sans"
     >
       {autoplayBlocked && (
-        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 bg-indigo-600 text-white text-xs font-semibold px-4 py-2 rounded-2xl shadow-xl flex items-center gap-3 animate-bounce">
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 bg-[#5865f2] text-white text-xs font-semibold px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-3 animate-bounce">
           <Volume2 className="w-4 h-4" />
           <span>O navegador bloqueou a reprodução de áudio.</span>
           <button
             onClick={handleUnblockAudio}
-            className="bg-white text-indigo-700 px-3 py-1 rounded-xl text-xs font-bold hover:bg-slate-100 cursor-pointer"
+            className="bg-white text-[#5865f2] px-3 py-1 rounded-xl text-xs font-bold hover:bg-zinc-100 cursor-pointer transition-colors"
           >
             Ativar Som
           </button>
         </div>
       )}
 
-      <header className="h-14 px-5 border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md flex items-center justify-between z-20 shrink-0">
+      <header className="h-14 px-5 border-b border-[#1f2023] bg-[#000000] flex items-center justify-between z-20 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-          <div>
-            <h2 className="text-sm font-bold text-white tracking-tight flex items-center gap-2">
-              {roomName}
-              <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
-                {roomType === 'stage' ? 'Palco' : roomType === 'qa' ? 'Q&A' : 'Voz Livre'}
-              </span>
-            </h2>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#23a55a]/10 border border-[#23a55a]/25 text-[#23a55a] text-[11px] font-bold">
+            <span className="w-2 h-2 rounded-full bg-[#23a55a] animate-pulse" />
+            <span>Voz Conectada</span>
           </div>
+
+          <div className="h-4 w-px bg-[#2b2d31]" />
+
+          <h2 className="text-sm font-bold text-white tracking-tight flex items-center gap-2">
+            <span>{roomName}</span>
+            <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-md bg-[#1e1f22] text-zinc-400 border border-[#2b2d31]">
+              {roomType === 'stage' ? 'Palco' : roomType === 'qa' ? 'Q&A' : 'Canal Geral'}
+            </span>
+          </h2>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="text-xs font-mono text-slate-400 bg-slate-800/60 px-2.5 py-1 rounded-lg border border-slate-700/50">
+        <div className="flex items-center gap-2.5">
+          <div className="text-xs font-mono text-zinc-400 bg-[#111214] px-2.5 py-1 rounded-lg border border-[#1e1f22]">
             {formatTime(callDuration)}
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-300 bg-slate-800/60 px-2.5 py-1 rounded-lg border border-slate-700/50">
-            <Users className="w-3.5 h-3.5 text-slate-400" />
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-300 bg-[#111214] px-2.5 py-1 rounded-lg border border-[#1e1f22]">
+            <Users className="w-3.5 h-3.5 text-zinc-400" />
             <span>{participants.length}</span>
           </div>
 
           <button
             onClick={toggleFullscreen}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors cursor-pointer"
+            className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-[#1e1f22] transition-colors cursor-pointer"
             title="Ecrã inteiro"
           >
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -811,11 +833,11 @@ export const CallStage = ({
       </header>
 
       {activeScreenShares.length > 0 && (
-        <div className="px-5 py-2 bg-slate-950/80 border-b border-slate-800/60 flex items-center justify-between gap-3 z-20 shrink-0 overflow-x-auto">
+        <div className="px-5 py-2.5 bg-[#0b0c0e] border-b border-[#1f2023] flex items-center justify-between gap-3 z-20 shrink-0 overflow-x-auto">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5 shrink-0">
-              <Monitor className="w-3.5 h-3.5 text-blue-400" />
-              <span>Ecrãs disponíveis:</span>
+            <span className="text-xs font-bold text-zinc-400 flex items-center gap-1.5 shrink-0 mr-1">
+              <Monitor className="w-3.5 h-3.5 text-[#5865f2]" />
+              <span>Transmissões ativas:</span>
             </span>
 
             {activeScreenShares.map(share => (
@@ -824,12 +846,13 @@ export const CallStage = ({
                 onClick={() => setSelectedScreenUserId(share.userId)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shrink-0 ${
                   selectedScreenUserId === share.userId
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                    : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700/60'
+                    ? 'bg-[#5865f2] text-white shadow-md shadow-[#5865f2]/30'
+                    : 'bg-[#1e1f22] text-zinc-300 hover:bg-[#2b2d31] hover:text-white border border-[#2b2d31]'
                 }`}
               >
-                <Monitor className="w-3 h-3" />
+                <Monitor className="w-3.5 h-3.5" />
                 <span>{share.userName}</span>
+                {selectedScreenUserId === share.userId && <Check className="w-3 h-3 ml-0.5" />}
               </button>
             ))}
           </div>
@@ -838,12 +861,12 @@ export const CallStage = ({
             onClick={() => setSelectedScreenUserId(prev => prev === 'none' ? (activeScreenShares[0]?.userId || null) : 'none')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shrink-0 border ${
               selectedScreenUserId === 'none'
-                ? 'bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-600/30'
-                : 'bg-slate-800/80 text-slate-400 hover:text-white border-slate-700/60'
+                ? 'bg-[#23a55a] text-white border-[#23a55a] shadow-md shadow-[#23a55a]/30'
+                : 'bg-[#1e1f22] text-zinc-400 hover:text-white border-[#2b2d31]'
             }`}
           >
             <LayoutGrid className="w-3.5 h-3.5" />
-            <span>{selectedScreenUserId === 'none' ? 'Voltar ao Ecrã' : 'Ver Apenas Câmaras'}</span>
+            <span>{selectedScreenUserId === 'none' ? 'Ver Ecrã Selecionado' : 'Grelha de Câmaras'}</span>
           </button>
         </div>
       )}
@@ -852,20 +875,20 @@ export const CallStage = ({
         <div className="flex-1 p-4 flex flex-col overflow-y-auto custom-scrollbar">
           {isViewingScreen ? (
             <div className="flex-1 flex flex-col gap-3 min-h-0">
-              <div className="flex-1 rounded-2xl overflow-hidden bg-black border border-slate-800 relative shadow-2xl flex items-center justify-center">
+              <div className="flex-1 rounded-2xl overflow-hidden bg-black border border-[#1e1f22] relative shadow-2xl flex items-center justify-center">
                 <VideoPlayer stream={spotlightStream} isContain={true} />
-                <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 text-xs font-medium text-white flex items-center gap-2">
-                  <Monitor className="w-3.5 h-3.5 text-blue-400" />
+                <div className="absolute top-3 left-3 bg-[#000000]/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 text-xs font-semibold text-white flex items-center gap-2">
+                  <Monitor className="w-3.5 h-3.5 text-[#5865f2]" />
                   <span>{currentScreenShare?.isSelf ? 'O seu ecrã (Em direto)' : `Ecrã de ${currentScreenShare?.userName}`}</span>
                 </div>
 
                 <div className="absolute top-3 right-3 flex items-center gap-2">
                   <button
                     onClick={() => setSelectedScreenUserId('none')}
-                    className="bg-black/70 hover:bg-black/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 text-xs font-medium text-slate-200 hover:text-white flex items-center gap-1.5 transition-all cursor-pointer"
+                    className="bg-[#000000]/80 hover:bg-[#000000] backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 text-xs font-semibold text-zinc-200 hover:text-white flex items-center gap-1.5 transition-all cursor-pointer"
                   >
                     <LayoutGrid className="w-3.5 h-3.5" />
-                    <span>Grelha de Câmaras</span>
+                    <span>Ver Câmaras</span>
                   </button>
                 </div>
               </div>
@@ -879,21 +902,26 @@ export const CallStage = ({
                   return (
                     <div
                       key={p.id}
-                      className={`h-full aspect-video rounded-xl bg-slate-900 border overflow-hidden relative shrink-0 flex items-center justify-center transition-all ${
-                        p.isSpeaking ? 'border-emerald-500 shadow-md shadow-emerald-500/20' : 'border-slate-800'
+                      className={`h-full aspect-video rounded-xl bg-[#111214] border overflow-hidden relative shrink-0 flex items-center justify-center transition-all ${
+                        p.isSpeaking ? 'border-[#23a55a] ring-2 ring-[#23a55a]/40 shadow-lg shadow-[#23a55a]/20' : 'border-[#1e1f22]'
                       }`}
                     >
                       {hasCamera ? (
                         <VideoPlayer stream={camStream} isMirrored={isSelf} />
                       ) : (
-                        <div className="flex flex-col items-center gap-1">
-                          <Avatar src={p.avatarUrl} alt={p.name} size="sm" fallbackText={p.name} />
-                          <span className="text-[10px] text-slate-400 max-w-[80px] truncate">{p.name}</span>
+                        <div className="flex flex-col items-center gap-1.5">
+                          <Avatar
+                            src={p.avatarUrl}
+                            name={p.name}
+                            size="md"
+                            className={p.isSpeaking ? 'ring-2 ring-[#23a55a]' : ''}
+                          />
+                          <span className="text-[10px] font-medium text-zinc-300 max-w-[90px] truncate">{p.name}</span>
                         </div>
                       )}
-                      <div className="absolute bottom-1.5 left-1.5 right-1.5 flex items-center justify-between text-[10px] font-semibold bg-black/60 backdrop-blur-xs px-2 py-0.5 rounded-md text-white pointer-events-none">
-                        <span className="truncate max-w-[70px]">{p.name}</span>
-                        {p.isMuted && <MicOff className="w-2.5 h-2.5 text-rose-400 shrink-0" />}
+                      <div className="absolute bottom-1.5 left-1.5 right-1.5 flex items-center justify-between text-[10px] font-semibold bg-[#000000]/80 backdrop-blur-xs px-2 py-0.5 rounded-md text-white pointer-events-none border border-white/5">
+                        <span className="truncate max-w-[75px]">{p.name}</span>
+                        {p.isMuted && <MicOff className="w-2.5 h-2.5 text-[#da373c] shrink-0" />}
                       </div>
                     </div>
                   );
@@ -901,12 +929,12 @@ export const CallStage = ({
               </div>
             </div>
           ) : (
-            <div className={`grid gap-4 flex-1 w-full max-w-6xl mx-auto items-center justify-center ${
-              participants.length === 1 ? 'grid-cols-1 max-w-2xl' :
-              participants.length === 2 ? 'grid-cols-1 md:grid-cols-2' :
-              participants.length <= 4 ? 'grid-cols-2' :
-              participants.length <= 6 ? 'grid-cols-2 md:grid-cols-3' :
-              'grid-cols-2 md:grid-cols-4'
+            <div className={`grid gap-4 flex-1 w-full max-w-7xl mx-auto items-center justify-center ${
+              participants.length === 1 ? 'grid-cols-1 max-w-3xl' :
+              participants.length === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-5xl' :
+              participants.length <= 4 ? 'grid-cols-2 max-w-6xl' :
+              participants.length <= 6 ? 'grid-cols-2 md:grid-cols-3 max-w-7xl' :
+              'grid-cols-2 md:grid-cols-4 max-w-7xl'
             }`}>
               {participants.map(p => {
                 const isSelf = p.id === user?.id;
@@ -916,8 +944,8 @@ export const CallStage = ({
                 return (
                   <div
                     key={p.id}
-                    className={`aspect-video w-full rounded-2xl overflow-hidden relative flex flex-col items-center justify-center bg-slate-900/90 border transition-all duration-200 ${
-                      p.isSpeaking ? 'border-emerald-500 ring-4 ring-emerald-500/20 shadow-lg' : 'border-slate-800 hover:border-slate-700'
+                    className={`aspect-video w-full rounded-2xl overflow-hidden relative flex flex-col items-center justify-center bg-[#111214] border transition-all duration-200 ${
+                      p.isSpeaking ? 'border-[#23a55a] ring-2 ring-[#23a55a]/40 shadow-xl shadow-[#23a55a]/15' : 'border-[#1e1f22] hover:border-[#2b2d31]'
                     }`}
                   >
                     {hasCamera ? (
@@ -927,10 +955,9 @@ export const CallStage = ({
                         <div className="relative">
                           <Avatar
                             src={p.avatarUrl}
-                            alt={p.name}
+                            name={p.name}
                             size="xl"
-                            fallbackText={p.name}
-                            className={p.isSpeaking ? 'ring-4 ring-emerald-500' : ''}
+                            className={p.isSpeaking ? 'ring-4 ring-[#23a55a]' : 'ring-4 ring-[#1e1f22]'}
                           />
                           {p.role === 'ADMIN' && (
                             <span className="absolute -top-1 -right-1 p-1 rounded-full bg-amber-500 text-white shadow-xs">
@@ -938,19 +965,19 @@ export const CallStage = ({
                             </span>
                           )}
                           {p.role === 'CREATOR' && (
-                            <span className="absolute -top-1 -right-1 p-1 rounded-full bg-indigo-500 text-white shadow-xs">
+                            <span className="absolute -top-1 -right-1 p-1 rounded-full bg-[#5865f2] text-white shadow-xs">
                               <Crown className="w-3 h-3" />
                             </span>
                           )}
                         </div>
-                        <span className="text-xs font-semibold text-slate-300 tracking-tight">{p.name}</span>
+                        <span className="text-xs font-semibold text-zinc-300 tracking-tight">{p.name}</span>
                       </div>
                     )}
 
                     {p.isScreenSharing && (
                       <button
                         onClick={() => setSelectedScreenUserId(p.id)}
-                        className="absolute top-3 left-3 bg-blue-600/90 hover:bg-blue-500 text-white text-xs font-bold px-2.5 py-1 rounded-xl shadow-lg flex items-center gap-1.5 transition-colors cursor-pointer"
+                        className="absolute top-3 left-3 bg-[#5865f2] hover:bg-[#4752c4] text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-xl flex items-center gap-1.5 transition-all cursor-pointer"
                         title="Ver partilha de ecrã deste utilizador"
                       >
                         <Monitor className="w-3.5 h-3.5" />
@@ -959,18 +986,18 @@ export const CallStage = ({
                     )}
 
                     <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between pointer-events-none">
-                      <div className="bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-xl text-xs font-semibold text-white flex items-center gap-1.5 border border-white/10">
-                        <span className="truncate max-w-[120px]">{p.name}</span>
+                      <div className="bg-[#000000]/85 backdrop-blur-md px-2.5 py-1 rounded-md text-xs font-semibold text-white flex items-center gap-1.5 border border-white/5">
+                        <span className="truncate max-w-[140px]">{p.name}</span>
                         {p.isSpeaking && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                          <span className="w-2 h-2 rounded-full bg-[#23a55a] animate-pulse" />
                         )}
                       </div>
 
                       <div className="flex items-center gap-1.5">
-                        <div className={`p-1.5 rounded-xl backdrop-blur-md border ${
-                          p.isMuted ? 'bg-rose-500/80 text-white border-rose-400/30' : 'bg-black/60 text-slate-300 border-white/10'
+                        <div className={`p-1.5 rounded-md backdrop-blur-md border ${
+                          p.isMuted ? 'bg-[#da373c] text-white border-[#da373c]' : 'bg-[#000000]/70 text-zinc-300 border-white/10'
                         }`}>
-                          {p.isMuted ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5 text-emerald-400" />}
+                          {p.isMuted ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5 text-[#23a55a]" />}
                         </div>
                       </div>
                     </div>
@@ -982,14 +1009,14 @@ export const CallStage = ({
         </div>
 
         {sideDrawer !== 'none' && (
-          <aside className="w-80 border-l border-slate-800 bg-slate-900/90 backdrop-blur-md flex flex-col shrink-0 animate-fade-in z-20">
-            <div className="h-14 px-4 border-b border-slate-800 flex items-center justify-between">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+          <aside className="w-80 border-l border-[#1e1f22] bg-[#111214] flex flex-col shrink-0 animate-fade-in z-20">
+            <div className="h-14 px-4 border-b border-[#1e1f22] flex items-center justify-between">
+              <h3 className="text-xs font-bold text-zinc-300 uppercase tracking-wider">
                 {sideDrawer === 'chat' ? 'Conversa da Chamada' : 'Participantes Conectados'}
               </h3>
               <button
                 onClick={() => setSideDrawer('none')}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
+                className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-[#1e1f22] cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -999,30 +1026,30 @@ export const CallStage = ({
               <div className="flex-1 flex flex-col overflow-hidden">
                 <div className="flex-1 p-4 space-y-3 overflow-y-auto custom-scrollbar">
                   {chatMessages.map(msg => (
-                    <div key={msg.id} className={`text-xs ${msg.isSystem ? 'text-slate-400 italic text-center py-1' : ''}`}>
+                    <div key={msg.id} className={`text-xs ${msg.isSystem ? 'text-zinc-500 italic text-center py-1' : ''}`}>
                       {!msg.isSystem && (
                         <div className="flex items-baseline justify-between mb-0.5">
-                          <span className="font-bold text-indigo-400">{msg.sender}</span>
-                          <span className="text-[10px] text-slate-500">{msg.time}</span>
+                          <span className="font-bold text-[#5865f2]">{msg.sender}</span>
+                          <span className="text-[10px] text-zinc-500">{msg.time}</span>
                         </div>
                       )}
-                      <p className={`rounded-xl p-2.5 ${msg.isSystem ? 'bg-slate-800/40' : 'bg-slate-800 text-slate-200'}`}>
+                      <p className={`rounded-xl p-2.5 ${msg.isSystem ? 'bg-[#1e1f22]/60' : 'bg-[#1e1f22] text-zinc-200'}`}>
                         {msg.content}
                       </p>
                     </div>
                   ))}
                 </div>
-                <form onSubmit={handleSendChatMessage} className="p-3 border-t border-slate-800 flex gap-2">
+                <form onSubmit={handleSendChatMessage} className="p-3 border-t border-[#1e1f22] flex gap-2">
                   <input
                     type="text"
                     value={chatInput}
                     onChange={e => setChatInput(e.target.value)}
                     placeholder="Enviar mensagem..."
-                    className="flex-1 bg-slate-800/80 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
+                    className="flex-1 bg-[#1e1f22] border border-[#2b2d31] rounded-xl px-3 py-2 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#5865f2]"
                   />
                   <button
                     type="submit"
-                    className="p-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white cursor-pointer transition-colors"
+                    className="p-2 rounded-xl bg-[#5865f2] hover:bg-[#4752c4] text-white cursor-pointer transition-colors"
                   >
                     <Send className="w-4 h-4" />
                   </button>
@@ -1031,18 +1058,18 @@ export const CallStage = ({
             ) : (
               <div className="flex-1 p-3 space-y-2 overflow-y-auto custom-scrollbar">
                 {participants.map(p => (
-                  <div key={p.id} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/40">
+                  <div key={p.id} className="flex items-center justify-between p-2.5 rounded-xl bg-[#1e1f22]/70 border border-[#2b2d31]/50">
                     <div className="flex items-center gap-2.5">
-                      <Avatar src={p.avatarUrl} alt={p.name} size="sm" fallbackText={p.name} />
+                      <Avatar src={p.avatarUrl} name={p.name} size="sm" />
                       <div>
                         <p className="text-xs font-semibold text-white">{p.name}</p>
-                        <p className="text-[10px] text-slate-400 capitalize">{p.role?.toLowerCase() || 'membro'}</p>
+                        <p className="text-[10px] text-zinc-400 capitalize">{p.role?.toLowerCase() || 'membro'}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5 text-slate-400">
-                      {p.isMuted ? <MicOff className="w-3.5 h-3.5 text-rose-400" /> : <Mic className="w-3.5 h-3.5 text-emerald-400" />}
-                      {p.isCameraOn && <Video className="w-3.5 h-3.5 text-indigo-400" />}
-                      {p.isScreenSharing && <Monitor className="w-3.5 h-3.5 text-blue-400" />}
+                    <div className="flex items-center gap-1.5 text-zinc-400">
+                      {p.isMuted ? <MicOff className="w-3.5 h-3.5 text-[#da373c]" /> : <Mic className="w-3.5 h-3.5 text-[#23a55a]" />}
+                      {p.isCameraOn && <Video className="w-3.5 h-3.5 text-[#5865f2]" />}
+                      {p.isScreenSharing && <Monitor className="w-3.5 h-3.5 text-[#5865f2]" />}
                     </div>
                   </div>
                 ))}
@@ -1052,50 +1079,52 @@ export const CallStage = ({
         )}
       </main>
 
-      <footer className="h-20 px-6 border-t border-slate-800/80 bg-slate-900/80 backdrop-blur-md flex items-center justify-center z-20 shrink-0">
-        <div className="flex items-center gap-3">
+      <footer className="h-20 px-6 border-t border-[#1f2023] bg-[#000000] flex items-center justify-center z-20 shrink-0">
+        <div className="bg-[#1e1f22]/90 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/5 flex items-center gap-2.5 shadow-2xl">
           <button
             onClick={toggleMic}
-            className={`p-3.5 rounded-2xl font-bold flex items-center gap-2 transition-all cursor-pointer shadow-lg ${
+            className={`p-3.5 rounded-xl font-bold flex items-center gap-2 transition-all cursor-pointer ${
               isMicMuted
-                ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40 hover:bg-rose-500/30'
-                : 'bg-slate-800 text-white border border-slate-700 hover:bg-slate-700'
+                ? 'bg-[#da373c] text-white hover:bg-[#a1282c] shadow-md shadow-[#da373c]/30'
+                : 'bg-[#2b2d31] text-zinc-200 hover:bg-[#35373c] hover:text-white'
             }`}
-            title={isMicMuted ? 'Ativar microfone' : 'Silenciar microfone'}
+            title={isMicMuted ? 'Ativar Microfone' : 'Silenciar Microfone'}
           >
-            {isMicMuted ? <MicOff className="w-5 h-5 text-rose-400" /> : <Mic className="w-5 h-5 text-emerald-400" />}
+            {isMicMuted ? <MicOff className="w-5 h-5 text-white" /> : <Mic className="w-5 h-5 text-[#23a55a]" />}
           </button>
 
           <button
             onClick={toggleCamera}
-            className={`p-3.5 rounded-2xl font-bold flex items-center gap-2 transition-all cursor-pointer shadow-lg ${
+            className={`p-3.5 rounded-xl font-bold flex items-center gap-2 transition-all cursor-pointer ${
               isCameraOn
-                ? 'bg-indigo-600 text-white border border-indigo-500 hover:bg-indigo-500'
-                : 'bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700'
+                ? 'bg-[#23a55a] text-white hover:bg-[#1f9350] shadow-md shadow-[#23a55a]/30'
+                : 'bg-[#2b2d31] text-zinc-200 hover:bg-[#35373c] hover:text-white'
             }`}
-            title={isCameraOn ? 'Desligar câmara' : 'Ligar câmara'}
+            title={isCameraOn ? 'Desligar Câmara' : 'Ligar Câmara'}
           >
-            {isCameraOn ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
+            {isCameraOn ? <Video className="w-5 h-5 text-white" /> : <VideoOff className="w-5 h-5 text-zinc-400" />}
           </button>
 
           <button
             onClick={toggleScreenShare}
-            className={`p-3.5 rounded-2xl font-bold flex items-center gap-2 transition-all cursor-pointer shadow-lg ${
+            className={`p-3.5 rounded-xl font-bold flex items-center gap-2 transition-all cursor-pointer ${
               isScreenSharing
-                ? 'bg-blue-600 text-white border border-blue-500 hover:bg-blue-500'
-                : 'bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700'
+                ? 'bg-[#5865f2] text-white hover:bg-[#4752c4] shadow-md shadow-[#5865f2]/30'
+                : 'bg-[#2b2d31] text-zinc-200 hover:bg-[#35373c] hover:text-white'
             }`}
-            title={isScreenSharing ? 'Parar partilha de ecrã' : 'Partilhar ecrã'}
+            title={isScreenSharing ? 'Parar Partilha de Ecrã' : 'Partilhar Ecrã'}
           >
-            {isScreenSharing ? <MonitorOff className="w-5 h-5" /> : <Monitor className="w-5 h-5" />}
+            {isScreenSharing ? <MonitorOff className="w-5 h-5 text-white" /> : <Monitor className="w-5 h-5 text-zinc-400" />}
           </button>
+
+          <div className="h-6 w-px bg-[#35373c] mx-1" />
 
           <button
             onClick={() => setSideDrawer(prev => prev === 'chat' ? 'none' : 'chat')}
-            className={`p-3.5 rounded-2xl font-bold transition-all cursor-pointer border ${
+            className={`p-3.5 rounded-xl font-bold transition-all cursor-pointer ${
               sideDrawer === 'chat'
-                ? 'bg-slate-700 text-white border-slate-600'
-                : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700 hover:text-white'
+                ? 'bg-[#35373c] text-white'
+                : 'bg-[#2b2d31] text-zinc-400 hover:bg-[#35373c] hover:text-white'
             }`}
             title="Chat da chamada"
           >
@@ -1104,26 +1133,28 @@ export const CallStage = ({
 
           <button
             onClick={() => setSideDrawer(prev => prev === 'participants' ? 'none' : 'participants')}
-            className={`p-3.5 rounded-2xl font-bold transition-all cursor-pointer border ${
+            className={`p-3.5 rounded-xl font-bold transition-all cursor-pointer ${
               sideDrawer === 'participants'
-                ? 'bg-slate-700 text-white border-slate-600'
-                : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700 hover:text-white'
+                ? 'bg-[#35373c] text-white'
+                : 'bg-[#2b2d31] text-zinc-400 hover:bg-[#35373c] hover:text-white'
             }`}
             title="Participantes"
           >
             <Users className="w-5 h-5" />
           </button>
 
+          <div className="h-6 w-px bg-[#35373c] mx-1" />
+
           <button
             onClick={() => {
               soundEffects.playLeaveCall();
               onDisconnect?.();
             }}
-            className="px-5 py-3.5 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center gap-2 cursor-pointer shadow-lg transition-all"
-            title="Sair da chamada"
+            className="px-5 py-3.5 rounded-xl bg-[#da373c] hover:bg-[#a1282c] text-white font-bold text-xs flex items-center gap-2 cursor-pointer shadow-lg shadow-[#da373c]/20 transition-all"
+            title="Desconectar do canal"
           >
             <PhoneOff className="w-4 h-4" />
-            <span>Sair</span>
+            <span>Desconectar</span>
           </button>
         </div>
       </footer>
