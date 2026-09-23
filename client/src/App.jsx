@@ -1,0 +1,143 @@
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { SocketProvider } from './context/SocketContext';
+import { ToastProvider } from './components/ui/Toast';
+import { AppLayout } from './components/layout/AppLayout';
+import { LandingPage } from './pages/LandingPage';
+import { Login } from './pages/auth/Login';
+import { Register } from './pages/auth/Register';
+import { ForgotPassword } from './pages/auth/ForgotPassword';
+import { Dashboard } from './pages/Dashboard';
+import { CourseDetails } from './pages/CourseDetails';
+import { CoursePlayer } from './pages/learn/CoursePlayer';
+import { DiscoverSpaces } from './pages/community/DiscoverSpaces';
+import { LibraryPage } from './pages/LibraryPage';
+import { CreatorDashboard } from './pages/creator/CreatorDashboard';
+import { CourseBuilder } from './pages/creator/CourseBuilder';
+import { CreatorMembers } from './pages/creator/CreatorMembers';
+import { AdminDashboard } from './pages/admin/AdminDashboard';
+import { CertificateView } from './pages/certificates/CertificateView';
+import { SettingsPage } from './pages/SettingsPage';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
+
+export const App = () => {
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <SocketProvider>
+          <ToastProvider>
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<AppLayout />}>
+                  
+                  {/* Public Core Routes */}
+                  <Route index element={<LandingPage />} />
+                  <Route path="login" element={<Login />} />
+                  <Route path="register" element={<Register />} />
+                  <Route path="forgot-password" element={<ForgotPassword />} />
+                  <Route path="explore" element={<DiscoverSpaces />} />
+                  <Route path="courses/:id" element={<CourseDetails />} />
+                  <Route path="certificates/verify/:id" element={<CertificateView />} />
+
+                  {/* Student / Client Core Routes */}
+                  <Route
+                    path="dashboard"
+                    element={
+                      <ProtectedRoute>
+                        <Dashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="learn/:courseId"
+                    element={
+                      <ProtectedRoute>
+                        <CoursePlayer />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="library"
+                    element={
+                      <ProtectedRoute>
+                        <LibraryPage />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* Creator Core Routes */}
+                  <Route
+                    path="creator"
+                    element={
+                      <ProtectedRoute requiredRole="CREATOR">
+                        <CreatorDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route path="creator/dashboard" element={<Navigate to="/creator" replace />} />
+                  <Route
+                    path="creator/courses/new"
+                    element={
+                      <ProtectedRoute requiredRole="CREATOR">
+                        <CourseBuilder />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="creator/courses/:courseId/edit"
+                    element={
+                      <ProtectedRoute requiredRole="CREATOR">
+                        <CourseBuilder />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="creator/members"
+                    element={
+                      <ProtectedRoute requiredRole="CREATOR">
+                        <CreatorMembers />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* Settings & Admin */}
+                  <Route
+                    path="settings"
+                    element={
+                      <ProtectedRoute>
+                        <SettingsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="admin"
+                    element={
+                      <ProtectedRoute requiredRole="ADMIN">
+                        <AdminDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* Redirects for Consolidated/Legacy Routes */}
+                  <Route path="community" element={<Navigate to="/explore" replace />} />
+                  <Route path="community/:id" element={<Navigate to="/explore" replace />} />
+                  <Route path="progress" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="achievements" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="leaderboard" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="messages" element={<Navigate to="/dashboard" replace />} />
+
+                  {/* Fallback */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Route>
+              </Routes>
+            </BrowserRouter>
+          </ToastProvider>
+        </SocketProvider>
+      </AuthProvider>
+    </ThemeProvider>
+  );
+};
+
+export default App;
