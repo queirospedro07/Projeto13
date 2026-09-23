@@ -34,7 +34,6 @@ export const CreatorDashboard = () => {
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-8 animate-fade-in pb-16">
       
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-zinc-800">
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 px-2.5 py-0.5 rounded-md border border-indigo-100 dark:border-indigo-900/40">
@@ -64,7 +63,6 @@ export const CreatorDashboard = () => {
         </div>
       </div>
 
-      {/* 3 Key Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <div className="p-6 rounded-3xl bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 shadow-xs flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
@@ -109,7 +107,6 @@ export const CreatorDashboard = () => {
         </div>
       </div>
 
-      {/* Courses List Table/Cards */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>

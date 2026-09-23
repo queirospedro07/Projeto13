@@ -30,7 +30,6 @@ export const Sidebar = () => {
   const isCreator = user?.role === 'CREATOR';
   const isAdmin = user?.role === 'ADMIN';
 
-  // Core links tailored strictly to each role
   const studentLinks = [
     { to: '/dashboard', label: 'Painel do Aluno', icon: Home },
     { to: '/explore', label: 'Explorar Cursos', icon: Compass },
@@ -63,7 +62,6 @@ export const Sidebar = () => {
     >
       <div className="flex-1 py-4 px-3 overflow-y-auto custom-scrollbar flex flex-col gap-6">
         
-        {/* Toggle Collapse Button */}
         <div className="flex items-center justify-between px-2">
           {!collapsed && (
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500">
@@ -79,7 +77,6 @@ export const Sidebar = () => {
           </button>
         </div>
 
-        {/* Primary Navigation */}
         <nav className="flex flex-col gap-1">
           {currentLinks.map((link) => (
             <NavLink key={link.to} to={link.to} end={link.to === '/creator'} className={linkClass}>
@@ -96,7 +93,6 @@ export const Sidebar = () => {
           )}
         </nav>
 
-        {/* Enrolled Courses Fast Access for Students */}
         {!isCreator && enrolledCourses.length > 0 && (
           <div className="flex flex-col gap-1.5 pt-4 border-t border-slate-100 dark:border-neutral-800">
             {!collapsed && (
@@ -164,7 +160,6 @@ export const Sidebar = () => {
         )}
       </div>
 
-      {/* User Footer Profile */}
       {user && (
         <div className="p-3 border-t border-slate-100 dark:border-neutral-800 bg-slate-50 dark:bg-neutral-950">
           <Link to="/settings" className="flex items-center gap-3 p-1 rounded-xl hover:bg-slate-200/60 dark:hover:bg-neutral-900 transition-colors">

@@ -469,6 +469,30 @@ router.get('/:id', optionalAuth, async (req, res) => {
        WHERE u.id != ?
        ORDER BY (CASE WHEN u.role = 'CREATOR' THEN 0 ELSE 1 END), u.name ASC
        LIMIT 50`, [course.id, targetSpaceId || '', course.creatorId || '']);
+    let reviewsList = [];
+    try {
+      const reviewsRows = queryAll(`SELECT r.*, u.name as user_name, u.username as user_username, u.avatarUrl as user_avatarUrl
+         FROM reviews r
+         JOIN users u ON r.userId = u.id
+         WHERE r.courseId = ?
+         ORDER BY r.createdAt DESC`, [course.id]);
+      reviewsList = reviewsRows.map(r => ({
+        id: r.id,
+        rating: r.rating,
+        comment: r.comment,
+        createdAt: r.createdAt,
+        user: {
+          name: r.user_name,
+          username: r.user_username,
+          avatarUrl: r.user_avatarUrl
+        }
+      }));
+    } catch (_) {}
+
+    const avgRating = reviewsList.length > 0
+      ? (reviewsList.reduce((acc, r) => acc + r.rating, 0) / reviewsList.length).toFixed(1)
+      : '4.9';
+
     return res.json({
       id: course.id,
       title: course.title,
@@ -492,7 +516,9 @@ router.get('/:id', optionalAuth, async (req, res) => {
       space,
       modules: modulesWithLessons,
       studentsCount: course.studentsCount,
-      averageRating: 4.9,
+      reviews: reviewsList,
+      reviewsCount: reviewsList.length,
+      averageRating: avgRating,
       userEnrollment,
       classmates
     });
@@ -644,4 +670,54 @@ router.post('/:id/lessons/:lessonId/complete', authenticate, async (req, res) =>
     });
   }
 });
+
+router.post('/:courseId/reviews', authenticate, async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const { rating, comment } = req.body;
+    const userId = req.user.id;
+
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ error: 'Classificação inválida (1 a 5 estrelas)' });
+    }
+    if (!comment || !comment.trim()) {
+      return res.status(400).json({ error: 'O comentário da avaliação é obrigatório' });
+    }
+
+    const course = queryOne('SELECT id FROM courses WHERE id = ? OR slug = ?', [courseId, courseId]);
+    if (!course) {
+      return res.status(404).json({ error: 'Curso não encontrado' });
+    }
+
+    try {
+      execute(`CREATE TABLE IF NOT EXISTS reviews (
+        id TEXT PRIMARY KEY,
+        courseId TEXT NOT NULL,
+        userId TEXT NOT NULL,
+        rating INTEGER NOT NULL,
+        comment TEXT NOT NULL,
+        createdAt TEXT NOT NULL
+      )`);
+    } catch (_) {}
+
+    const revId = `rev-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+    const now = new Date().toISOString();
+
+    execute(`INSERT INTO reviews (id, courseId, userId, rating, comment, createdAt)
+       VALUES (?, ?, ?, ?, ?, ?)`, [revId, course.id, userId, Number(rating), comment.trim(), now]);
+
+    return res.status(201).json({
+      message: 'Avaliação publicada com sucesso',
+      review: {
+        id: revId,
+        rating: Number(rating),
+        comment: comment.trim(),
+        createdAt: now
+      }
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Falha ao guardar avaliação' });
+  }
+});
+
 export default router;

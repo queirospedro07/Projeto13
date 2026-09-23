@@ -32,7 +32,6 @@ export const App = () => {
               <Routes>
                 <Route path="/" element={<AppLayout />}>
                   
-                  {/* Public Core Routes */}
                   <Route index element={<LandingPage />} />
                   <Route path="login" element={<Login />} />
                   <Route path="register" element={<Register />} />
@@ -41,7 +40,6 @@ export const App = () => {
                   <Route path="courses/:id" element={<CourseDetails />} />
                   <Route path="certificates/verify/:id" element={<CertificateView />} />
 
-                  {/* Student / Client Core Routes */}
                   <Route
                     path="dashboard"
                     element={
@@ -67,7 +65,6 @@ export const App = () => {
                     }
                   />
 
-                  {/* Creator Core Routes */}
                   <Route
                     path="creator"
                     element={
@@ -102,7 +99,6 @@ export const App = () => {
                     }
                   />
 
-                  {/* Settings & Admin */}
                   <Route
                     path="settings"
                     element={
@@ -120,7 +116,6 @@ export const App = () => {
                     }
                   />
 
-                  {/* Redirects for Consolidated/Legacy Routes */}
                   <Route path="community" element={<Navigate to="/explore" replace />} />
                   <Route path="community/:id" element={<Navigate to="/explore" replace />} />
                   <Route path="progress" element={<Navigate to="/dashboard" replace />} />
@@ -128,7 +123,6 @@ export const App = () => {
                   <Route path="leaderboard" element={<Navigate to="/dashboard" replace />} />
                   <Route path="messages" element={<Navigate to="/dashboard" replace />} />
 
-                  {/* Fallback */}
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Route>
               </Routes>

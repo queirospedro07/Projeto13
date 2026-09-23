@@ -297,7 +297,8 @@ router.put('/profile', authenticate, async (req, res) => {
     if (bannerUrl && typeof bannerUrl === 'string') {
       const isDataUrl = bannerUrl.startsWith('data:image/');
       const isHttpUrl = bannerUrl.startsWith('http://') || bannerUrl.startsWith('https://');
-      if (!isDataUrl && !isHttpUrl) {
+      const isPreset = bannerUrl.startsWith('gradient-');
+      if (!isDataUrl && !isHttpUrl && !isPreset) {
         return res.status(400).json({
           error: 'URL de banner inválido'
         });

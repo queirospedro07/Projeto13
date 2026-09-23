@@ -309,21 +309,28 @@ router.get('/status/:targetUserId', authenticate, async (req, res) => {
     });
   }
 });
-router.get('/users/search', authenticate, async (req, res) => {
+router.get('/users/search', optionalAuth, async (req, res) => {
   try {
     const {
       query
     } = req.query;
-    const userId = req.user.id;
+    const userId = req.user?.id || null;
     if (!query || String(query).trim().length < 1) {
-      const users = queryAll('SELECT id, name, username, avatarUrl, role, xp, level, bio FROM users WHERE id != ? AND isSuspended = 0 LIMIT 15', [userId]);
+      const users = userId
+        ? queryAll('SELECT id, name, username, avatarUrl, role, xp, level, bio FROM users WHERE id != ? AND isSuspended = 0 LIMIT 15', [userId])
+        : queryAll('SELECT id, name, username, avatarUrl, role, xp, level, bio FROM users WHERE isSuspended = 0 LIMIT 15');
       return res.json(users);
     }
     const searchTerm = `%${String(query).trim()}%`;
-    const users = queryAll(`SELECT id, name, username, avatarUrl, role, xp, level, bio
-       FROM users
-       WHERE id != ? AND isSuspended = 0 AND (name LIKE ? OR username LIKE ?)
-       LIMIT 20`, [userId, searchTerm, searchTerm]);
+    const users = userId
+      ? queryAll(`SELECT id, name, username, avatarUrl, role, xp, level, bio
+         FROM users
+         WHERE id != ? AND isSuspended = 0 AND (name LIKE ? OR username LIKE ?)
+         LIMIT 20`, [userId, searchTerm, searchTerm])
+      : queryAll(`SELECT id, name, username, avatarUrl, role, xp, level, bio
+         FROM users
+         WHERE isSuspended = 0 AND (name LIKE ? OR username LIKE ?)
+         LIMIT 20`, [searchTerm, searchTerm]);
     return res.json(users);
   } catch (err) {
     return res.status(500).json({

@@ -22,7 +22,6 @@ export const LandingPage = () => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Fallback courses matching the platform database structure
   const fallbackCourses = [
     {
       id: 'course-react-ts',
@@ -77,9 +76,6 @@ export const LandingPage = () => {
   return (
     <div className="w-full min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-neutral-100 transition-colors">
       
-      {/* ========================================================================= */}
-      {/* 1. HERO SECTION                                                          */}
-      {/* ========================================================================= */}
       <section className="pt-16 sm:pt-24 pb-16 px-4 sm:px-6 max-w-7xl mx-auto flex flex-col items-center text-center">
         
         <div className="mb-6">
@@ -118,7 +114,6 @@ export const LandingPage = () => {
           </Link>
         </div>
 
-        {/* Institutional Trust Indicators */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 w-full max-w-4xl">
           <Card className="p-5 text-center flex flex-col items-center justify-center">
             <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400 mb-2" />
@@ -140,9 +135,6 @@ export const LandingPage = () => {
         </div>
       </section>
 
-      {/* ========================================================================= */}
-      {/* 2. PILARES DE UTILIZAÇÃO: ALUNOS E FORMADORES                             */}
-      {/* ========================================================================= */}
       <section className="py-16 px-4 sm:px-6 max-w-7xl mx-auto border-t border-slate-200 dark:border-neutral-800">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <h2 className="text-3xl font-extrabold text-slate-950 dark:text-white tracking-tight">
@@ -155,7 +147,6 @@ export const LandingPage = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           
-          {/* Card Aluno */}
           <Card className="p-8 flex flex-col justify-between">
             <div>
               <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-neutral-900 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-6 font-bold">
@@ -193,7 +184,6 @@ export const LandingPage = () => {
             </div>
           </Card>
 
-          {/* Card Criador */}
           <Card className="p-8 flex flex-col justify-between">
             <div>
               <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-neutral-900 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-6 font-bold">
@@ -234,9 +224,6 @@ export const LandingPage = () => {
         </div>
       </section>
 
-      {/* ========================================================================= */}
-      {/* 3. CURSOS EM DESTAQUE                                                     */}
-      {/* ========================================================================= */}
       <section className="py-16 px-4 sm:px-6 max-w-7xl mx-auto border-t border-slate-200 dark:border-neutral-800">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
           <div>
@@ -304,9 +291,6 @@ export const LandingPage = () => {
         </div>
       </section>
 
-      {/* ========================================================================= */}
-      {/* 4. RECURSOS INSTITUCIONAIS                                                */}
-      {/* ========================================================================= */}
       <section className="py-16 px-4 sm:px-6 max-w-7xl mx-auto border-t border-slate-200 dark:border-neutral-800">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="p-6">
@@ -335,9 +319,6 @@ export const LandingPage = () => {
         </div>
       </section>
 
-      {/* ========================================================================= */}
-      {/* 5. CHAMADA FINAL PARA AÇÃO (CTA)                                         */}
-      {/* ========================================================================= */}
       <section className="py-16 px-4 sm:px-6 max-w-7xl mx-auto">
         <div className="rounded-3xl bg-blue-600 text-white p-8 sm:p-12 text-center flex flex-col items-center shadow-lg shadow-blue-500/20">
           <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight max-w-2xl mb-3">
@@ -362,9 +343,6 @@ export const LandingPage = () => {
         </div>
       </section>
 
-      {/* ========================================================================= */}
-      {/* 6. RODAPÉ INSTITUCIONAL                                                   */}
-      {/* ========================================================================= */}
       <footer className="border-t border-slate-200 dark:border-neutral-800 py-10 px-4 sm:px-6 max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-neutral-400 font-medium">
         <div className="flex items-center gap-2.5">
           <Logo size="sm" showText={false} />

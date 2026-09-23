@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Search,
   LogOut,
   Plus,
   BookOpen,
@@ -10,13 +9,16 @@ import {
   Moon,
   Monitor,
   BarChart3,
-  ArrowRight
+  ArrowRight,
+  MessageSquare,
+  User as UserIcon
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { Avatar } from '../ui/Avatar';
 import { Logo } from '../ui/Logo';
 import { useToast } from '../ui/Toast';
+import { GlobalSearch } from './GlobalSearch';
 
 export const Navbar = () => {
   const { user, logout } = useAuth();
@@ -25,13 +27,6 @@ export const Navbar = () => {
   const navigate = useNavigate();
 
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-    navigate(`/explore?q=${encodeURIComponent(searchQuery.trim())}`);
-  };
 
   const handleLogout = () => {
     logout();
@@ -50,8 +45,6 @@ export const Navbar = () => {
   return (
     <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-black/95 backdrop-blur-md border-b border-slate-200 dark:border-neutral-800 h-16 transition-colors shadow-xs">
       <div className="w-full px-4 sm:px-6 h-full flex items-center justify-between gap-4">
-        
-        {/* Brand Logo */}
         <div className="flex items-center gap-6 shrink-0">
           <Link to={homeTarget} className="flex items-center gap-2.5 group select-none">
             <Logo size="md" showText={false} />
@@ -60,33 +53,29 @@ export const Navbar = () => {
             </span>
           </Link>
 
-          {/* Quick link for explore */}
           <Link
             to="/explore"
             className="hidden sm:inline-flex text-sm font-semibold text-slate-600 dark:text-neutral-400 hover:text-slate-950 dark:hover:text-white px-3 py-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-neutral-900 transition-colors"
           >
             Explorar Cursos
           </Link>
+
+          {user && (
+            <Link
+              to="/messages"
+              className="hidden md:inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 dark:text-neutral-400 hover:text-slate-950 dark:hover:text-white px-3 py-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-neutral-900 transition-colors"
+            >
+              <MessageSquare className="w-4 h-4 text-blue-500" />
+              <span>Mensagens & Chamadas</span>
+            </Link>
+          )}
         </div>
 
-        {/* Clean Center Search Input */}
-        <div className="flex-1 max-w-md mx-2 sm:mx-6">
-          <form onSubmit={handleSearch} className="relative w-full">
-            <Search className="w-4 h-4 text-slate-400 dark:text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Pesquisar cursos e lições..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-100/90 dark:bg-[#121214] border border-slate-200/90 dark:border-neutral-800 hover:border-blue-500/50 dark:hover:border-blue-500/50 focus:border-blue-600 dark:focus:border-blue-500 rounded-2xl pl-10 pr-4 py-2 text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
-            />
-          </form>
+        <div className="flex-1 max-w-md mx-2 sm:mx-6 flex justify-center">
+          <GlobalSearch />
         </div>
 
-        {/* Right Actions */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          
-          {/* Theme Switcher */}
           <button
             onClick={toggleTheme}
             className="p-2 rounded-xl text-slate-600 dark:text-neutral-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-neutral-900 transition-colors cursor-pointer"
@@ -119,7 +108,6 @@ export const Navbar = () => {
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              {/* If creator: direct "+ Novo Curso" button */}
               {isCreator && (
                 <Link
                   to="/creator/courses/new"
@@ -130,7 +118,6 @@ export const Navbar = () => {
                 </Link>
               )}
 
-              {/* Profile Avatar Dropdown */}
               <div className="relative">
                 <button
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
@@ -141,8 +128,6 @@ export const Navbar = () => {
 
                 {showProfileMenu && (
                   <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-[#222222] rounded-2xl shadow-2xl p-2 z-50 text-sm animate-fade-in flex flex-col gap-1">
-                    
-                    {/* User info head */}
                     <div className="p-3 bg-slate-50 dark:bg-[#121212] rounded-xl mb-1 flex items-center gap-2.5">
                       <Avatar src={user.avatarUrl} name={user.name} size="sm" />
                       <div className="min-w-0 flex-1">
@@ -153,10 +138,28 @@ export const Navbar = () => {
                           {user.email}
                         </p>
                         <span className="inline-block mt-1 px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 text-[10px] font-bold uppercase">
-                          {isCreator ? 'Criador' : 'Aluno'}
+                          {isCreator ? 'Criador' : user.role === 'ADMIN' ? 'Admin' : 'Aluno'}
                         </span>
                       </div>
                     </div>
+
+                    <Link
+                      to="/profile"
+                      onClick={() => setShowProfileMenu(false)}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-[#141414] text-slate-700 dark:text-zinc-300 font-semibold text-xs"
+                    >
+                      <UserIcon className="w-4 h-4 text-indigo-500" />
+                      <span>O Meu Perfil</span>
+                    </Link>
+
+                    <Link
+                      to="/messages"
+                      onClick={() => setShowProfileMenu(false)}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-[#141414] text-slate-700 dark:text-zinc-300 font-semibold text-xs"
+                    >
+                      <MessageSquare className="w-4 h-4 text-blue-500" />
+                      <span>Mensagens & Chamadas</span>
+                    </Link>
 
                     {isCreator ? (
                       <Link
@@ -206,3 +209,5 @@ export const Navbar = () => {
     </header>
   );
 };
+
+export default Navbar;

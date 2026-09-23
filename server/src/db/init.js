@@ -180,6 +180,17 @@ export function initializeSchemaAndSeed(db) {
       UNIQUE(messageId, userId, emoji)
     );
 
+    CREATE TABLE IF NOT EXISTS reviews (
+      id TEXT PRIMARY KEY,
+      courseId TEXT NOT NULL,
+      userId TEXT NOT NULL,
+      rating INTEGER NOT NULL,
+      comment TEXT NOT NULL,
+      createdAt TEXT NOT NULL,
+      FOREIGN KEY(courseId) REFERENCES courses(id) ON DELETE CASCADE,
+      FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE
+    );
+
     CREATE TABLE IF NOT EXISTS quizzes (
       id TEXT PRIMARY KEY,
       lessonId TEXT UNIQUE NOT NULL,

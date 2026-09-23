@@ -145,9 +145,9 @@ export const ProfilePage = () => {
         }
       }).catch(() => {});
     }
-  }, [username, currentUser?.id, isMe]);
+  }, [username, currentUser, isMe]);
   const openEditModal = useCallback(() => {
-    const u = profileUser || currentUser;
+    const u = isMe ? (currentUser || profileUser) : (profileUser || currentUser);
     setEditName(u?.name || '');
     setEditBio(u?.bio || '');
     setEditLocation(u?.location || '');
@@ -161,7 +161,7 @@ export const ProfilePage = () => {
     setAvatarPreview(u?.avatarUrl || '');
     setBannerPreview(u?.profile?.bannerUrl || '');
     setIsEditOpen(true);
-  }, [profileUser, currentUser]);
+  }, [profileUser, currentUser, isMe]);
   const handleAvatarFileChange = async e => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -220,7 +220,7 @@ export const ProfilePage = () => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      await api.updateProfile({
+      const updateRes = await api.updateProfile({
         name: editName,
         bio: editBio,
         location: editLocation,
@@ -232,6 +232,9 @@ export const ProfilePage = () => {
         website: editWebsite,
         bannerUrl: editBannerUrl
       });
+      if (updateRes?.user) {
+        setProfileUser(updateRes.user);
+      }
       await refreshUser();
       setIsEditOpen(false);
       toast({
@@ -305,7 +308,7 @@ export const ProfilePage = () => {
       });
     }
   };
-  const u = profileUser || currentUser;
+  const u = isMe ? (currentUser || profileUser) : (profileUser || currentUser);
   const bannerClass = getBannerClass(u?.profile?.bannerUrl);
   const bannerStyle = getBannerStyle(u?.profile?.bannerUrl);
   return <div className="max-w-5xl mx-auto flex flex-col gap-8 animate-fade-in pb-16">

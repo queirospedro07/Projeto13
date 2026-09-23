@@ -390,7 +390,7 @@ export const CourseDetails = () => {
         
         {activeTab === 'reviews' && <div className="max-w-4xl flex flex-col gap-6">
             
-            {isEnrolled && <Card className="p-6">
+            {user ? <Card className="p-6">
                 <h4 className="font-bold text-slate-900 text-base mb-4">Deixar uma Avaliação</h4>
                 <form onSubmit={handleReviewSubmit} className="flex flex-col gap-4">
                   <div className="flex items-center gap-3">
@@ -406,6 +406,11 @@ export const CourseDetails = () => {
                     Publicar Avaliação
                   </Button>
                 </form>
+              </Card> : <Card className="p-6 text-center">
+                <p className="text-slate-600 text-sm mb-3">Inicie sessão para deixar a sua avaliação deste curso.</p>
+                <Link to="/login">
+                  <Button variant="outline" size="sm">Iniciar Sessão</Button>
+                </Link>
               </Card>}
 
             

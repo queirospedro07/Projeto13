@@ -48,7 +48,6 @@ export const Dashboard = () => {
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-8 animate-fade-in pb-12">
       
-      {/* Welcome Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-zinc-800">
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-2.5 py-0.5 rounded-md border border-blue-100 dark:border-blue-900/40">
@@ -72,10 +71,8 @@ export const Dashboard = () => {
         </div>
       </div>
 
-      {/* Primary Highlights & Stats Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Main Resume Card (2 cols) */}
         <div className="lg:col-span-2 p-6 sm:p-8 rounded-3xl bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 shadow-xs flex flex-col justify-between">
           {primaryEnrollment ? (
             <>
@@ -142,7 +139,6 @@ export const Dashboard = () => {
           )}
         </div>
 
-        {/* Quick Summary Stats Card (1 col) */}
         <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 shadow-xs flex flex-col justify-between gap-4">
           <h4 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
             O Seu Resumo
@@ -183,7 +179,6 @@ export const Dashboard = () => {
         </div>
       </div>
 
-      {/* Enrolled Courses List */}
       {myCourses.length > 0 && (
         <div className="space-y-4 pt-2">
           <div className="flex items-center justify-between">
@@ -250,7 +245,6 @@ export const Dashboard = () => {
         </div>
       )}
 
-      {/* Recommended Courses */}
       {recommendedCourses.length > 0 && (
         <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-zinc-800">
           <div className="flex items-center justify-between">
