@@ -8,15 +8,9 @@ import {
   Send,
   Video,
   X,
-  UserPlus,
-  UserCheck,
-  Clock,
-  ExternalLink,
-  ShieldCheck,
-  Crown
+  UserPlus
 } from 'lucide-react';
 import { Avatar } from '../../components/ui/Avatar';
-import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
@@ -24,14 +18,25 @@ import { useToast } from '../../components/ui/Toast';
 import { soundEffects } from '../../services/soundEffects';
 import { api } from '../../services/api';
 import { CallStage } from '../../components/call/CallStage';
+import { FriendsManager } from '../../features/messages/components/FriendsManager';
 
 export const MessagesPage = () => {
   const { user } = useAuth();
   const { socket } = useSocket();
   const { toast } = useToast();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
+
+  const initialTab = searchParams.get('tab') === 'friends' || searchParams.get('tab') === 'add' ? 'friends' : 'chat';
+  const initialSubTab = searchParams.get('tab') === 'add' ? 'add' : 'all';
+
+  const [mainTab, setMainTab] = useState(initialTab);
+  const [friendsSubTab, setFriendsSubTab] = useState(initialSubTab);
+  const [friendsData, setFriendsData] = useState({ friends: [], incoming: [], outgoing: [] });
+  const [addFriendQuery, setAddFriendQuery] = useState('');
+  const [searchResult, setSearchResult] = useState(null);
+  const [requestSent, setRequestSent] = useState(false);
 
   const [conversations, setConversations] = useState([]);
   const [activePeer, setActivePeer] = useState(location.state?.peer || null);
@@ -59,6 +64,7 @@ export const MessagesPage = () => {
 
       const targetUserId = searchParams.get('userId');
       if (targetUserId) {
+        setMainTab('chat');
         const found = list.find(c => c.peer?.id === targetUserId);
         if (found) {
           setActivePeer(found.peer);
@@ -70,15 +76,34 @@ export const MessagesPage = () => {
             if (match) setActivePeer(match);
           }).catch(() => {});
         }
-      } else if (!activePeer && list.length > 0) {
+      } else if (!activePeer && list.length > 0 && mainTab === 'chat') {
         setActivePeer(list[0].peer);
       }
     } catch (_) {}
   };
 
+  const loadFriendsData = async () => {
+    try {
+      const data = await api.getFriends();
+      setFriendsData(data || { friends: [], incoming: [], outgoing: [] });
+    } catch (_) {}
+  };
+
   useEffect(() => {
     loadConversations();
+    loadFriendsData();
   }, [user?.id, searchParams]);
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'friends') {
+      setMainTab('friends');
+      setFriendsSubTab('all');
+    } else if (tabParam === 'add') {
+      setMainTab('friends');
+      setFriendsSubTab('add');
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (activePeer?.id) {
@@ -203,8 +228,102 @@ export const MessagesPage = () => {
     soundEffects.play('click');
     setIsCallOpen(false);
     setActivePeer(peer);
+    setMainTab('chat');
     setIsNewChatModalOpen(false);
     setSearchQuery('');
+  };
+
+  const handleSearchAndAddFriend = async (e) => {
+    e.preventDefault();
+    if (!addFriendQuery.trim()) return;
+    const clean = addFriendQuery.replace(/^@/, '').trim().toLowerCase();
+    try {
+      const users = await api.searchSocialUsers(clean);
+      const exact = (users || []).find(u => u.username?.toLowerCase() === clean && u.id !== user?.id);
+      if (exact) {
+        setSearchResult(exact);
+        setRequestSent(false);
+      } else {
+        const first = (users || []).find(u => u.id !== user?.id);
+        if (first) {
+          setSearchResult(first);
+          setRequestSent(false);
+        } else {
+          setSearchResult(null);
+          toast({
+            title: 'Não encontrado',
+            message: 'Nenhum utilizador encontrado com esse nome.',
+            type: 'error'
+          });
+        }
+      }
+    } catch (_) {
+      toast({
+        title: 'Erro',
+        message: 'Falha ao pesquisar utilizador.',
+        type: 'error'
+      });
+    }
+  };
+
+  const handleSendFriendRequest = async (targetUserId) => {
+    try {
+      await api.sendFriendRequest(targetUserId);
+      setRequestSent(true);
+      toast({
+        title: 'Pedido Enviado',
+        message: 'Pedido de amizade enviado com sucesso!',
+        type: 'success'
+      });
+      loadFriendsData();
+    } catch (err) {
+      toast({
+        title: 'Aviso',
+        message: err.message || 'Não foi possível enviar o pedido.',
+        type: 'error'
+      });
+    }
+  };
+
+  const handleAcceptFriendRequest = async (friendshipId) => {
+    try {
+      await api.acceptFriendRequest(friendshipId);
+      toast({
+        title: 'Amizade Aceite',
+        message: 'Agora são amigos e podem conversar livremente!',
+        type: 'success'
+      });
+      loadFriendsData();
+      loadConversations();
+    } catch (err) {
+      toast({
+        title: 'Erro',
+        message: err.message || 'Falha ao aceitar pedido.',
+        type: 'error'
+      });
+    }
+  };
+
+  const handleRejectFriendRequest = async (friendshipId) => {
+    try {
+      await api.rejectFriendRequest(friendshipId);
+      toast({
+        title: 'Pedido Recusado',
+        type: 'info'
+      });
+      loadFriendsData();
+    } catch (_) {}
+  };
+
+  const handleRemoveFriend = async (targetUserId) => {
+    try {
+      await api.removeFriend(targetUserId);
+      toast({
+        title: 'Amigo Removido',
+        type: 'info'
+      });
+      loadFriendsData();
+    } catch (_) {}
   };
 
   const filteredConversations = conversations.filter(c =>
@@ -216,13 +335,38 @@ export const MessagesPage = () => {
     <div className="max-w-7xl mx-auto h-[calc(100vh-6rem)] flex flex-col md:flex-row rounded-3xl overflow-hidden border border-slate-200/90 dark:border-zinc-800/80 bg-white dark:bg-[#0b0c0e] shadow-sm animate-fade-in mb-6">
       <aside className="w-full md:w-80 border-r border-slate-200/90 dark:border-zinc-800/80 bg-slate-50/60 dark:bg-[#0e0f12] flex flex-col shrink-0">
         <div className="p-3.5 border-b border-slate-200/90 dark:border-zinc-800/80 bg-white dark:bg-[#0b0c0e] flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
-              <MessageSquare className="w-4 h-4" />
-            </div>
-            <h2 className="font-extrabold text-sm text-slate-900 dark:text-white tracking-tight">
-              Mensagens
-            </h2>
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-zinc-800/80 rounded-xl flex-1">
+            <button
+              onClick={() => {
+                soundEffects.play('click');
+                setMainTab('chat');
+              }}
+              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                mainTab === 'chat'
+                  ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-xs'
+                  : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>Conversas</span>
+            </button>
+            <button
+              onClick={() => {
+                soundEffects.play('click');
+                setMainTab('friends');
+              }}
+              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 relative ${
+                mainTab === 'friends'
+                  ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-xs'
+                  : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Amigos</span>
+              {friendsData?.incoming?.length > 0 && (
+                <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+              )}
+            </button>
           </div>
 
           <button
@@ -230,11 +374,10 @@ export const MessagesPage = () => {
               soundEffects.play('click');
               setIsNewChatModalOpen(true);
             }}
-            className="p-1.5 rounded-xl bg-slate-100 dark:bg-zinc-800/80 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 transition-all cursor-pointer flex items-center gap-1 text-xs font-bold"
+            className="p-2 rounded-xl bg-slate-100 dark:bg-zinc-800/80 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 transition-all cursor-pointer flex items-center justify-center shrink-0"
             title="Nova conversa"
           >
-            <Plus className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Nova</span>
+            <Plus className="w-4 h-4" />
           </button>
         </div>
 
@@ -243,7 +386,7 @@ export const MessagesPage = () => {
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
-              placeholder="Pesquisar utilizadores..."
+              placeholder="Pesquisar conversas e pessoas..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="w-full bg-slate-100 dark:bg-zinc-800/60 border border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-zinc-800 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none transition-all"
@@ -290,18 +433,30 @@ export const MessagesPage = () => {
               )}
             </div>
           ) : filteredConversations.length === 0 ? (
-            <div className="p-6 text-center text-xs text-slate-400 dark:text-zinc-500 font-medium">
-              <p className="mb-2">Sem mensagens diretas ainda.</p>
-              <button
-                onClick={() => setIsNewChatModalOpen(true)}
-                className="text-blue-600 dark:text-blue-400 font-bold hover:underline cursor-pointer"
-              >
-                Iniciar conversa
-              </button>
+            <div className="p-6 text-center text-xs text-slate-400 dark:text-zinc-500 font-medium space-y-2">
+              <p>Sem conversas ativas.</p>
+              <div className="flex flex-col gap-1.5 pt-2">
+                <button
+                  onClick={() => setIsNewChatModalOpen(true)}
+                  className="text-blue-600 dark:text-blue-400 font-bold hover:underline cursor-pointer"
+                >
+                  Iniciar Conversa
+                </button>
+                <button
+                  onClick={() => {
+                    setMainTab('friends');
+                    setFriendsSubTab('add');
+                  }}
+                  className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline cursor-pointer flex items-center justify-center gap-1"
+                >
+                  <UserPlus className="w-3 h-3" />
+                  <span>Adicionar Amigos</span>
+                </button>
+              </div>
             </div>
           ) : (
             filteredConversations.map(c => {
-              const isSelected = c.peer?.id === activePeer?.id && !isCallOpen;
+              const isSelected = c.peer?.id === activePeer?.id && mainTab === 'chat' && !isCallOpen;
               return (
                 <button
                   key={c.peer.id}
@@ -349,13 +504,31 @@ export const MessagesPage = () => {
       </aside>
 
       <main className="flex-1 flex flex-col bg-white dark:bg-[#0b0c0e] overflow-hidden">
-        {activePeer ? (
+        {mainTab === 'friends' ? (
+          <FriendsManager
+            friendsSubTab={friendsSubTab}
+            onSetFriendsSubTab={setFriendsSubTab}
+            friendsData={friendsData}
+            addFriendQuery={addFriendQuery}
+            onAddFriendQueryChange={setAddFriendQuery}
+            onSearchAndAddFriend={handleSearchAndAddFriend}
+            searchResult={searchResult}
+            requestSent={requestSent}
+            onSendFriendRequest={handleSendFriendRequest}
+            onAcceptRequest={handleAcceptFriendRequest}
+            onRejectRequest={handleRejectFriendRequest}
+            onRemoveFriend={handleRemoveFriend}
+            onOpenConversationWithUser={(peer) => {
+              handleSelectPeer(peer);
+              navigate(`/messages?userId=${peer.id}`, { replace: true });
+            }}
+          />
+        ) : activePeer ? (
           isCallOpen ? (
             <CallStage
               key={`call_dm_${[user?.id || 'me', activePeer.id].sort().join('_')}`}
               roomName={`Chamada com ${activePeer.name}`}
               roomId={`call_dm_${[user?.id || 'me', activePeer.id].sort().join('_')}`}
-              isStageMode={false}
               onDisconnect={() => setIsCallOpen(false)}
             />
           ) : (
@@ -483,20 +656,34 @@ export const MessagesPage = () => {
               <MessageSquare className="w-7 h-7" />
             </div>
             <h3 className="text-base font-extrabold text-slate-900 dark:text-white mb-1">
-              Caixa de Mensagens
+              Caixa de Mensagens & Amigos
             </h3>
             <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-xs leading-relaxed mb-4">
-              Selecione uma conversa ou inicie uma nova com qualquer utilizador da plataforma.
+              Conecte-se com amigos ou selecione uma conversa para trocar mensagens diretas.
             </p>
-            <Button
-              onClick={() => setIsNewChatModalOpen(true)}
-              variant="primary"
-              size="sm"
-              leftIcon={<Plus className="w-3.5 h-3.5" />}
-              className="font-bold text-xs"
-            >
-              Nova Conversa
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => setIsNewChatModalOpen(true)}
+                variant="primary"
+                size="sm"
+                leftIcon={<Plus className="w-3.5 h-3.5" />}
+                className="font-bold text-xs"
+              >
+                Nova Mensagem
+              </Button>
+              <Button
+                onClick={() => {
+                  setMainTab('friends');
+                  setFriendsSubTab('add');
+                }}
+                variant="secondary"
+                size="sm"
+                leftIcon={<UserPlus className="w-3.5 h-3.5" />}
+                className="font-bold text-xs"
+              >
+                Adicionar Amigo
+              </Button>
+            </div>
           </div>
         )}
       </main>

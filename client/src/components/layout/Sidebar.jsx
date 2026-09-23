@@ -12,9 +12,8 @@ import {
   ChevronLeft,
   ChevronRight,
   BarChart3,
-  GraduationCap,
   Sparkles,
-  UserCheck
+  UserPlus
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
@@ -28,6 +27,8 @@ export const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [unreadDms, setUnreadDms] = useState(0);
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
+  const [recentPeers, setRecentPeers] = useState([]);
 
   const isCreator = user?.role === 'CREATOR';
   const isAdmin = user?.role === 'ADMIN';
@@ -40,6 +41,14 @@ export const Sidebar = () => {
       api.getDirectConversations().then(convs => {
         const total = (convs || []).reduce((acc, c) => acc + (c.unreadCount || 0), 0);
         setUnreadDms(total);
+        const peers = (convs || []).slice(0, 4).map(c => ({
+          ...c.peer,
+          unreadCount: c.unreadCount || 0
+        })).filter(p => p && p.id);
+        setRecentPeers(peers);
+      }).catch(() => {});
+      api.getFriends().then(data => {
+        setPendingRequestsCount(data?.incoming?.length || 0);
       }).catch(() => {});
     }
   };
@@ -81,27 +90,22 @@ export const Sidebar = () => {
         collapsed ? 'w-18' : 'w-64'
       }`}
     >
-      <div className="flex-1 py-4 px-3 overflow-y-auto custom-scrollbar flex flex-col gap-6">
+      <div className="flex-1 py-4 px-3 overflow-y-auto custom-scrollbar flex flex-col gap-5">
         <div className="flex items-center justify-between px-1">
           <Link
             to="/dashboard"
             className="flex items-center gap-2.5 min-w-0 group"
           >
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 text-white flex items-center justify-center font-black shadow-md shadow-blue-500/20 shrink-0 group-hover:scale-105 transition-transform">
-              <GraduationCap className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-black flex items-center justify-center font-black shadow-sm shrink-0 group-hover:scale-105 transition-transform">
+              <Sparkles className="w-5 h-5 text-indigo-500 dark:text-indigo-600" />
             </div>
             {!collapsed && (
               <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-white truncate">
-                    LearnSpace
-                  </span>
-                  <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/60">
-                    HUB
-                  </span>
-                </div>
+                <span className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-white truncate block">
+                  Comunidade
+                </span>
                 <p className="text-[10px] text-slate-400 dark:text-zinc-500 truncate font-medium">
-                  whop.com/learnspace
+                  Espaço Principal
                 </p>
               </div>
             )}
@@ -125,23 +129,19 @@ export const Sidebar = () => {
 
           <NavLink to="/dashboard" className={navClass}>
             {({ isActive }) => (
-              <>
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <Home className={iconClass(isActive)} />
-                  {!collapsed && <span className="truncate">Início</span>}
-                </div>
-              </>
+              <div className="flex items-center gap-2.5 min-w-0">
+                <Home className={iconClass(isActive)} />
+                {!collapsed && <span className="truncate">Início</span>}
+              </div>
             )}
           </NavLink>
 
           <NavLink to="/explore" className={navClass}>
             {({ isActive }) => (
-              <>
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <Compass className={iconClass(isActive)} />
-                  {!collapsed && <span className="truncate">Explorar</span>}
-                </div>
-              </>
+              <div className="flex items-center gap-2.5 min-w-0">
+                <Compass className={iconClass(isActive)} />
+                {!collapsed && <span className="truncate">Explorar</span>}
+              </div>
             )}
           </NavLink>
 
@@ -164,13 +164,30 @@ export const Sidebar = () => {
               </>
             )}
           </NavLink>
+        </div>
 
-          <NavLink to="/messages" className={navClass}>
+        <div className="flex flex-col gap-1 pt-3 border-t border-slate-100 dark:border-zinc-800/80">
+          {!collapsed && (
+            <div className="flex items-center justify-between px-3 mb-1">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
+                Social & Mensagens
+              </span>
+              <Link
+                to="/messages?tab=add"
+                className="p-1 rounded-md text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+                title="Adicionar Amigo"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          )}
+
+          <NavLink to="/messages" end className={navClass}>
             {({ isActive }) => (
               <>
                 <div className="flex items-center gap-2.5 min-w-0">
                   <MessageSquare className={iconClass(isActive)} />
-                  {!collapsed && <span className="truncate">Mensagens Diretas</span>}
+                  {!collapsed && <span className="truncate">Mensagens</span>}
                 </div>
                 {unreadDms > 0 && (
                   <span className="px-1.5 py-0.5 rounded-full bg-blue-600 text-white font-black text-[10px] shadow-xs">
@@ -180,6 +197,51 @@ export const Sidebar = () => {
               </>
             )}
           </NavLink>
+
+          <NavLink to="/messages?tab=friends" className={navClass}>
+            {({ isActive }) => (
+              <>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Users className={iconClass(isActive)} />
+                  {!collapsed && <span className="truncate">Amigos & Rede</span>}
+                </div>
+                {pendingRequestsCount > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-white font-black text-[10px] shadow-xs">
+                    {pendingRequestsCount}
+                  </span>
+                )}
+              </>
+            )}
+          </NavLink>
+
+          {!collapsed && recentPeers.length > 0 && (
+            <div className="flex flex-col gap-0.5 mt-1">
+              {recentPeers.map(p => (
+                <NavLink
+                  key={p.id}
+                  to={`/messages?userId=${p.id}`}
+                  className={({ isActive }) =>
+                    `flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs transition-colors ${
+                      isActive
+                        ? 'bg-slate-100 dark:bg-zinc-800 text-slate-900 dark:text-white font-bold'
+                        : 'text-slate-600 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-zinc-900/60 hover:text-slate-900 dark:hover:text-white'
+                    }`
+                  }
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="relative shrink-0">
+                      <Avatar src={p.avatarUrl} name={p.name} size="xs" />
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 border border-white dark:border-black absolute -bottom-0.5 -right-0.5" />
+                    </div>
+                    <span className="truncate text-xs">{p.name}</span>
+                  </div>
+                  {p.unreadCount > 0 && (
+                    <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0" />
+                  )}
+                </NavLink>
+              ))}
+            </div>
+          )}
         </div>
 
         {isCreator && (
@@ -230,7 +292,7 @@ export const Sidebar = () => {
             <NavLink to="/admin" className={navClass}>
               {({ isActive }) => (
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <ShieldCheck className={`w-4 h-4 text-amber-500 shrink-0`} />
+                  <ShieldCheck className="w-4 h-4 text-amber-500 shrink-0" />
                   {!collapsed && <span className="truncate">Painel de Controlo</span>}
                 </div>
               )}
@@ -239,7 +301,7 @@ export const Sidebar = () => {
         )}
 
         {!isCreator && enrolledCourses.length > 0 && !collapsed && (
-          <div className="flex flex-col gap-1.5 pt-4 border-t border-slate-100 dark:border-zinc-800/80">
+          <div className="flex flex-col gap-1.5 pt-3 border-t border-slate-100 dark:border-zinc-800/80">
             <div className="px-3 flex items-center justify-between mb-1">
               <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
                 Continuar Aulas
