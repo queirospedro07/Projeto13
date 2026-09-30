@@ -222,7 +222,7 @@ export const SpaceChat = () => {
     if (searchQuery && !m.content.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     return true;
   });
-  return <div className="flex h-[calc(100vh-4rem)] overflow-hidden bg-white border border-slate-200 rounded-3xl shadow-sm relative">
+  return <div className="flex h-[calc(100dvh-8rem)] md:h-[calc(100vh-5rem)] overflow-hidden bg-white border border-slate-200 rounded-2xl md:rounded-xl shadow-sm relative">
       
       {showMobileSidebar && <div className="fixed inset-0 z-20 bg-black/40 md:hidden" onClick={() => setShowMobileSidebar(false)} />}
 

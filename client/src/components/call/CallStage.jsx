@@ -115,6 +115,7 @@ export const CallStage = ({
   const [chatInput, setChatInput] = useState('');
 
   const containerRef = useRef(null);
+  const chatMessagesEndRef = useRef(null);
   const localAudioStreamRef = useRef(null);
   const localCameraStreamRef = useRef(null);
   const localScreenStreamRef = useRef(null);
@@ -773,7 +774,11 @@ export const CallStage = ({
 
       // 9. Voice chat message
       socket.on('voice-chat-message', (msg) => {
-        setChatMessages(prev => [...prev, msg]);
+        if (!msg) return;
+        setChatMessages(prev => {
+          if (prev.some(m => m.id === msg.id)) return prev;
+          return [...prev, msg];
+        });
       });
     }
 
@@ -1005,18 +1010,24 @@ export const CallStage = ({
     }
   };
 
+  useEffect(() => {
+    if (sideDrawer === 'chat') {
+      chatMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatMessages, sideDrawer]);
+
   const handleSendChatMessage = (e) => {
     e.preventDefault();
     if (!chatInput.trim()) return;
 
     const newMsg = {
-      id: `call-msg-${Date.now()}`,
+      id: `call-msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       sender: userRef.current?.name || 'Eu',
       content: chatInput.trim(),
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
-    setChatMessages(prev => [...prev, newMsg]);
+    setChatMessages(prev => (prev.some(m => m.id === newMsg.id) ? prev : [...prev, newMsg]));
     socket?.emit('voice-chat-message', { roomId: effectiveRoomId, message: newMsg });
     setChatInput('');
   };
@@ -1079,7 +1090,7 @@ export const CallStage = ({
   return (
     <div
       ref={containerRef}
-      className="relative flex-1 w-full h-full bg-[#090a0f] text-slate-100 flex flex-col overflow-hidden select-none font-sans"
+      className="fixed inset-0 z-50 md:relative md:inset-auto md:z-auto flex-1 w-full h-full bg-[#090a0f] text-slate-100 flex flex-col overflow-hidden font-sans"
     >
       {/* Audio Autoplay Unblock Banner */}
       {autoplayBlocked && (
@@ -1096,7 +1107,7 @@ export const CallStage = ({
       )}
 
       {/* Header */}
-      <header className="h-14 px-5 border-b border-white/5 bg-[#090a0f]/90 backdrop-blur-md flex items-center justify-between z-20 shrink-0">
+      <header className="h-14 px-3 sm:px-5 border-b border-white/5 bg-[#090a0f]/90 backdrop-blur-md flex items-center justify-between z-20 shrink-0 pt-safe sm:pt-0">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -1189,10 +1200,10 @@ export const CallStage = ({
                   <button
                     onClick={() => setIsScreenMaximized(prev => !prev)}
                     className="bg-black/75 hover:bg-black/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 text-xs font-semibold text-slate-200 hover:text-white flex items-center gap-1.5 transition-all cursor-pointer shadow-lg"
-                    title={isScreenMaximized ? 'Restaurar visualização' : 'Ecrã em tela cheia'}
+                    title={isScreenMaximized ? 'Restaurar visualização' : 'Ecrã inteiro'}
                   >
                     {isScreenMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-                    <span>{isScreenMaximized ? 'Restaurar' : 'Tela Cheia'}</span>
+                    <span>{isScreenMaximized ? 'Restaurar' : 'Ecrã Inteiro'}</span>
                   </button>
                   <button
                     onClick={() => setSelectedScreenUserId('none')}
@@ -1337,16 +1348,17 @@ export const CallStage = ({
 
         {/* Side Drawer: Chat or Participants */}
         {sideDrawer !== 'none' && (
-          <aside className="w-80 border-l border-white/10 bg-zinc-950 flex flex-col shrink-0 animate-fade-in z-20">
+          <aside className="fixed inset-0 sm:static sm:w-80 border-l border-white/10 bg-zinc-950 flex flex-col shrink-0 animate-fade-in z-40 sm:z-20 shadow-2xl">
             <div className="h-14 px-4 border-b border-white/10 flex items-center justify-between">
               <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
                 {sideDrawer === 'chat' ? 'Mensagens da Chamada' : 'Participantes Conectados'}
               </h3>
               <button
                 onClick={() => setSideDrawer('none')}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 cursor-pointer"
+                className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 cursor-pointer"
+                title="Fechar painel"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5 sm:w-4 sm:h-4" />
               </button>
             </div>
 
@@ -1366,8 +1378,9 @@ export const CallStage = ({
                       </p>
                     </div>
                   ))}
+                  <div ref={chatMessagesEndRef} />
                 </div>
-                <form onSubmit={handleSendChatMessage} className="p-3 border-t border-white/10 flex gap-2">
+                <form onSubmit={handleSendChatMessage} className="p-3 border-t border-white/10 flex gap-2 pb-safe">
                   <input
                     type="text"
                     value={chatInput}
@@ -1377,7 +1390,8 @@ export const CallStage = ({
                   />
                   <button
                     type="submit"
-                    className="p-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white cursor-pointer transition-colors shadow-sm"
+                    className="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white cursor-pointer transition-colors shadow-sm shrink-0"
+                    title="Enviar"
                   >
                     <Send className="w-4 h-4" />
                   </button>
@@ -1408,12 +1422,13 @@ export const CallStage = ({
       </main>
 
       {/* Control Bar Footer */}
-      <footer className="h-20 px-6 border-t border-white/5 bg-[#090a0f] flex items-center justify-center z-20 shrink-0">
-        <div className="bg-zinc-900/90 backdrop-blur-xl px-3.5 py-2 rounded-2xl border border-white/10 flex items-center gap-2 shadow-2xl">
+      <footer className="py-2.5 sm:py-3.5 px-2 sm:px-6 border-t border-white/5 bg-[#090a0f] flex items-center justify-center relative z-30 shrink-0 pb-safe pointer-events-auto">
+        <div className="bg-zinc-900/95 backdrop-blur-xl px-2 sm:px-3.5 py-1.5 sm:py-2 rounded-2xl border border-white/10 flex items-center gap-1.5 sm:gap-2 shadow-2xl max-w-full overflow-x-auto no-scrollbar pointer-events-auto">
           {/* Mic */}
           <button
+            type="button"
             onClick={toggleMic}
-            className={`p-3 rounded-xl font-bold flex items-center gap-2 transition-all cursor-pointer ${
+            className={`min-w-[42px] min-h-[42px] sm:min-w-[46px] sm:min-h-[46px] p-2.5 sm:p-3 rounded-xl font-bold flex items-center justify-center transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 ${
               isMicMuted
                 ? 'bg-rose-600 text-white hover:bg-rose-500 shadow-sm shadow-rose-600/30'
                 : 'bg-white/10 text-slate-200 hover:bg-white/15 hover:text-white'
@@ -1425,8 +1440,9 @@ export const CallStage = ({
 
           {/* Camera */}
           <button
+            type="button"
             onClick={toggleCamera}
-            className={`p-3 rounded-xl font-bold flex items-center gap-2 transition-all cursor-pointer ${
+            className={`min-w-[42px] min-h-[42px] sm:min-w-[46px] sm:min-h-[46px] p-2.5 sm:p-3 rounded-xl font-bold flex items-center justify-center transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 ${
               isCameraOn
                 ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-sm shadow-blue-600/30'
                 : 'bg-white/10 text-slate-200 hover:bg-white/15 hover:text-white'
@@ -1438,8 +1454,9 @@ export const CallStage = ({
 
           {/* Screen Share */}
           <button
+            type="button"
             onClick={toggleScreenShare}
-            className={`p-3 rounded-xl font-bold flex items-center gap-2 transition-all cursor-pointer ${
+            className={`min-w-[42px] min-h-[42px] sm:min-w-[46px] sm:min-h-[46px] p-2.5 sm:p-3 rounded-xl font-bold flex items-center justify-center transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 ${
               isScreenSharing
                 ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-sm shadow-blue-600/30 animate-pulse'
                 : 'bg-white/10 text-slate-200 hover:bg-white/15 hover:text-white'
@@ -1449,12 +1466,13 @@ export const CallStage = ({
             {isScreenSharing ? <MonitorOff className="w-4 h-4 text-white" /> : <Monitor className="w-4 h-4 text-slate-400" />}
           </button>
 
-          <div className="h-5 w-px bg-white/10 mx-1" />
+          <div className="h-5 w-px bg-white/10 mx-0.5 sm:mx-1 shrink-0" />
 
           {/* Chat Drawer Toggle */}
           <button
+            type="button"
             onClick={() => setSideDrawer(prev => prev === 'chat' ? 'none' : 'chat')}
-            className={`p-3 rounded-xl font-bold transition-all cursor-pointer ${
+            className={`min-w-[42px] min-h-[42px] sm:min-w-[46px] sm:min-h-[46px] p-2.5 sm:p-3 rounded-xl font-bold transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 relative flex items-center justify-center ${
               sideDrawer === 'chat'
                 ? 'bg-white/20 text-white'
                 : 'bg-white/10 text-slate-400 hover:bg-white/15 hover:text-white'
@@ -1466,8 +1484,9 @@ export const CallStage = ({
 
           {/* Participants Drawer Toggle */}
           <button
+            type="button"
             onClick={() => setSideDrawer(prev => prev === 'participants' ? 'none' : 'participants')}
-            className={`p-3 rounded-xl font-bold transition-all cursor-pointer ${
+            className={`min-w-[42px] min-h-[42px] sm:min-w-[46px] sm:min-h-[46px] p-2.5 sm:p-3 rounded-xl font-bold transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 flex items-center justify-center ${
               sideDrawer === 'participants'
                 ? 'bg-white/20 text-white'
                 : 'bg-white/10 text-slate-400 hover:bg-white/15 hover:text-white'
@@ -1477,18 +1496,19 @@ export const CallStage = ({
             <Users className="w-4 h-4" />
           </button>
 
-          <div className="h-5 w-px bg-white/10 mx-1" />
+          <div className="h-5 w-px bg-white/10 mx-0.5 sm:mx-1 shrink-0" />
 
           {/* Leave Call */}
           <button
+            type="button"
             onClick={() => {
               soundEffects.playLeaveCall();
               onDisconnect?.();
             }}
-            className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center gap-2 cursor-pointer shadow-sm shadow-rose-600/20 transition-all"
+            className="min-h-[42px] sm:min-h-[46px] px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer touch-manipulation active:scale-95 shadow-sm shadow-rose-600/20 transition-all shrink-0"
             title="Sair da chamada"
           >
-            <PhoneOff className="w-4 h-4" />
+            <PhoneOff className="w-4 h-4 shrink-0" />
             <span>Sair</span>
           </button>
         </div>

@@ -35,13 +35,13 @@ export const CourseDocumentsView = ({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {documents.map((doc, idx) => <div key={doc.id || doc.title || idx} className="p-5 bg-white border border-slate-200 rounded-3xl shadow-sm hover:shadow-md transition-shadow flex items-center justify-between">
+        {documents.map((doc, idx) => <div key={doc.id || doc.title || idx} className="p-5 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl shadow-xs flex items-center justify-between">
             <div className="flex items-center gap-3.5 min-w-0">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center font-bold text-xs uppercase shadow-xs shrink-0">
+              <div className="w-12 h-12 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900 flex items-center justify-center font-bold text-xs uppercase shadow-xs shrink-0">
                 {doc.type}
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-bold text-slate-900 leading-snug truncate">
+                <p className="text-sm font-bold text-slate-900 dark:text-white leading-snug truncate">
                   {doc.title}
                 </p>
                 <p className="text-xs text-slate-500 font-mono mt-0.5">
@@ -50,7 +50,7 @@ export const CourseDocumentsView = ({
               </div>
             </div>
             <a href={doc.url || '#'} download target="_blank" rel="noreferrer" className="shrink-0 ml-3">
-              <button className="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 transition-all flex items-center gap-1.5 cursor-pointer">
+              <button className="px-4 py-2 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-slate-800 dark:text-neutral-200 transition-all flex items-center gap-1.5 cursor-pointer">
                 <Download className="w-4 h-4" />
                 <span>Descarregar</span>
               </button>

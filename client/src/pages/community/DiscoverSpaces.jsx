@@ -152,7 +152,7 @@ export const DiscoverSpaces = () => {
       {loading ? <div className="py-24 text-center">
           <div className="w-10 h-10 border-4 border-slate-900 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-base text-slate-500 font-medium">A carregar catálogo de cursos...</p>
-        </div> : filteredSpaces.length === 0 ? <div className="py-20 text-center border border-dashed border-slate-200 rounded-3xl bg-white max-w-xl mx-auto p-10">
+        </div> : filteredSpaces.length === 0 ? <div className="py-20 text-center border border-dashed border-slate-200 rounded-xl bg-white max-w-xl mx-auto p-10">
           <div className="w-16 h-16 bg-slate-100 text-slate-900 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <BookOpen className="w-8 h-8" />
           </div>
@@ -173,7 +173,7 @@ export const DiscoverSpaces = () => {
         const isFree = space.isFree || space.price === 0 || space.price === null || space.price === undefined;
         const priceFormatted = isFree ? 'Gratuito' : `€${space.price || 49}`;
         const hasCommunity = space.channelsCount && space.channelsCount > 0 || space.hasCommunity !== false;
-        return <div key={space.id} className="group rounded-3xl bg-white dark:bg-[#0c0c0c] border border-slate-200/90 dark:border-neutral-800 shadow-sm hover:shadow-2xl hover:border-slate-300 dark:hover:border-neutral-700 hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col justify-between">
+        return <div key={space.id} className="group rounded-xl bg-white dark:bg-[#0c0c0c] border border-slate-200/90 dark:border-neutral-800 shadow-sm hover:shadow-2xl hover:border-slate-300 dark:hover:border-neutral-700 hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col justify-between">
                 
                 <div className="relative aspect-video w-full bg-slate-900 overflow-hidden">
                   <img src={space.bannerUrl || 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&auto=format&fit=crop&q=80'} alt={space.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90 group-hover:opacity-100" />

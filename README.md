@@ -1,4 +1,4 @@
-# LearnSpace — "Learn. Connect. Grow."
+# NEXO — "Learn. Connect. Grow."
 
 > **A next-generation Full Stack learning and community platform combining courses, Discord-inspired community spaces, real-time WebSockets chat, gamification, and creator monetization.**
 
@@ -6,7 +6,7 @@
 
 ## 🌟 Concept
 
-LearnSpace brings together the best aspects of modern learning and community products into a cohesive, high-polish SaaS platform:
+NEXO brings together the best aspects of modern learning and community products into a cohesive, high-polish SaaS platform:
 - **Courses & Learning Player**: HD video streaming, playback speeds (0.75x–2x), subtitles, personal notes auto-saved per lesson, downloadable resources, and lesson checkmarks.
 - **Interactive Quizzes**: Instant automated grading, answer explanations, score tracking, repeat attempts, and XP awards.
 - **Course Q&A**: Question and answer threads with upvotes and "Mark as Accepted Solution".
@@ -67,22 +67,73 @@ The platform is pre-seeded with realistic courses, spaces, channels, messages, a
 
 ---
 
-## 🏗️ Architecture & Tech Stack
+## 🏗️ Tecnologias, Arquitetura & Segurança
 
-### Frontend (`/client`)
-- **Framework**: React 18 + JavaScript (JSX) + Vite 5
-- **Styling**: Tailwind CSS with custom SaaS dark theme (`#090a0f` base, `#11131a` cards, `#232733` borders, indigo `#6366f1` accent, cyan `#06b6d4` highlight)
-- **Icons**: Lucide React
-- **Animations & Effects**: Canvas Confetti (celebration on XP gain and level up)
-- **Data Visualizations**: Recharts (Study hours charts, Creator revenue area chart)
-- **Real-time Client**: Socket.IO client for live channel chat, typing indicators, and presence
+Estrutura desenhada segundo as melhores práticas académicas e profissionais de **Programação Web (PW)**:
 
 ### Backend (`/server`)
-- **Runtime**: Node.js (>=22) + Express (Native ES Modules)
-- **Real-Time**: Socket.IO WebSockets server
-- **Database Engine**: Direct SQL with native `node:sqlite` (WAL mode, prepared statements, zero ORM overhead)
-- **Authentication**: JWT token authentication with bcrypt password hashing and role authorization
-- **Database Tables**: `users`, `profiles`, `courses`, `course_modules`, `lessons`, `quizzes`, `quiz_questions`, `quiz_options`, `quiz_attempts`, `enrollments`, `lesson_progress`, `certificates`, `reviews`, `spaces`, `channels`, `messages`, `reactions`, `memberships`, `achievements`, `user_achievements`, `xp_transactions`, `notifications`, `events`, `event_participants`, `resources`, `notes`, `qa_questions`, `qa_answers`, `reports`, `categories`, `subscriptions`, `friendships`, `follows`, `direct_messages`.
+| Tecnologia | Função |
+|------------|--------|
+| **Node.js + Express** | Servidor HTTP e API REST modular |
+| **PostgreSQL + SQLite** | Base de dados relacional (suporte PostgreSQL nativo via `pg.Pool` e fallback inteligente para SQLite) |
+| **jsonwebtoken (JWT)** | Autenticação stateless com expiração e verificação no middleware `protect` |
+| **bcryptjs** | Hashing criptográfico de palavras-passe com 10 salt rounds |
+| **express-validator** | Validação e sanitização estrita de dados em todas as rotas de entrada |
+| **Socket.IO** | Comunicação bidirecional em tempo real para chat e sinalização WebRTC de chamadas |
+| **Helmet & CORS** | Proteção de cabeçalhos HTTP e restrição de origens |
+
+### Frontend (`/client`)
+| Tecnologia | Função |
+|------------|--------|
+| **React + Vite** | Interface SPA modular, reativa e de alta performance |
+| **react-router-dom** | Navegação cliente SPA com rotas protegidas |
+| **Axios** | Cliente HTTP centralizado (`src/services/api.js`) com interceptors de autenticação Bearer e gestão de 401 |
+| **Tailwind CSS** | Design system responsivo com suporte a modo claro/escuro e safe-areas móveis |
+| **Lucide Icons** | Conjunto uniforme de ícones |
+| **Recharts** | Gráficos interativos para progresso e estúdio de criadores |
+
+---
+
+## 🔒 Segurança Implementada
+- **Hashing com bcrypt**: 10 salt rounds para todas as passwords, prevenindo ataques de força bruta e rainbow tables.
+- **Autenticação Stateless com JWT**: Token com expiração de 24h, verificado no middleware central `protect` via header `Authorization: Bearer <token>`.
+- **Queries SQL Parametrizadas**: Todas as consultas utilizam queries preparadas nativas (`$1, $2` / `?`), prevenindo 100% de vulnerabilidades SQL Injection.
+- **Validação com `express-validator`**: Validação de comprimento, formatos de email (`normalizeEmail()`), e sanitização de inputs em todas as operações de escrita (`POST`, `PUT`).
+- **Verificação de Permissões**: Middlewares `protect`, `requireAdmin` e `requireCreator` para controlo de acesso baseado em papéis (RBAC).
+- **CORS Restrito**: Apenas a origem autorizada do frontend (`FRONTEND_URL`) pode consumir a API com credenciais.
+- **Bloqueio de Contas Suspensas**: Utilizadores com `isSuspended = true` têm o login e pedidos bloqueados automaticamente.
+- **Variáveis de Ambiente**: Gestão segura com `dotenv`, `.env` e ficheiros documentados `.env.example` tanto no cliente como no servidor.
+
+---
+
+## 📁 Estrutura de Ficheiros do Backend (Padrão MVC)
+```
+server/
+├── .env.example                    (modelo de variáveis de ambiente)
+├── package.json                    (dependências e scripts npm)
+└── src/
+    ├── server.js                   (ponto de entrada - inicia base de dados e servidor)
+    ├── app.js                      (configuração Express, middlewares, cors e rotas)
+    ├── database/
+    │   ├── connection.js           (pool PostgreSQL / SQLite com queries parametrizadas)
+    │   ├── migrate.js              (script npm run migrate para criação do esquema)
+    │   └── seed.js                 (script npm run seed para dados de demonstração)
+    ├── middleware/
+    │   ├── auth.js                 (middleware protect e optionalAuth)
+    │   ├── admin.js                (middleware requireAdmin e requireCreator)
+    │   ├── validate.js             (tratamento de erros express-validator)
+    │   └── security.js             (helmet, cors, sanitização e rate limiters)
+    ├── models/
+    │   ├── User.js                 (acesso a dados de utilizadores com queries SQL)
+    │   └── Course.js               (acesso a dados de cursos)
+    ├── controllers/
+    │   └── auth.controller.js      (lógica de registo, login e perfil)
+    ├── routes/
+    │   ├── auth.routes.js          (rotas de autenticação com express-validator)
+    │   └── ...                     (restantes rotas de cursos, espaços, chat, etc.)
+    └── sockets/
+        └── chatSocket.js           (WebSockets para chat e chamadas WebRTC)
+```
 
 ---
 

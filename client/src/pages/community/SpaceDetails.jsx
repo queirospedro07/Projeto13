@@ -57,7 +57,7 @@ export const SpaceDetails = () => {
   if (!space) return <div className="p-16 text-center text-slate-700 font-medium">Espaço não encontrado.</div>;
   return <div className="max-w-6xl mx-auto flex flex-col gap-10 animate-fade-in pb-16">
       
-      <div className="relative rounded-3xl overflow-hidden border border-slate-200 bg-white shadow-sm">
+      <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-white shadow-sm">
         <div className="h-56 sm:h-72 w-full bg-slate-900 overflow-hidden">
           <img src={space.bannerUrl} alt={space.name} className="w-full h-full object-cover" />
         </div>

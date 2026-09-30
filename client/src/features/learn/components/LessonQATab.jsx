@@ -9,16 +9,16 @@ export const LessonQATab = ({
         <h4 className="font-bold text-slate-900 dark:text-white text-base">
           Discussão & Dúvidas da Aula
         </h4>
-        <button onClick={onOpenAskModal} className="px-5 py-2.5 rounded-xl text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 cursor-pointer transition-all">
+        <button onClick={onOpenAskModal} className="px-5 py-2 rounded-lg text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs cursor-pointer transition-all">
           Fazer Pergunta
         </button>
       </div>
 
       <div className="flex flex-col gap-3">
-        {questions.length === 0 ? <div className="p-8 text-center text-sm text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-[#12141c] rounded-2xl border border-slate-200 dark:border-[#222636]">
+        {questions.length === 0 ? <div className="p-8 text-center text-sm text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-[#12141c] rounded-xl border border-slate-200 dark:border-[#222636]">
             Ainda não existem perguntas publicadas para esta aula. Seja o primeiro a colocar uma
             dúvida!
-          </div> : questions.map(q => <div key={q.id} className="p-5 rounded-2xl bg-white dark:bg-[#12141c] border border-slate-200 dark:border-[#222636] shadow-sm">
+          </div> : questions.map(q => <div key={q.id} className="p-5 rounded-xl bg-white dark:bg-[#12141c] border border-slate-200 dark:border-[#222636] shadow-xs">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2.5">
                   <Avatar src={q.author?.avatarUrl} name={q.author?.name || 'Aluno'} size="xs" />

@@ -18,6 +18,8 @@ import { LibraryPage } from './pages/LibraryPage';
 import { CreatorDashboard } from './pages/creator/CreatorDashboard';
 import { CourseBuilder } from './pages/creator/CourseBuilder';
 import { CreatorMembers } from './pages/creator/CreatorMembers';
+import { ApplyCreator } from './pages/creator/ApplyCreator';
+import { ApplySubAdmin } from './pages/admin/ApplySubAdmin';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { CertificateView } from './pages/certificates/CertificateView';
 import { SettingsPage } from './pages/SettingsPage';
@@ -113,6 +115,14 @@ export const App = () => {
                   />
 
                   <Route
+                    path="creator/apply"
+                    element={
+                      <ProtectedRoute>
+                        <ApplyCreator />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
                     path="creator"
                     element={
                       <ProtectedRoute requiredRole="CREATOR">
@@ -151,6 +161,14 @@ export const App = () => {
                     element={
                       <ProtectedRoute>
                         <SettingsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="admin/apply"
+                    element={
+                      <ProtectedRoute>
+                        <ApplySubAdmin />
                       </ProtectedRoute>
                     }
                   />

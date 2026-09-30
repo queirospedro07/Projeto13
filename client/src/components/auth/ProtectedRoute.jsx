@@ -28,7 +28,7 @@ export const ProtectedRoute = ({
       return <Navigate to="/dashboard" replace />;
     }
     if (requiredRole === 'CREATOR' && user.role !== 'CREATOR' && user.role !== 'ADMIN') {
-      return <Navigate to="/dashboard" replace />;
+      return <Navigate to="/creator/apply" replace />;
     }
   }
   return children;

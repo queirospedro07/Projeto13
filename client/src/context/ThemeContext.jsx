@@ -4,7 +4,7 @@ export const ThemeProvider = ({
   children
 }) => {
   const [theme, setThemeState] = useState(() => {
-    return localStorage.getItem('learnspace_theme') || 'light';
+    return localStorage.getItem('nexo_theme') || localStorage.getItem('learnspace_theme') || 'light';
   });
   const [actualTheme, setActualTheme] = useState('light');
   const applyTheme = useCallback(currentTheme => {
@@ -27,7 +27,7 @@ export const ThemeProvider = ({
   }, []);
   const setTheme = useCallback(newTheme => {
     setThemeState(newTheme);
-    localStorage.setItem('learnspace_theme', newTheme);
+    localStorage.setItem('nexo_theme', newTheme);
     applyTheme(newTheme);
   }, [applyTheme]);
   const toggleTheme = useCallback(() => {
@@ -38,7 +38,7 @@ export const ThemeProvider = ({
     if (window.matchMedia) {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const handleMediaChange = () => {
-        const savedTheme = localStorage.getItem('learnspace_theme') || 'light';
+        const savedTheme = localStorage.getItem('nexo_theme') || localStorage.getItem('learnspace_theme') || 'light';
         if (savedTheme === 'system') {
           applyTheme('system');
         }

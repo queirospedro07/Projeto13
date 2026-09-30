@@ -79,7 +79,7 @@ export const IncomingCallModal = ({ onAcceptCall }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-[#12141a] border border-white/10 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl flex flex-col items-center text-center animate-scale-in">
+      <div className="bg-[#12141a] border border-white/10 rounded-xl p-6 sm:p-8 max-w-sm w-full shadow-2xl flex flex-col items-center text-center animate-scale-in">
         <div className="relative mb-5">
           <div className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping" />
           <Avatar
@@ -104,7 +104,7 @@ export const IncomingCallModal = ({ onAcceptCall }) => {
         <div className="flex items-center gap-4 w-full">
           <button
             onClick={handleReject}
-            className="flex-1 py-3 px-4 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-rose-600/30 transition-all hover:scale-105 active:scale-95"
+            className="flex-1 py-3 px-4 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-rose-600/30 transition-all hover:scale-105 active:scale-95"
           >
             <PhoneOff className="w-4 h-4" />
             <span>Recusar</span>
@@ -112,7 +112,7 @@ export const IncomingCallModal = ({ onAcceptCall }) => {
 
           <button
             onClick={handleAccept}
-            className="flex-1 py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-600/30 transition-all hover:scale-105 active:scale-95"
+            className="flex-1 py-3 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-600/30 transition-all hover:scale-105 active:scale-95"
           >
             <Phone className="w-4 h-4" />
             <span>Atender</span>

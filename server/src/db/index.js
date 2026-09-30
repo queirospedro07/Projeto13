@@ -4,7 +4,7 @@ import fs from 'fs';
 import dotenv from 'dotenv';
 import { initializeSchemaAndSeed } from './init.js';
 dotenv.config();
-const dbPath = process.env.DATABASE_PATH || path.resolve(process.cwd(), 'data/learnspace.db');
+const dbPath = process.env.DATABASE_PATH || path.resolve(process.cwd(), 'data/nexo.db');
 const dbDir = path.dirname(dbPath);
 if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, {

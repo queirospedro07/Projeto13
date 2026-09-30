@@ -457,21 +457,21 @@ export const CoursePlayer = () => {
       
       <main className="flex-1 flex flex-col min-w-0 bg-slate-50 overflow-hidden">
         
-        <header className="h-16 border-b border-slate-200 bg-white px-4 sm:px-6 flex items-center justify-between shrink-0 shadow-xs">
+        <header className="h-16 border-b border-slate-200 bg-white px-3 sm:px-6 flex items-center justify-between shrink-0 shadow-xs">
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <button
               type="button"
               onClick={() => setMobileSidebarOpen(true)}
-              className="p-2 -ml-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 md:hidden transition-colors cursor-pointer shrink-0"
+              className="p-2 -ml-1 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 md:hidden transition-colors cursor-pointer shrink-0"
               title="Abrir menu do curso"
               aria-label="Abrir menu do curso"
             >
               <Menu className="w-5 h-5" />
             </button>
 
-            {activeView === 'channel' && <div className="flex items-center gap-2.5">
-                <Hash className="w-5 h-5 text-blue-600" />
-                <span className="font-extrabold text-slate-900 text-base truncate">
+            {activeView === 'channel' && <div className="flex items-center gap-2 truncate max-w-[140px] xs:max-w-[220px] sm:max-w-md">
+                <Hash className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 shrink-0" />
+                <span className="font-extrabold text-slate-900 text-sm sm:text-base truncate">
                   {currentTextChannel?.name || 'geral'}
                 </span>
                 {currentTextChannel?.topic && <span className="text-sm text-slate-500 hidden md:inline truncate max-w-md">
@@ -479,37 +479,37 @@ export const CoursePlayer = () => {
                   </span>}
               </div>}
 
-            {activeView === 'lesson' && <div className="flex items-center gap-2.5 truncate">
-                <Play className="w-5 h-5 text-blue-600 shrink-0" />
-                <span className="font-extrabold text-slate-900 text-base truncate">
+            {activeView === 'lesson' && <div className="flex items-center gap-2 truncate max-w-[140px] xs:max-w-[220px] sm:max-w-md">
+                <Play className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 shrink-0" />
+                <span className="font-extrabold text-slate-900 text-sm sm:text-base truncate">
                   {currentLesson?.title || 'Aula em Vídeo'}
                 </span>
               </div>}
 
-            {activeView === 'live-room' && <div className="flex items-center gap-2.5 text-blue-600">
-                <Radio className="w-5 h-5 animate-pulse text-red-500" />
-                <span className="font-extrabold text-slate-900 text-base truncate">
-                  Sala de Conferência ao Vivo: {liveRoomName}
+            {activeView === 'live-room' && <div className="flex items-center gap-2 text-blue-600 truncate max-w-[140px] xs:max-w-[220px] sm:max-w-md">
+                <Radio className="w-4 h-4 sm:w-5 sm:h-5 animate-pulse text-red-500 shrink-0" />
+                <span className="font-extrabold text-slate-900 text-sm sm:text-base truncate">
+                  {liveRoomName}
                 </span>
               </div>}
 
-            {activeView === 'quiz' && <div className="flex items-center gap-2.5">
-                <HelpCircle className="w-5 h-5 text-amber-500" />
-                <span className="font-extrabold text-slate-900 text-base truncate">
-                  Avaliação & Quizzes do Curso
+            {activeView === 'quiz' && <div className="flex items-center gap-2 truncate">
+                <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 shrink-0" />
+                <span className="font-extrabold text-slate-900 text-sm sm:text-base truncate">
+                  Quizzes
                 </span>
               </div>}
 
-            {activeView === 'documents' && <div className="flex items-center gap-2.5">
-                <FileCode2 className="w-5 h-5 text-blue-600" />
-                <span className="font-extrabold text-slate-900 text-base truncate">
-                  Documentos & Recursos de Apoio
+            {activeView === 'documents' && <div className="flex items-center gap-2 truncate">
+                <FileCode2 className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 shrink-0" />
+                <span className="font-extrabold text-slate-900 text-sm sm:text-base truncate">
+                  Documentos
                 </span>
               </div>}
           </div>
 
           
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             {isCreatorOrAdmin && (
               <Link
                 to={`/creator/courses/${course.id}/edit?step=3`}
@@ -521,11 +521,15 @@ export const CoursePlayer = () => {
               </Link>
             )}
 
-            {activeView === 'lesson' && currentLesson && <button onClick={handleMarkComplete} className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 sm:gap-2 transition-all cursor-pointer ${isCurrentCompleted ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-500/20'}`}>
+            {activeView === 'lesson' && currentLesson && <button onClick={handleMarkComplete} className={`px-2.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1 sm:gap-2 transition-all cursor-pointer shrink-0 ${isCurrentCompleted ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-500/20'}`}>
                 {isCurrentCompleted ? <>
-                    <Check className="w-4 h-4 text-emerald-600" />
-                    <span>Concluída (+25 XP)</span>
-                  </> : <span>Marcar como Concluída</span>}
+                    <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600" />
+                    <span className="hidden xs:inline">Concluída (+25 XP)</span>
+                    <span className="xs:hidden">Feito (+25)</span>
+                  </> : <>
+                    <span className="hidden xs:inline">Marcar como Concluída</span>
+                    <span className="xs:hidden">Concluir</span>
+                  </>}
               </button>}
 
             {inLiveRoom && activeView !== 'live-room' && <button onClick={() => setActiveView('live-room')} className="px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-md flex items-center gap-2 cursor-pointer">
@@ -560,7 +564,7 @@ export const CoursePlayer = () => {
         
         {activeView === 'lesson' && (!currentLesson ? (
             <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-8 text-center max-w-md mx-auto">
-              <div className="w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4 shadow-xs">
+              <div className="w-16 h-16 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4 shadow-xs">
                 <BookOpen className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-black text-slate-900 mb-2">
@@ -600,7 +604,7 @@ export const CoursePlayer = () => {
         }} onNextLesson={nextLesson ? () => setCurrentLesson(nextLesson) : undefined} />}
 
             
-            {currentLesson?.type === 'code' && <div className="flex flex-col gap-4 bg-[#11131a] p-6 rounded-3xl border border-[#1e2230] text-white">
+            {currentLesson?.type === 'code' && <div className="flex flex-col gap-4 bg-[#11131a] p-6 rounded-xl border border-[#1e2230] text-white">
                 <div className="flex items-center justify-between pb-3 border-b border-[#1e2230]">
                   <div className="flex items-center gap-2.5">
                     <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
@@ -655,7 +659,7 @@ export const CoursePlayer = () => {
               </div>}
 
             
-            {currentLesson?.type === 'resource' && <div className="flex flex-col gap-4 bg-[#11131a] p-6 rounded-3xl border border-[#1e2230] text-white">
+            {currentLesson?.type === 'resource' && <div className="flex flex-col gap-4 bg-[#11131a] p-6 rounded-xl border border-[#1e2230] text-white">
                 <div className="flex items-center justify-between pb-3 border-b border-[#1e2230]">
                   <div className="flex items-center gap-2.5">
                     <div className="w-9 h-9 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold">
@@ -722,7 +726,7 @@ export const CoursePlayer = () => {
               </div>}
 
             
-            {currentLesson?.type === 'project' && <div className="flex flex-col gap-4 bg-[#11131a] p-6 rounded-3xl border border-[#1e2230] text-white">
+            {currentLesson?.type === 'project' && <div className="flex flex-col gap-4 bg-[#11131a] p-6 rounded-xl border border-[#1e2230] text-white">
                 <div className="flex items-center justify-between pb-3 border-b border-[#1e2230]">
                   <div className="flex items-center gap-2.5">
                     <div className="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold">
@@ -802,7 +806,7 @@ export const CoursePlayer = () => {
               </div>}
 
             
-            {currentLesson?.type === 'text' && <div className="flex flex-col gap-4 bg-white dark:bg-[#12141c] p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-[#222636] shadow-sm text-slate-900 dark:text-white">
+            {currentLesson?.type === 'text' && <div className="flex flex-col gap-4 bg-white dark:bg-[#12141c] p-6 sm:p-8 rounded-xl border border-slate-200 dark:border-[#222636] shadow-sm text-slate-900 dark:text-white">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-[#222636]">
                   <div>
                     <h2 className="text-lg font-black text-slate-950 dark:text-white">
@@ -850,24 +854,41 @@ export const CoursePlayer = () => {
               </div>}
 
             
-            <div className="flex items-center justify-between">
-              {prevLesson ? <button onClick={() => setCurrentLesson(prevLesson)} className="px-5 py-2.5 rounded-xl text-sm font-bold bg-white dark:bg-[#12141c] hover:bg-slate-100 dark:hover:bg-[#1f2330] text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-[#222636] flex items-center gap-2 cursor-pointer shadow-xs">
-                  <ChevronLeft className="w-4 h-4" />
-                  <span>Anterior: {prevLesson.title}</span>
-                </button> : <div />}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              {prevLesson ? (
+                <button
+                  onClick={() => setCurrentLesson(prevLesson)}
+                  className="px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-white dark:bg-[#12141c] hover:bg-slate-100 dark:hover:bg-[#1f2330] text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-[#222636] flex items-center justify-center sm:justify-start gap-2 cursor-pointer shadow-xs min-w-0"
+                >
+                  <ChevronLeft className="w-4 h-4 shrink-0" />
+                  <span className="truncate">Anterior: {prevLesson.title}</span>
+                </button>
+              ) : (
+                <div />
+              )}
 
-              {nextLesson ? <button onClick={() => setCurrentLesson(nextLesson)} className="px-6 py-3 rounded-2xl text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 flex items-center gap-2 cursor-pointer">
-                  <span>Próxima: {nextLesson.title}</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button> : <button onClick={handleMarkComplete} className="px-6 py-3 rounded-2xl text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20 flex items-center gap-2 cursor-pointer">
-                  <Award className="w-4 h-4" />
+              {nextLesson ? (
+                <button
+                  onClick={() => setCurrentLesson(nextLesson)}
+                  className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 flex items-center justify-center sm:justify-end gap-2 cursor-pointer min-w-0"
+                >
+                  <span className="truncate">Próxima: {nextLesson.title}</span>
+                  <ChevronRight className="w-4 h-4 shrink-0" />
+                </button>
+              ) : (
+                <button
+                  onClick={handleMarkComplete}
+                  className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer min-w-0"
+                >
+                  <Award className="w-4 h-4 shrink-0" />
                   <span>Concluir Curso Oficialmente</span>
-                </button>}
+                </button>
+              )}
             </div>
 
             
             <div>
-              <div className="flex items-center gap-2 border-b border-slate-200 dark:border-[#222636] pb-3 text-sm font-bold text-slate-500 dark:text-slate-400 overflow-x-auto">
+              <div className="flex items-center gap-1.5 sm:gap-2 border-b border-slate-200 dark:border-[#222636] pb-3 text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 overflow-x-auto no-scrollbar">
                 {[{
               id: 'overview',
               label: 'Visão Geral da Lição'
@@ -886,7 +907,7 @@ export const CoursePlayer = () => {
               </div>
 
               <div className="pt-6">
-                {activeLessonTab === 'overview' && <div className="text-base text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line bg-white dark:bg-[#12141c] p-6 rounded-3xl border border-slate-200 dark:border-[#222636] shadow-sm">
+                {activeLessonTab === 'overview' && <div className="text-base text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line bg-white dark:bg-[#12141c] p-6 rounded-xl border border-slate-200 dark:border-[#222636] shadow-sm">
                     {currentLesson?.content || 'Sem notas ou introdução adicional para esta lição.'}
                   </div>}
 

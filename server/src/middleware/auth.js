@@ -1,40 +1,72 @@
-import { queryOne } from '../db/index.js';
+import jwt from 'jsonwebtoken';
+import { queryOne } from '../database/connection.js';
 import { verifyJwtToken } from '../config/jwt.js';
-export async function authenticate(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({
-      error: 'Authentication required'
-    });
-  }
-  const token = authHeader.split(' ')[1];
+
+export const protect = async (req, res, next) => {
   try {
-    const payload = verifyJwtToken(token);
-    const user = queryOne('SELECT id, email, username, role, isSuspended FROM users WHERE id = ?', [payload.id]);
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        message: 'Não autorizado. Token em falta.',
+        error: 'Não autorizado. Token em falta.'
+      });
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    let payload;
+    try {
+      payload = verifyJwtToken(token);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError') {
+        return res.status(401).json({
+          message: 'Token expirado. Por favor, inicie sessão novamente.',
+          error: 'Token expirado. Por favor, inicie sessão novamente.'
+        });
+      }
+      return res.status(401).json({
+        message: 'Token inválido.',
+        error: 'Token inválido.'
+      });
+    }
+
+    const user = queryOne('SELECT id, email, username, name, role, isSuspended FROM users WHERE id = ?', [payload.id]);
     if (!user) {
       return res.status(401).json({
-        error: 'User no longer exists'
+        message: 'Utilizador não encontrado.',
+        error: 'Utilizador não encontrado.'
       });
     }
+
     if (user.isSuspended) {
       return res.status(403).json({
-        error: 'Account has been suspended by administration'
+        message: 'Conta suspensa. Contacte a administração.',
+        error: 'Conta suspensa. Contacte a administração.'
       });
     }
+
     req.user = {
       id: user.id,
       email: user.email,
       username: user.username,
-      role: user.role
+      name: user.name,
+      role: user.role,
+      isAdmin: user.role === 'ADMIN'
     };
+
     next();
   } catch (err) {
     return res.status(401).json({
-      error: 'Invalid or expired authentication token'
+      message: 'Não autorizado.',
+      error: 'Não autorizado.'
     });
   }
-}
-export function optionalAuth(req, res, next) {
+};
+
+// Alias for compatibility
+export const authenticate = protect;
+
+export const optionalAuth = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return next();
@@ -43,21 +75,24 @@ export function optionalAuth(req, res, next) {
   try {
     const payload = verifyJwtToken(token);
     req.user = payload;
-  } catch (err) {}
+  } catch (_) {}
   next();
-}
-export function requireRole(...roles) {
+};
+
+export const requireRole = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({
-        error: 'Authentication required'
+        message: 'Autenticação necessária.',
+        error: 'Autenticação necessária.'
       });
     }
     if (!roles.includes(req.user.role) && req.user.role !== 'ADMIN') {
       return res.status(403).json({
-        error: 'Insufficient permissions for this action'
+        message: 'Permissões insuficientes para esta ação.',
+        error: 'Permissões insuficientes para esta ação.'
       });
     }
     next();
   };
-}
+};

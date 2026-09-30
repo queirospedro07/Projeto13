@@ -158,7 +158,7 @@ export const QuizLessonEditor = ({
       options: remaining
     });
   };
-  return <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#12141c] border border-slate-200 dark:border-[#242838] flex flex-col gap-4 text-xs">
+  return <div className="p-4 rounded-lg bg-slate-50 dark:bg-[#12141c] border border-slate-200 dark:border-[#242838] flex flex-col gap-4 text-xs">
       
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-xl bg-white dark:bg-[#181a24] border border-slate-200 dark:border-[#2b3044]">
         <div className="flex flex-col gap-1">
@@ -903,12 +903,21 @@ export const CourseBuilder = () => {
         const result = await api.createCourse(payload);
         resultId = result.id || result.slug;
       }
+      const isAdmin = user?.role === 'ADMIN';
       toast({
-        title: publish ? isEditMode ? 'Curso Atualizado!' : 'Curso Publicado!' : 'Rascunho Guardado!',
-        message: publish ? isEditMode ? 'As alterações foram guardadas e publicadas.' : 'O curso está agora visível para os estudantes.' : 'O curso foi guardado como rascunho.',
+        title: publish 
+          ? (isAdmin 
+              ? (isEditMode ? 'Curso Atualizado!' : 'Curso Publicado!') 
+              : 'Curso Submetido para Moderação!')
+          : 'Rascunho Guardado!',
+        message: publish 
+          ? (isAdmin 
+              ? (isEditMode ? 'As alterações foram guardadas e publicadas.' : 'O curso está agora visível para os estudantes.') 
+              : 'O seu curso foi enviado para aprovação da administração NEXO. Assim que for aprovado, ficará visível no catálogo.')
+          : 'O curso foi guardado como rascunho.',
         type: 'success'
       });
-      navigate(isEditMode ? '/creator' : `/learn/${resultId}`);
+      navigate('/creator');
     } catch (err) {
       toast({
         title: 'Erro ao Publicar',
@@ -997,7 +1006,7 @@ export const CourseBuilder = () => {
               <span>{isEditMode ? 'Guardar' : 'Rascunho'}</span>
             </Button>
             <Button variant="primary" size="sm" leftIcon={<Send className="w-4 h-4" />} isLoading={isSubmitting} onClick={() => handlePublish(true)} className="font-black rounded-xl text-xs bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/25 cursor-pointer px-3 sm:px-4">
-              <span>{isEditMode ? 'Publicar Alterações' : 'Publicar Curso'}</span>
+              <span>{user?.role === 'ADMIN' ? (isEditMode ? 'Publicar Alterações' : 'Publicar Curso') : (isEditMode ? 'Guardar & Submeter' : 'Submeter p/ Aprovação')}</span>
             </Button>
           </div>
         </div>
@@ -1006,7 +1015,7 @@ export const CourseBuilder = () => {
       <main className="max-w-6xl mx-auto px-3 sm:px-8 pt-6 sm:pt-8">
         
         <nav aria-label="Progresso da criação do curso" className="mb-6 sm:mb-8">
-          <div className="bg-white dark:bg-[#151720] p-1.5 rounded-2xl grid grid-cols-2 sm:grid-cols-4 gap-1.5 max-w-4xl mx-auto border border-slate-200 dark:border-[#222636] shadow-xs transition-colors">
+          <div className="bg-white dark:bg-[#151720] p-1.5 rounded-lg grid grid-cols-2 sm:grid-cols-4 gap-1.5 max-w-4xl mx-auto border border-slate-200 dark:border-[#222636] shadow-xs transition-colors">
             {[{
               num: 1,
               short: '1. Identidade',
@@ -1041,7 +1050,7 @@ export const CourseBuilder = () => {
         
         {activeStep === 1 && <div className="flex flex-col gap-6 animate-fade-in">
             
-            <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-3xl flex flex-col gap-5 shadow-xs transition-colors">
+            <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-xl flex flex-col gap-5 shadow-xs transition-colors">
               <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-[#222636]">
                 <div>
                   <h2 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
@@ -1136,7 +1145,7 @@ export const CourseBuilder = () => {
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               
-              <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-3xl flex flex-col gap-4 shadow-xs transition-colors">
+              <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-xl flex flex-col gap-4 shadow-xs transition-colors">
                 <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-[#222636]">
                   <Palette className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                   <h3 className="text-sm font-black text-slate-900 dark:text-white">
@@ -1186,7 +1195,7 @@ export const CourseBuilder = () => {
               </Card>
 
               
-              <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-3xl flex flex-col gap-4 shadow-xs transition-colors">
+              <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-xl flex flex-col gap-4 shadow-xs transition-colors">
                 <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-[#222636]">
                   <DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                   <h3 className="text-sm font-black text-slate-900 dark:text-white">
@@ -1225,7 +1234,7 @@ export const CourseBuilder = () => {
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               
-              <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-3xl flex flex-col gap-4 shadow-xs transition-colors">
+              <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-xl flex flex-col gap-4 shadow-xs transition-colors">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-[#222636]">
                   <div className="flex items-center gap-2">
                     <Award className="w-5 h-5 text-amber-500" />
@@ -1261,7 +1270,7 @@ export const CourseBuilder = () => {
               </Card>
 
               
-              <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-3xl flex flex-col gap-4 shadow-xs transition-colors">
+              <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-xl flex flex-col gap-4 shadow-xs transition-colors">
                 <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-[#222636]">
                   <FileBadge className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                   <h3 className="text-sm font-black text-slate-900 dark:text-white">
@@ -1302,7 +1311,7 @@ export const CourseBuilder = () => {
         
         {activeStep === 2 && <div className="flex flex-col gap-6 animate-fade-in">
             
-            <div className="flex items-center gap-2 p-1.5 bg-white dark:bg-[#151720] border border-slate-200 dark:border-[#222636] rounded-2xl w-fit shadow-xs">
+            <div className="flex items-center gap-2 p-1.5 bg-white dark:bg-[#151720] border border-slate-200 dark:border-[#222636] rounded-lg w-fit shadow-xs">
               <button type="button" onClick={() => setStep2SubTab('channels')} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${step2SubTab === 'channels' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'}`}>
                 <Hash className="w-4 h-4" />
                 <span>Canais da Turma ({channels.length})</span>
@@ -1320,7 +1329,7 @@ export const CourseBuilder = () => {
             </div>
 
             
-            {step2SubTab === 'channels' && <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-3xl flex flex-col gap-5 shadow-xs transition-colors">
+            {step2SubTab === 'channels' && <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-xl flex flex-col gap-5 shadow-xs transition-colors">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-[#222636]">
                   <div>
                     <h2 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
@@ -1347,7 +1356,7 @@ export const CourseBuilder = () => {
                   {channels.map(chan => {
               const isVoice = chan.type === 'voice';
               const isAnnouncement = chan.accessMode === 'announcement';
-              return <div key={chan.id} className="p-4 rounded-2xl bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-3 transition-colors">
+              return <div key={chan.id} className="p-4 rounded-lg bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-3 transition-colors">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3 min-w-0">
                             <div className="w-8 h-8 rounded-xl bg-white dark:bg-[#222636] border border-slate-200 dark:border-[#2b3144] flex items-center justify-center shrink-0">
@@ -1423,7 +1432,7 @@ export const CourseBuilder = () => {
               </Card>}
 
             
-            {step2SubTab === 'calls' && <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-3xl flex flex-col gap-6 shadow-xs transition-colors">
+            {step2SubTab === 'calls' && <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-xl flex flex-col gap-6 shadow-xs transition-colors">
                 <div className="pb-3 border-b border-slate-200 dark:border-[#222636]">
                   <h2 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
                     <Volume2 className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
@@ -1455,7 +1464,7 @@ export const CourseBuilder = () => {
               desc: 'Os alunos entram numa fila ordenada para esclarecimento de dúvidas pontuais.',
               icon: HelpCircle,
               badge: 'Ideal para mentoria'
-            }].map(mode => <div key={mode.id} onClick={() => setDefaultCallMode(mode.id)} className={`p-4 rounded-2xl border flex flex-col justify-between gap-3 cursor-pointer transition-all ${defaultCallMode === mode.id ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-50/40 dark:bg-indigo-950/20 shadow-md shadow-indigo-600/10 ring-2 ring-indigo-500/20' : 'border-slate-200 dark:border-[#282d3e] bg-slate-50 dark:bg-[#181a24] hover:border-slate-400'}`}>
+            }].map(mode => <div key={mode.id} onClick={() => setDefaultCallMode(mode.id)} className={`p-4 rounded-lg border flex flex-col justify-between gap-3 cursor-pointer transition-all ${defaultCallMode === mode.id ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-50/40 dark:bg-indigo-950/20 shadow-md shadow-indigo-600/10 ring-2 ring-indigo-500/20' : 'border-slate-200 dark:border-[#282d3e] bg-slate-50 dark:bg-[#181a24] hover:border-slate-400'}`}>
                       <div className="flex flex-col gap-2">
                         <div className="flex items-center justify-between">
                           <mode.icon className={`w-5 h-5 ${defaultCallMode === mode.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500'}`} />
@@ -1481,7 +1490,7 @@ export const CourseBuilder = () => {
                 </div>
 
                 
-                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-4">
+                <div className="p-4 rounded-lg bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-4">
                   <h3 className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-2">
                     <SlidersHorizontal className="w-4 h-4 text-indigo-500" />
                     Permissões de Média dos Estudantes
@@ -1517,7 +1526,7 @@ export const CourseBuilder = () => {
               </Card>}
 
             
-            {step2SubTab === 'roles' && <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-3xl flex flex-col gap-6 shadow-xs transition-colors">
+            {step2SubTab === 'roles' && <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-xl flex flex-col gap-6 shadow-xs transition-colors">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-[#222636]">
                   <div>
                     <h2 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
@@ -1537,7 +1546,7 @@ export const CourseBuilder = () => {
 
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {customRoles.map(r => <div key={r.id} className="p-4 rounded-2xl bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col justify-between gap-3 transition-colors">
+                  {customRoles.map(r => <div key={r.id} className="p-4 rounded-lg bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col justify-between gap-3 transition-colors">
                       <div>
                         <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-[#252a3b]">
                           <div className="flex items-center gap-2">
@@ -1601,7 +1610,7 @@ export const CourseBuilder = () => {
         
         
         {activeStep === 3 && <div className="flex flex-col gap-6 animate-fade-in">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#151720] p-4 sm:p-5 rounded-3xl border border-slate-200 dark:border-[#222636] shadow-xs transition-colors">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#151720] p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-[#222636] shadow-xs transition-colors">
               <div>
                 <h2 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
                   <Layers className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
@@ -1619,8 +1628,8 @@ export const CourseBuilder = () => {
               </div>
             </div>
 
-            {modules.length === 0 ? <Card className="p-8 sm:p-12 text-center bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-3xl flex flex-col items-center justify-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+            {modules.length === 0 ? <Card className="p-8 sm:p-12 text-center bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-xl flex flex-col items-center justify-center gap-3">
+                <div className="w-12 h-12 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
                   <Layers className="w-6 h-6" />
                 </div>
                 <h3 className="font-extrabold text-slate-900 dark:text-white text-base">
@@ -1636,7 +1645,7 @@ export const CourseBuilder = () => {
                 </div>
               </Card> : modules.map((mod, mIdx) => {
                 const isCollapsed = collapsedModuleIds.has(mod.id);
-                return <Card key={mod.id} className="p-4 sm:p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-3xl flex flex-col gap-4 sm:gap-5 shadow-xs transition-colors">
+                return <Card key={mod.id} className="p-4 sm:p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-xl flex flex-col gap-4 sm:gap-5 shadow-xs transition-colors">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-[#222636]">
                     <div className="flex items-start sm:items-center gap-2 flex-1 min-w-0">
                       <button
@@ -1717,7 +1726,7 @@ export const CourseBuilder = () => {
                         Nenhuma aula adicionada a este módulo. Escolha um tipo abaixo para começar.
                       </p>
                     ) : mod.lessons.map((les, lIdx) => (
-                      <div key={les.id} className="p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-3 transition-colors">
+                      <div key={les.id} className="p-3.5 sm:p-4 rounded-lg bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-3 transition-colors">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                           <div className="flex items-center gap-2 flex-1 min-w-0">
                             <span className="w-6 h-6 rounded-lg bg-white dark:bg-[#202433] border border-slate-200 dark:border-[#2b3144] text-slate-700 dark:text-zinc-300 text-xs font-bold flex items-center justify-center shrink-0">
@@ -1961,7 +1970,7 @@ export const CourseBuilder = () => {
         
         
         {activeStep === 4 && <div className="flex flex-col gap-6 animate-fade-in">
-            <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-3xl flex flex-col gap-6 shadow-xs transition-colors">
+            <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-xl flex flex-col gap-6 shadow-xs transition-colors">
               <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-[#222636]">
                 <div>
                   <h2 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
@@ -1980,7 +1989,7 @@ export const CourseBuilder = () => {
 
               
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-1">
+                <div className="p-4 rounded-lg bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-1">
                   <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400">
                     Conteúdo Programático
                   </span>
@@ -1992,7 +2001,7 @@ export const CourseBuilder = () => {
                   </p>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-1">
+                <div className="p-4 rounded-lg bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-1">
                   <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400">
                     Canais da Turma
                   </span>
@@ -2005,7 +2014,7 @@ export const CourseBuilder = () => {
                   </p>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-1">
+                <div className="p-4 rounded-lg bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-1">
                   <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400">
                     Regras de Chamadas
                   </span>
@@ -2017,7 +2026,7 @@ export const CourseBuilder = () => {
                   </p>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-1">
+                <div className="p-4 rounded-lg bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-1">
                   <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400">
                     Cargos & Permissões
                   </span>
@@ -2031,7 +2040,7 @@ export const CourseBuilder = () => {
               </div>
 
               
-              <div className="p-5 rounded-2xl bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="p-5 rounded-lg bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 {thumbnailUrl ? <img src={thumbnailUrl} alt={title} className="w-24 h-24 rounded-xl object-cover shrink-0" /> : <div className="w-24 h-24 rounded-xl bg-slate-200 dark:bg-[#202433] flex items-center justify-center text-slate-400 shrink-0">
                     <BookOpen className="w-8 h-8" />
                   </div>}
@@ -2057,6 +2066,16 @@ export const CourseBuilder = () => {
               </div>
 
               
+              {user?.role !== 'ADMIN' && (
+                <div className="p-4 rounded-lg bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200/60 dark:border-indigo-800/40 flex items-start gap-3 mt-4">
+                  <Shield className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
+                  <div className="text-xs text-slate-700 dark:text-zinc-300 leading-relaxed">
+                    <p className="font-bold text-slate-900 dark:text-white mb-0.5">Validação Pedagógica NEXO</p>
+                    Para salvaguardar os padrões de qualidade da comunidade NEXO, os novos cursos submetidos por formadores são revistos pela equipa de administração antes de serem publicados no catálogo aberto.
+                  </div>
+                </div>
+              )}
+
               <div className="flex justify-between pt-4 border-t border-slate-200 dark:border-[#222636]">
                 <Button variant="secondary" onClick={() => {
               soundEffects.play('click');
@@ -2065,8 +2084,8 @@ export const CourseBuilder = () => {
                   Voltar às Aulas
                 </Button>
 
-                <Button variant="primary" size="lg" isLoading={isSubmitting} onClick={() => handlePublish(true)} leftIcon={<Check className="w-5 h-5" />} className="bg-indigo-600 hover:bg-indigo-500 text-white font-black px-8 py-3.5 rounded-2xl shadow-xl shadow-indigo-600/30 cursor-pointer">
-                  Confirmar & Publicar Curso
+                <Button variant="primary" size="lg" isLoading={isSubmitting} onClick={() => handlePublish(true)} leftIcon={<Check className="w-5 h-5" />} className="bg-indigo-600 hover:bg-indigo-500 text-white font-black px-8 py-3.5 rounded-lg shadow-xl shadow-indigo-600/30 cursor-pointer">
+                  {user?.role === 'ADMIN' ? 'Confirmar & Publicar Curso' : 'Submeter Curso para Validação'}
                 </Button>
               </div>
             </Card>
@@ -2077,7 +2096,7 @@ export const CourseBuilder = () => {
       
       
       {showNewRoleModal && <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white dark:bg-[#151720] border border-slate-200 dark:border-[#222636] rounded-3xl max-w-lg w-full p-6 shadow-2xl flex flex-col gap-5 text-slate-900 dark:text-white transition-colors">
+          <div className="bg-white dark:bg-[#151720] border border-slate-200 dark:border-[#222636] rounded-xl max-w-lg w-full p-6 shadow-2xl flex flex-col gap-5 text-slate-900 dark:text-white transition-colors">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-[#222636]">
               <div className="flex items-center gap-2 font-black text-base">
                 <Shield className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
@@ -2107,7 +2126,7 @@ export const CourseBuilder = () => {
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-2.5">
+              <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-2.5">
                 <span className="font-bold text-slate-900 dark:text-white">
                   Permissões Especiais:
                 </span>
@@ -2189,7 +2208,7 @@ export const CourseBuilder = () => {
       
       
       {previewOpen && <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white dark:bg-[#151720] border border-slate-200 dark:border-[#222636] rounded-3xl max-w-2xl w-full p-6 shadow-2xl flex flex-col gap-4 text-slate-900 dark:text-white transition-colors max-h-[85vh] overflow-y-auto">
+          <div className="bg-white dark:bg-[#151720] border border-slate-200 dark:border-[#222636] rounded-xl max-w-2xl w-full p-6 shadow-2xl flex flex-col gap-4 text-slate-900 dark:text-white transition-colors max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-[#222636]">
               <div className="flex items-center gap-2 font-black text-base">
                 <Eye className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
@@ -2201,7 +2220,7 @@ export const CourseBuilder = () => {
             </div>
 
             <div className="flex flex-col gap-4">
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e]">
+              <div className="p-4 rounded-lg bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e]">
                 <h3 className="font-extrabold text-base text-slate-900 dark:text-white">
                   {title || 'Título do Curso'}
                 </h3>

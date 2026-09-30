@@ -90,7 +90,7 @@ router.get('/', optionalAuth, async (req, res) => {
              COALESCE((SELECT ROUND(AVG(rating), 1) FROM reviews WHERE courseId = c.id), 0.0) as averageRating
       FROM courses c
       JOIN users u ON c.creatorId = u.id
-      WHERE c.isPublished = 1
+      WHERE c.isPublished = 1 AND (c.approvalStatus = 'APPROVED' OR c.approvalStatus IS NULL)
     `;
     const params = [];
     if (search) {

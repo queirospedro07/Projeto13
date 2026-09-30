@@ -28,10 +28,10 @@ export const SpaceMessageStream = ({
   }, [messages.length]);
   return <div className="flex-1 flex flex-col min-w-0 bg-white">
       
-      <div className="h-16 px-6 border-b border-slate-200 bg-white flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-3 min-w-0">
+      <div className="h-16 pl-14 md:pl-6 pr-4 md:pr-6 border-b border-slate-200 bg-white flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
           <Hash className="w-5 h-5 text-slate-400 shrink-0" />
-          <span className="font-bold text-slate-900 text-base truncate">
+          <span className="font-bold text-slate-900 text-sm sm:text-base truncate">
             {currentChannel?.name || 'geral'}
           </span>
           {currentChannel?.topic && <>
@@ -62,9 +62,9 @@ export const SpaceMessageStream = ({
       </div>
 
       
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-4">
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-3.5 sm:p-6 space-y-3 sm:space-y-4">
         {messages.length === 0 ? <div className="h-full flex flex-col items-center justify-center text-center p-8">
-            <div className="w-16 h-16 rounded-3xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center mb-4">
+            <div className="w-16 h-16 rounded-xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center mb-4">
               <Hash className="w-8 h-8" />
             </div>
             <h3 className="text-xl font-extrabold text-slate-900 mb-1">
@@ -151,10 +151,10 @@ export const SpaceMessageStream = ({
         </div>}
 
       
-      <div className="p-4 border-t border-slate-200 bg-white">
-        <form onSubmit={onSendMessage} className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
-          <input type="text" placeholder={`Enviar mensagem em #${currentChannel?.name || 'geral'}...`} value={inputContent} onChange={onInputChange} className="flex-1 bg-transparent text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none" />
-          <button type="submit" disabled={!inputContent.trim()} className="p-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:hover:bg-blue-600 transition-all cursor-pointer shadow-xs">
+      <div className="p-2.5 sm:p-4 border-t border-slate-200 bg-white">
+        <form onSubmit={onSendMessage} className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-3 sm:px-4 py-2 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+          <input type="text" placeholder={`Enviar mensagem em #${currentChannel?.name || 'geral'}...`} value={inputContent} onChange={onInputChange} className="flex-1 bg-transparent text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none min-w-0" />
+          <button type="submit" disabled={!inputContent.trim()} className="p-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:hover:bg-blue-600 transition-all cursor-pointer shadow-xs shrink-0">
             <Send className="w-4 h-4" />
           </button>
         </form>

@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+
 export function initializeSchemaAndSeed(db) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
@@ -7,7 +8,7 @@ export function initializeSchemaAndSeed(db) {
       username TEXT UNIQUE NOT NULL,
       passwordHash TEXT NOT NULL,
       name TEXT NOT NULL,
-      role TEXT NOT NULL DEFAULT 'USER',
+      role TEXT NOT NULL DEFAULT 'STUDENT',
       avatarUrl TEXT,
       bio TEXT,
       location TEXT,
@@ -54,12 +55,16 @@ export function initializeSchemaAndSeed(db) {
       slug TEXT UNIQUE NOT NULL,
       description TEXT NOT NULL,
       category TEXT NOT NULL,
-      difficulty TEXT NOT NULL DEFAULT 'Intermediate',
+      difficulty TEXT NOT NULL DEFAULT 'Intermédio',
       thumbnailUrl TEXT,
       bannerUrl TEXT,
       price REAL NOT NULL DEFAULT 0.0,
       isFree INTEGER NOT NULL DEFAULT 1,
       isPublished INTEGER NOT NULL DEFAULT 1,
+      approvalStatus TEXT NOT NULL DEFAULT 'APPROVED',
+      adminNotes TEXT,
+      submittedForReviewAt TEXT,
+      reviewedAt TEXT,
       featured INTEGER NOT NULL DEFAULT 0,
       durationHours REAL NOT NULL DEFAULT 10.0,
       language TEXT NOT NULL DEFAULT 'Português',
@@ -374,6 +379,47 @@ export function initializeSchemaAndSeed(db) {
       UNIQUE(courseId, userId, roleId)
     );
 
+    -- Inquéritos e Candidaturas para Formador / Criador
+    CREATE TABLE IF NOT EXISTS creator_applications (
+      id TEXT PRIMARY KEY,
+      userId TEXT NOT NULL,
+      fullName TEXT NOT NULL,
+      bio TEXT,
+      expertise TEXT NOT NULL,
+      experienceYears INTEGER NOT NULL DEFAULT 0,
+      portfolioUrl TEXT,
+      motivation TEXT NOT NULL,
+      proposedCourses TEXT NOT NULL,
+      sampleVideoUrl TEXT,
+      status TEXT NOT NULL DEFAULT 'PENDING',
+      adminFeedback TEXT,
+      reviewedBy TEXT,
+      reviewedAt TEXT,
+      createdAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL,
+      FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    -- Inquéritos e Candidaturas para Equipa de Administração / Sub-Admin
+    CREATE TABLE IF NOT EXISTS admin_applications (
+      id TEXT PRIMARY KEY,
+      userId TEXT NOT NULL,
+      fullName TEXT NOT NULL,
+      email TEXT NOT NULL,
+      motivation TEXT NOT NULL,
+      experience TEXT NOT NULL,
+      weeklyAvailabilityHours INTEGER NOT NULL DEFAULT 10,
+      areasOfInterest TEXT NOT NULL,
+      situationScenario TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'PENDING',
+      adminFeedback TEXT,
+      reviewedBy TEXT,
+      reviewedAt TEXT,
+      createdAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL,
+      FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE
+    );
+
     -- Indices for high performance queries
     CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
     CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
@@ -385,12 +431,27 @@ export function initializeSchemaAndSeed(db) {
     CREATE INDEX IF NOT EXISTS idx_enrollments_course ON enrollments(courseId);
     CREATE INDEX IF NOT EXISTS idx_messages_channel ON messages(channelId);
     CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(userId);
-    CREATE INDEX IF NOT EXISTS idx_friendships_users ON friendships(requesterId, addresseeId);
-    CREATE INDEX IF NOT EXISTS idx_follows_users ON follows(followerId, followingId);
-    CREATE INDEX IF NOT EXISTS idx_dm_users ON direct_messages(senderId, receiverId);
-    CREATE INDEX IF NOT EXISTS idx_course_roles ON course_roles(courseId);
-    CREATE INDEX IF NOT EXISTS idx_course_member_roles ON course_member_roles(courseId, userId);
+    CREATE INDEX IF NOT EXISTS idx_creator_apps_user ON creator_applications(userId);
+    CREATE INDEX IF NOT EXISTS idx_creator_apps_status ON creator_applications(status);
+    CREATE INDEX IF NOT EXISTS idx_admin_apps_user ON admin_applications(userId);
+    CREATE INDEX IF NOT EXISTS idx_admin_apps_status ON admin_applications(status);
   `);
+
+  try {
+    db.exec(`ALTER TABLE courses ADD COLUMN approvalStatus TEXT DEFAULT 'APPROVED'`);
+  } catch (_) {}
+  try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_courses_approval ON courses(approvalStatus)`);
+  } catch (_) {}
+  try {
+    db.exec(`ALTER TABLE courses ADD COLUMN adminNotes TEXT`);
+  } catch (_) {}
+  try {
+    db.exec(`ALTER TABLE courses ADD COLUMN submittedForReviewAt TEXT`);
+  } catch (_) {}
+  try {
+    db.exec(`ALTER TABLE courses ADD COLUMN reviewedAt TEXT`);
+  } catch (_) {}
   try {
     db.exec(`ALTER TABLE courses ADD COLUMN defaultCallMode TEXT DEFAULT 'open'`);
   } catch (_) {}
@@ -412,105 +473,385 @@ export function initializeSchemaAndSeed(db) {
   try {
     db.exec(`ALTER TABLE profiles ADD COLUMN bannerUrl TEXT`);
   } catch (_) {}
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS admin_applications (
+        id TEXT PRIMARY KEY,
+        userId TEXT NOT NULL,
+        fullName TEXT NOT NULL,
+        email TEXT NOT NULL,
+        motivation TEXT NOT NULL,
+        experience TEXT NOT NULL,
+        weeklyAvailabilityHours INTEGER NOT NULL DEFAULT 10,
+        areasOfInterest TEXT NOT NULL,
+        situationScenario TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'PENDING',
+        adminFeedback TEXT,
+        reviewedBy TEXT,
+        reviewedAt TEXT,
+        createdAt TEXT NOT NULL,
+        updatedAt TEXT NOT NULL,
+        FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE
+      );
+      CREATE INDEX IF NOT EXISTS idx_admin_apps_user ON admin_applications(userId);
+      CREATE INDEX IF NOT EXISTS idx_admin_apps_status ON admin_applications(status);
+    `);
+  } catch (_) {}
+
   const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
   if (userCount === 0) {
     seedData(db);
   }
 }
+
 function seedData(db) {
   const passwordHash = bcrypt.hashSync('password123', 10);
   const now = new Date().toISOString();
+
   const insertUser = db.prepare(`
     INSERT INTO users (id, email, username, passwordHash, name, role, avatarUrl, bio, location, streakDays, dailyGoalMinutes, minutesToday, totalMinutes, xp, level, isSuspended, createdAt, updatedAt)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
   `);
+
   const insertProfile = db.prepare(`
     INSERT INTO profiles (id, userId, headline, website, github, twitter, linkedin, isPublic, showStreak, showLeaderboard, themePreference)
     VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1, 1, 'light')
   `);
+
   const insertCategory = db.prepare(`
     INSERT INTO categories (id, name, slug, description, icon)
     VALUES (?, ?, ?, ?, ?)
   `);
+
   const insertCourse = db.prepare(`
-    INSERT INTO courses (id, title, slug, description, category, difficulty, thumbnailUrl, bannerUrl, price, isFree, isPublished, featured, durationHours, language, creatorId, spaceId, createdAt, updatedAt)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO courses (id, title, slug, description, category, difficulty, thumbnailUrl, bannerUrl, price, isFree, isPublished, approvalStatus, adminNotes, featured, durationHours, language, creatorId, spaceId, createdAt, updatedAt)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
+
   const insertModule = db.prepare(`
     INSERT INTO course_modules (id, courseId, title, description, orderIndex)
     VALUES (?, ?, ?, ?, ?)
   `);
+
   const insertLesson = db.prepare(`
     INSERT INTO lessons (id, moduleId, title, type, content, videoUrl, durationMin, orderIndex, xpReward)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
+
   const insertSpace = db.prepare(`
     INSERT INTO spaces (id, name, slug, description, iconUrl, bannerUrl, isPrivate, category, ownerId, memberCount, createdAt)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
+
   const insertChannel = db.prepare(`
     INSERT INTO channels (id, spaceId, name, type, topic, orderIndex, isVoice, isLocked, guidingQuestion, guidelines)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
+
   const insertMembership = db.prepare(`
     INSERT INTO memberships (id, userId, spaceId, role, joinedAt)
     VALUES (?, ?, ?, ?, ?)
   `);
+
   const insertEnrollment = db.prepare(`
     INSERT INTO enrollments (id, userId, courseId, enrolledAt, progressPercent, lastLessonId)
     VALUES (?, ?, ?, ?, ?, ?)
   `);
+
   const insertAchievement = db.prepare(`
     INSERT INTO achievements (id, slug, title, description, icon, category, rarity, xpReward)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `);
-  const insertUserAchievement = db.prepare(`
-    INSERT INTO user_achievements (id, userId, achievementId, unlockedAt)
-    VALUES (?, ?, ?, ?)
-  `);
+
   const insertNotification = db.prepare(`
     INSERT INTO notifications (id, userId, type, title, content, link, isRead, createdAt)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `);
+
   const insertQuiz = db.prepare(`
     INSERT INTO quizzes (id, lessonId, title, description, passingScore, xpReward)
     VALUES (?, ?, ?, ?, ?, ?)
   `);
+
   const insertQuizQuestion = db.prepare(`
     INSERT INTO quiz_questions (id, quizId, question, options, correctOptionIndex, explanation, orderIndex)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `);
-  const txn = db.transaction(() => {
-    insertUser.run('user-student', 'aluno@learnspace.io', 'aluno', passwordHash, 'Estudante Demo', 'STUDENT', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80', 'Estudante de engenharia de software e tecnologias web modernas.', 'Lisboa, Portugal', 0, 45, 0, 0, 0, 1, now, now);
-    insertProfile.run('prof-student', 'user-student', 'Estudante LearnSpace', 'https://learnspace.io', '', '', '');
-    insertUser.run('user-sarah', 'sarah@learnspace.io', 'sarah_dev', passwordHash, 'Sarah Jenkins', 'CREATOR', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80', 'Arquiteta Frontend e Criadora de Cursos Avançados de React & TypeScript.', 'Porto, Portugal', 45, 90, 85, 8900, 8900, 15, now, now);
-    insertProfile.run('prof-sarah', 'user-sarah', 'Arquiteta de Software & Criadora', 'https://sarahjenkins.dev', 'https://github.com', '', '');
-    insertUser.run('user-alex', 'alex@learnspace.io', 'alex_admin', passwordHash, 'Alex Vance', 'ADMIN', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80', 'Administrador de infraestrutura e gestor sénior da plataforma LearnSpace.', 'Braga, Portugal', 120, 120, 120, 25400, 25400, 32, now, now);
-    insertProfile.run('prof-alex', 'user-alex', 'Administrador de Sistemas LearnSpace', '', 'https://github.com', '', '');
-    insertCategory.run('cat-prog', 'Programação & Engenharia', 'programming', 'Desenvolvimento Web, APIs e Engenharia de Software', 'Code');
-    insertCategory.run('cat-design', 'Design & UX/UI', 'design', 'Design Systems, Interfaces e Experiência de Utilizador', 'Palette');
-    insertCategory.run('cat-ai', 'Inteligência Artificial & Dados', 'ai', 'Machine Learning, Modelos de Linguagem e Python', 'Cpu');
-    insertCategory.run('cat-sec', 'Cibersegurança & Redes', 'cybersecurity', 'Segurança Ofensiva e Defensiva', 'ShieldCheck');
-    insertSpace.run('space-react', 'Comunidade React & TypeScript Master', 'react-masterclass', 'Espaço de mentoria, partilha de projetos, dúvidas de código e salas ao vivo com partilha de ecrã.', 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=100&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200&auto=format&fit=crop&q=80', 0, 'programming', 'user-sarah', 128, now);
-    insertChannel.run('ch-general', 'space-react', 'geral', 'text', 'Discussões gerais sobre desenvolvimento e a comunidade', 0, 0, 0, 'Qual é o seu objetivo de aprendizagem este mês?', 'Seja respeitoso e ajude os colegas.');
-    insertChannel.run('ch-qa', 'space-react', 'duvidas-exercicios', 'text', 'Canal para colocação de dúvidas de código e resolução coletiva', 1, 0, 0, 'Qual foi a mensagem de erro específica ou comportamento inesperado?', 'Inclua excertos de código formatados com sintaxe markdown.');
-    insertChannel.run('ch-showcase', 'space-react', 'projetos-showcase', 'text', 'Partilhe os seus projetos e receba feedback detalhado', 2, 0, 0, 'Que desafio técnico superou na construção deste projeto?', 'Adicione links de pré-visualização e repositório.');
-    insertChannel.run('ch-voice-1', 'space-react', 'Sala de Estudo 01 (Voz/Vídeo)', 'voice', 'Sala ao vivo com partilha de câmara e ecrã em direto', 3, 1, 0, 'Que tópico está a estudar em grupo neste momento?', 'Mantenha o microfone em silêncio quando não estiver a falar.');
+
+  const insertApplication = db.prepare(`
+    INSERT INTO creator_applications (id, userId, fullName, bio, expertise, experienceYears, portfolioUrl, motivation, proposedCourses, sampleVideoUrl, status, adminFeedback, createdAt, updatedAt)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  db.exec('BEGIN');
+  try {
+    // 1. UTILIZADORES
+    // Aluno Demo
+    insertUser.run(
+      'user-student',
+      'aluno@nexo.pt',
+      'aluno',
+      passwordHash,
+      'Pedro Silva',
+      'STUDENT',
+      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+      'Estudante focado em desenvolvimento web moderno, TypeScript e interfaces cinemáticas.',
+      'Lisboa, Portugal',
+      12,
+      45,
+      35,
+      1450,
+      1450,
+      4,
+      now,
+      now
+    );
+    insertProfile.run('prof-student', 'user-student', 'Estudante Full Stack @ NEXO', 'https://nexo.pt', 'https://github.com/pedrosilva', '', '');
+
+    // Formadora Criadora
+    insertUser.run(
+      'user-sarah',
+      'sarah@nexo.pt',
+      'sarah_dev',
+      passwordHash,
+      'Sarah Jenkins',
+      'CREATOR',
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80',
+      'Arquiteta de Software e Formadora Especialista em React 19, TypeScript e Design Systems.',
+      'Porto, Portugal',
+      45,
+      90,
+      85,
+      8900,
+      8900,
+      15,
+      now,
+      now
+    );
+    insertProfile.run('prof-sarah', 'user-sarah', 'Arquiteta de Software & Criadora NEXO', 'https://sarahjenkins.dev', 'https://github.com/sarahjenkins', '', '');
+
+    // Administrador
+    insertUser.run(
+      'user-alex',
+      'alex@nexo.pt',
+      'alex_admin',
+      passwordHash,
+      'Alex Vance',
+      'ADMIN',
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
+      'Administrador de infraestruturas e moderador-chefe da plataforma NEXO.',
+      'Braga, Portugal',
+      120,
+      120,
+      120,
+      25400,
+      25400,
+      32,
+      now,
+      now
+    );
+    insertProfile.run('prof-alex', 'user-alex', 'Administrador Global NEXO', '', 'https://github.com/alexvance', '', '');
+
+    // Aluno com Candidatura a Criador Pendente (para testes de aprovação pelo Admin)
+    insertUser.run(
+      'user-tiago',
+      'tiago@nexo.pt',
+      'tiago_sec',
+      passwordHash,
+      'Tiago Ramos',
+      'STUDENT',
+      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80',
+      'Engenheiro de Redes e Especialista em Segurança Ofensiva.',
+      'Coimbra, Portugal',
+      5,
+      60,
+      20,
+      820,
+      820,
+      3,
+      now,
+      now
+    );
+    insertProfile.run('prof-tiago', 'user-tiago', 'Engenheiro de Redes & Aspirante a Formador', '', 'https://github.com/tiagoramos', '', '');
+
+    // 2. CANDIDATURA A CRIADOR PENDENTE (Inquérito para moderação pelo Admin)
+    insertApplication.run(
+      'app-tiago-1',
+      'user-tiago',
+      'Tiago Ramos',
+      'Consultor de Cibersegurança Sénior com certificação OSCP e 6 anos de experiência em auditorias de segurança aplicacional.',
+      'Cibersegurança & Redes',
+      6,
+      'https://github.com/tiagoramos-sec',
+      'Desejo partilhar conhecimento prático e preparar os alunos do NEXO para os desafios reais de segurança ofensiva em ambiente de produção.',
+      '1. Fundamentos de Cibersegurança & Ethical Hacking\n2. Defesa Ativa e Auditoria de Aplicações Web',
+      'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      'PENDING',
+      null,
+      now,
+      now
+    );
+
+    // 3. CATEGORIAS (PT-PT)
+    insertCategory.run('cat-prog', 'Programação & Engenharia de Software', 'programming', 'Desenvolvimento Web, APIs escaláveis, TypeScript e arquitetura de código.', 'Code');
+    insertCategory.run('cat-design', 'Design & Experiência de Utilizador (UX/UI)', 'design', 'Design Systems no Figma, prototipagem avançada e micro-interações.', 'Palette');
+    insertCategory.run('cat-ai', 'Inteligência Artificial & Ciência de Dados', 'ai', 'Modelos de Linguagem, Machine Learning e automação prática com Python.', 'Cpu');
+    insertCategory.run('cat-sec', 'Cibersegurança & Redes Defensivas', 'cybersecurity', 'Segurança ofensiva, análise de vulnerabilidades e proteção de redes.', 'ShieldCheck');
+    insertCategory.run('cat-cloud', 'Cloud, DevOps & Infraestruturas', 'cloud', 'Docker, Kubernetes, fluxos de integração contínua (CI/CD) e servidores Linux.', 'Server');
+
+    // 4. ESPAÇO COMUNITÁRIO (PT-PT)
+    insertSpace.run(
+      'space-react',
+      'Comunidade React & Engenharia Web',
+      'comunidade-react-portugal',
+      'Espaço oficial de mentoria, partilha de código, esclarecimento de dúvidas e salas de estudo coletivo com áudio e partilha de ecrã.',
+      'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=100&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200&auto=format&fit=crop&q=80',
+      0,
+      'programming',
+      'user-sarah',
+      142,
+      now
+    );
+
+    insertChannel.run('ch-general', 'space-react', 'geral', 'text', 'Discussões gerais sobre programação e a comunidade NEXO', 0, 0, 0, 'Qual é o seu objetivo de estudo para esta semana?', 'Mantenha uma comunicação cordial e apoie os colegas.');
+    insertChannel.run('ch-qa', 'space-react', 'duvidas-exercicios', 'text', 'Canal para colocar dúvidas de lições e desafios técnicos', 1, 0, 0, 'Qual foi a mensagem de erro específica ou comportamento verificado?', 'Partilhe excertos de código formatados com blocos markdown.');
+    insertChannel.run('ch-showcase', 'space-react', 'projetos-showcase', 'text', 'Apresente os seus projetos concluídos e receba feedback', 2, 0, 0, 'Que desafio técnico superou na construção deste projeto?', 'Adicione links de repositório e pré-visualização.');
+    insertChannel.run('ch-voice-1', 'space-react', 'Sala de Estudo 01 (Voz / Vídeo)', 'voice', 'Sala ao vivo com partilha de ecrã e microfone aberto', 3, 1, 0, 'Que lição ou projeto está a rever em grupo?', 'Silencie o microfone quando não estiver a intervir.');
+
     insertMembership.run('mem-1', 'user-sarah', 'space-react', 'OWNER', now);
     insertMembership.run('mem-2', 'user-student', 'space-react', 'MEMBER', now);
     insertMembership.run('mem-3', 'user-alex', 'space-react', 'ADMIN', now);
-    insertCourse.run('course-react-ts', 'React 19 & TypeScript de Alta Performance', 'react-19-typescript-alta-performance', 'Domine os novos padrões do React 19, Server Components, Gestão de Estado Eficiente, Hooks Modernos e TypeScript Avançado com projetos práticos de produção.', 'programming', 'Intermédio', 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=600&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&auto=format&fit=crop&q=80', 0.0, 1, 1, 1, 14.5, 'Português', 'user-sarah', 'space-react', now, now);
-    insertModule.run('mod-1', 'course-react-ts', 'Módulo 1: Fundamentos do React 19 & TypeScript', 'Conceitos essenciais, tipagem estrita e arquitetura moderna.', 0);
-    insertLesson.run('les-1', 'mod-1', '1.1 Introdução e Configuração do Ambiente Moderno', 'video', 'Nesta lição configuramos o TypeScript com configurações estritas e Vite.', 'https://www.w3schools.com/html/mov_bbb.mp4', 12, 0, 30);
-    insertLesson.run('les-2', 'mod-1', '1.2 Tipagem Avançada de Hooks & Props', 'video', 'Aprenda a tipar useState, useReducer, useRef e handlers de eventos com rigor.', 'https://www.w3schools.com/html/mov_bbb.mp4', 18, 1, 35);
-    insertLesson.run('les-3', 'mod-1', '1.3 Questionário de Avaliação: Fundamentos', 'quiz', 'Avalie a sua compreensão sobre tipagem de componentes.', '', 10, 2, 50);
+    insertMembership.run('mem-4', 'user-tiago', 'space-react', 'MEMBER', now);
+
+    // 5. CURSOS APROVADOS (PT-PT)
+    // Curso 1: React & TS (Aprovado e publicado)
+    insertCourse.run(
+      'course-react-ts',
+      'React 19 & TypeScript de Alta Performance',
+      'react-19-typescript-alta-performance',
+      'Domine os novos padrões do React 19, Server Components, Gestão de Estado Eficiente, Hooks Modernos e TypeScript Avançado com projetos práticos prontos para produção.',
+      'programming',
+      'Intermédio',
+      'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&auto=format&fit=crop&q=80',
+      0.0,
+      1,
+      1,
+      'APPROVED',
+      'Curso validado pela equipa pedagógica do NEXO. Conteúdo de excelência.',
+      1,
+      14.5,
+      'Português',
+      'user-sarah',
+      'space-react',
+      now,
+      now
+    );
+
+    insertModule.run('mod-1', 'course-react-ts', 'Módulo 1: Fundamentos do React 19 & Tipagem Estrita', 'Conceitos essenciais, padrões de Server Components e TypeScript moderno.', 0);
+    insertLesson.run('les-1', 'mod-1', '1.1 Introdução e Configuração do Ambiente Moderno', 'video', 'Nesta lição configuramos o TypeScript com definições estritas, Vite e ESLint para máxima estabilidade.', 'https://www.w3schools.com/html/mov_bbb.mp4', 12, 0, 30);
+    insertLesson.run('les-2', 'mod-1', '1.2 Tipagem Avançada de Hooks & Props no React 19', 'video', 'Aprenda a tipar useState, useReducer, useRef e handlers de eventos com rigor e elegância.', 'https://www.w3schools.com/html/mov_bbb.mp4', 18, 1, 35);
+    insertLesson.run('les-3', 'mod-1', '1.3 Questionário de Avaliação: Fundamentos', 'quiz', 'Avalie a sua compreensão sobre tipagem de componentes funcionais.', '', 10, 2, 50);
+
     insertQuiz.run('quiz-1', 'les-3', 'Questionário: Fundamentos do React com TypeScript', 'Teste prático de 2 perguntas essenciais de arquitetura.', 70, 50);
-    insertQuizQuestion.run('qq-1', 'quiz-1', 'Qual é a forma recomendada de tipar as propriedades de um componente React funcional?', JSON.stringify(['Usando interface ou type dedicado', 'Utilizando tipo "any"', 'Não definindo tipos', 'Utilizando a função Object']), 0, 'Interfaces e types dedicados garantem verificação em tempo de compilação.', 0);
-    insertQuizQuestion.run('qq-2', 'quiz-1', 'Qual o benefício principal do modo estrito do TypeScript no React?', JSON.stringify(['Reduzir bugs e detetar referências nulas', 'Aumentar a velocidade da internet', 'Adicionar animações CSS automáticas', 'Ignorar erros de sintaxe']), 0, 'O modo estrito previne erros comuns como acesso a propriedades nulas ou indefinidas.', 1);
-    insertAchievement.run('ach-first-step', 'primeiro-passo', 'Primeiro Passo', 'Concluiu a sua primeira lição na plataforma LearnSpace.', 'CheckCircle2', 'learning', 'Comum', 100);
-    insertAchievement.run('ach-quiz-master', 'mestre-quizzes', 'Mestre dos Questionários', 'Acertou 100% num questionário de avaliação técnica.', 'Award', 'quiz', 'Raro', 250);
+    insertQuizQuestion.run('qq-1', 'quiz-1', 'Qual é a forma recomendada de tipar as propriedades de um componente React funcional?', JSON.stringify(['Utilizar interface ou type dedicado com tipagem estrita', 'Utilizar o tipo "any"', 'Não definir tipos e deixar implícito', 'Utilizar a função genérica Object']), 0, 'Interfaces e types dedicados garantem verificação estrita em tempo de compilação.', 0);
+    insertQuizQuestion.run('qq-2', 'quiz-1', 'Qual o benefício principal do modo estrito do TypeScript no React?', JSON.stringify(['Prevenir bugs e detetar referências nulas antes da execução', 'Aumentar a velocidade da rede Wi-Fi', 'Adicionar efeitos visuais CSS automaticamente', 'Permitir ignorar erros de sintaxe']), 0, 'O modo estrito previne erros comuns como acesso a propriedades indefinidas.', 1);
+
+    // Curso 2: Design Systems (Aprovado e publicado)
+    insertCourse.run(
+      'course-ui-ux',
+      'Design Systems & Interfaces Cinemáticas no Figma',
+      'design-systems-interfaces-cinematicas-figma',
+      'Crie sistemas de design industriais, tokens de cores, tipografia responsiva, componentes reutilizáveis e protótipos de alta fidelidade prontos para implementação em código.',
+      'design',
+      'Avançado',
+      'https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?w=600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=1200&auto=format&fit=crop&q=80',
+      29.0,
+      0,
+      1,
+      'APPROVED',
+      'Aprovado pelo Administrador.',
+      1,
+      14.0,
+      'Português',
+      'user-sarah',
+      'space-react',
+      now,
+      now
+    );
+
+    insertModule.run('mod-design-1', 'course-ui-ux', 'Módulo 1: Fundações de Design & Tokens', 'Paletas semânticas, tipografia, espaçamento e acessibilidade WCAG.', 0);
+    insertLesson.run('les-design-1', 'mod-design-1', '1.1 Definição de Variáveis e Design Tokens no Figma', 'video', 'Como estruturar tokens primitivos e semânticos para alimentar tanto o Figma como variáveis CSS.', 'https://www.w3schools.com/html/mov_bbb.mp4', 15, 0, 30);
+
+    // Curso 3: Cloud & DevOps (Aprovado e publicado)
+    insertCourse.run(
+      'course-cloud-devops',
+      'DevOps Moderno, Docker & Arquitetura Cloud',
+      'devops-moderno-docker-arquitetura-cloud',
+      'Implemente pipelines automatizados de CI/CD, orquestre contentores com Docker e publique aplicações escaláveis na nuvem com segurança máxima.',
+      'cloud',
+      'Intermédio',
+      'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200&auto=format&fit=crop&q=80',
+      39.0,
+      0,
+      1,
+      'APPROVED',
+      'Aprovado pelo Administrador.',
+      0,
+      20.0,
+      'Português',
+      'user-sarah',
+      'space-react',
+      now,
+      now
+    );
+
+    // 6. CURSO PENDENTE DE APROVAÇÃO (Para testar moderação do Administrador)
+    insertCourse.run(
+      'course-ai-pending',
+      'Inteligência Artificial Aplicada & Engenharia de Prompts',
+      'inteligencia-artificial-aplicada-engenharia-prompts',
+      'Formação avançada sobre integração de modelos generativos, embeddings, recuperação aumentada (RAG) e fluxos de trabalho inteligentes em aplicações reais.',
+      'ai',
+      'Intermédio',
+      'https://images.unsplash.com/photo-1677442136019-21780efad99a?w=600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=1200&auto=format&fit=crop&q=80',
+      45.0,
+      0,
+      0,
+      'PENDING',
+      'Submetido pelo formador para aprovação do Administrador.',
+      0,
+      16.0,
+      'Português',
+      'user-sarah',
+      'space-react',
+      now,
+      now
+    );
+
+    insertModule.run('mod-ai-1', 'course-ai-pending', 'Módulo 1: Fundamentos de IA & LLMs', 'Conceitos de redes neurais e arquitetura Transformer.', 0);
+    insertLesson.run('les-ai-1', 'mod-ai-1', '1.1 Visão Geral dos Grandes Modelos de Linguagem', 'video', 'Entenda como funcionam os modelos de linguagem modernos e tokenização.', 'https://www.w3schools.com/html/mov_bbb.mp4', 16, 0, 30);
+
+    // 7. INSCRIÇÃO DEMO
+    insertEnrollment.run('enr-1', 'user-student', 'course-react-ts', now, 68.0, 'les-2');
+
+    // 8. CONQUISTAS (PT-PT)
+    insertAchievement.run('ach-first-step', 'primeiro-passo', 'Primeiro Passo', 'Concluiu a sua primeira lição na plataforma NEXO.', 'CheckCircle2', 'learning', 'Comum', 100);
+    insertAchievement.run('ach-quiz-master', 'mestre-quizzes', 'Mestre dos Questionários', 'Alcançou pontuação máxima de 100% num questionário de avaliação técnica.', 'Award', 'quiz', 'Raro', 250);
     insertAchievement.run('ach-streak-7', 'consistencia-7', 'Foco de Aço (7 Dias)', 'Manteve uma sequência ativa de estudo durante 7 dias consecutivos.', 'Flame', 'streak', 'Épico', 500);
-    insertNotification.run('notif-1', 'user-student', 'achievement', 'Bem-vindo ao LearnSpace!', 'Aceda aos seus cursos e participe nas salas de estudo ao vivo.', '/explore', 0, now);
-  });
-  txn();
+    insertAchievement.run('ach-creator', 'criador-destaque', 'Formador Verificado', 'Teve a sua candidatura a criador aprovada e publicou o primeiro curso no NEXO.', 'Sparkles', 'creator', 'Lendário', 1000);
+
+    // 9. NOTIFICAÇÕES (PT-PT)
+    insertNotification.run('notif-1', 'user-student', 'achievement', 'Bem-vindo ao NEXO!', 'Explore o catálogo de cursos e junte-se às salas de estudo ao vivo.', '/explore', 0, now);
+    insertNotification.run('notif-admin', 'user-alex', 'admin', 'Nova Candidatura a Criador', 'O utilizador Tiago Ramos submeteu um inquérito para se tornar Formador.', '/admin', 0, now);
+
+    db.exec('COMMIT');
+  } catch (err) {
+    db.exec('ROLLBACK');
+    throw err;
+  }
 }

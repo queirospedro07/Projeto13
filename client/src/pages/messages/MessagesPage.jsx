@@ -8,7 +8,8 @@ import {
   Send,
   Video,
   X,
-  UserPlus
+  UserPlus,
+  ArrowLeft
 } from 'lucide-react';
 import { Avatar } from '../../components/ui/Avatar';
 import { Button } from '../../components/ui/Button';
@@ -77,7 +78,9 @@ export const MessagesPage = () => {
           }).catch(() => {});
         }
       } else if (!activePeer && list.length > 0 && mainTab === 'chat') {
-        setActivePeer(list[0].peer);
+        if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+          setActivePeer(list[0].peer);
+        }
       }
     } catch (_) {}
   };
@@ -345,8 +348,10 @@ export const MessagesPage = () => {
   );
 
   return (
-    <div className="max-w-7xl mx-auto h-[calc(100vh-6rem)] flex flex-col md:flex-row rounded-3xl overflow-hidden border border-slate-200/90 dark:border-zinc-800/80 bg-white dark:bg-[#0b0c0e] shadow-sm animate-fade-in mb-6">
-      <aside className="w-full md:w-80 border-r border-slate-200/90 dark:border-zinc-800/80 bg-slate-50/60 dark:bg-[#0e0f12] flex flex-col shrink-0">
+    <div className="max-w-7xl mx-auto h-[calc(100vh-5.5rem)] md:h-[calc(100vh-6rem)] flex flex-col md:flex-row rounded-2xl md:rounded-xl overflow-hidden border border-slate-200/90 dark:border-zinc-800/80 bg-white dark:bg-[#0b0c0e] shadow-sm animate-fade-in mb-2 md:mb-6">
+      <aside className={`w-full md:w-80 border-r border-slate-200/90 dark:border-zinc-800/80 bg-slate-50/60 dark:bg-[#0e0f12] flex flex-col shrink-0 ${
+        mainTab === 'friends' || (mainTab === 'chat' && activePeer) ? 'hidden md:flex' : 'flex'
+      }`}>
         <div className="p-3.5 border-b border-slate-200/90 dark:border-zinc-800/80 bg-white dark:bg-[#0b0c0e] flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-zinc-800/80 rounded-xl flex-1">
             <button
@@ -518,26 +523,42 @@ export const MessagesPage = () => {
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col bg-white dark:bg-[#0b0c0e] overflow-hidden">
+      <main className={`flex-1 flex flex-col bg-white dark:bg-[#0b0c0e] overflow-hidden ${
+        mainTab === 'chat' && !activePeer ? 'hidden md:flex' : 'flex'
+      }`}>
         {mainTab === 'friends' ? (
-          <FriendsManager
-            friendsSubTab={friendsSubTab}
-            onSetFriendsSubTab={setFriendsSubTab}
-            friendsData={friendsData}
-            addFriendQuery={addFriendQuery}
-            onAddFriendQueryChange={setAddFriendQuery}
-            onSearchAndAddFriend={handleSearchAndAddFriend}
-            searchResult={searchResult}
-            requestSent={requestSent}
-            onSendFriendRequest={handleSendFriendRequest}
-            onAcceptRequest={handleAcceptFriendRequest}
-            onRejectRequest={handleRejectFriendRequest}
-            onRemoveFriend={handleRemoveFriend}
-            onOpenConversationWithUser={(peer) => {
-              handleSelectPeer(peer);
-              navigate(`/messages?userId=${peer.id}`, { replace: true });
-            }}
-          />
+          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <div className="md:hidden px-3.5 py-2.5 border-b border-slate-200/90 dark:border-zinc-800/80 bg-slate-50 dark:bg-[#0e0f12] flex items-center justify-between shrink-0">
+              <button
+                onClick={() => {
+                  setMainTab('chat');
+                  setSearchParams({});
+                }}
+                className="flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 py-1 px-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/40 cursor-pointer"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Voltar às conversas</span>
+              </button>
+            </div>
+            <FriendsManager
+              friendsSubTab={friendsSubTab}
+              onSetFriendsSubTab={setFriendsSubTab}
+              friendsData={friendsData}
+              addFriendQuery={addFriendQuery}
+              onAddFriendQueryChange={setAddFriendQuery}
+              onSearchAndAddFriend={handleSearchAndAddFriend}
+              searchResult={searchResult}
+              requestSent={requestSent}
+              onSendFriendRequest={handleSendFriendRequest}
+              onAcceptRequest={handleAcceptFriendRequest}
+              onRejectRequest={handleRejectFriendRequest}
+              onRemoveFriend={handleRemoveFriend}
+              onOpenConversationWithUser={(peer) => {
+                handleSelectPeer(peer);
+                navigate(`/messages?userId=${peer.id}`, { replace: true });
+              }}
+            />
+          </div>
         ) : activePeer ? (
           isCallOpen ? (
             <CallStage
@@ -554,8 +575,19 @@ export const MessagesPage = () => {
             />
           ) : (
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-              <header className="h-14 px-5 border-b border-slate-200/90 dark:border-zinc-800/80 bg-white dark:bg-[#0b0c0e] flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-3 min-w-0">
+              <header className="h-14 px-3 sm:px-5 border-b border-slate-200/90 dark:border-zinc-800/80 bg-white dark:bg-[#0b0c0e] flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  <button
+                    onClick={() => {
+                      setActivePeer(null);
+                      setSearchParams({});
+                    }}
+                    className="md:hidden p-1.5 -ml-1 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer shrink-0"
+                    title="Voltar às conversas"
+                    aria-label="Voltar às conversas"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
                   <div className="relative shrink-0">
                     <Avatar src={activePeer.avatarUrl} name={activePeer.name} size="sm" className="rounded-xl" />
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white dark:border-black absolute -bottom-0.5 -right-0.5" />
@@ -663,7 +695,7 @@ export const MessagesPage = () => {
                 <div ref={messagesEndRef} />
               </div>
 
-              <form onSubmit={handleSendMessage} className="p-3 bg-white dark:bg-[#0b0c0e] border-t border-slate-200/90 dark:border-zinc-800/80 flex items-center gap-2">
+              <form onSubmit={handleSendMessage} className="p-2.5 sm:p-3 bg-white dark:bg-[#0b0c0e] border-t border-slate-200/90 dark:border-zinc-800/80 flex items-center gap-2 pb-safe">
                 <input
                   type="text"
                   required

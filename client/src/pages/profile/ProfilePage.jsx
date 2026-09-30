@@ -381,7 +381,7 @@ export const ProfilePage = () => {
   }
   if (notFound || (!isMe && !profileUser)) {
     return (
-      <div className="max-w-xl mx-auto flex flex-col items-center justify-center min-h-[400px] text-center p-8 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-sm">
+      <div className="max-w-xl mx-auto flex flex-col items-center justify-center min-h-[400px] text-center p-8 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-sm">
         <Users className="w-12 h-12 text-slate-400 mb-3" />
         <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-1">Utilizador não encontrado</h2>
         <p className="text-sm text-slate-500 dark:text-zinc-400 mb-6">O perfil solicitado não existe ou pode ter sido alterado.</p>
@@ -394,7 +394,7 @@ export const ProfilePage = () => {
   const bannerStyle = getBannerStyle(u?.profile?.bannerUrl);
   return <div className="max-w-5xl mx-auto flex flex-col gap-8 animate-fade-in pb-16">
       
-      <div className="relative rounded-3xl overflow-hidden border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
+      <div className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
         
         <div className={`h-44 sm:h-56 w-full relative ${bannerClass}`} style={bannerStyle}>
           
@@ -422,9 +422,9 @@ export const ProfilePage = () => {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
             
             <div className="relative group -mt-14 sm:-mt-16 z-20 shrink-0 self-start">
-              <Avatar src={u?.avatarUrl} name={u?.name} size="xl" className="ring-4 ring-white dark:ring-zinc-900 bg-white dark:bg-zinc-800 shadow-lg rounded-3xl" />
+              <Avatar src={u?.avatarUrl} name={u?.name} size="xl" className="ring-4 ring-white dark:ring-zinc-900 bg-white dark:bg-zinc-800 shadow-lg rounded-xl" />
               <span className="w-4 h-4 rounded-full bg-emerald-500 border-2 border-white dark:border-zinc-900 absolute bottom-1 right-1" />
-              {isMe && <button onClick={() => openEditModal()} className="absolute inset-0 rounded-3xl bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer" aria-label="Alterar foto de perfil">
+              {isMe && <button onClick={() => openEditModal()} className="absolute inset-0 rounded-xl bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer" aria-label="Alterar foto de perfil">
                   <Camera className="w-6 h-6 text-white drop-shadow" />
                 </button>}
             </div>
@@ -456,7 +456,7 @@ export const ProfilePage = () => {
               @{u?.username}
             </span>
             <Badge variant="brand" size="sm">
-              {u?.role || 'STUDENT'}
+              {u?.role === 'CREATOR' ? 'Formador' : u?.role === 'ADMIN' ? 'Administrador' : 'Estudante'}
             </Badge>
           </div>
 
@@ -559,7 +559,7 @@ export const ProfilePage = () => {
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                Cursos Matriculados ({myCourses.length})
+                Cursos Inscritos ({myCourses.length})
               </h3>
               {myCourses.some(e => (e.progressPercent || 0) >= 100) && (
                 <button
@@ -577,7 +577,7 @@ export const ProfilePage = () => {
             </div>
 
             {visibleProfileCourses.length === 0 ? (
-              <Card className="p-10 text-center bg-slate-50 dark:bg-zinc-800/50 border-slate-200 dark:border-zinc-700 rounded-3xl">
+              <Card className="p-10 text-center bg-slate-50 dark:bg-zinc-800/50 border-slate-200 dark:border-zinc-700 rounded-xl">
                 <BookOpen className="w-10 h-10 text-slate-300 dark:text-zinc-600 mx-auto mb-3" />
                 <p className="text-sm font-bold text-slate-700 dark:text-zinc-300 mb-1">
                   {myCourses.length > 0 ? 'Os seus cursos concluídos estão ocultados.' : 'Nenhum curso ainda.'}
@@ -602,7 +602,7 @@ export const ProfilePage = () => {
                 {visibleProfileCourses.map(e => {
                   const isFinished = (e.progressPercent || 0) >= 100;
                   return (
-                    <Card key={e.id} hover className="p-4 flex items-center justify-between border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 shadow-xs rounded-2xl gap-4">
+                    <Card key={e.id} hover className="p-4 flex items-center justify-between border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 shadow-xs rounded-lg gap-4">
                       <div className="flex items-center gap-3 min-w-0">
                         <img src={e.course?.thumbnailUrl} alt={e.course?.title} className="w-14 h-14 rounded-xl object-cover border border-slate-200 dark:border-zinc-700 shrink-0" />
                         <div className="min-w-0">
@@ -649,19 +649,19 @@ export const ProfilePage = () => {
       {activeTab === 'achievements' && <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-              Badges Desbloqueados
+              Conquistas Desbloqueadas
             </h3>
             <Link to="/achievements" className="text-sm font-bold text-blue-600 hover:underline">
               Ver Todos
             </Link>
           </div>
-          {achievements.length === 0 ? <Card className="p-10 text-center bg-slate-50 dark:bg-zinc-800/50 border-slate-200 dark:border-zinc-700 rounded-3xl">
+          {achievements.length === 0 ? <Card className="p-10 text-center bg-slate-50 dark:bg-zinc-800/50 border-slate-200 dark:border-zinc-700 rounded-xl">
               <Award className="w-10 h-10 text-slate-300 dark:text-zinc-600 mx-auto mb-3" />
               <p className="text-sm text-slate-500 dark:text-zinc-400">
                 Ainda sem conquistas. Continue a aprender!
               </p>
             </Card> : <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {achievements.map(ach => <Card key={ach.id} className="p-4 flex items-center gap-3 bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 shadow-xs rounded-2xl">
+              {achievements.map(ach => <Card key={ach.id} className="p-4 flex items-center gap-3 bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 shadow-xs rounded-lg">
                   <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 text-amber-600 flex items-center justify-center shrink-0">
                     <Award className="w-5 h-5" />
                   </div>
@@ -676,7 +676,7 @@ export const ProfilePage = () => {
         </div>}
 
       
-      {activeTab === 'friends' && <Card className="p-8 text-center bg-slate-50 dark:bg-zinc-800/50 border-slate-200 dark:border-zinc-700 rounded-3xl">
+      {activeTab === 'friends' && <Card className="p-8 text-center bg-slate-50 dark:bg-zinc-800/50 border-slate-200 dark:border-zinc-700 rounded-xl">
           <Users className="w-10 h-10 text-blue-500 mx-auto mb-3" />
           <p className="text-base font-bold text-slate-900 dark:text-white mb-1">
             Hub de Mensagens & Amigos
@@ -701,8 +701,8 @@ export const ProfilePage = () => {
             </label>
             <div className="flex items-center gap-4">
               <div className="relative group shrink-0">
-                <Avatar src={avatarPreview || editAvatarUrl} name={editName} size="lg" className="rounded-2xl ring-2 ring-slate-200 dark:ring-zinc-700" />
-                {isCompressingAvatar && <div className="absolute inset-0 rounded-2xl bg-black/50 flex items-center justify-center">
+                <Avatar src={avatarPreview || editAvatarUrl} name={editName} size="lg" className="rounded-lg ring-2 ring-slate-200 dark:ring-zinc-700" />
+                {isCompressingAvatar && <div className="absolute inset-0 rounded-lg bg-black/50 flex items-center justify-center">
                     <Loader2 className="w-5 h-5 text-white animate-spin" />
                   </div>}
               </div>
@@ -817,7 +817,7 @@ export const ProfilePage = () => {
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">Website</label>
-              <input type="url" placeholder="https://meusite.com" value={editWebsite} onChange={e => setEditWebsite(e.target.value)} className="bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl px-3 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition-all placeholder:text-slate-400" />
+              <input type="url" placeholder="https://oseusite.pt" value={editWebsite} onChange={e => setEditWebsite(e.target.value)} className="bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl px-3 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition-all placeholder:text-slate-400" />
             </div>
           </div>
 
@@ -843,11 +843,11 @@ export const ProfilePage = () => {
           </div>
 
           
-          <div className="flex justify-end gap-3 pt-2 border-t border-slate-100 dark:border-zinc-700">
-            <Button type="button" onClick={() => setIsEditOpen(false)} variant="secondary" size="md">
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2.5 sm:gap-3 pt-2 border-t border-slate-100 dark:border-zinc-700">
+            <Button type="button" onClick={() => setIsEditOpen(false)} variant="secondary" size="md" className="w-full sm:w-auto">
               Cancelar
             </Button>
-            <Button type="submit" variant="primary" size="md" className="font-bold shadow-md shadow-blue-500/20" isLoading={isSaving}>
+            <Button type="submit" variant="primary" size="md" className="w-full sm:w-auto font-bold shadow-md shadow-blue-500/20" isLoading={isSaving}>
               {isSaving ? 'A guardar...' : 'Guardar Alterações'}
             </Button>
           </div>

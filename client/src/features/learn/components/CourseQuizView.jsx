@@ -296,7 +296,7 @@ export const CourseQuizView = ({
     soundEffects.play('click');
   };
   return <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-8 max-w-4xl mx-auto w-full animate-fade-in antialiased">
-      <div className="bg-white dark:bg-[#12141c] border border-slate-200/80 dark:border-[#222636] rounded-3xl shadow-xs p-6 sm:p-10 space-y-8">
+      <div className="bg-white dark:bg-[#12141c] border border-slate-200/80 dark:border-[#222636] rounded-xl shadow-xs p-6 sm:p-10 space-y-8">
         
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100 dark:border-[#222636]">
           <div>
@@ -316,7 +316,7 @@ export const CourseQuizView = ({
             </p>
           </div>
 
-          <div className="text-left sm:text-right shrink-0 bg-slate-50 dark:bg-[#171a24] border border-slate-200/80 dark:border-[#222636] rounded-2xl p-3.5 sm:min-w-[120px]">
+          <div className="text-left sm:text-right shrink-0 bg-slate-50 dark:bg-[#171a24] border border-slate-200/80 dark:border-[#222636] rounded-lg p-3.5 sm:min-w-[120px]">
             <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
               Recompensa
             </span>
@@ -330,10 +330,10 @@ export const CourseQuizView = ({
         </div>
 
         
-        {quizResults && <div className={`p-6 rounded-2xl border transition-all ${quizResults.passed ? 'bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-200/80 dark:border-emerald-800/50 text-emerald-950 dark:text-emerald-200 shadow-xs' : 'bg-rose-50/80 dark:bg-rose-950/40 border-rose-200/80 dark:border-rose-800/50 text-rose-950 dark:text-rose-200 shadow-xs'}`}>
+        {quizResults && <div className={`p-6 rounded-xl border transition-all ${quizResults.passed ? 'bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-200/80 dark:border-emerald-800/50 text-emerald-950 dark:text-emerald-200 shadow-xs' : 'bg-rose-50/80 dark:bg-rose-950/40 border-rose-200/80 dark:border-rose-800/50 text-rose-950 dark:text-rose-200 shadow-xs'}`}>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
               <div className="flex items-start gap-3.5">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${quizResults.passed ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'}`}>
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${quizResults.passed ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'}`}>
                   {quizResults.passed ? <CheckCircle2 className="w-6 h-6" /> : <XCircle className="w-6 h-6" />}
                 </div>
 
@@ -369,11 +369,11 @@ export const CourseQuizView = ({
           const badge = getQuestionTypeBadge(q.type);
           const isMultiple = q.type === 'multiple';
           const userSelections = isMultiple ? multipleAnswers[q.id] || [] : [singleAnswers[q.id]].filter(Boolean);
-          return <div key={q.id} className="p-6 rounded-2xl bg-slate-50/50 dark:bg-[#171a24] border border-slate-200/80 dark:border-[#222636] space-y-4">
+          return <div key={q.id} className="p-6 rounded-xl bg-slate-50/50 dark:bg-[#171a24] border border-slate-200/80 dark:border-[#222636] space-y-4">
                 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2">
                   <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-lg bg-slate-900 dark:bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                    <span className="w-6 h-6 rounded-md bg-slate-900 dark:bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
                       {qIdx + 1}
                     </span>
                     <span className={`px-2 py-0.5 rounded-md border text-[11px] font-semibold ${badge.color}`}>
@@ -381,7 +381,7 @@ export const CourseQuizView = ({
                     </span>
                   </div>
 
-                  {q.type === 'find-incorrect' && <span className="text-[11px] font-semibold text-amber-900 dark:text-amber-300 bg-amber-100/70 dark:bg-amber-950/40 px-2.5 py-0.5 rounded-full flex items-center gap-1 border border-amber-200 dark:border-amber-800/40">
+                  {q.type === 'find-incorrect' && <span className="text-[11px] font-semibold text-amber-900 dark:text-amber-300 bg-amber-100/70 dark:bg-amber-950/40 px-2.5 py-0.5 rounded-md flex items-center gap-1 border border-amber-200 dark:border-amber-800/40">
                       <AlertCircle className="w-3 h-3 text-amber-700 dark:text-amber-400" />
                       Selecione a opção falsa / com erro
                     </span>}
@@ -399,7 +399,7 @@ export const CourseQuizView = ({
                 
                 {q.type === 'open-ended' ? <div className="space-y-3 pt-1">
                     {!quizSubmitted ? <div className="space-y-1.5">
-                        <textarea rows={4} value={openEndedAnswers[q.id] || ''} onChange={e => handleOpenEndedChange(q.id, e.target.value)} placeholder="Escreva aqui a sua resposta detalhada por extenso..." className="w-full bg-white dark:bg-[#12141c] border border-slate-200 dark:border-[#222636] focus:border-slate-950 dark:focus:border-blue-500 rounded-2xl p-4 text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-950/10 dark:focus:ring-blue-900/30 transition-all leading-relaxed" />
+                        <textarea rows={4} value={openEndedAnswers[q.id] || ''} onChange={e => handleOpenEndedChange(q.id, e.target.value)} placeholder="Escreva aqui a sua resposta detalhada por extenso..." className="w-full bg-white dark:bg-[#12141c] border border-slate-200 dark:border-[#222636] focus:border-slate-950 dark:focus:border-blue-500 rounded-lg p-3 text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-950/10 dark:focus:ring-blue-900/30 transition-all leading-relaxed" />
                         <div className="flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500 px-1">
                           <span>
                             {q.gradingMode === 'teacher' ? 'Esta resposta será revista e avaliada manualmente pelo professor.' : 'Correção automática por palavras-chave conceituais (ignora acentos e maiúsculas).'}

@@ -362,7 +362,7 @@ export const CreatorMembers = () => {
 
       
       {roleModalMember && <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6 animate-fade-in overflow-y-auto">
-          <div className="bg-white dark:bg-[#12141c] rounded-3xl max-w-lg w-full border border-slate-200 dark:border-[#222636] shadow-2xl overflow-hidden my-auto flex flex-col">
+          <div className="bg-white dark:bg-[#12141c] rounded-xl max-w-lg w-full border border-slate-200 dark:border-[#222636] shadow-2xl overflow-hidden my-auto flex flex-col">
             <div className="px-6 py-5 border-b border-slate-200 dark:border-[#222636] flex items-center justify-between bg-slate-50/50 dark:bg-[#151720]">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
@@ -460,7 +460,7 @@ export const CreatorMembers = () => {
       
       {selectedStudent && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6 animate-fade-in overflow-y-auto">
-          <div className="bg-white dark:bg-[#12141c] rounded-3xl max-w-3xl w-full border border-slate-200 dark:border-[#222636] shadow-2xl overflow-hidden my-auto max-h-[90vh] flex flex-col">
+          <div className="bg-white dark:bg-[#12141c] rounded-xl max-w-3xl w-full border border-slate-200 dark:border-[#222636] shadow-2xl overflow-hidden my-auto max-h-[90vh] flex flex-col">
             
             <div className="px-6 py-5 border-b border-slate-200 dark:border-[#222636] flex items-center justify-between bg-slate-50/50 dark:bg-[#151720] shrink-0">
               <div className="flex items-center gap-3">

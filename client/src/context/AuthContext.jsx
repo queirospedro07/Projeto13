@@ -13,7 +13,7 @@ export const AuthProvider = ({
       const savedToken = getAuthToken();
       if (savedToken) {
         const userData = await api.getMe();
-        setUser(userData);
+        setUser(userData.user || userData);
       } else {
         setUser(null);
       }

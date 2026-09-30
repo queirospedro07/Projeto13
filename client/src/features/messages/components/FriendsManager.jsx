@@ -69,7 +69,7 @@ export const FriendsManager = ({
       {friendsSubTab === 'all' && (
         <div>
           {(!friendsData?.friends || friendsData.friends.length === 0) ? (
-            <div className="p-12 text-center border-2 border-dashed border-slate-200 dark:border-zinc-800 rounded-3xl bg-slate-50/50 dark:bg-zinc-900/30">
+            <div className="p-12 text-center border-2 border-dashed border-slate-200 dark:border-zinc-800 rounded-xl bg-slate-50/50 dark:bg-zinc-900/30">
               <Users className="w-12 h-12 text-slate-400 dark:text-zinc-600 mx-auto mb-3" />
               <h3 className="font-bold text-slate-800 dark:text-zinc-200 text-base mb-1">
                 Ainda não tem amigos adicionados

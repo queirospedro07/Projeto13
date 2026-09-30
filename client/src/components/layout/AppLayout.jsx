@@ -17,6 +17,8 @@ export const AppLayout = () => {
   const isLearnPlayer = location.pathname.startsWith('/learn/');
   const isCourseBuilder = location.pathname.startsWith('/creator/courses/');
 
+  const isMessages = location.pathname.startsWith('/messages');
+
   const showAppSidebar = Boolean(user) && !isLanding && !isAuthPage;
 
   return (
@@ -30,7 +32,9 @@ export const AppLayout = () => {
           className={`flex-1 overflow-y-auto ${
             isLearnPlayer || isLanding || isAuthPage || isCourseBuilder
               ? 'p-0'
-              : 'p-4 sm:p-6 lg:p-8 pb-24 md:pb-10'
+              : isMessages
+              ? 'p-2 sm:p-4 lg:p-6 pb-20 md:pb-6'
+              : 'p-3.5 sm:p-6 lg:p-8 pb-24 md:pb-10'
           }`}
         >
           <Outlet />

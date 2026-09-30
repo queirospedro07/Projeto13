@@ -213,7 +213,7 @@ export function setupSocketIO(io) {
       roomId,
       message
     }) => {
-      io.to(`voice_${roomId}`).emit('voice-chat-message', message);
+      socket.to(`voice_${roomId}`).emit('voice-chat-message', message);
     });
     socket.on('voice-set-room-mode', ({
       roomId,

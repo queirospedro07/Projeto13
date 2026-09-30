@@ -38,66 +38,65 @@ export const ProgressPage = () => {
       </div>
 
       
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="p-6 border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#0e0e0e] shadow-xs">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-              <Clock className="w-6 h-6" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+        <Card className="p-4 sm:p-6 rounded-xl border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#0e0e0e] shadow-xs">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+              <Clock className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <div>
-              <p className="text-xs text-slate-400 dark:text-zinc-500 font-bold uppercase tracking-wider">
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-xs text-slate-400 dark:text-zinc-500 font-bold uppercase tracking-wider truncate">
                 Tempo Total
               </p>
-              <p className="text-2xl font-extrabold text-slate-900 dark:text-white mt-0.5">
-                {stats?.totalMinutes ? (stats.totalMinutes / 60).toFixed(1) : stats?.totalHours ?? '0.0'}
-                h
+              <p className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white mt-0.5">
+                {stats?.totalMinutes ? (stats.totalMinutes / 60).toFixed(1) : stats?.totalHours ?? '0.0'}h
               </p>
             </div>
           </div>
         </Card>
 
-        <Card className="p-6 border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#0e0e0e] shadow-xs">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 text-amber-500 dark:text-amber-400 flex items-center justify-center">
-              <Flame className="w-6 h-6 fill-amber-500 dark:fill-amber-400" />
+        <Card className="p-4 sm:p-6 rounded-xl border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#0e0e0e] shadow-xs">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 text-amber-500 dark:text-amber-400 flex items-center justify-center shrink-0">
+              <Flame className="w-5 h-5 sm:w-6 sm:h-6 fill-amber-500 dark:fill-amber-400" />
             </div>
-            <div>
-              <p className="text-xs text-slate-400 dark:text-zinc-500 font-bold uppercase tracking-wider">
-                Sequência Atual
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-xs text-slate-400 dark:text-zinc-500 font-bold uppercase tracking-wider truncate">
+                Sequência
               </p>
-              <p className="text-2xl font-extrabold text-slate-900 dark:text-white mt-0.5">
+              <p className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white mt-0.5">
                 {stats?.streakDays ?? user?.streakDays ?? 0} dias
               </p>
             </div>
           </div>
         </Card>
 
-        <Card className="p-6 border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#0e0e0e] shadow-xs">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-              <CheckCircle2 className="w-6 h-6" />
+        <Card className="p-4 sm:p-6 rounded-xl border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#0e0e0e] shadow-xs">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <div>
-              <p className="text-xs text-slate-400 dark:text-zinc-500 font-bold uppercase tracking-wider">
-                Quizzes Aprovados
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-xs text-slate-400 dark:text-zinc-500 font-bold uppercase tracking-wider truncate">
+                Quizzes
               </p>
-              <p className="text-2xl font-extrabold text-slate-900 dark:text-white mt-0.5">
+              <p className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white mt-0.5">
                 {stats?.quizzesTaken ?? 0}
               </p>
             </div>
           </div>
         </Card>
 
-        <Card className="p-6 border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#0e0e0e] shadow-xs">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-              <Award className="w-6 h-6" />
+        <Card className="p-4 sm:p-6 rounded-xl border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#0e0e0e] shadow-xs">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+              <Award className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <div>
-              <p className="text-xs text-slate-400 dark:text-zinc-500 font-bold uppercase tracking-wider">
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-xs text-slate-400 dark:text-zinc-500 font-bold uppercase tracking-wider truncate">
                 Distintivos
               </p>
-              <p className="text-2xl font-extrabold text-slate-900 dark:text-white mt-0.5">
+              <p className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white mt-0.5">
                 {stats?.badgesCount ?? 0}
               </p>
             </div>
@@ -185,7 +184,7 @@ export const ProgressPage = () => {
             </p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 mt-6">
+          <div className="p-4 rounded-lg bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 mt-6">
             <span className="font-extrabold text-amber-800 dark:text-amber-300 text-sm">
               {(user?.streakDays ?? 0) > 0 ? `${user?.streakDays} Dias Consecutivos` : '0 Dias Consecutivos'}
             </span>
@@ -202,7 +201,7 @@ export const ProgressPage = () => {
           Progresso por Curso
         </h3>
         {enrollments.length === 0 ? <Card className="p-10 border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#0e0e0e] shadow-xs text-center flex flex-col items-center">
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-3">
+            <div className="w-12 h-12 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-3">
               <BookOpen className="w-6 h-6" />
             </div>
             <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-1">

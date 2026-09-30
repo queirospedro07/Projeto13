@@ -48,7 +48,9 @@ router.post('/register', async (req, res) => {
         error: 'Endereço de e-mail inválido'
       });
     }
-    const targetRole = role === 'CREATOR' ? 'CREATOR' : 'STUDENT';
+    // Registos públicos criam sempre conta como ALUNO (STUDENT)
+    // Para ser criador é necessário submeter inquérito de candidatura para aprovação do Administrador
+    const targetRole = 'STUDENT';
     const cleanUsername = usernameClean;
     const cleanEmail = emailClean;
     const existing = queryOne('SELECT id FROM users WHERE email = ? OR username = ?', [cleanEmail, cleanUsername]);
@@ -67,7 +69,7 @@ router.post('/register', async (req, res) => {
       execute(`INSERT INTO profiles (id, userId, headline, isPublic, showStreak, showLeaderboard, themePreference)
          VALUES (?, ?, '', 1, 1, 1, 'light')`, [`prof-${userId}`, userId]);
       execute(`INSERT INTO notifications (id, userId, type, title, content, link, isRead, createdAt)
-         VALUES (?, ?, 'achievement', 'Bem-vindo ao LearnSpace!', 'Explore o catálogo de cursos e junte-se aos espaços da comunidade.', '/explore', 0, ?)`, [`notif-${Date.now()}`, userId, now]);
+         VALUES (?, ?, 'achievement', 'Bem-vindo ao NEXO!', 'Explore o catálogo de cursos e junte-se aos espaços da comunidade.', '/explore', 0, ?)`, [`notif-${Date.now()}`, userId, now]);
     });
     const user = {
       id: userId,

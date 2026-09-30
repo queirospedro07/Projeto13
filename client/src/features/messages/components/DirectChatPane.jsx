@@ -60,7 +60,7 @@ export const DirectChatPane = ({
       
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-slate-50/50">
         {messages.length === 0 ? <div className="h-full flex flex-col items-center justify-center text-center p-8">
-            <div className="w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold mb-4 shadow-sm">
+            <div className="w-16 h-16 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold mb-4 shadow-sm">
               <MessageSquare className="w-8 h-8" />
             </div>
             <h3 className="text-lg font-extrabold text-slate-900 mb-1">

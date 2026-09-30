@@ -24,8 +24,8 @@ export const CertificateView = () => {
       </div>;
   if (!cert) {
     return <div className="max-w-xl mx-auto py-20 px-6 text-center animate-fade-in">
-        <div className="p-10 rounded-3xl bg-white border border-slate-200 shadow-sm flex flex-col items-center">
-          <div className="w-16 h-16 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mb-4">
+        <div className="p-10 rounded-xl bg-white border border-slate-200 shadow-sm flex flex-col items-center">
+          <div className="w-16 h-16 rounded-lg bg-red-50 text-red-600 flex items-center justify-center mb-4">
             <Award className="w-8 h-8" />
           </div>
           <h2 className="text-2xl font-black text-slate-950 mb-2">Certificado Não Encontrado</h2>
@@ -56,8 +56,8 @@ export const CertificateView = () => {
       </div>
 
       
-      <div className="border-4 border-slate-200 p-3 sm:p-4 rounded-3xl bg-slate-100 shadow-xl print:border-none print:p-0 print:shadow-none">
-        <div className="relative border-2 border-slate-300 rounded-2xl p-10 sm:p-16 bg-white text-center select-none text-slate-900 overflow-hidden shadow-sm">
+      <div className="border-4 border-slate-200 p-3 sm:p-4 rounded-xl bg-slate-100 shadow-xl print:border-none print:p-0 print:shadow-none">
+        <div className="relative border-2 border-slate-300 rounded-lg p-10 sm:p-16 bg-white text-center select-none text-slate-900 overflow-hidden shadow-sm">
           
           <div className="absolute top-4 left-4 w-12 h-12 border-t-2 border-l-2 border-amber-500/60 rounded-tl-xl" />
           <div className="absolute top-4 right-4 w-12 h-12 border-t-2 border-r-2 border-amber-500/60 rounded-tr-xl" />
@@ -68,7 +68,7 @@ export const CertificateView = () => {
           <div className="flex flex-col items-center gap-2 mb-10">
             <Logo size="lg" showText={false} />
             <span className="text-xs font-bold tracking-[0.25em] text-blue-700 uppercase mt-2">
-              LearnSpace Autoridade de Certificação
+              NEXO Autoridade de Certificação
             </span>
             <div className="w-16 h-0.5 bg-slate-200 mt-2" />
           </div>
@@ -98,7 +98,7 @@ export const CertificateView = () => {
               <div className="h-10 border-b-2 border-slate-400 w-44 flex items-center justify-center font-serif text-slate-800 italic text-base">
                 {cert.creatorName}
               </div>
-              <p className="text-xs font-bold text-slate-500 mt-2">Assinatura do Instrutor</p>
+              <p className="text-xs font-bold text-slate-500 mt-2">Assinatura do Formador</p>
             </div>
 
             
@@ -128,7 +128,7 @@ export const CertificateView = () => {
             <span>
               ID do Certificado: <strong className="text-slate-700">{cert.certificateId}</strong>
             </span>
-            <span>learnspace.io/verify/{cert.certificateId}</span>
+            <span>nexo.pt/verify/{cert.certificateId}</span>
           </div>
         </div>
       </div>

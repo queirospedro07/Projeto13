@@ -2,6 +2,91 @@ import { Router } from 'express';
 import { queryAll, queryOne, execute, transaction } from '../db/index.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
 const router = Router();
+
+// Obter estado da candidatura a criador do utilizador autenticado
+router.get('/application-status', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const application = queryOne('SELECT * FROM creator_applications WHERE userId = ? ORDER BY createdAt DESC LIMIT 1', [userId]);
+    return res.json({
+      role: req.user.role,
+      hasApplication: !!application,
+      application: application || null
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Falha ao obter estado da candidatura' });
+  }
+});
+
+// Submeter inquérito de candidatura a criador / formador
+router.post('/apply', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    if (req.user.role === 'CREATOR' || req.user.role === 'ADMIN') {
+      return res.status(400).json({ error: 'A sua conta já tem estatuto de Formador ou Administrador.' });
+    }
+
+    const existingPending = queryOne("SELECT id FROM creator_applications WHERE userId = ? AND status = 'PENDING'", [userId]);
+    if (existingPending) {
+      return res.status(400).json({ error: 'Já tem uma candidatura pendente em análise pela administração.' });
+    }
+
+    const {
+      fullName,
+      bio,
+      expertise,
+      experienceYears,
+      portfolioUrl,
+      motivation,
+      proposedCourses,
+      sampleVideoUrl
+    } = req.body;
+
+    if (!fullName || !expertise || !motivation || !proposedCourses) {
+      return res.status(400).json({ error: 'Nome completo, especialização, motivação e proposta de cursos são obrigatórios.' });
+    }
+
+    const appId = `app-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+    const now = new Date().toISOString();
+
+    execute(`
+      INSERT INTO creator_applications (id, userId, fullName, bio, expertise, experienceYears, portfolioUrl, motivation, proposedCourses, sampleVideoUrl, status, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?, ?)
+    `, [
+      appId,
+      userId,
+      fullName.trim(),
+      bio?.trim() || '',
+      expertise.trim(),
+      Number(experienceYears) || 0,
+      portfolioUrl?.trim() || '',
+      motivation.trim(),
+      proposedCourses.trim(),
+      sampleVideoUrl?.trim() || '',
+      now,
+      now
+    ]);
+
+    // Notificar administradores
+    const admins = queryAll("SELECT id FROM users WHERE role = 'ADMIN'");
+    for (const admin of admins) {
+      execute(`
+        INSERT INTO notifications (id, userId, type, title, content, link, isRead, createdAt)
+        VALUES (?, ?, 'admin', 'Nova Candidatura a Formador', ?, '/admin', 0, ?)
+      `, [`notif-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`, admin.id, `${fullName} submeteu um inquérito de candidatura para lecionar no NEXO.`, now]);
+    }
+
+    const application = queryOne('SELECT * FROM creator_applications WHERE id = ?', [appId]);
+    return res.status(201).json({
+      message: 'Candidatura submetida com sucesso! A aguardar revisão do Administrador.',
+      application
+    });
+  } catch (err) {
+    console.error('Error submitting creator application:', err);
+    return res.status(500).json({ error: 'Falha ao submeter candidatura a criador' });
+  }
+});
+
 router.get('/stats', authenticate, requireRole('CREATOR', 'ADMIN'), async (req, res) => {
   try {
     const creatorId = req.user.id;
@@ -370,8 +455,10 @@ router.post('/courses', authenticate, requireRole('CREATOR', 'ADMIN'), async (re
       const defCallMode = defaultCallMode || 'open';
       const allowScreen = allowStudentScreenShare !== false ? 1 : 0;
       const allowCam = allowStudentCamera !== false ? 1 : 0;
-      execute(`INSERT INTO courses (id, title, slug, description, category, difficulty, thumbnailUrl, bannerUrl, price, isFree, isPublished, featured, durationHours, language, creatorId, spaceId, defaultCallMode, allowStudentScreenShare, allowStudentCamera, createdAt, updatedAt)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [courseId, title, slug, description || '', category, difficulty || 'Intermédio', thumbnailUrl || 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&auto=format&fit=crop&q=80', bannerUrl || null, isFree ? 0 : Number(price || 0), isFree ? 1 : 0, durationHours ? Number(durationHours) : 10.0, language || 'Português', creatorId, resolvedSpaceId, defCallMode, allowScreen, allowCam, now, now]);
+      const approvalStatus = req.user.role === 'ADMIN' ? 'APPROVED' : 'PENDING';
+      const isPub = req.user.role === 'ADMIN' ? 1 : 0;
+      execute(`INSERT INTO courses (id, title, slug, description, category, difficulty, thumbnailUrl, bannerUrl, price, isFree, isPublished, approvalStatus, adminNotes, submittedForReviewAt, featured, durationHours, language, creatorId, spaceId, defaultCallMode, allowStudentScreenShare, allowStudentCamera, createdAt, updatedAt)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [courseId, title, slug, description || '', category, difficulty || 'Intermédio', thumbnailUrl || 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&auto=format&fit=crop&q=80', bannerUrl || null, isFree ? 0 : Number(price || 0), isFree ? 1 : 0, isPub, approvalStatus, now, durationHours ? Number(durationHours) : 10.0, language || 'Português', creatorId, resolvedSpaceId, defCallMode, allowScreen, allowCam, now, now]);
       const rolesToInsert = Array.isArray(customRoles) && customRoles.length > 0 ? customRoles : [{
         name: 'Instrutor',
         color: 'indigo',
@@ -608,7 +695,41 @@ router.delete('/courses/:courseId/members/:userId', authenticate, requireRole('C
     execute('DELETE FROM course_member_roles WHERE courseId = ? AND userId = ?', [courseId, userId]);
     return res.json({ success: true, message: 'Membro removido do curso com sucesso' });
   } catch (err) {
-    return res.status(500).json({ error: 'Falha ao remover membro do curso' });
+    return res.status(500).json({ error: 'Falha ao remover membro' });
+  }
+});
+
+router.post('/courses/:courseId/submit-review', authenticate, requireRole('CREATOR', 'ADMIN'), async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const creatorId = req.user.id;
+    const course = queryOne('SELECT * FROM courses WHERE id = ? AND (creatorId = ? OR ? = "ADMIN")', [courseId, creatorId, req.user.role]);
+    if (!course) {
+      return res.status(404).json({ error: 'Curso não encontrado ou sem permissão' });
+    }
+
+    const now = new Date().toISOString();
+    execute(`
+      UPDATE courses 
+      SET approvalStatus = 'PENDING', isPublished = 0, submittedForReviewAt = ?, updatedAt = ?
+      WHERE id = ?
+    `, [now, now, courseId]);
+
+    // Notificar administradores
+    const admins = queryAll("SELECT id FROM users WHERE role = 'ADMIN'");
+    for (const admin of admins) {
+      execute(`
+        INSERT INTO notifications (id, userId, type, title, content, link, isRead, createdAt)
+        VALUES (?, ?, 'admin', 'Curso Submetido para Moderação', ?, '/admin', 0, ?)
+      `, [`notif-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`, admin.id, `O curso "${course.title}" foi submetido para moderação e aprovação.`, now]);
+    }
+
+    return res.json({
+      message: 'Curso submetido para aprovação do Administrador.',
+      approvalStatus: 'PENDING'
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Falha ao submeter curso para aprovação' });
   }
 });
 

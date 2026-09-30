@@ -21,11 +21,11 @@ export const Dashboard = () => {
   const [recommendedCourses, setRecommendedCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [hideCompleted, setHideCompleted] = useState(() => {
-    return localStorage.getItem('learnspace_hide_completed') === 'true';
+    return (localStorage.getItem('nexo_hide_completed') ?? localStorage.getItem('learnspace_hide_completed')) === 'true';
   });
   const [hiddenCourseIds, setHiddenCourseIds] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem('learnspace_hidden_courses') || '[]');
+      return JSON.parse(localStorage.getItem('nexo_hidden_courses') || localStorage.getItem('learnspace_hidden_courses') || '[]');
     } catch {
       return [];
     }
@@ -34,7 +34,7 @@ export const Dashboard = () => {
   const toggleHideCourse = (courseId) => {
     setHiddenCourseIds(prev => {
       const next = prev.includes(courseId) ? prev.filter(id => id !== courseId) : [...prev, courseId];
-      localStorage.setItem('learnspace_hidden_courses', JSON.stringify(next));
+      localStorage.setItem('nexo_hidden_courses', JSON.stringify(next));
       return next;
     });
   };
@@ -42,7 +42,7 @@ export const Dashboard = () => {
   const toggleHideAllCompleted = () => {
     setHideCompleted(prev => {
       const next = !prev;
-      localStorage.setItem('learnspace_hide_completed', String(next));
+      localStorage.setItem('nexo_hide_completed', String(next));
       return next;
     });
   };
@@ -82,14 +82,14 @@ export const Dashboard = () => {
   });
 
   return (
-    <div className="max-w-7xl mx-auto flex flex-col gap-8 animate-fade-in pb-12">
+    <div className="max-w-7xl mx-auto flex flex-col gap-6 sm:gap-8 animate-fade-in pb-12">
       
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-zinc-800">
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-2.5 py-0.5 rounded-md border border-blue-100 dark:border-blue-900/40">
             Painel do Aluno
           </span>
-          <h1 className="text-3xl sm:text-4xl font-black text-slate-950 dark:text-white tracking-tight mt-1.5">
+          <h1 className="text-2xl sm:text-4xl font-black text-slate-950 dark:text-white tracking-tight mt-1.5">
             {getTimeGreeting()}, {user?.name?.split(' ')[0] || 'Aluno'}!
           </h1>
           <p className="text-sm sm:text-base text-slate-600 dark:text-zinc-400 mt-1">
@@ -98,8 +98,8 @@ export const Dashboard = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <Link to="/explore">
-            <button className="px-5 py-2.5 text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md shadow-blue-500/20 flex items-center gap-2 transition-all cursor-pointer">
+          <Link to="/explore" className="w-full sm:w-auto">
+            <button className="w-full sm:w-auto px-5 py-2.5 text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer">
               <Compass className="w-4 h-4" />
               <span>Explorar Cursos</span>
             </button>
@@ -107,14 +107,14 @@ export const Dashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         
-        <div className="lg:col-span-2 p-6 sm:p-8 rounded-3xl bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-2 p-5 sm:p-7 rounded-xl bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 shadow-xs flex flex-col justify-between">
           {primaryEnrollment ? (
             <>
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <span className="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300 text-xs font-bold uppercase tracking-wider">
+                  <span className="px-2.5 py-1 rounded-md bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300 text-xs font-bold uppercase tracking-wider">
                     Curso Ativo
                   </span>
                   <span className="text-sm font-bold text-slate-700 dark:text-zinc-300 font-mono">
@@ -148,7 +148,7 @@ export const Dashboard = () => {
                 </div>
 
                 <Link to={`/learn/${primaryEnrollment.courseId}`}>
-                  <button className="px-6 py-3 rounded-xl font-bold text-sm bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 flex items-center gap-2 transition-all cursor-pointer">
+                  <button className="px-5 py-2.5 rounded-lg font-bold text-sm bg-blue-600 hover:bg-blue-700 text-white shadow-xs flex items-center gap-2 transition-all cursor-pointer">
                     <PlayCircle className="w-4 h-4" />
                     <span>Continuar Aula</span>
                   </button>
@@ -157,7 +157,7 @@ export const Dashboard = () => {
             </>
           ) : (
             <div className="flex flex-col justify-center items-center text-center py-8">
-              <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-4">
+              <div className="w-14 h-14 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-4">
                 <GraduationCap className="w-7 h-7" />
               </div>
               <h3 className="text-xl font-extrabold text-slate-950 dark:text-white mb-1">
@@ -167,7 +167,7 @@ export const Dashboard = () => {
                 Explore o catálogo para encontrar cursos práticos e começar a aprender.
               </p>
               <Link to="/explore">
-                <button className="px-6 py-2.5 text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md">
+                <button className="px-5 py-2.5 text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-xs">
                   Ver Cursos Disponíveis
                 </button>
               </Link>
@@ -175,15 +175,15 @@ export const Dashboard = () => {
           )}
         </div>
 
-        <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 shadow-xs flex flex-col justify-between gap-4">
+        <div className="p-5 sm:p-7 rounded-xl bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 shadow-xs flex flex-col justify-between gap-4">
           <h4 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
             O Seu Resumo
           </h4>
 
           <div className="space-y-4">
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-zinc-950 border border-slate-100 dark:border-zinc-800 flex items-center justify-between">
+            <div className="p-4 rounded-lg bg-slate-50 dark:bg-zinc-950 border border-slate-100 dark:border-zinc-800 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-md bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center">
                   <BookOpen className="w-5 h-5" />
                 </div>
                 <div>
@@ -196,9 +196,9 @@ export const Dashboard = () => {
               </Link>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-zinc-950 border border-slate-100 dark:border-zinc-800 flex items-center justify-between">
+            <div className="p-4 rounded-lg bg-slate-50 dark:bg-zinc-950 border border-slate-100 dark:border-zinc-800 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                   <CheckCircle2 className="w-5 h-5" />
                 </div>
                 <div>
@@ -244,7 +244,7 @@ export const Dashboard = () => {
           </div>
 
           {visibleCourses.length === 0 ? (
-            <div className="p-8 text-center bg-white dark:bg-zinc-900/60 rounded-3xl border border-slate-200 dark:border-zinc-800">
+            <div className="p-8 text-center bg-white dark:bg-zinc-900/60 rounded-xl border border-slate-200 dark:border-zinc-800">
               <p className="text-sm font-bold text-slate-700 dark:text-zinc-300 mb-1">
                 Todos os seus cursos concluídos estão ocultados.
               </p>
@@ -266,10 +266,10 @@ export const Dashboard = () => {
                 return (
                   <div
                     key={course.id}
-                    className="p-5 rounded-3xl bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 shadow-xs flex flex-col justify-between gap-4 hover:border-blue-300 dark:hover:border-blue-800 transition-all"
+                    className="p-4 sm:p-5 rounded-xl bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 shadow-xs flex flex-col justify-between gap-4 hover:border-blue-300 dark:hover:border-blue-800 transition-all"
                   >
                     <div>
-                      <div className="relative h-36 rounded-2xl overflow-hidden bg-slate-900 mb-4">
+                      <div className="relative h-36 rounded-lg overflow-hidden bg-slate-900 mb-4">
                         {course.thumbnailUrl ? (
                           <img
                             src={course.thumbnailUrl}
@@ -281,7 +281,7 @@ export const Dashboard = () => {
                             {course.title?.charAt(0) || 'C'}
                           </div>
                         )}
-                        <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-md text-[11px] font-bold text-white">
+                        <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-md bg-black/70 backdrop-blur-md text-[11px] font-bold text-white">
                           {course.category || 'Geral'}
                         </span>
                         {isFinished && (
@@ -291,7 +291,7 @@ export const Dashboard = () => {
                               ev.stopPropagation();
                               toggleHideCourse(course.id);
                             }}
-                            className="absolute top-2.5 right-2.5 px-2 py-1 rounded-lg bg-black/75 hover:bg-black text-white text-[10px] font-bold flex items-center gap-1 backdrop-blur-md cursor-pointer transition-colors"
+                            className="absolute top-2.5 right-2.5 px-2 py-1 rounded-md bg-black/75 hover:bg-black text-white text-[10px] font-bold flex items-center gap-1 backdrop-blur-md cursor-pointer transition-colors"
                             title="Ocultar curso concluído"
                           >
                             <EyeOff className="w-3 h-3 text-amber-400" />
@@ -313,7 +313,7 @@ export const Dashboard = () => {
                     <ProgressBar value={progress} size="md" className="mb-4" />
 
                     <Link to={`/learn/${course.id}`} className="block">
-                      <button className="w-full py-2.5 rounded-xl font-bold text-xs bg-slate-100 hover:bg-blue-600 dark:bg-zinc-800 dark:hover:bg-blue-600 text-slate-800 dark:text-zinc-200 hover:text-white dark:hover:text-white transition-all cursor-pointer flex items-center justify-center gap-1.5">
+                      <button className="w-full py-2.5 rounded-lg font-bold text-xs bg-slate-100 hover:bg-blue-600 dark:bg-zinc-800 dark:hover:bg-blue-600 text-slate-800 dark:text-zinc-200 hover:text-white dark:hover:text-white transition-all cursor-pointer flex items-center justify-center gap-1.5">
                         <PlayCircle className="w-4 h-4" />
                         <span>Aceder às Aulas</span>
                       </button>
@@ -342,10 +342,10 @@ export const Dashboard = () => {
             {recommendedCourses.map((c) => (
               <div
                 key={c.id}
-                className="p-5 rounded-3xl bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 shadow-xs flex flex-col justify-between gap-4"
+                className="p-5 rounded-xl bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 shadow-xs flex flex-col justify-between gap-4"
               >
                 <div>
-                  <div className="relative h-36 rounded-2xl overflow-hidden bg-slate-900 mb-4">
+                  <div className="relative h-36 rounded-lg overflow-hidden bg-slate-900 mb-4">
                     <img
                       src={
                         c.thumbnailUrl ||
@@ -354,7 +354,7 @@ export const Dashboard = () => {
                       alt={c.title}
                       className="w-full h-full object-cover"
                     />
-                    <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-md text-[11px] font-bold text-white">
+                    <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-md bg-black/70 backdrop-blur-md text-[11px] font-bold text-white">
                       {c.category || 'Geral'}
                     </span>
                   </div>
@@ -372,7 +372,7 @@ export const Dashboard = () => {
                     {c.isFree || c.price === 0 ? 'Gratuito' : `€${c.price}`}
                   </span>
                   <Link to={`/courses/${c.id}`}>
-                    <button className="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors">
+                    <button className="px-4 py-2 rounded-lg text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors">
                       Ver Detalhes
                     </button>
                   </Link>

@@ -139,7 +139,7 @@ export const GlobalSearch = () => {
                         {course.title}
                       </p>
                       <p className="text-[11px] text-slate-500 dark:text-zinc-400 truncate">
-                        {course.category} • {course.difficulty}
+                        {course.category} • {course.difficulty === 'Beginner' ? 'Iniciante' : course.difficulty === 'Intermediate' ? 'Intermédio' : course.difficulty === 'Advanced' ? 'Avançado' : (course.difficulty || 'Geral')}
                       </p>
                     </div>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 shrink-0">
@@ -171,7 +171,7 @@ export const GlobalSearch = () => {
                           {u.name}
                         </p>
                         <p className="text-[11px] text-slate-500 dark:text-zinc-400 truncate">
-                          @{u.username} • {u.role === 'CREATOR' ? 'Instrutor' : u.role === 'ADMIN' ? 'Administrador' : 'Estudante'}
+                          @{u.username} • {u.role === 'CREATOR' ? 'Formador' : u.role === 'ADMIN' ? 'Administrador' : 'Estudante'}
                         </p>
                       </div>
                     </div>

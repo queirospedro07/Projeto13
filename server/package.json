@@ -1,24 +1,25 @@
 {
-  "name": "learnspace-server",
+  "name": "nexo-server",
   "version": "1.0.0",
-  "description": "LearnSpace backend API and Socket.IO server with high-performance direct SQL queries",
-  "main": "src/index.js",
+  "description": "NEXO backend API and Socket.IO server with high-performance direct SQL queries",
+  "main": "src/server.js",
   "scripts": {
-    "build": "node -e \"console.log('Build ready (JavaScript)')\"",
-    "start": "node --experimental-sqlite src/index.js",
-    "dev": "node --experimental-sqlite --watch src/index.js"
+    "start": "node --experimental-sqlite src/server.js",
+    "dev": "node --experimental-sqlite --watch src/server.js",
+    "migrate": "node --experimental-sqlite src/database/migrate.js",
+    "seed": "node --experimental-sqlite src/database/seed.js"
   },
   "engines": {
     "node": ">=22.0.0"
   },
   "keywords": [
-    "learnspace",
+    "nexo",
     "e-learning",
     "community",
     "sql",
     "gamification"
   ],
-  "author": "LearnSpace Team",
+  "author": "NEXO Team",
   "license": "MIT",
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -26,8 +27,10 @@
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "express-rate-limit": "^8.7.0",
+    "express-validator": "^7.3.2",
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.2",
+    "pg": "^8.23.0",
     "socket.io": "^4.8.1"
   },
   "type": "module"

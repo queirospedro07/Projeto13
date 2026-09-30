@@ -77,30 +77,29 @@ export const ExploreCourses = () => {
 
       
       <div className="flex flex-col gap-5">
-        <form onSubmit={handleSearchSubmit} className="flex gap-3">
+        <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-2.5 sm:gap-3">
           <div className="relative flex-1">
-            <Search className="w-5 h-5 text-slate-400 dark:text-zinc-500 absolute left-4 top-1/2 -translate-y-1/2" />
-            <input type="text" placeholder="Pesquise por título, tecnologia, criador ou palavra-chave..." value={search} onChange={e => setSearch(e.target.value)} className="w-full bg-white dark:bg-[#0a0a0a] border border-slate-300 dark:border-[#222222] focus:border-blue-600 dark:focus:border-blue-500 rounded-2xl pl-12 pr-4 py-3.5 text-base text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 shadow-xs transition-all" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input type="text" placeholder="Pesquise por título, tecnologia, criador ou palavra-chave..." value={search} onChange={e => setSearch(e.target.value)} className="w-full bg-white dark:bg-[#0c0d12] border border-slate-300 dark:border-neutral-800 focus:border-slate-900 dark:focus:border-white rounded-lg pl-10 pr-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:outline-none shadow-xs transition-colors" />
           </div>
-          <button type="submit" className="px-8 py-3.5 text-base font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 rounded-2xl transition-all cursor-pointer">
+          <button type="submit" className="px-6 py-2.5 text-sm font-semibold text-white bg-slate-900 hover:bg-black dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 rounded-lg transition-all cursor-pointer border border-slate-900 dark:border-white shadow-xs">
             Pesquisar
           </button>
         </form>
 
         
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 custom-scrollbar">
-          {categories.map(cat => <button key={cat.id} onClick={() => setSelectedCategory(cat.id)} className={`px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${selectedCategory === cat.id ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-[#222222] text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#141414] hover:text-slate-950 dark:hover:text-white'}`}>
+        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-2 no-scrollbar">
+          {categories.map(cat => <button key={cat.id} onClick={() => setSelectedCategory(cat.id)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${selectedCategory === cat.id ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950 shadow-xs' : 'bg-white dark:bg-[#0c0d12] border border-slate-200 dark:border-neutral-800 text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-neutral-900'}`}>
               {cat.label}
             </button>)}
         </div>
 
         
-        <div className="flex flex-wrap items-center justify-between gap-4 pt-2 text-sm text-slate-600 dark:text-zinc-400">
-          <div className="flex items-center gap-4 flex-wrap">
-            
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-slate-700 dark:text-zinc-300">Nível:</span>
-              <select value={selectedDifficulty} onChange={e => setSelectedDifficulty(e.target.value)} className="bg-white dark:bg-[#0a0a0a] border border-slate-300 dark:border-[#222222] text-slate-800 dark:text-zinc-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pt-1 text-xs sm:text-sm text-slate-600 dark:text-neutral-400">
+          <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+            <div className="flex items-center gap-1.5">
+              <span className="font-semibold text-slate-700 dark:text-neutral-300 text-xs">Nível:</span>
+              <select value={selectedDifficulty} onChange={e => setSelectedDifficulty(e.target.value)} className="bg-white dark:bg-[#0c0d12] border border-slate-300 dark:border-neutral-800 text-slate-800 dark:text-neutral-200 rounded-lg px-2.5 py-1 text-xs font-medium focus:outline-none">
                 <option value="all">Todos os Níveis</option>
                 <option value="Beginner">Iniciante</option>
                 <option value="Intermediate">Intermédio</option>
@@ -108,10 +107,9 @@ export const ExploreCourses = () => {
               </select>
             </div>
 
-            
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-slate-700 dark:text-zinc-300">Preço:</span>
-              <select value={selectedPrice} onChange={e => setSelectedPrice(e.target.value)} className="bg-white dark:bg-[#0a0a0a] border border-slate-300 dark:border-[#222222] text-slate-800 dark:text-zinc-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 shadow-2xs">
+            <div className="flex items-center gap-1.5">
+              <span className="font-semibold text-slate-700 dark:text-neutral-300 text-xs">Preço:</span>
+              <select value={selectedPrice} onChange={e => setSelectedPrice(e.target.value)} className="bg-white dark:bg-[#0c0d12] border border-slate-300 dark:border-neutral-800 text-slate-800 dark:text-neutral-200 rounded-lg px-2.5 py-1 text-xs font-medium focus:outline-none">
                 <option value="all">Todos os Preços</option>
                 <option value="free">Gratuito</option>
                 <option value="paid">Pago</option>
@@ -119,10 +117,9 @@ export const ExploreCourses = () => {
             </div>
           </div>
 
-          
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-700 dark:text-zinc-300">Ordenar:</span>
-            <select value={selectedSort} onChange={e => setSelectedSort(e.target.value)} className="bg-white dark:bg-[#0a0a0a] border border-slate-300 dark:border-[#222222] text-slate-800 dark:text-zinc-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 shadow-2xs">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <span className="font-semibold text-slate-700 dark:text-neutral-300 text-xs">Ordenar:</span>
+            <select value={selectedSort} onChange={e => setSelectedSort(e.target.value)} className="bg-white dark:bg-[#0c0d12] border border-slate-300 dark:border-neutral-800 text-slate-800 dark:text-neutral-200 rounded-lg px-2.5 py-1 text-xs font-medium focus:outline-none">
               <option value="popular">Mais Populares</option>
               <option value="newest">Mais Recentes</option>
               <option value="price-low">Preço: Menor para Maior</option>
@@ -137,7 +134,7 @@ export const ExploreCourses = () => {
           <SkeletonCard />
           <SkeletonCard />
           <SkeletonCard />
-        </div> : courses.length === 0 ? <div className="text-center py-20 border-2 border-dashed border-slate-200 dark:border-[#222222] rounded-3xl bg-white dark:bg-[#0a0a0a] p-8">
+        </div> : courses.length === 0 ? <div className="text-center py-20 border-2 border-dashed border-slate-200 dark:border-[#222222] rounded-xl bg-white dark:bg-[#0a0a0a] p-8">
           <BookOpen className="w-12 h-12 text-slate-400 dark:text-zinc-600 mx-auto mb-3" />
           <h3 className="text-lg font-bold text-slate-800 dark:text-white">
             Nenhum curso encontrado
@@ -145,90 +142,78 @@ export const ExploreCourses = () => {
           <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">
             Experimente ajustar os filtros ou os termos de pesquisa.
           </p>
-        </div> : <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {courses.map(course => <div key={course.id} className="rounded-3xl bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-[#222222] shadow-sm hover:shadow-2xl hover:border-blue-500/40 dark:hover:border-blue-500/40 transition-all duration-300 overflow-hidden flex flex-col justify-between group">
+        </div> : <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {courses.map(course => <div key={course.id} className="rounded-xl bg-white dark:bg-[#0c0d12] border border-slate-200 dark:border-neutral-800 shadow-xs hover:border-slate-400 dark:hover:border-neutral-600 transition-colors overflow-hidden flex flex-col justify-between group">
               
-              <div className="relative h-52 w-full bg-slate-900 overflow-hidden">
-                <img src={course.thumbnailUrl || 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&auto=format&fit=crop&q=80'} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90 group-hover:opacity-100" />
+              <div className="relative h-48 w-full bg-slate-900 overflow-hidden">
+                <img src={course.thumbnailUrl || 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&auto=format&fit=crop&q=80'} alt={course.title} className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300 opacity-95" />
 
-                
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/60 pointer-events-none" />
-
-                
-                <div className="absolute top-3.5 inset-x-3.5 flex items-center justify-between pointer-events-none">
-                  
+                <div className="absolute top-3 inset-x-3 flex items-center justify-between pointer-events-none">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="px-3 py-1 rounded-xl bg-black/60 backdrop-blur-md border border-white/20 text-xs font-bold text-white shadow-lg flex items-center gap-1">
+                    <span className="px-2.5 py-0.5 rounded-md bg-black/75 backdrop-blur-sm text-[11px] font-semibold text-white flex items-center gap-1">
                       <GraduationCap className="w-3.5 h-3.5 text-blue-400" />
                       {course.category}
                     </span>
-                    <span className="px-2.5 py-1 rounded-xl bg-black/60 backdrop-blur-md border border-white/15 text-[11px] font-semibold text-zinc-200 shadow-lg">
+                    <span className="px-2 py-0.5 rounded-md bg-black/75 backdrop-blur-sm text-[10px] font-medium text-slate-200">
                       {course.difficulty === 'Beginner' ? 'Iniciante' : course.difficulty === 'Intermediate' ? 'Intermédio' : course.difficulty === 'Advanced' ? 'Avançado' : course.difficulty}
                     </span>
                   </div>
 
-                  
                   <div>
-                    {course.isEnrolled ? <span className="px-3 py-1 rounded-xl bg-emerald-600/95 text-white backdrop-blur-md border border-emerald-400/40 text-xs font-black shadow-lg uppercase tracking-wider flex items-center gap-1.5">
-                        <Check className="w-3.5 h-3.5 stroke-[3]" />
+                    {course.isEnrolled ? <span className="px-2.5 py-0.5 rounded-md bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                        <Check className="w-3 h-3" />
                         Adquirido
-                      </span> : course.isFree ? <span className="px-3 py-1 rounded-xl bg-emerald-500/90 text-white backdrop-blur-md border border-emerald-400/30 text-xs font-extrabold shadow-lg uppercase tracking-wider">
+                      </span> : course.isFree ? <span className="px-2.5 py-0.5 rounded-md bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wider">
                         Gratuito
-                      </span> : <span className="px-3 py-1 rounded-xl bg-blue-600/90 text-white backdrop-blur-md border border-blue-400/30 text-xs font-extrabold shadow-lg">
+                      </span> : <span className="px-2.5 py-0.5 rounded-md bg-slate-900 text-white text-[11px] font-bold">
                         {course.price} €
                       </span>}
                   </div>
                 </div>
 
-                
-                <div className="absolute bottom-3 inset-x-3.5 flex items-center justify-between pointer-events-none">
-                  
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-black/70 backdrop-blur-md border border-white/15 text-xs font-bold text-white shadow-md">
-                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                <div className="absolute bottom-2.5 inset-x-3 flex items-center justify-between pointer-events-none">
+                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-sm text-xs font-semibold text-white">
+                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
                     <span>{course.averageRating || '5.0'}</span>
-                    <span className="text-zinc-400 text-[11px]">({course.studentsCount || 0})</span>
+                    <span className="text-slate-400 text-[10px]">({course.studentsCount || 0})</span>
                   </div>
 
-                  
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-black/70 backdrop-blur-md border border-white/15 text-xs font-bold text-zinc-200 shadow-md">
-                    <Clock className="w-3.5 h-3.5 text-blue-400" />
+                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-sm text-[11px] font-medium text-slate-200">
+                    <Clock className="w-3 h-3 text-slate-400" />
                     <span>{course.durationHours}h</span>
                   </div>
                 </div>
 
-                
-                {course.isEnrolled && <div className="absolute bottom-0 inset-x-0 h-1.5 bg-black/40">
+                {course.isEnrolled && <div className="absolute bottom-0 inset-x-0 h-1 bg-black/40">
                     <div className="h-full bg-emerald-500 transition-all duration-300" style={{
               width: `${Math.min(100, Math.max(0, course.userProgress || 0))}%`
             }} />
                   </div>}
               </div>
 
-              
-              <div className="p-6 flex-1 flex flex-col justify-between">
+              <div className="p-5 flex-1 flex flex-col justify-between">
                 <div>
-                  <h3 className="font-extrabold text-slate-950 dark:text-white text-lg leading-snug line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                  <h3 className="font-bold text-slate-900 dark:text-white text-base leading-snug line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                     {course.title}
                   </h3>
-                  <p className="text-sm text-slate-600 dark:text-zinc-400 line-clamp-2 mt-2 leading-relaxed">
+                  <p className="text-xs text-slate-600 dark:text-neutral-400 line-clamp-2 mt-1.5 leading-relaxed">
                     {course.description}
                   </p>
                 </div>
 
-                
-                <div className="pt-4 mt-6 border-t border-slate-100 dark:border-[#1a1a1a] flex items-center justify-between">
-                  <div className="flex items-center gap-2.5 min-w-0">
+                <div className="pt-3.5 mt-4 border-t border-slate-100 dark:border-neutral-800 flex items-center justify-between">
+                  <div className="flex items-center gap-2 min-w-0">
                     <Avatar src={course.creator?.avatarUrl} name={course.creator?.name} size="sm" />
-                    <span className="text-sm font-bold text-slate-800 dark:text-zinc-200 truncate">
+                    <span className="text-xs font-semibold text-slate-800 dark:text-neutral-200 truncate">
                       {course.creator?.name}
                     </span>
                   </div>
 
                   <Link to={course.isEnrolled ? `/learn/${course.id}` : `/courses/${course.id}`}>
-                    <button className={`px-4 py-2 rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer flex items-center gap-1.5 ${course.isEnrolled ? 'bg-slate-950 dark:bg-white text-white dark:text-slate-950 hover:bg-slate-800 dark:hover:bg-slate-100 shadow-slate-950/20' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20'}`}>
+                    <button className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 border ${course.isEnrolled ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-950 border-slate-900 dark:border-white hover:bg-black' : 'bg-slate-900 hover:bg-black text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white'}`}>
                       {course.isEnrolled ? <>
                           <span>Continuar ({Math.round(course.userProgress || 0)}%)</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
+                          <ArrowRight className="w-3 h-3" />
                         </> : 'Ver Curso'}
                     </button>
                   </Link>

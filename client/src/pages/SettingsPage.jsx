@@ -33,7 +33,7 @@ export const SettingsPage = () => {
       <div className="pb-6 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center gap-2 mb-2">
           <Badge size="md" variant="primary">
-            Configurações
+            Definições
           </Badge>
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
@@ -45,14 +45,14 @@ export const SettingsPage = () => {
       </div>
 
       
-      <Card className="p-8 border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 shadow-xs">
+      <Card className="p-5 sm:p-8 border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 shadow-xs">
         <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Aparência & Tema</h3>
         <p className="text-sm text-slate-500 dark:text-neutral-400 mb-6">
           Escolha o tema visual para a plataforma.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <button onClick={() => setTheme('light')} className={`p-5 rounded-2xl border text-left flex flex-col justify-between h-28 transition-all cursor-pointer ${theme === 'light' ? 'border-blue-600 bg-blue-50/50 dark:bg-neutral-900 shadow-xs ring-2 ring-blue-500/20' : 'border-slate-200 dark:border-neutral-800 bg-white dark:bg-black hover:bg-slate-50 dark:hover:bg-neutral-900'}`}>
+          <button onClick={() => setTheme('light')} className={`p-5 rounded-xl border text-left flex flex-col justify-between h-28 transition-all cursor-pointer ${theme === 'light' ? 'border-blue-600 bg-blue-50/50 dark:bg-neutral-900 shadow-xs ring-2 ring-blue-500/20' : 'border-slate-200 dark:border-neutral-800 bg-white dark:bg-black hover:bg-slate-50 dark:hover:bg-neutral-900'}`}>
             <div className="flex items-center justify-between">
               <Sun className="w-5 h-5 text-amber-500" />
               {theme === 'light' && <Check className="w-5 h-5 text-blue-600 dark:text-blue-400" />}
@@ -67,7 +67,7 @@ export const SettingsPage = () => {
             </div>
           </button>
 
-          <button onClick={() => setTheme('dark')} className={`p-5 rounded-2xl border text-left flex flex-col justify-between h-28 transition-all cursor-pointer ${theme === 'dark' ? 'border-blue-600 bg-blue-50/50 dark:bg-neutral-900 shadow-xs ring-2 ring-blue-500/20' : 'border-slate-200 dark:border-neutral-800 bg-white dark:bg-black hover:bg-slate-50 dark:hover:bg-neutral-900'}`}>
+          <button onClick={() => setTheme('dark')} className={`p-5 rounded-xl border text-left flex flex-col justify-between h-28 transition-all cursor-pointer ${theme === 'dark' ? 'border-blue-600 bg-blue-50/50 dark:bg-neutral-900 shadow-xs ring-2 ring-blue-500/20' : 'border-slate-200 dark:border-neutral-800 bg-white dark:bg-black hover:bg-slate-50 dark:hover:bg-neutral-900'}`}>
             <div className="flex items-center justify-between">
               <Moon className="w-5 h-5 text-slate-600 dark:text-blue-400" />
               {theme === 'dark' && <Check className="w-5 h-5 text-blue-600 dark:text-blue-400" />}
@@ -82,7 +82,7 @@ export const SettingsPage = () => {
             </div>
           </button>
 
-          <button onClick={() => setTheme('system')} className={`p-5 rounded-2xl border text-left flex flex-col justify-between h-28 transition-all cursor-pointer ${theme === 'system' ? 'border-blue-600 bg-blue-50/50 dark:bg-neutral-900 shadow-xs ring-2 ring-blue-500/20' : 'border-slate-200 dark:border-neutral-800 bg-white dark:bg-black hover:bg-slate-50 dark:hover:bg-neutral-900'}`}>
+          <button onClick={() => setTheme('system')} className={`p-5 rounded-xl border text-left flex flex-col justify-between h-28 transition-all cursor-pointer ${theme === 'system' ? 'border-blue-600 bg-blue-50/50 dark:bg-neutral-900 shadow-xs ring-2 ring-blue-500/20' : 'border-slate-200 dark:border-neutral-800 bg-white dark:bg-black hover:bg-slate-50 dark:hover:bg-neutral-900'}`}>
             <div className="flex items-center justify-between">
               <Monitor className="w-5 h-5 text-slate-600 dark:text-neutral-300" />
               {theme === 'system' && <Check className="w-5 h-5 text-blue-600 dark:text-blue-400" />}
@@ -100,7 +100,7 @@ export const SettingsPage = () => {
       </Card>
 
       
-      <Card className="p-8 flex flex-col gap-6 border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 shadow-xs">
+      <Card className="p-5 sm:p-8 flex flex-col gap-6 border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 shadow-xs">
         <div>
           <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Notificações</h3>
           <p className="text-sm text-slate-500 dark:text-neutral-400">
@@ -115,7 +115,7 @@ export const SettingsPage = () => {
                 Novidades & Módulos nos Cursos
               </p>
               <p className="text-xs text-slate-500 dark:text-neutral-400">
-                Quando os instrutores publicam novas aulas ou conteúdos
+                Quando os formadores publicam novas aulas ou conteúdos
               </p>
             </div>
             <input type="checkbox" checked={courseUpdates} onChange={e => setCourseUpdates(e.target.checked)} className="w-5 h-5 accent-blue-600 rounded cursor-pointer" />
@@ -146,20 +146,20 @@ export const SettingsPage = () => {
           </div>
         </div>
 
-        <Button onClick={handleSavePreferences} variant="primary" size="md" className="self-end mt-2 font-bold shadow-md shadow-blue-500/20">
+        <Button onClick={handleSavePreferences} variant="primary" size="md" className="self-stretch sm:self-end mt-2 font-bold shadow-md shadow-blue-500/20">
           Guardar Preferências
         </Button>
       </Card>
 
       
-      <Card className="p-7 flex items-center justify-between border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 shadow-xs">
+      <Card className="p-5 sm:p-7 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 shadow-xs">
         <div>
           <h4 className="text-base font-bold text-slate-900 dark:text-white">Gestão de Sessão</h4>
           <p className="text-sm text-slate-500 dark:text-neutral-400 mt-0.5">
-            Sessão iniciada como {user?.email} ({user?.role})
+            Sessão iniciada como {user?.email} ({user?.role === 'CREATOR' ? 'Formador' : user?.role === 'ADMIN' ? 'Administrador' : 'Estudante'})
           </p>
         </div>
-        <Button onClick={logout} variant="secondary" size="md" leftIcon={<LogOut className="w-4 h-4 text-red-600" />} className="font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 hover:border-red-200 dark:hover:border-red-900">
+        <Button onClick={logout} variant="secondary" size="md" leftIcon={<LogOut className="w-4 h-4 text-red-600" />} className="w-full sm:w-auto font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 hover:border-red-200 dark:hover:border-red-900">
           Terminar Sessão
         </Button>
       </Card>

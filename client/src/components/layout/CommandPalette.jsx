@@ -194,7 +194,7 @@ export const CommandPalette = ({
       <div className="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-md transition-opacity" onClick={onClose} />
 
       
-      <div className="relative w-full max-w-2xl bg-white dark:bg-[#121214] border border-slate-200 dark:border-neutral-800 rounded-3xl shadow-2xl overflow-hidden z-10 animate-fade-in flex flex-col">
+      <div className="relative w-full max-w-2xl bg-white dark:bg-[#121214] border border-slate-200 dark:border-neutral-800 rounded-xl shadow-2xl overflow-hidden z-10 animate-fade-in flex flex-col">
         
         <div className="flex items-center px-5 py-4 border-b border-slate-200 dark:border-neutral-800 gap-3.5 bg-white dark:bg-[#121214]">
           <Search className="w-5 h-5 text-slate-400 dark:text-zinc-500 shrink-0" />
@@ -262,9 +262,9 @@ export const CommandPalette = ({
                 {filteredCourses.map(item => {
               const globalIdx = flatItems.findIndex(i => i.id === item.id);
               const isSelected = globalIdx === selectedIndex;
-              return <button key={item.id} data-active={isSelected} onClick={() => handleSelect(item.to, item.title)} onMouseEnter={() => setSelectedIndex(globalIdx)} className={`w-full flex items-center justify-between p-3 rounded-2xl border text-left transition-all group cursor-pointer ${isSelected ? 'bg-blue-50/80 dark:bg-neutral-800/80 border-blue-400 dark:border-blue-500/80 shadow-xs' : 'bg-white dark:bg-[#141416] border-slate-200/80 dark:border-neutral-800/80 hover:border-blue-300 dark:hover:border-neutral-700'}`}>
+              return <button key={item.id} data-active={isSelected} onClick={() => handleSelect(item.to, item.title)} onMouseEnter={() => setSelectedIndex(globalIdx)} className={`w-full flex items-center justify-between p-3 rounded-lg border text-left transition-all group cursor-pointer ${isSelected ? 'bg-blue-50/80 dark:bg-neutral-800/80 border-blue-400 dark:border-blue-500/80 shadow-xs' : 'bg-white dark:bg-[#141416] border-slate-200/80 dark:border-neutral-800/80 hover:border-blue-300 dark:hover:border-neutral-700'}`}>
                       <div className="flex items-center gap-3.5 min-w-0">
-                        <div className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/60 text-blue-600 dark:text-blue-400'}`}>
+                        <div className={`w-9 h-9 rounded-md border flex items-center justify-center shrink-0 ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/60 text-blue-600 dark:text-blue-400'}`}>
                           <BookOpen className="w-4 h-4" />
                         </div>
                         <div className="truncate">
@@ -299,9 +299,9 @@ export const CommandPalette = ({
                 {filteredSpaces.map(item => {
               const globalIdx = flatItems.findIndex(i => i.id === item.id);
               const isSelected = globalIdx === selectedIndex;
-              return <button key={item.id} data-active={isSelected} onClick={() => handleSelect(item.to, item.title)} onMouseEnter={() => setSelectedIndex(globalIdx)} className={`w-full flex items-center justify-between p-3 rounded-2xl border text-left transition-all group cursor-pointer ${isSelected ? 'bg-blue-50/80 dark:bg-neutral-800/80 border-blue-400 dark:border-blue-500/80 shadow-xs' : 'bg-white dark:bg-[#141416] border-slate-200/80 dark:border-neutral-800/80 hover:border-blue-300 dark:hover:border-neutral-700'}`}>
+              return <button key={item.id} data-active={isSelected} onClick={() => handleSelect(item.to, item.title)} onMouseEnter={() => setSelectedIndex(globalIdx)} className={`w-full flex items-center justify-between p-3 rounded-lg border text-left transition-all group cursor-pointer ${isSelected ? 'bg-blue-50/80 dark:bg-neutral-800/80 border-blue-400 dark:border-blue-500/80 shadow-xs' : 'bg-white dark:bg-[#141416] border-slate-200/80 dark:border-neutral-800/80 hover:border-blue-300 dark:hover:border-neutral-700'}`}>
                       <div className="flex items-center gap-3.5 min-w-0">
-                        <div className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/60 text-emerald-600 dark:text-emerald-400'}`}>
+                        <div className={`w-9 h-9 rounded-md border flex items-center justify-center shrink-0 ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/60 text-emerald-600 dark:text-emerald-400'}`}>
                           <Users className="w-4 h-4" />
                         </div>
                         <div className="truncate">
@@ -333,9 +333,9 @@ export const CommandPalette = ({
                 {filteredActions.map(item => {
               const globalIdx = flatItems.findIndex(i => i.id === item.id);
               const isSelected = globalIdx === selectedIndex;
-              return <button key={item.id} data-active={isSelected} onClick={() => handleSelect(item.to, item.title)} onMouseEnter={() => setSelectedIndex(globalIdx)} className={`w-full flex items-center justify-between p-3 rounded-2xl border text-left transition-all group cursor-pointer ${isSelected ? 'bg-blue-50/80 dark:bg-neutral-800/80 border-blue-400 dark:border-blue-500/80 shadow-xs' : 'bg-white dark:bg-[#141416] border-slate-200/80 dark:border-neutral-800/80 hover:border-blue-300 dark:hover:border-neutral-700'}`}>
+              return <button key={item.id} data-active={isSelected} onClick={() => handleSelect(item.to, item.title)} onMouseEnter={() => setSelectedIndex(globalIdx)} className={`w-full flex items-center justify-between p-3 rounded-lg border text-left transition-all group cursor-pointer ${isSelected ? 'bg-blue-50/80 dark:bg-neutral-800/80 border-blue-400 dark:border-blue-500/80 shadow-xs' : 'bg-white dark:bg-[#141416] border-slate-200/80 dark:border-neutral-800/80 hover:border-blue-300 dark:hover:border-neutral-700'}`}>
                       <div className="flex items-center gap-3.5 min-w-0">
-                        <div className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-100 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 text-slate-600 dark:text-zinc-400'}`}>
+                        <div className={`w-9 h-9 rounded-md border flex items-center justify-center shrink-0 ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-100 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 text-slate-600 dark:text-zinc-400'}`}>
                           <item.icon className="w-4 h-4" />
                         </div>
                         <div className="truncate">
@@ -359,7 +359,7 @@ export const CommandPalette = ({
 
           
           {flatItems.length === 0 && <div className="py-10 text-center flex flex-col items-center justify-center px-4">
-              <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-neutral-800 flex items-center justify-center text-slate-400 dark:text-zinc-500 mb-3">
+              <div className="w-12 h-12 rounded-lg bg-slate-100 dark:bg-neutral-800 flex items-center justify-center text-slate-400 dark:text-zinc-500 mb-3">
                 <Search className="w-6 h-6" />
               </div>
               <p className="font-semibold text-slate-800 dark:text-zinc-200 text-sm">
@@ -413,7 +413,7 @@ export const CommandPalette = ({
           </div>
           <span className="flex items-center gap-1.5 text-slate-500 dark:text-zinc-400 font-bold text-xs">
             <Command className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-            <span className="text-slate-700 dark:text-zinc-300">LearnSpace</span>
+            <span className="text-slate-700 dark:text-zinc-300">NEXO</span>
           </span>
         </div>
       </div>

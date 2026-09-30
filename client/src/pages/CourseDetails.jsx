@@ -122,7 +122,7 @@ export const CourseDetails = () => {
       </div>;
   }
   if (!course) {
-    return <div className="max-w-4xl mx-auto py-20 text-center bg-white rounded-3xl border border-slate-200 p-12 shadow-sm">
+    return <div className="max-w-4xl mx-auto py-20 text-center bg-white dark:bg-neutral-900 rounded-xl border border-slate-200 dark:border-neutral-800 p-12 shadow-xs">
         <h2 className="text-2xl font-bold text-slate-900 mb-2">Curso Não Encontrado</h2>
         <p className="text-slate-500 mb-6">O curso que procura não existe ou foi removido.</p>
         <Link to="/explore">
@@ -134,42 +134,42 @@ export const CourseDetails = () => {
   }
   const isEnrolled = !!course.userEnrollment;
   const userProgress = course.userEnrollment?.progressPercent || 0;
-  return <div className="max-w-6xl mx-auto flex flex-col gap-10 animate-fade-in pb-16">
+  return <div className="max-w-6xl mx-auto flex flex-col gap-6 sm:gap-10 animate-fade-in pb-16">
       
-      <div className="relative rounded-3xl overflow-hidden border border-slate-200 bg-white p-8 sm:p-10 shadow-sm">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+      <div className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/60 p-5 sm:p-10 shadow-xs">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10 items-center">
           
-          <div className="lg:col-span-7 flex flex-col gap-5">
-            <div className="flex flex-wrap items-center gap-2.5">
+          <div className="lg:col-span-7 flex flex-col gap-4 sm:gap-5">
+            <div className="flex flex-wrap items-center gap-2">
               <Badge size="md" variant="primary">
                 {course.category}
               </Badge>
               <Badge variant="outline" size="md">
-                {course.difficulty}
+                {course.difficulty === 'Beginner' ? 'Iniciante' : course.difficulty === 'Intermediate' ? 'Intermédio' : course.difficulty === 'Advanced' ? 'Avançado' : (course.difficulty || 'Geral')}
               </Badge>
               <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
                 • {course.language}
               </span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
               {course.title}
             </h1>
 
-            <p className="text-base text-slate-600 leading-relaxed">{course.description}</p>
+            <p className="text-sm sm:text-base text-slate-600 dark:text-neutral-400 leading-relaxed">{course.description}</p>
 
             
-            <div className="flex flex-wrap items-center gap-5 text-sm text-slate-600 pt-2 border-t border-slate-100">
+            <div className="flex flex-wrap items-center gap-5 text-sm text-slate-600 dark:text-neutral-400 pt-2 border-t border-slate-100 dark:border-neutral-800">
               <span className="flex items-center gap-1.5 text-amber-500 font-bold">
                 <Star className="w-4 h-4 fill-amber-400" />
                 {course.averageRating || '5.0'} ({course.reviews?.length || 0} avaliações)
               </span>
-              <span className="text-slate-300">•</span>
+              <span className="text-slate-300 dark:text-neutral-700">•</span>
               <span className="flex items-center gap-1.5 font-medium">
                 <Users className="w-4 h-4 text-slate-400" />
                 {course.studentsCount || 0} alunos
               </span>
-              <span className="text-slate-300">•</span>
+              <span className="text-slate-300 dark:text-neutral-700">•</span>
               <span className="flex items-center gap-1.5 font-medium">
                 <Clock className="w-4 h-4 text-slate-400" />
                 {course.durationHours} horas
@@ -180,11 +180,11 @@ export const CourseDetails = () => {
             <div className="flex items-center gap-4 pt-3">
               <Avatar src={course.creator?.avatarUrl} name={course.creator?.name} size="md" />
               <div>
-                <p className="text-sm font-bold text-slate-900">
+                <p className="text-sm font-bold text-slate-900 dark:text-white">
                   Ministrado por {course.creator?.name}
                 </p>
-                <p className="text-xs text-slate-500">
-                  {course.creator?.bio || 'Instrutor Especialista'}
+                <p className="text-xs text-slate-500 dark:text-neutral-400">
+                  {course.creator?.bio || 'Formador Especialista'}
                 </p>
               </div>
             </div>
@@ -192,28 +192,28 @@ export const CourseDetails = () => {
 
           
           <div className="lg:col-span-5">
-            <Card className="p-0 overflow-hidden border-slate-200 bg-white shadow-md">
+            <Card className="p-0 overflow-hidden border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-xs">
               <div className="relative h-56 sm:h-64 w-full bg-slate-900 group">
                 <img src={course.bannerUrl || course.thumbnailUrl} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 <div className="absolute inset-0 bg-slate-950/40 flex items-center justify-center">
-                  <div className="w-14 h-14 rounded-full bg-white text-blue-600 flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
+                  <div className="w-14 h-14 rounded-lg bg-white text-blue-600 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
                     <Play className="w-6 h-6 fill-current ml-1" />
                   </div>
                 </div>
               </div>
 
-              <div className="p-7 flex flex-col gap-5">
+              <div className="p-5 sm:p-7 flex flex-col gap-5">
                 <div className="flex items-center justify-between">
                   {isEnrolled ? <div className="flex items-center gap-2">
-                      <span className="px-3.5 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
+                      <span className="px-3 py-1 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
                         <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                         Curso Adquirido
                       </span>
-                      <span className="text-xs text-slate-500 font-semibold">
+                      <span className="text-xs text-slate-500 dark:text-neutral-400 font-semibold">
                         Acesso Vitalício Ativo
                       </span>
                     </div> : <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-extrabold text-slate-900">
+                      <span className="text-3xl font-extrabold text-slate-900 dark:text-white">
                         {course.isFree ? 'Gratuito' : `€${course.price}`}
                       </span>
                       {!course.isFree && <span className="text-sm text-slate-400 line-through font-medium">
@@ -252,7 +252,7 @@ export const CourseDetails = () => {
       </div>
 
       
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-3 overflow-x-auto">
+      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-neutral-800 pb-3 overflow-x-auto">
         {[{
         id: 'overview',
         label: 'Visão Geral'
@@ -268,7 +268,7 @@ export const CourseDetails = () => {
       }, {
         id: 'resources',
         label: `Recursos (${course.resources?.length || 0})`
-      }].map(tab => <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all cursor-pointer shrink-0 ${activeTab === tab.id ? 'text-blue-600 bg-blue-50/80 border border-blue-200 shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-white border border-transparent'}`}>
+      }].map(tab => <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all cursor-pointer shrink-0 ${activeTab === tab.id ? 'text-blue-600 bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50 shadow-xs' : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-neutral-800 border border-transparent'}`}>
             {tab.label}
           </button>)}
       </div>
@@ -343,21 +343,21 @@ export const CourseDetails = () => {
                       {mod.description && <p className="text-sm text-slate-500 mt-1">{mod.description}</p>}
                     </div>
                     <div className="flex items-center gap-4 shrink-0 ml-4">
-                      <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+                      <span className="text-xs font-semibold text-slate-500 bg-slate-100 dark:bg-neutral-800 dark:text-neutral-400 px-2.5 py-0.5 rounded-md">
                         {mod.lessons?.length || 0} aulas
                       </span>
                       {isOpen ? <ChevronUp className="w-5 h-5 text-slate-500" /> : <ChevronDown className="w-5 h-5 text-slate-500" />}
                     </div>
                   </button>
 
-                  {isOpen && <div className="divide-y divide-slate-100 bg-slate-50/50 border-t border-slate-100">
-                      {mod.lessons?.map((les, lIdx) => <div key={les.id} className="p-4 sm:px-6 flex items-center justify-between text-sm hover:bg-white transition-colors">
+                  {isOpen && <div className="divide-y divide-slate-100 dark:divide-neutral-800 bg-slate-50/50 dark:bg-neutral-900/30 border-t border-slate-100 dark:border-neutral-800">
+                      {mod.lessons?.map((les, lIdx) => <div key={les.id} className="p-4 sm:px-6 flex items-center justify-between text-sm hover:bg-white dark:hover:bg-neutral-800 transition-colors">
                           <div className="flex items-center gap-3.5">
-                            <div className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-700 font-bold text-xs shadow-xs">
+                            <div className="w-7 h-7 rounded-lg bg-white dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 flex items-center justify-center text-slate-700 dark:text-neutral-300 font-bold text-xs shadow-xs">
                               {lIdx + 1}
                             </div>
                             <div>
-                              <span className="font-semibold text-slate-800">{les.title}</span>
+                              <span className="font-semibold text-slate-800 dark:text-neutral-200">{les.title}</span>
                               {les.type === 'quiz' && <Badge size="sm" variant="accent" className="ml-2.5 font-bold">
                                   Quiz (+{les.xpReward} XP)
                                 </Badge>}
@@ -374,11 +374,11 @@ export const CourseDetails = () => {
 
         
         {activeTab === 'community' && <Card className="p-8 max-w-3xl flex flex-col gap-5">
-            <h3 className="text-xl font-bold text-slate-900">Comunidade e Servidor do Curso</h3>
-            <p className="text-base text-slate-600 leading-relaxed">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Comunidade e Servidor do Curso</h3>
+            <p className="text-base text-slate-600 dark:text-neutral-400 leading-relaxed">
               Ao inscrever-se neste curso, ganha acesso imediato ao servidor da turma com canais de
               texto temáticos, canais de voz, partilha de ecrã para tirar dúvidas e conferências com
-              o instrutor {course.creator?.name}.
+              o formador {course.creator?.name}.
             </p>
             {course.spaceId && <Link to={`/community/${course.spaceId}`}>
                 <Button variant="primary" size="md" className="self-start">
@@ -391,17 +391,17 @@ export const CourseDetails = () => {
         {activeTab === 'reviews' && <div className="max-w-4xl flex flex-col gap-6">
             
             {user ? <Card className="p-6">
-                <h4 className="font-bold text-slate-900 text-base mb-4">Deixar uma Avaliação</h4>
+                <h4 className="font-bold text-slate-900 dark:text-white text-base mb-4">Deixar uma Avaliação</h4>
                 <form onSubmit={handleReviewSubmit} className="flex flex-col gap-4">
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold text-slate-700">Classificação:</span>
+                    <span className="text-sm font-semibold text-slate-700 dark:text-neutral-300">Classificação:</span>
                     <div className="flex items-center gap-1">
                       {[1, 2, 3, 4, 5].map(star => <button type="button" key={star} onClick={() => setReviewRating(star)} className="cursor-pointer p-1 hover:scale-110 transition-transform">
                           <Star className={`w-5 h-5 ${star <= reviewRating ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}`} />
                         </button>)}
                     </div>
                   </div>
-                  <textarea rows={3} placeholder="Partilhe a sua opinião sobre este curso..." value={reviewComment} onChange={e => setReviewComment(e.target.value)} className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-2xl p-4 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all" />
+                  <textarea rows={3} placeholder="Partilhe a sua opinião sobre este curso..." value={reviewComment} onChange={e => setReviewComment(e.target.value)} className="w-full bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 focus:border-blue-500 focus:bg-white dark:focus:bg-neutral-800 rounded-lg p-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none transition-all" />
                   <Button type="submit" variant="primary" size="md" isLoading={isSubmittingReview} className="self-end font-semibold">
                     Publicar Avaliação
                   </Button>
@@ -441,15 +441,15 @@ export const CourseDetails = () => {
         {activeTab === 'resources' && <div className="max-w-3xl flex flex-col gap-3">
             {course.resources?.length === 0 ? <Card className="py-12 text-center text-slate-500 font-medium">
                 Sem ficheiros adicionais associados a este curso.
-              </Card> : course.resources?.map(res => <div key={res.id} className="flex items-center justify-between p-5 rounded-2xl bg-white border border-slate-200 shadow-sm hover:border-blue-200 transition-colors">
+              </Card> : course.resources?.map(res => <div key={res.id} className="flex items-center justify-between p-5 rounded-xl bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 shadow-xs hover:border-blue-200 transition-colors">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs uppercase">
+                    <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-xs uppercase">
                       {res.type}
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-slate-900">{res.title}</p>
+                      <p className="text-sm font-bold text-slate-900 dark:text-white">{res.title}</p>
                       <p className="text-xs text-slate-500 font-medium">
-                        {res.sizeBytes ? `${(res.sizeBytes / 1024 / 1024).toFixed(1)} MB` : 'Link Direto'}
+                        {res.sizeBytes ? `${(res.sizeBytes / 1024 / 1024).toFixed(1)} MB` : 'Ligação Direta'}
                       </p>
                     </div>
                   </div>

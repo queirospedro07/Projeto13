@@ -67,7 +67,7 @@ export const LessonVideoPlayer = ({
   };
   return <div className="flex flex-col gap-6 antialiased">
       
-      <div className="relative aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl border border-slate-800 group">
+      <div className="relative aspect-video bg-black rounded-xl overflow-hidden shadow-2xl border border-slate-800 group">
         {youtubeEmbedUrl ? <iframe src={youtubeEmbedUrl} title={title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen className="w-full h-full border-0" /> : videoUrl ? <video ref={videoRef} src={videoUrl} onTimeUpdate={handleTimeUpdate} onLoadedMetadata={handleTimeUpdate} onEnded={() => {
         setIsPlaying(false);
         if (onMarkComplete && !isCompleted) onMarkComplete();
