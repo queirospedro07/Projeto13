@@ -90,6 +90,7 @@ O LearnSpace conta com um esquema relacional de **26 tabelas** totalmente normal
 
 - **Módulo 1: Autenticação & Perfis:** Registo com validações, login JWT com expiração de 24h, contas demo instantâneas, edição de perfil, temas e bloqueio de utilizadores suspensos.
 - **Módulo 2: Cursos e Player de Aprendizagem:** Catálogo pesquisável, player customizado com vídeo HD, velocidades (0.75x a 2x), notas automáticas, recursos para download, Q&A colaborativo e quizzes avaliados em tempo real.
+- **Restrição de Pesquisa:** A barra de pesquisa global e a página de resultados `/search` apenas ficam disponíveis para utilizadores autenticados; visitantes anónimos são direcionados para o login.
 - **Módulo 3: Comunidade em Tempo Real:** Espaços com canais de texto e salas de voz, lista de membros online com hierarquia visual de cargos (Owner, Admin, Mod, Member).
 - **Módulo 4: Chat e Mensagens Diretas:** Mensagens Socket.IO instantâneas, indicadores de quem está a escrever ("typing..."), reações com emojis e conversas privadas 1-a-1.
 - **Módulo 5: Chamadas WebRTC de Áudio e Vídeo:** Chamadas peer-to-peer integradas, toque sonoro de chamada recebida, controlos de câmara/áudio e partilha de ecrã.

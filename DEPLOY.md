@@ -11,6 +11,8 @@ Este guia detalha passo a passo como colocar o **LearnSpace** online:
 2. Uma conta no [Render](https://render.com)
 3. Uma conta na [Vercel](https://vercel.com)
 
+> 🔒 Regras de acesso da aplicação: a barra de pesquisa global e a rota `/search` são restringidas a utilizadores autenticados. Visitantes sem sessão não podem realizar pesquisas nem aceder à página de resultados.
+
 ---
 
 ## Passo 1: Subir o Projeto para o GitHub

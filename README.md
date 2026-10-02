@@ -17,6 +17,7 @@
 | Comunidade | Espaços com canais de texto, voz e partilha de ecrã em tempo real |
 | Gamificação | XP, níveis, conquistas, streaks diários e leaderboard |
 | Mensagens | Chat direto com outros utilizadores e gestão de amizades |
+| Pesquisa Global | Pesquisa de cursos e utilizadores na barra de navegação, disponível apenas para utilizadores autenticados |
 | Certificados | Certificado digital gerado automaticamente ao completar um curso |
 
 ### Para Criadores
@@ -111,6 +112,8 @@ npm run dev
 ```
 
 A aplicação fica disponível em `http://localhost:5173`.
+
+> Segurança: a barra de pesquisa e a página `/search` só ficam disponíveis para utilizadores autenticados. Visitantes anónimos são redirecionados para o login.
 
 ---
 

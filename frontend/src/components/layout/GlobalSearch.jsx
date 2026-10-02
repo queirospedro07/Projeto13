@@ -4,8 +4,10 @@ import { Search, BookOpen, User, X, ArrowRight, Loader2, MessageSquare } from 'l
 import { Avatar } from '../ui/Avatar';
 import { api } from '../../services/api';
 import { formatCoursePrice } from '../../utils/formatters';
+import { useAuth } from '../../context/AuthContext';
 
 export const GlobalSearch = ({ onClose } = {}) => {
+  const { user } = useAuth();
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -54,6 +56,8 @@ export const GlobalSearch = ({ onClose } = {}) => {
 
     return () => clearTimeout(timer);
   }, [query]);
+
+  if (!user) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();

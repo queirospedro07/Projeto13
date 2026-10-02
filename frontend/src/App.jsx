@@ -87,7 +87,14 @@ export const App = () => {
                   <Route path="support" element={<HelpSupportPage />} />
                   <Route path="privacy" element={<PrivacyPolicyPage />} />
                   <Route path="terms" element={<TermsPage />} />
-                  <Route path="search" element={<SearchResultsPage />} />
+                  <Route
+                    path="search"
+                    element={
+                      <ProtectedRoute>
+                        <SearchResultsPage />
+                      </ProtectedRoute>
+                    }
+                  />
 
                   <Route
                     path="dashboard"

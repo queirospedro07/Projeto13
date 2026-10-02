@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Search, BookOpen, User, ArrowRight, Star, Clock, GraduationCap } from 'lucide-react';
 import { Avatar } from '../../components/ui/Avatar';
 import { api } from '../../services/api';
 import { formatCoursePrice } from '../../utils/formatters';
+import { useAuth } from '../../context/AuthContext';
 
 export const SearchResultsPage = () => {
+  const { user, isLoading } = useAuth();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const rawQuery = (searchParams.get('q') || '').trim();
   const [query, setQuery] = useState(rawQuery);
@@ -61,6 +64,21 @@ export const SearchResultsPage = () => {
     if (!trimmed) return;
     setSearchParams({ q: trimmed });
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center bg-slate-50 text-slate-600 gap-3">
+        <div className="w-8 h-8 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" />
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-mono">
+          A verificar sessão...
+        </p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
 
   return (
     <div className="max-w-7xl mx-auto py-4 sm:py-8 animate-fade-in">
