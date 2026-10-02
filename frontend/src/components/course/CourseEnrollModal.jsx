@@ -9,13 +9,25 @@ import {
   Award, 
   Clock, 
   Play, 
-  ArrowRight
+  ArrowRight,
+  ShieldCheck
 } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../ui/Toast';
 import { api } from '../../services/api';
+
+const formatCoursePrice = (course) => {
+  if (!course) return 'Grátis';
+
+  const rawPrice = Number(course.price);
+  const isFreeCourse = course.isFree || course.price === 0 || course.price === null || course.price === undefined || Number.isNaN(rawPrice) || rawPrice <= 0;
+
+  if (isFreeCourse) return 'Grátis';
+
+  return `€${rawPrice.toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1')}`;
+};
 
 export const CourseEnrollModal = ({
   isOpen,
@@ -29,10 +41,15 @@ export const CourseEnrollModal = ({
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isPaidConfirmation, setIsPaidConfirmation] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    setIsPaidConfirmation(false);
+  }, [isOpen, course?.id]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -50,7 +67,7 @@ export const CourseEnrollModal = ({
 
   if (!isOpen || !mounted || !course) return null;
 
-  const isFree = course.isFree || course.price === 0 || course.price === null || course.price === undefined;
+  const isFree = course.isFree || Number(course.price || 0) <= 0;
   const courseTitle = course.title || course.name || 'Curso';
   const bannerImage = course.bannerUrl || course.thumbnailUrl || 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200&auto=format&fit=crop&q=80';
   const creator = course.creator || course.owner;
@@ -70,6 +87,15 @@ export const CourseEnrollModal = ({
       });
       onClose();
       navigate('/login');
+      return;
+    }
+
+    if (!isFree && !isPaidConfirmation) {
+      toast({
+        title: 'Confirmação necessária',
+        message: 'Confirme a compra para prosseguir com a aquisição do curso.',
+        type: 'info'
+      });
       return;
     }
 
@@ -146,7 +172,7 @@ export const CourseEnrollModal = ({
                 </span>
               )}
               <span className="px-3 py-1 rounded-lg bg-emerald-600 text-white text-xs font-extrabold uppercase tracking-wider">
-                {isFree ? '100% Gratuito' : 'Acesso Completo'}
+                {isFree ? '100% Gratuito' : 'Compra Segura'}
               </span>
             </div>
 
@@ -170,9 +196,15 @@ export const CourseEnrollModal = ({
           {/* Content Body */}
           <div className="p-6 sm:p-7 flex flex-col gap-6 overflow-y-auto custom-scrollbar flex-1">
             <div>
-              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-950 dark:text-white tracking-tight leading-snug">
-                {courseTitle}
-              </h2>
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-xl sm:text-2xl font-extrabold text-slate-950 dark:text-white tracking-tight leading-snug">
+                  {courseTitle}
+                </h2>
+                <div className="rounded-xl bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 px-3 py-1.5 text-right">
+                  <div className="text-[10px] uppercase tracking-[0.14em] text-slate-500 dark:text-zinc-400 font-bold">Preço</div>
+                  <div className="text-lg font-black text-slate-950 dark:text-white">{formatCoursePrice(course)}</div>
+                </div>
+              </div>
               {course.description && (
                 <p className="text-sm text-slate-600 dark:text-neutral-400 mt-2 line-clamp-2 leading-relaxed">
                   {course.description}
@@ -202,6 +234,36 @@ export const CourseEnrollModal = ({
                 </div>
               </div>
             </div>
+
+            {!isFree && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/20 p-3.5">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 rounded-lg bg-amber-100 dark:bg-amber-900/50 p-1.5 text-amber-700 dark:text-amber-300">
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs font-black uppercase tracking-[0.12em] text-amber-700 dark:text-amber-300">
+                      Confirmação final da compra
+                    </p>
+                    <p className="mt-1 text-sm text-slate-700 dark:text-zinc-200">
+                      Vai pagar <span className="font-bold">{formatCoursePrice(course)}</span> e receber acesso imediato ao curso.
+                    </p>
+                  </div>
+                </div>
+
+                <label className="mt-3 flex items-start gap-2 text-sm text-slate-700 dark:text-zinc-200 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isPaidConfirmation}
+                    onChange={(e) => setIsPaidConfirmation(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+                  />
+                  <span>
+                    Confirmo que desejo adquirir este curso por <span className="font-bold">{formatCoursePrice(course)}</span>.
+                  </span>
+                </label>
+              </div>
+            )}
 
             {/* What you get list */}
             <div className="space-y-2 text-xs">
@@ -242,10 +304,11 @@ export const CourseEnrollModal = ({
                 variant="primary"
                 size="md"
                 isLoading={isSubmitting}
+                disabled={!isFree && !isPaidConfirmation}
                 onClick={handleConfirmEnroll}
-                className="w-full sm:w-auto flex-1 font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 justify-center cursor-pointer"
+                className="w-full sm:w-auto flex-1 font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-600/25 justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isFree ? 'Confirmar Entrada Gratuita' : 'Confirmar Matrícula'}
+                {isFree ? 'Confirmar Entrada Gratuita' : `Confirmar compra • ${formatCoursePrice(course)}`}
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </div>

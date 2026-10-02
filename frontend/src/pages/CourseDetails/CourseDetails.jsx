@@ -68,7 +68,18 @@ export const CourseDetails = () => {
   const isInstructorOfThisCourse = Boolean(user && (user.id === course?.creator?.id || user.id === course?.creatorId || user.id === course?.instructorId));
   const isCreatorOrAdmin = Boolean(user && (user.role === 'ADMIN' || isInstructorOfThisCourse));
 
-  const outcomes = (Array.isArray(course?.learningOutcomes) && course.learningOutcomes.length > 0)
+  const formatCoursePrice = (course) => {
+  if (!course) return 'Grátis';
+
+  const rawPrice = Number(course.price);
+  const isFreeCourse = course.isFree || course.price === 0 || course.price === null || course.price === undefined || Number.isNaN(rawPrice) || rawPrice <= 0;
+
+  if (isFreeCourse) return 'Grátis';
+
+  return `€${rawPrice.toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1')}`;
+};
+
+const outcomes = (Array.isArray(course?.learningOutcomes) && course.learningOutcomes.length > 0)
     ? course.learningOutcomes
     : [
         'Construção de projetos práticos e arquiteturas de alta fiabilidade.',
@@ -202,8 +213,8 @@ export const CourseDetails = () => {
     );
   }
 
-  const isEnrolled = !!course.userEnrollment;
-  const userProgress = Math.round(course.userEnrollment?.progressPercent || 0);
+  const isEnrolled = Boolean(course?.isEnrolled || course?.userEnrollment || (user && course?.creator?.id === user.id));
+  const userProgress = Math.round(course?.userProgress ?? course?.userEnrollment?.progressPercent ?? 0);
   const totalLessons = (course.modules || []).reduce((acc, m) => acc + (m.lessons?.length || 0), 0);
   const previewVideo = course.previewVideoUrl || course.modules?.[0]?.lessons?.[0]?.videoUrl;
   const classmates = course.classmates || (course.space?.members?.map(m => m.user || m) || []);
@@ -392,11 +403,11 @@ export const CourseDetails = () => {
                   ) : (
                     <div className="flex items-baseline gap-2">
                       <span className="text-3xl font-black text-slate-950 dark:text-white">
-                        {course.isFree || course.price === 0 || !course.price ? 'Gratuito' : `€${course.price}`}
+                        {formatCoursePrice(course)}
                       </span>
-                      {!course.isFree && course.price > 0 && (
+                      {!course.isFree && Number(course.price || 0) > 0 && (
                         <span className="text-sm text-slate-400 line-through font-medium">
-                          €{(course.price * 1.5).toFixed(0)}
+                          €{(Number(course.price) * 1.5).toFixed(0)}
                         </span>
                       )}
                     </div>
@@ -444,9 +455,9 @@ export const CourseDetails = () => {
                   <div className="flex flex-col gap-2.5">
                     <button
                       onClick={() => setShowEnrollModal(true)}
-                      className="w-full py-3.5 px-4 rounded-xl font-black text-sm bg-blue-600 hover:bg-blue-500 text-white shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer"
+                      className="w-full py-3.5 px-4 rounded-xl font-black text-sm bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-600/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
                     >
-                      <span>{course.isFree ? 'Inscrever Gratuitamente' : 'Adquirir Acesso Completo'}</span>
+                      <span>{course.isFree ? 'Inscrever Gratuitamente' : `Comprar agora • ${formatCoursePrice(course)}`}</span>
                       <ArrowRight className="w-4 h-4" />
                     </button>
 

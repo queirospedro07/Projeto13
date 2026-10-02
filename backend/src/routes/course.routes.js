@@ -1,6 +1,18 @@
 ﻿import { Router } from 'express';
 import { queryAll, queryOne, execute, transaction } from '../database/connection.js';
 import { authenticate, optionalAuth } from '../middleware/auth.js';
+
+export const resolveCourseAccessState = ({ user, course, enrollmentRow }) => {
+  const isCreator = Boolean(user && course && (user.role === 'ADMIN' || user.id === course.creatorId || user.id === course.creator_id));
+  const userEnrollment = enrollmentRow || null;
+  return {
+    isCreator,
+    isEnrolled: isCreator || Boolean(userEnrollment),
+    userEnrollment,
+    userProgress: userEnrollment ? (userEnrollment.progressPercent ?? 0) : isCreator ? 100 : 0,
+  };
+};
+
 const router = Router();
 router.get('/my-learning', authenticate, async (req, res) => {
   try {
@@ -406,21 +418,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
     }
     let userEnrollment = null;
     if (req.user) {
-      let enrollmentRow = queryOne('SELECT * FROM enrollments WHERE userId = ? AND courseId = ?', [req.user.id, course.id]);
-      if (!enrollmentRow) {
-        const enrId = `enr-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-        const now = new Date().toISOString();
-        execute(`INSERT OR IGNORE INTO enrollments (id, userId, courseId, enrolledAt, progressPercent) VALUES (?, ?, ?, ?, ?)`, [enrId, req.user.id, course.id, now, course.creatorId === req.user.id ? 100 : 0]);
-        enrollmentRow = queryOne('SELECT * FROM enrollments WHERE userId = ? AND courseId = ?', [req.user.id, course.id]);
-      }
-      if (targetSpaceId) {
-        const memExists = queryOne('SELECT id FROM memberships WHERE spaceId = ? AND userId = ?', [targetSpaceId, req.user.id]);
-        if (!memExists) {
-          const memId = `mem-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-          const now = new Date().toISOString();
-          execute(`INSERT OR IGNORE INTO memberships (id, userId, spaceId, role, joinedAt) VALUES (?, ?, ?, 'MEMBER', ?)`, [memId, req.user.id, targetSpaceId, now]);
-        }
-      }
+      const enrollmentRow = queryOne('SELECT * FROM enrollments WHERE userId = ? AND courseId = ?', [req.user.id, course.id]);
       if (enrollmentRow) {
         const progresses = queryAll('SELECT * FROM lesson_progress WHERE enrollmentId = ?', [enrollmentRow.id]);
         userEnrollment = {
@@ -429,6 +427,12 @@ router.get('/:id', optionalAuth, async (req, res) => {
         };
       }
     }
+
+    const accessState = resolveCourseAccessState({
+      user: req.user,
+      course,
+      enrollmentRow: userEnrollment,
+    });
     const classmates = queryAll(`SELECT DISTINCT u.id, u.name, u.username, u.avatarUrl, u.role, u.xp, u.level
        FROM (
          SELECT userId FROM enrollments WHERE courseId = ?
@@ -514,6 +518,9 @@ router.get('/:id', optionalAuth, async (req, res) => {
       reviewsCount: reviewsList.length,
       averageRating: avgRating,
       userEnrollment,
+      isEnrolled: accessState.isEnrolled,
+      isCreator: accessState.isCreator,
+      userProgress: accessState.userProgress,
       classmates
     });
   } catch (err) {
