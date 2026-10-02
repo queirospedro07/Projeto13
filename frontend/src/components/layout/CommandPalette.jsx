@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Search, BookOpen, Users, Home, Trophy, FolderPlus, Settings, ArrowRight, Command, X, Clock, Trash2 } from 'lucide-react';
+import { formatCoursePrice } from '../../utils/formatters';
 import { api } from '../../services/api';
 const RECENT_SEARCHES_KEY = 'learnspace_recent_searches';
 export const CommandPalette = ({
@@ -129,7 +130,7 @@ export const CommandPalette = ({
       id: `course-${c.id}`,
       type: 'course',
       title: c.title,
-      subtitle: `${c.category || 'Geral'} • ${c.difficulty || 'Todos os níveis'} • ${c.isFree ? 'Gratuito' : `${c.price}€`}`,
+      subtitle: `${c.category || 'Geral'} • ${c.difficulty || 'Todos os níveis'} • ${formatCoursePrice(c)}`,
       to: `/courses/${c.id}`,
       icon: BookOpen,
       badge: 'Curso'

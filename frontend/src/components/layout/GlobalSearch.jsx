@@ -3,18 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, BookOpen, User, X, ArrowRight, Loader2, MessageSquare } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import { api } from '../../services/api';
-
-const formatCoursePrice = (course) => {
-  if (!course) return 'Grátis';
-
-  const price = Number(course.price);
-
-  if (course.isFree || course.price === 0 || course.price === null || course.price === undefined || Number.isNaN(price) || price === 0) {
-    return 'Grátis';
-  }
-
-  return `€${price.toFixed(2).replace(/\.00$/, '')}`;
-};
+import { formatCoursePrice } from '../../utils/formatters';
 
 export const GlobalSearch = ({ onClose } = {}) => {
   const [query, setQuery] = useState('');

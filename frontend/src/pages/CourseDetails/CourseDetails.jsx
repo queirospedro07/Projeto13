@@ -38,6 +38,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/ui/Toast';
 import { useActiveCall } from '../../context/ActiveCallContext';
 import { api } from '../../services/api';
+import { formatCoursePrice } from '../../utils/formatters';
 
 export const CourseDetails = () => {
   const { id } = useParams();
@@ -68,18 +69,7 @@ export const CourseDetails = () => {
   const isInstructorOfThisCourse = Boolean(user && (user.id === course?.creator?.id || user.id === course?.creatorId || user.id === course?.instructorId));
   const isCreatorOrAdmin = Boolean(user && (user.role === 'ADMIN' || isInstructorOfThisCourse));
 
-  const formatCoursePrice = (course) => {
-  if (!course) return 'Grátis';
-
-  const rawPrice = Number(course.price);
-  const isFreeCourse = course.isFree || course.price === 0 || course.price === null || course.price === undefined || Number.isNaN(rawPrice) || rawPrice <= 0;
-
-  if (isFreeCourse) return 'Grátis';
-
-  return `€${rawPrice.toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1')}`;
-};
-
-const outcomes = (Array.isArray(course?.learningOutcomes) && course.learningOutcomes.length > 0)
+  const outcomes = (Array.isArray(course?.learningOutcomes) && course.learningOutcomes.length > 0)
     ? course.learningOutcomes
     : [
         'Construção de projetos práticos e arquiteturas de alta fiabilidade.',

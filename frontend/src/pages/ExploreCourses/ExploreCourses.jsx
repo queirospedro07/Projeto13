@@ -6,6 +6,7 @@ import { SkeletonCard } from '../../components/ui/SkeletonLoader';
 import { Select } from '../../components/ui/Select';
 import { CourseEnrollModal } from '../../components/course/CourseEnrollModal';
 import { api } from '../../services/api';
+import { formatCoursePrice } from '../../utils/formatters';
 export const ExploreCourses = () => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -230,7 +231,7 @@ export const ExploreCourses = () => {
                     </Link>
 
                     <span className="text-xs font-black text-slate-900 dark:text-white shrink-0">
-                      {course.isFree || course.price === 0 ? 'Gratuito' : `€${course.price}`}
+                      {formatCoursePrice(course)}
                     </span>
                   </div>
 

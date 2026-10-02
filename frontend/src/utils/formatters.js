@@ -30,6 +30,18 @@ export const formatDifficulty = difficulty => {
       return difficulty || 'Geral';
   }
 };
+export const formatCoursePrice = value => {
+  if (typeof value === 'object' && value !== null) {
+    const rawPrice = Number(value.price ?? 0);
+    const isFreeCourse = Boolean(value.isFree) || value.price === 0 || value.price === null || value.price === undefined || Number.isNaN(rawPrice) || rawPrice <= 0;
+    if (isFreeCourse) return 'Grátis';
+    return `€${rawPrice.toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1')}`;
+  }
+
+  const rawPrice = Number(value ?? 0);
+  if (Number.isNaN(rawPrice) || rawPrice <= 0) return 'Grátis';
+  return `€${rawPrice.toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1')}`;
+};
 export const formatRelativeTime = isoString => {
   if (!isoString) return '';
   const date = new Date(isoString);

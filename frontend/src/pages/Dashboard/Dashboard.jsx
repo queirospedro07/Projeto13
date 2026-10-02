@@ -464,7 +464,7 @@ export const Dashboard = () => {
 
                 <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-zinc-800">
                   <span className="text-base font-black text-slate-950 dark:text-white">
-                    {c.isFree || c.price === 0 ? 'Gratuito' : `€${c.price}`}
+                    {formatCoursePrice(c)}
                   </span>
                   <Link to={`/courses/${c.id}`}>
                     <button className="px-4 py-2 rounded-lg text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors cursor-pointer">

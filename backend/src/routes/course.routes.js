@@ -342,33 +342,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
       }
     }
 
-    if (!targetSpaceId || isSharedSpace) {
-      const newSpaceId = `space-${course.id}`;
-      const now = new Date().toISOString();
-      const existingSpace = queryOne('SELECT id FROM spaces WHERE id = ?', [newSpaceId]);
-      if (!existingSpace) {
-        execute(
-          `INSERT INTO spaces (id, name, slug, description, iconUrl, bannerUrl, isPrivate, category, ownerId, memberCount, createdAt)
-           VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, 1, ?)`,
-          [
-            newSpaceId,
-            `Comunidade: ${course.title}`,
-            `comunidade-${course.slug || course.id}`,
-            `Espaço dedicado e canais exclusivos para a turma de ${course.title}.`,
-            course.thumbnailUrl || 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=100&auto=format&fit=crop&q=80',
-            course.bannerUrl || 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200&auto=format&fit=crop&q=80',
-            course.category || 'programming',
-            course.creatorId || 'user-sarah',
-            now
-          ]
-        );
-      }
-      execute('UPDATE courses SET spaceId = ? WHERE id = ?', [newSpaceId, course.id]);
-      course.spaceId = newSpaceId;
-      targetSpaceId = newSpaceId;
-    }
-
-    if (targetSpaceId) {
+    if (targetSpaceId && !isSharedSpace) {
       const spaceRow = queryOne('SELECT * FROM spaces WHERE id = ?', [targetSpaceId]);
       if (spaceRow) {
         let channels = queryAll('SELECT * FROM channels WHERE spaceId = ? ORDER BY orderIndex ASC', [spaceRow.id]);

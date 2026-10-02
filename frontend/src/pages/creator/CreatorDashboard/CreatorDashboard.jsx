@@ -187,7 +187,7 @@ export const CreatorDashboard = () => {
                         <span>{course._count?.enrollments || 0} alunos inscritos</span>
                         <span>•</span>
                         <span className="font-bold text-slate-900 dark:text-white">
-                          {course.isFree ? 'Gratuito' : `€${course.price}`}
+                          {formatCoursePrice(course)}
                         </span>
                       </div>
                     </div>

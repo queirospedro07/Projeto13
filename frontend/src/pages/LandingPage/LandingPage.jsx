@@ -529,7 +529,7 @@ export const LandingPage = () => {
 
               <div className="p-5 pt-0 border-t border-slate-100 dark:border-neutral-800/80 mt-2 flex items-center justify-between">
                 <span className="text-base font-bold text-slate-950 dark:text-white">
-                  {course.isFree || course.price === 0 ? 'Gratuito' : `€${course.price}`}
+                  {formatCoursePrice(course)}
                 </span>
 
                 <Link

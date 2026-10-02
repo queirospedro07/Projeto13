@@ -2359,7 +2359,7 @@ export const CourseBuilder = () => {
                       {difficulty}
                     </span>
                     <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                      {isFree ? 'Gratuito' : `€${price || 0}`}
+                      {isFree ? 'Gratuito' : formatCoursePrice({ price: Number(price) || 0, isFree: false })}
                     </span>
                   </div>
                 </div>

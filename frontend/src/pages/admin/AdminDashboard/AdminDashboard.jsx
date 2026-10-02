@@ -714,7 +714,7 @@ export const AdminDashboard = () => {
                         <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-neutral-400 font-mono">
                           <span>Criador: {course.creator?.name || 'Formador'}</span>
                           <span>Categoria: {course.category}</span>
-                          <span>Preço: {course.isFree ? 'Gratuito' : `€${course.price}`}</span>
+                          <span>Preço: {formatCoursePrice(course)}</span>
                           <span>{course.modulesCount || 0} módulos</span>
                         </div>
 

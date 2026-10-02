@@ -7,6 +7,7 @@ import { Avatar } from '../../../components/ui/Avatar';
 import { useToast } from '../../../components/ui/Toast';
 import { CourseEnrollModal } from '../../../components/course/CourseEnrollModal';
 import { api } from '../../../services/api';
+import { formatCoursePrice } from '../../../utils/formatters';
 export const DiscoverSpaces = () => {
   const [spaces, setSpaces] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -173,7 +174,7 @@ export const DiscoverSpaces = () => {
         </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredSpaces.map(space => {
         const isFree = space.isFree || space.price === 0 || space.price === null || space.price === undefined;
-        const priceFormatted = isFree ? 'Gratuito' : `€${space.price || 49}`;
+        const priceFormatted = formatCoursePrice({ ...space, isFree, price: space.price ?? 0 });
         const hasCommunity = space.channelsCount && space.channelsCount > 0 || space.hasCommunity !== false;
         return <div key={space.id} className="group rounded-xl bg-white dark:bg-[#0c0d12] border border-slate-200/90 dark:border-neutral-800 hover:border-slate-300 dark:hover:border-neutral-700 shadow-xs hover:shadow-sm transition-colors duration-150 overflow-hidden flex flex-col justify-between">
                 

@@ -17,17 +17,7 @@ import { Button } from '../ui/Button';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../ui/Toast';
 import { api } from '../../services/api';
-
-const formatCoursePrice = (course) => {
-  if (!course) return 'Grátis';
-
-  const rawPrice = Number(course.price);
-  const isFreeCourse = course.isFree || course.price === 0 || course.price === null || course.price === undefined || Number.isNaN(rawPrice) || rawPrice <= 0;
-
-  if (isFreeCourse) return 'Grátis';
-
-  return `€${rawPrice.toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1')}`;
-};
+import { formatCoursePrice } from '../../utils/formatters';
 
 export const CourseEnrollModal = ({
   isOpen,

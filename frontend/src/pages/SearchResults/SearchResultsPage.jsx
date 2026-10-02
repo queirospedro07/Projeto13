@@ -3,18 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Search, BookOpen, User, ArrowRight, Star, Clock, GraduationCap } from 'lucide-react';
 import { Avatar } from '../../components/ui/Avatar';
 import { api } from '../../services/api';
-
-const formatCoursePrice = (course) => {
-  if (!course) return 'Grátis';
-
-  const price = Number(course.price);
-
-  if (course.isFree || course.price === 0 || course.price === null || course.price === undefined || Number.isNaN(price) || price === 0) {
-    return 'Grátis';
-  }
-
-  return `€${price.toFixed(2).replace(/\.00$/, '')}`;
-};
+import { formatCoursePrice } from '../../utils/formatters';
 
 export const SearchResultsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();

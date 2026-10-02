@@ -7,6 +7,7 @@ import { Badge } from '../../../components/ui/Badge';
 import { Avatar } from '../../../components/ui/Avatar';
 import { useToast } from '../../../components/ui/Toast';
 import { api } from '../../../services/api';
+import { formatCoursePrice } from '../../../utils/formatters';
 export const SpaceDetails = () => {
   const {
     id
@@ -103,7 +104,7 @@ export const SpaceDetails = () => {
                 Acesso ao Curso
               </span>
               <span className="text-2xl font-bold text-slate-950">
-                {space.courses?.[0]?.isFree || !space.courses?.[0]?.price ? 'Gratuito' : `€${space.courses[0].price}`}
+                {formatCoursePrice(space.courses?.[0] || { isFree: true, price: 0 })}
               </span>
               <span className="text-[11px] text-slate-500 font-medium">
                 Inclui aulas, canais e certificado
