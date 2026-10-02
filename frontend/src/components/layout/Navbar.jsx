@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   LogOut,
   Plus,
@@ -15,7 +15,6 @@ import {
   Sparkles,
   Shield,
   Search,
-  LayoutDashboard,
   HelpCircle
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -30,8 +29,6 @@ export const Navbar = () => {
   const { theme, toggleTheme, actualTheme } = useTheme();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const location = useLocation();
-
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
 
@@ -61,46 +58,6 @@ export const Navbar = () => {
               <Logo size="md" showText={true} />
             </Link>
 
-            <Link
-              to="/dashboard"
-              className={`inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg transition-colors ${
-                location.pathname === '/dashboard'
-                  ? 'bg-slate-100 dark:bg-neutral-900 text-blue-600 dark:text-blue-400 font-bold'
-                  : 'text-slate-600 dark:text-neutral-400 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-neutral-900'
-              }`}
-            >
-              <LayoutDashboard className="w-4 h-4 text-blue-500 shrink-0" />
-              <span>Dashboard</span>
-            </Link>
-
-            <Link
-              to="/explore"
-              className="hidden md:inline-flex text-sm font-semibold text-slate-600 dark:text-neutral-400 hover:text-slate-950 dark:hover:text-white px-3 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-neutral-900 transition-colors"
-            >
-              Explorar Cursos
-            </Link>
-
-            <Link
-              to="/help"
-              className={`hidden lg:inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg transition-colors ${
-                location.pathname === '/help' || location.pathname === '/support'
-                  ? 'bg-slate-100 dark:bg-neutral-900 text-blue-600 dark:text-blue-400 font-bold'
-                  : 'text-slate-600 dark:text-neutral-400 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-neutral-900'
-              }`}
-            >
-              <HelpCircle className="w-4 h-4 text-blue-500" />
-              <span>Dúvidas & Suporte</span>
-            </Link>
-
-            {user && (
-              <Link
-                to="/messages"
-                className="hidden lg:inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 dark:text-neutral-400 hover:text-slate-950 dark:hover:text-white px-3 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-neutral-900 transition-colors"
-              >
-                <MessageSquare className="w-4 h-4 text-blue-500" />
-                <span>Mensagens</span>
-              </Link>
-            )}
           </div>
 
           {/* ── Center search — visible sm+ for all, hidden on mobile ── */}
