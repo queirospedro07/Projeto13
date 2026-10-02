@@ -22,15 +22,15 @@ export const AppLayout = () => {
   const showAppSidebar = Boolean(user) && !isLanding && !isAuthPage;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-white flex flex-col transition-colors duration-200">
+    <div className="h-dvh overflow-hidden bg-slate-50 dark:bg-black text-slate-900 dark:text-white flex flex-col transition-colors duration-200">
       <Navbar />
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 min-h-0 flex overflow-hidden">
         {showAppSidebar && <Sidebar />}
 
         <main
           id="main-content"
-          className={`flex-1 overflow-y-auto overscroll-y-none ${
+          className={`min-h-0 flex-1 overflow-y-auto overscroll-y-none ${
             isLearnPlayer || isLanding || isAuthPage || isCourseBuilder
               ? 'p-0'
               : isMessages
