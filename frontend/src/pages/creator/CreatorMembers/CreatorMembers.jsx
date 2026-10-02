@@ -1,11 +1,12 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import { Search, Shield, MessageSquare, X, ChevronDown } from 'lucide-react';
+import { Search, Shield, MessageSquare, X } from 'lucide-react';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Avatar } from '../../../components/ui/Avatar';
+import { Select } from '../../../components/ui/Select';
 import { useToast } from '../../../components/ui/Toast';
 import { api } from '../../../services/api';
 export const CreatorMembers = () => {
@@ -188,7 +189,7 @@ export const CreatorMembers = () => {
           </div>
 
           <div className="relative">
-            <select
+            <Select
               value={selectedCourseFilter}
               onChange={e => setSelectedCourseFilter(e.target.value)}
               className="appearance-none w-full sm:w-auto bg-white dark:bg-[#151720] border border-slate-200 dark:border-[#222636] focus:border-indigo-500 rounded-xl pl-3.5 pr-8 py-2 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none cursor-pointer shadow-2xs"
@@ -199,8 +200,7 @@ export const CreatorMembers = () => {
                   {c.title}
                 </option>
               ))}
-            </select>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </Select>
           </div>
         </div>
       </div>

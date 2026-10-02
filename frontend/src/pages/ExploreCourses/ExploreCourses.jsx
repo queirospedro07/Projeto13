@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Search, Star, BookOpen, Clock, GraduationCap, Check, ArrowRight } from 'lucide-react';
 import { Avatar } from '../../components/ui/Avatar';
 import { SkeletonCard } from '../../components/ui/SkeletonLoader';
+import { Select } from '../../components/ui/Select';
 import { CourseEnrollModal } from '../../components/course/CourseEnrollModal';
 import { api } from '../../services/api';
 export const ExploreCourses = () => {
@@ -94,7 +95,7 @@ export const ExploreCourses = () => {
             <div className="flex items-center gap-1.5">
               <span className="font-bold text-slate-700 dark:text-neutral-300 text-xs">Nível:</span>
               <div className="relative">
-                <select
+                <Select
                   value={selectedDifficulty}
                   onChange={e => setSelectedDifficulty(e.target.value)}
                   className="appearance-none bg-slate-50 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-700 text-slate-900 dark:text-white rounded-xl pl-3 pr-8 py-1.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer shadow-2xs"
@@ -103,15 +104,14 @@ export const ExploreCourses = () => {
                   <option value="Beginner" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Iniciante</option>
                   <option value="Intermediate" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Intermédio</option>
                   <option value="Advanced" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Avançado</option>
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </Select>
               </div>
             </div>
 
             <div className="flex items-center gap-1.5">
               <span className="font-bold text-slate-700 dark:text-neutral-300 text-xs">Preço:</span>
               <div className="relative">
-                <select
+                <Select
                   value={selectedPrice}
                   onChange={e => setSelectedPrice(e.target.value)}
                   className="appearance-none bg-slate-50 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-700 text-slate-900 dark:text-white rounded-xl pl-3 pr-8 py-1.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer shadow-2xs"
@@ -119,8 +119,7 @@ export const ExploreCourses = () => {
                   <option value="all" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Todos os Preços</option>
                   <option value="free" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Gratuito</option>
                   <option value="paid" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Pago</option>
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </Select>
               </div>
             </div>
           </div>
@@ -128,7 +127,7 @@ export const ExploreCourses = () => {
           <div className="flex items-center gap-1.5 sm:gap-2">
             <span className="font-bold text-slate-700 dark:text-neutral-300 text-xs">Ordenar:</span>
             <div className="relative">
-              <select
+              <Select
                 value={selectedSort}
                 onChange={e => setSelectedSort(e.target.value)}
                 className="appearance-none bg-slate-50 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-700 text-slate-900 dark:text-white rounded-xl pl-3 pr-8 py-1.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer shadow-2xs"
@@ -137,8 +136,7 @@ export const ExploreCourses = () => {
                 <option value="newest" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Mais Recentes</option>
                 <option value="price-low" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Preço: Menor para Maior</option>
                 <option value="price-high" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Preço: Maior para Menor</option>
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </Select>
             </div>
           </div>
         </div>

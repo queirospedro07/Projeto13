@@ -46,6 +46,7 @@ import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Avatar } from '../../components/ui/Avatar';
 import { Modal } from '../../components/ui/Modal';
+import { Select } from '../../components/ui/Select';
 import { SEO } from '../../components/common/SEO';
 
 const FALLBACK_FAQ = [
@@ -1290,38 +1291,17 @@ export const HelpSupportPage = () => {
         )}
 
         {/* ── MODAL: ABRIR NOVO TICKET ── */}
-        {showNewTicketModal && (
-          <div className="fixed inset-0 z-[9999] overflow-y-auto" style={{ isolation: 'isolate' }}>
-            <div
-              className="fixed inset-0 bg-black/80 dark:bg-black/90 transition-opacity"
-              onClick={() => setShowNewTicketModal(false)}
-              aria-hidden="true"
-            />
-            <div className="flex min-h-full items-center justify-center p-4 text-center">
-              <Card className="relative w-full max-w-lg p-6 sm:p-8 space-y-5 shadow-2xl z-10 animate-fade-in text-left border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#0c0d10]">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-blue-600/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 flex items-center justify-center">
-                      <Ticket className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-black text-slate-900 dark:text-white">
-                        Abrir Ticket de Suporte
-                      </h3>
-                      <p className="text-xs text-slate-500 dark:text-neutral-400">
-                        Envie o seu pedido diretamente para a equipa técnica e pedagógica.
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setShowNewTicketModal(false)}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-
-                <form onSubmit={handleCreateTicket} className="space-y-4 pt-1">
+        <Modal
+          isOpen={showNewTicketModal}
+          onClose={() => setShowNewTicketModal(false)}
+          title="Abrir Ticket de Suporte"
+          maxWidth="lg"
+        >
+          <div className="space-y-4">
+            <p className="text-xs text-slate-500 dark:text-neutral-400">
+              Envie o seu pedido diretamente para a equipa técnica e pedagógica.
+            </p>
+            <form onSubmit={handleCreateTicket} className="space-y-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 dark:text-neutral-300 uppercase tracking-wider mb-1.5">
                       Assunto do Pedido *
@@ -1342,7 +1322,7 @@ export const HelpSupportPage = () => {
                         Categoria
                       </label>
                       <div className="relative">
-                        <select
+                        <Select
                           value={newTicketCategory}
                           onChange={(e) => setNewTicketCategory(e.target.value)}
                           className="w-full appearance-none bg-slate-50 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-700 rounded-xl px-3.5 py-2.5 pr-8 text-xs sm:text-sm text-slate-900 dark:text-white font-semibold focus:outline-none focus:border-blue-500 cursor-pointer"
@@ -1354,7 +1334,7 @@ export const HelpSupportPage = () => {
                           <option value="Formadores & Estúdio" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Formadores & Estúdio</option>
                           <option value="Conta & Segurança" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Conta & Segurança</option>
                           <option value="Problema Técnico" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Problema Técnico / Bug</option>
-                        </select>
+                        </Select>
                       </div>
                     </div>
 
@@ -1363,7 +1343,7 @@ export const HelpSupportPage = () => {
                         Prioridade
                       </label>
                       <div className="relative">
-                        <select
+                        <Select
                           value={newTicketPriority}
                           onChange={(e) => setNewTicketPriority(e.target.value)}
                           className="w-full appearance-none bg-slate-50 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-700 rounded-xl px-3.5 py-2.5 pr-8 text-xs sm:text-sm text-slate-900 dark:text-white font-semibold focus:outline-none focus:border-blue-500 cursor-pointer"
@@ -1372,7 +1352,7 @@ export const HelpSupportPage = () => {
                           <option value="MÉDIA" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Média</option>
                           <option value="ALTA" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Alta</option>
                           <option value="URGENTE" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Urgente</option>
-                        </select>
+                        </Select>
                       </div>
                     </div>
                   </div>
@@ -1412,11 +1392,9 @@ export const HelpSupportPage = () => {
                       {isCreatingTicket ? 'A submeter...' : 'Submeter Ticket'}
                     </Button>
                   </div>
-                </form>
-              </Card>
-            </div>
+            </form>
           </div>
-        )}
+        </Modal>
       </div>
     </>
   );

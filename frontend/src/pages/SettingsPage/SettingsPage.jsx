@@ -15,12 +15,12 @@ import {
   Globe,
   MessageSquare,
   Users,
-  Bell,
-  ChevronDown
+  Bell
 } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
+import { Select } from '../../components/ui/Select';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useToast } from '../../components/ui/Toast';
@@ -263,7 +263,7 @@ export const SettingsPage = () => {
             </div>
 
             <div className="relative shrink-0 w-full sm:w-72">
-              <select
+              <Select
                 id="dm-permission"
                 value={dmPermission}
                 onChange={e => setDmPermission(e.target.value)}
@@ -281,8 +281,7 @@ export const SettingsPage = () => {
                 <option value="NONE" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white py-1">
                   Ninguém (Desativar DMs privadas)
                 </option>
-              </select>
-              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </Select>
             </div>
           </div>
 
@@ -317,7 +316,7 @@ export const SettingsPage = () => {
             </div>
 
             <div className="relative shrink-0 w-full sm:w-72">
-              <select
+              <Select
                 id="friends-vis"
                 value={friendsListVisibility}
                 onChange={e => setFriendsListVisibility(e.target.value)}
@@ -332,8 +331,7 @@ export const SettingsPage = () => {
                 <option value="PRIVATE" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white py-1">
                   Privado (Apenas eu)
                 </option>
-              </select>
-              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </Select>
             </div>
           </div>
 
@@ -349,7 +347,7 @@ export const SettingsPage = () => {
             </div>
 
             <div className="relative shrink-0 w-full sm:w-72">
-              <select
+              <Select
                 id="online-vis"
                 value={onlineStatusVisibility}
                 onChange={e => setOnlineStatusVisibility(e.target.value)}
@@ -364,8 +362,7 @@ export const SettingsPage = () => {
                 <option value="HIDDEN" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white py-1">
                   Invisível / Ocultar Sempre
                 </option>
-              </select>
-              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </Select>
             </div>
           </div>
 

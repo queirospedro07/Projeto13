@@ -4,6 +4,7 @@ import { Layers, Hash, Volume2, HelpCircle, Plus, Trash2, ArrowRight, ArrowLeft,
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { DraggableImageCrop } from '../../../components/ui/DraggableImageCrop';
+import { Select } from '../../../components/ui/Select';
 import { useToast } from '../../../components/ui/Toast';
 import { useAuth } from '../../../context/AuthContext';
 import { soundEffects } from '../../../services/soundEffects';
@@ -214,7 +215,7 @@ export const QuizLessonEditor = ({
                   <span className="w-5 h-5 rounded-md bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 font-black text-[11px] flex items-center justify-center border border-indigo-200 dark:border-indigo-800/40">
                     {qIdx + 1}
                   </span>
-                  <select value={q.type} onChange={e => handleUpdateQuestion(q.id, {
+                  <Select value={q.type} onChange={e => handleUpdateQuestion(q.id, {
               type: e.target.value
             })} className="px-2 py-1 rounded-lg bg-slate-50 dark:bg-[#1c1f2b] border border-slate-200 dark:border-[#2e3346] text-slate-900 dark:text-zinc-100 text-xs font-bold cursor-pointer focus:outline-none">
                     <option value="single">Escolha Única (1 Correta)</option>
@@ -222,7 +223,7 @@ export const QuizLessonEditor = ({
                     <option value="find-incorrect">Encontre o Erro (Assinalar a Incorreta)</option>
                     <option value="true-false">Verdadeiro ou Falso</option>
                     <option value="open-ended">Resposta por Extenso / Aberta</option>
-                  </select>
+                  </Select>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -289,12 +290,12 @@ export const QuizLessonEditor = ({
                       <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-300">
                         Critério de Avaliação
                       </label>
-                      <select value={q.gradingMode || 'auto'} onChange={e => handleUpdateQuestion(q.id, {
+                      <Select value={q.gradingMode || 'auto'} onChange={e => handleUpdateQuestion(q.id, {
                 gradingMode: e.target.value
               })} className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-[#12141c] border border-slate-200 dark:border-[#2b3044] text-slate-900 dark:text-zinc-100 text-xs focus:outline-none">
                         <option value="auto">Automático (Palavras-chave)</option>
                         <option value="teacher">Avaliação do Instrutor</option>
-                      </select>
+                      </Select>
                     </div>
                   </div>
 
@@ -1151,7 +1152,7 @@ export const CourseBuilder = () => {
                     Área Temática / Categoria
                   </label>
                   <div className="relative">
-                    <select
+                    <Select
                       value={category}
                       onChange={e => setCategory(e.target.value)}
                       className="w-full appearance-none bg-white dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-xl px-4 py-3 pr-10 text-sm font-semibold text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none cursor-pointer transition-colors shadow-2xs"
@@ -1170,8 +1171,7 @@ export const CourseBuilder = () => {
                       <option value="Música & Produção Áudio">Música, Áudio & Produção Sonora</option>
                       <option value="Direito & Sociedade">Direito, Cidadania & Humanidades</option>
                       <option value="Outras Áreas">Outras Áreas & Especializações</option>
-                    </select>
-                    <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </Select>
                   </div>
                 </div>
 
@@ -1180,7 +1180,7 @@ export const CourseBuilder = () => {
                     Nível de Dificuldade
                   </label>
                   <div className="relative">
-                    <select
+                    <Select
                       value={difficulty}
                       onChange={e => setDifficulty(e.target.value)}
                       className="w-full appearance-none bg-white dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-xl px-4 py-3 pr-10 text-sm font-semibold text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none cursor-pointer transition-colors shadow-2xs"
@@ -1188,8 +1188,7 @@ export const CourseBuilder = () => {
                       <option value="Iniciante">Iniciante (Sem pré-requisitos)</option>
                       <option value="Intermédio">Intermédio (Conhecimentos prévios)</option>
                       <option value="Avançado">Avançado (Especialização)</option>
-                    </select>
-                    <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </Select>
                   </div>
                 </div>
 
@@ -1354,13 +1353,13 @@ export const CourseBuilder = () => {
                     <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-400">
                       Raridade
                     </label>
-                    <select value={badgeRarity} onChange={e => setBadgeRarity(e.target.value)} className="w-full bg-white dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none cursor-pointer">
+                    <Select value={badgeRarity} onChange={e => setBadgeRarity(e.target.value)} className="w-full bg-white dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none cursor-pointer">
                       <option value="bronze">Bronze (Iniciante)</option>
                       <option value="silver">Prata (Intermédio)</option>
                       <option value="gold">Ouro (Avançado)</option>
                       <option value="platinum">Platina (Especialista)</option>
                       <option value="diamond">Diamante (Mestre)</option>
-                    </select>
+                    </Select>
                   </div>
                 </div>
               </Card>
@@ -1677,7 +1676,7 @@ export const CourseBuilder = () => {
                                 <label className="text-[10px] font-bold text-slate-600 dark:text-zinc-400">
                                   Modo de Envio
                                 </label>
-                                <select value={chan.accessMode || 'discussion'} onChange={e => handleUpdateChannel(chan.id, 'accessMode', e.target.value)} className="w-full bg-white dark:bg-[#141620] border border-slate-300 dark:border-[#2b3044] rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white font-medium cursor-pointer">
+                                <Select value={chan.accessMode || 'discussion'} onChange={e => handleUpdateChannel(chan.id, 'accessMode', e.target.value)} className="w-full bg-white dark:bg-[#141620] border border-slate-300 dark:border-[#2b3044] rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white font-medium cursor-pointer">
                                   <option value="discussion">
                                     Discussão Aberta (Todos podem publicar)
                                   </option>
@@ -1687,18 +1686,18 @@ export const CourseBuilder = () => {
                                   <option value="qa">
                                     Fila de Dúvidas (Perguntas & Respostas)
                                   </option>
-                                </select>
+                                </Select>
                               </div> : <div>
                                 <label className="text-[10px] font-bold text-slate-600 dark:text-zinc-400">
                                   Formato da Sala ao Vivo
                                 </label>
-                                <select value={chan.voiceMode || defaultCallMode} onChange={e => handleUpdateChannel(chan.id, 'voiceMode', e.target.value)} className="w-full bg-white dark:bg-[#141620] border border-slate-300 dark:border-[#2b3044] rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white font-medium cursor-pointer">
+                                <Select value={chan.voiceMode || defaultCallMode} onChange={e => handleUpdateChannel(chan.id, 'voiceMode', e.target.value)} className="w-full bg-white dark:bg-[#141620] border border-slate-300 dark:border-[#2b3044] rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white font-medium cursor-pointer">
                                   <option value="open">Modo Aberto (Todos falam livremente)</option>
                                   <option value="stage">
                                     Modo Palco (Alunos entram silenciados)
                                   </option>
                                   <option value="qa">Modo Dúvidas (Fila de intervenção)</option>
-                                </select>
+                                </Select>
                               </div>}
 
                             <div>
@@ -1988,7 +1987,7 @@ export const CourseBuilder = () => {
                       >
                         <ChevronDown className="w-4 h-4" />
                       </button>
-                      <select
+                      <Select
                         value={mod.dripMode || 'instant'}
                         onChange={e => handleUpdateModule(mod.id, 'dripMode', e.target.value)}
                         className="bg-white dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-lg px-2 py-1 text-xs text-slate-700 dark:text-zinc-300 font-bold cursor-pointer"
@@ -1997,7 +1996,7 @@ export const CourseBuilder = () => {
                         <option value="instant">Imediato</option>
                         <option value="sequential">Sequencial</option>
                         <option value="drip">Drip (Dias)</option>
-                      </select>
+                      </Select>
                       <button
                         type="button"
                         onClick={() => handleRemoveModule(mod.id)}
@@ -2049,7 +2048,7 @@ export const CourseBuilder = () => {
                             >
                               <ChevronDown className="w-3.5 h-3.5" />
                             </button>
-                            <select
+                            <Select
                               value={les.type}
                               onChange={e => handleUpdateLesson(mod.id, les.id, 'type', e.target.value)}
                               className="bg-white dark:bg-[#141620] border border-slate-300 dark:border-[#2b3044] rounded-lg px-2 py-1 text-xs text-indigo-600 dark:text-indigo-400 font-bold cursor-pointer"
@@ -2059,7 +2058,7 @@ export const CourseBuilder = () => {
                               <option value="code">Código</option>
                               <option value="quiz">Questionário</option>
                               <option value="resource">Recursos</option>
-                            </select>
+                            </Select>
                             <button
                               type="button"
                               onClick={() => handleRemoveLesson(mod.id, les.id)}

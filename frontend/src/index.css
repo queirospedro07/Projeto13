@@ -365,5 +365,194 @@ option:checked {
   color: #ffffff !important;
 }
 
+.custom-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 12rem;
+  max-width: 100%;
+  min-height: 2.75rem;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.75rem;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  color: #0f172a;
+  box-shadow: 0 2px 5px rgb(15 23 42 / 0.08), inset 0 1px 0 rgb(255 255 255 / 0.9);
+  font-size: 0.875rem;
+  font-weight: 650;
+  line-height: 1.25rem;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease, transform 150ms ease;
+}
+
+.custom-select-trigger:hover:not(:disabled) {
+  border-color: #93a4bd;
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgb(15 23 42 / 0.1);
+}
+
+.custom-select-trigger:focus-visible,
+.custom-select-trigger[aria-expanded="true"] {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgb(59 130 246 / 0.16), 0 5px 14px rgb(15 23 42 / 0.1);
+}
+
+.custom-select-trigger:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.custom-select-trigger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+html.dark .custom-select-trigger {
+  border-color: #343744;
+  background: linear-gradient(180deg, #191c25 0%, #11131a 100%);
+  color: #f4f4f5;
+  box-shadow: 0 3px 8px rgb(0 0 0 / 0.28), inset 0 1px 0 rgb(255 255 255 / 0.04);
+}
+
+html.dark .custom-select-trigger:hover:not(:disabled) {
+  border-color: #4b5568;
+  background: #1c202a;
+}
+
+html.dark .custom-select-trigger:focus-visible,
+html.dark .custom-select-trigger[aria-expanded="true"] {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgb(96 165 250 / 0.2), 0 5px 14px rgb(0 0 0 / 0.32);
+}
+
+.custom-select-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.custom-select-chevron {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+  color: #64748b;
+  transition: transform 150ms ease, color 150ms ease;
+}
+
+.custom-select-chevron.is-open {
+  transform: rotate(180deg);
+  color: #2563eb;
+}
+
+html.dark .custom-select-chevron {
+  color: #a1a1aa;
+}
+
+.custom-select-menu {
+  position: fixed;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.375rem;
+  overflow-y: auto;
+  border: 1px solid #dbe2ec;
+  border-radius: 0.875rem;
+  background: #ffffff;
+  box-shadow: 0 18px 45px rgb(15 23 42 / 0.2), 0 4px 12px rgb(15 23 42 / 0.08);
+  animation: select-menu-in 130ms ease-out both;
+  transform-origin: top center;
+}
+
+html.dark .custom-select-menu {
+  border-color: #343744;
+  background: #171a22;
+  box-shadow: 0 20px 48px rgb(0 0 0 / 0.55), 0 4px 14px rgb(0 0 0 / 0.32);
+}
+
+.custom-select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 0.625rem;
+  background: transparent;
+  color: #334155;
+  font-size: 0.8125rem;
+  font-weight: 550;
+  line-height: 1.25rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.custom-select-option:hover,
+.custom-select-option.is-active {
+  border-color: #dbeafe;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.custom-select-option.is-selected {
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+.custom-select-option:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.custom-select-option-label {
+  min-width: 0;
+}
+
+.custom-select-option-check {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+  color: #2563eb;
+}
+
+html.dark .custom-select-option {
+  color: #d4d4d8;
+}
+
+html.dark .custom-select-option:hover,
+html.dark .custom-select-option.is-active {
+  border-color: rgb(59 130 246 / 0.22);
+  background: rgb(37 99 235 / 0.16);
+  color: #bfdbfe;
+}
+
+html.dark .custom-select-option.is-selected,
+html.dark .custom-select-option-check {
+  color: #93c5fd;
+}
+
+@keyframes select-menu-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .custom-select-trigger,
+  .custom-select-chevron,
+  .custom-select-option {
+    transition: none;
+  }
+
+  .custom-select-menu {
+    animation: none;
+  }
+}
+
 
 
