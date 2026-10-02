@@ -25,6 +25,7 @@ import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Avatar } from '../../../components/ui/Avatar';
+import { Modal } from '../../../components/ui/Modal';
 import { useToast } from '../../../components/ui/Toast';
 import { api } from '../../../services/api';
 
@@ -904,7 +905,7 @@ export const AdminDashboard = () => {
           {/* Tickets Grid / Master-Detail Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* Tickets List */}
-            <div className={`flex flex-col gap-3 ${selectedTicket ? 'lg:col-span-5' : 'lg:col-span-12'}`}>
+            <div className="flex flex-col gap-3 lg:col-span-12">
               {supportTickets
                 .filter(t => ticketStatusFilter === 'ALL' || t.status === ticketStatusFilter)
                 .length === 0 ? (
@@ -989,8 +990,15 @@ export const AdminDashboard = () => {
             </div>
 
             {/* Selected Ticket Conversation & Actions */}
-            {selectedTicket && (
-              <div className="lg:col-span-7 flex flex-col rounded-2xl bg-white dark:bg-[#0b0c0e] border border-slate-200 dark:border-neutral-800 shadow-sm overflow-hidden sticky top-24">
+            <Modal
+              isOpen={Boolean(selectedTicket)}
+              onClose={() => setSelectedTicket(null)}
+              maxWidth="4xl"
+              title="Conversa de Suporte"
+              bodyClassName="p-0 overflow-hidden flex-1 min-h-0"
+            >
+              {selectedTicket && (
+              <div className="flex h-[min(70vh,680px)] min-h-0 flex-col bg-white dark:bg-[#0b0c0e]">
                 {/* Header */}
                 <div className="p-5 border-b border-slate-200 dark:border-neutral-800 bg-slate-50/70 dark:bg-white/[0.02] flex flex-col gap-3">
                   <div className="flex items-start justify-between gap-4">
@@ -1008,12 +1016,6 @@ export const AdminDashboard = () => {
                       </h3>
                     </div>
 
-                    <button
-                      onClick={() => setSelectedTicket(null)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-neutral-800 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
                   </div>
 
                   {/* Status Action Buttons */}
@@ -1061,7 +1063,7 @@ export const AdminDashboard = () => {
                 </div>
 
                 {/* Messages Feed */}
-                <div className="p-5 flex flex-col gap-4 max-h-[420px] overflow-y-auto custom-scrollbar bg-white dark:bg-[#07080a]">
+                <div className="p-5 flex-1 min-h-0 flex flex-col gap-4 overflow-y-auto custom-scrollbar bg-white dark:bg-[#07080a]">
                   {selectedTicket.messages && selectedTicket.messages.length > 0 ? (
                     selectedTicket.messages.map((msg, index) => {
                       const isAdminMsg = msg.isAdminReply || msg.sender?.role === 'ADMIN' || msg.sender?.role === 'SUBADMIN';
@@ -1142,7 +1144,8 @@ export const AdminDashboard = () => {
                   </form>
                 </div>
               </div>
-            )}
+              )}
+            </Modal>
           </div>
         </div>
       )}

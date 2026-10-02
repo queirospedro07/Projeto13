@@ -45,6 +45,7 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Avatar } from '../../components/ui/Avatar';
+import { Modal } from '../../components/ui/Modal';
 import { SEO } from '../../components/common/SEO';
 
 const FALLBACK_FAQ = [
@@ -228,6 +229,7 @@ export const HelpSupportPage = () => {
   const [loadingTickets, setLoadingTickets] = useState(false);
   const [selectedTicketId, setSelectedTicketId] = useState(searchParams.get('ticketId') || null);
   const [selectedTicketData, setSelectedTicketData] = useState(null);
+  const [isTicketModalOpen, setIsTicketModalOpen] = useState(Boolean(searchParams.get('ticketId')));
   const [ticketReplyContent, setTicketReplyContent] = useState('');
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
 
@@ -339,6 +341,7 @@ export const HelpSupportPage = () => {
       const newId = created?.id || created?.ticket?.id;
       if (newId) {
         setSelectedTicketId(newId);
+        setIsTicketModalOpen(true);
         setActiveTab('tickets');
       }
     } catch (err) {
@@ -1055,9 +1058,9 @@ export const HelpSupportPage = () => {
                 </Link>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              <div className="flex flex-col gap-6">
                 {/* Tickets List */}
-                <div className="lg:col-span-5 flex flex-col gap-3">
+                <div className="flex flex-col gap-3">
                   <div className="flex items-center justify-between px-1">
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500">
                       Os Meus Tickets ({myTickets.length})
@@ -1114,7 +1117,10 @@ export const HelpSupportPage = () => {
                       return (
                         <div
                           key={ticket.id}
-                          onClick={() => setSelectedTicketId(ticket.id)}
+                          onClick={() => {
+                            setSelectedTicketId(ticket.id);
+                            setIsTicketModalOpen(true);
+                          }}
                           className={`p-4 rounded-2xl border transition-all cursor-pointer text-left bg-white dark:bg-[#0b0c0e] ${
                             isSelected
                               ? 'border-blue-600 ring-2 ring-blue-600/20 shadow-md'
@@ -1161,10 +1167,15 @@ export const HelpSupportPage = () => {
                   )}
                 </div>
 
-                {/* Ticket Details & Conversation */}
-                <div className="lg:col-span-7 flex flex-col rounded-2xl bg-white dark:bg-[#0b0c0e] border border-slate-200 dark:border-neutral-800 shadow-sm overflow-hidden sticky top-24">
-                  {selectedTicketData ? (
-                    <>
+                <Modal
+                  isOpen={isTicketModalOpen && selectedTicketData?.id === selectedTicketId}
+                  onClose={() => setIsTicketModalOpen(false)}
+                  maxWidth="4xl"
+                  title="Conversa do Ticket"
+                  bodyClassName="p-0 overflow-hidden flex-1 min-h-0"
+                >
+                  {selectedTicketData && (
+                    <div className="flex h-[min(70vh,680px)] min-h-0 flex-col bg-white dark:bg-[#0b0c0e]">
                       {/* Ticket Header */}
                       <div className="p-5 border-b border-slate-200 dark:border-neutral-800 bg-slate-50/70 dark:bg-white/[0.02] flex flex-col gap-2">
                         <div className="flex items-center justify-between gap-2">
@@ -1192,7 +1203,7 @@ export const HelpSupportPage = () => {
                       </div>
 
                       {/* Messages History */}
-                      <div className="p-5 flex flex-col gap-4 max-h-[420px] overflow-y-auto custom-scrollbar bg-white dark:bg-[#07080a]">
+                      <div className="p-5 flex-1 min-h-0 flex flex-col gap-4 overflow-y-auto custom-scrollbar bg-white dark:bg-[#07080a]">
                         {selectedTicketData.messages?.map((msg, idx) => {
                           const isAdmin = msg.isAdminReply || msg.senderRole === 'ADMIN' || msg.senderRole === 'SUBADMIN' || msg.sender?.role === 'ADMIN' || msg.sender?.role === 'SUBADMIN';
                           const senderName = msg.senderName || msg.sender?.name || (isAdmin ? 'Suporte' : 'Eu');
@@ -1270,13 +1281,9 @@ export const HelpSupportPage = () => {
                           </form>
                         </div>
                       )}
-                    </>
-                  ) : (
-                    <div className="p-16 text-center text-slate-400 text-xs">
-                      Selecione um ticket na lista para visualizar o histórico de mensagens.
                     </div>
                   )}
-                </div>
+                </Modal>
               </div>
             )}
           </div>
@@ -1348,7 +1355,6 @@ export const HelpSupportPage = () => {
                           <option value="Conta & Segurança" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Conta & Segurança</option>
                           <option value="Problema Técnico" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Problema Técnico / Bug</option>
                         </select>
-                        <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                       </div>
                     </div>
 
@@ -1367,7 +1373,6 @@ export const HelpSupportPage = () => {
                           <option value="ALTA" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Alta</option>
                           <option value="URGENTE" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Urgente</option>
                         </select>
-                        <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                       </div>
                     </div>
                   </div>

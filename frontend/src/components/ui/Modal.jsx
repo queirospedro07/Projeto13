@@ -7,7 +7,8 @@ export const Modal = ({
   onClose,
   title,
   children,
-  maxWidth = 'lg'
+  maxWidth = 'lg',
+  bodyClassName = 'p-6 sm:p-8 overflow-y-auto custom-scrollbar text-slate-900 dark:text-neutral-100 flex-1 min-h-0'
 }) => {
   const [mounted, setMounted] = useState(false);
 
@@ -41,7 +42,7 @@ export const Modal = ({
   };
 
   const modalContent = (
-    <div className="fixed inset-0 z-[9999] overflow-y-auto" style={{ isolation: 'isolate' }}>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto p-4 sm:p-6" style={{ isolation: 'isolate' }}>
       {/* Crisp Solid Dark Backdrop - Fixed to viewport */}
       <div 
         className="fixed inset-0 bg-black/80 dark:bg-black/90 transition-opacity" 
@@ -49,12 +50,10 @@ export const Modal = ({
         aria-hidden="true"
       />
 
-      {/* Centering container that enables natural full vertical scrolling without cut-offs */}
-      <div className="flex min-h-full items-center justify-center p-4 sm:p-6 text-center">
-        <div 
-          className={`relative w-full ${maxWidths[maxWidth]} bg-white dark:bg-[#0c0d12] border border-slate-200 dark:border-neutral-800 rounded-2xl shadow-2xl text-left overflow-hidden z-10 animate-fade-in my-6 max-h-[88vh] flex flex-col text-slate-900 dark:text-white`}
-          onClick={(e) => e.stopPropagation()}
-        >
+      <div
+        className={`relative w-full ${maxWidths[maxWidth]} bg-white dark:bg-[#0c0d12] border border-slate-200 dark:border-neutral-800 rounded-2xl shadow-2xl text-left overflow-hidden z-10 animate-fade-in max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-3rem)] flex flex-col text-slate-900 dark:text-white`}
+        onClick={(e) => e.stopPropagation()}
+      >
           {title && (
             <div className="flex items-center justify-between px-6 py-4.5 border-b border-slate-100 dark:border-neutral-800 bg-slate-50/80 dark:bg-[#12141a] shrink-0">
               <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">
@@ -70,9 +69,8 @@ export const Modal = ({
             </div>
           )}
 
-          <div className="p-6 sm:p-8 overflow-y-auto custom-scrollbar text-slate-900 dark:text-neutral-100 flex-1">
-            {children}
-          </div>
+        <div className={bodyClassName}>
+          {children}
         </div>
       </div>
     </div>
