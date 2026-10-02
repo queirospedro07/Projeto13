@@ -29,7 +29,7 @@ export const ToastProvider = ({
   }}>
       {children}
       
-      <div className="fixed top-5 right-5 z-[9999] flex flex-col gap-3 pointer-events-none max-w-sm sm:max-w-md w-full px-4 sm:px-0">
+      <div className="fixed top-5 inset-x-0 sm:left-auto sm:right-5 z-[9999] flex flex-col gap-3 pointer-events-none w-full max-w-sm sm:max-w-md px-4 sm:px-0" role="status" aria-live="polite">
         {toasts.map(t => <div key={t.id} className="pointer-events-auto flex items-start gap-3.5 p-4 bg-slate-950/90 dark:bg-black/95 backdrop-blur-xl border border-slate-700/60 dark:border-white/15 text-white rounded-2xl shadow-2xl shadow-black/60 animate-slide-in transition-all">
             
             <div className="shrink-0 mt-0.5">
@@ -58,7 +58,7 @@ export const ToastProvider = ({
             </div>
 
             
-            <button onClick={() => removeToast(t.id)} className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors shrink-0" title="Fechar notificação">
+            <button onClick={() => removeToast(t.id)} className="min-h-10 min-w-10 flex items-center justify-center text-slate-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors shrink-0" title="Fechar notificação" aria-label="Fechar notificação">
               <X className="w-4 h-4" />
             </button>
           </div>)}

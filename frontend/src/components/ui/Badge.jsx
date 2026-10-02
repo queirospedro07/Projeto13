@@ -8,7 +8,7 @@ export const Badge = ({
   className,
   icon
 }) => {
-  const base = 'inline-flex items-center font-bold rounded-lg select-none text-xs';
+  const base = 'inline-flex items-center font-bold rounded-md select-none text-xs';
   const sizes = {
     sm: 'px-2 py-0.5 gap-1 text-[11px]',
     md: 'px-2.5 py-1 gap-1.5 text-xs'

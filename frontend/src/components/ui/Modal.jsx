@@ -53,6 +53,9 @@ export const Modal = ({
       <div
         className={`relative w-full ${maxWidths[maxWidth]} bg-white dark:bg-[#0c0d12] border border-slate-200 dark:border-neutral-800 rounded-2xl shadow-2xl text-left overflow-hidden z-10 animate-fade-in max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-3rem)] flex flex-col text-slate-900 dark:text-white`}
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title || 'Janela de diálogo'}
       >
           {title && (
             <div className="flex items-center justify-between px-6 py-4.5 border-b border-slate-100 dark:border-neutral-800 bg-slate-50/80 dark:bg-[#12141a] shrink-0">
@@ -61,7 +64,8 @@ export const Modal = ({
               </h3>
               <button 
                 onClick={onClose} 
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+                className="min-h-10 min-w-10 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+                aria-label="Fechar diálogo"
                 title="Fechar"
               >
                 <X className="w-5 h-5" />

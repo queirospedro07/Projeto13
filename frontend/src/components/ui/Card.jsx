@@ -13,7 +13,7 @@ export const Card = ({
     <div
       className={twMerge(
         clsx(
-          'bg-white dark:bg-[#0c0d12] border border-slate-200 dark:border-neutral-800 rounded-xl p-5 sm:p-6 text-slate-900 dark:text-white shadow-xs transition-all duration-150',
+          'bg-white dark:bg-[#0c0d12] border border-slate-200 dark:border-neutral-800 rounded-lg p-5 sm:p-6 text-slate-900 dark:text-white shadow-xs transition-all duration-150',
           hover && 'hover:border-slate-300 dark:hover:border-neutral-700 hover:shadow-sm',
           className
         )

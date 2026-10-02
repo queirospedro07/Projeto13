@@ -68,9 +68,9 @@ export const MobileBottomNav = () => {
           to={item.to}
           end={item.to === '/creator' || item.to === '/dashboard'}
           className={({ isActive }) =>
-            `relative flex flex-col items-center justify-center gap-0.5 py-1 px-2 rounded-xl text-[10px] font-semibold transition-all ${
+            `relative flex min-w-0 min-h-11 flex-1 flex-col items-center justify-center gap-0.5 px-1 py-1 rounded-lg text-[10px] font-semibold transition-colors ${
               isActive
-                ? 'text-blue-600 dark:text-blue-400 font-extrabold scale-105'
+                ? 'text-blue-600 dark:text-blue-400 font-extrabold'
                 : 'text-slate-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
             }`
           }

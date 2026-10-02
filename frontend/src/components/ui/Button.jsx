@@ -15,7 +15,7 @@ export const Button = ({
 }) => {
   // Professional, crisp rectilinear square geometry (rounded-lg / rounded-md)
   const baseStyles =
-    'inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-white/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer select-none';
+    'inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40 dark:focus-visible:ring-blue-400/40 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer select-none';
 
   const sizes = {
     sm: 'px-3 py-1.5 text-xs gap-1.5',

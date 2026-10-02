@@ -83,6 +83,7 @@ export const Navbar = () => {
             <button
               onClick={toggleTheme}
               className="p-2 rounded-lg text-slate-600 dark:text-neutral-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-neutral-900 transition-colors cursor-pointer shrink-0"
+              aria-label="Alternar tema"
               title="Alternar Tema"
             >
               {theme === 'system' ? (
@@ -126,6 +127,8 @@ export const Navbar = () => {
                   <button
                     onClick={() => setShowProfileMenu(!showProfileMenu)}
                     className="flex items-center gap-2 p-0.5 rounded-full hover:ring-2 hover:ring-blue-600 transition-all cursor-pointer"
+                    aria-label={`Abrir menu de ${user.name}`}
+                    aria-expanded={showProfileMenu}
                   >
                     <Avatar src={user.avatarUrl} name={user.name} size="sm" status="online" role={user.role} />
                   </button>
