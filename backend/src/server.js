@@ -2,8 +2,9 @@ import dotenv from 'dotenv';
 import http from 'http';
 import { Server } from 'socket.io';
 import app from './app.js';
-import { connectDB, db } from './database/connection.js';
+import { connectDB, db, query } from './database/connection.js';
 import { socketCorsConfig } from './middleware/security.js';
+import { verifyJwtToken } from './middleware/auth.js';
 import { setupSocketIO } from './sockets/chatSocket.js';
 
 dotenv.config();
@@ -14,6 +15,30 @@ const server = http.createServer(app);
 // Real-time WebSockets with Socket.IO
 const io = new Server(server, {
   cors: socketCorsConfig
+});
+io.use(async (socket, next) => {
+  const token = socket.handshake.auth?.token;
+  if (typeof token !== 'string' || !token) {
+    return next(new Error('Autenticação necessária.'));
+  }
+
+  try {
+    const payload = verifyJwtToken(token);
+    const result = await query(
+      'SELECT id, name, username, role, avatarUrl, isSuspended FROM users WHERE id = ?',
+      [payload.id]
+    );
+    const user = result?.rows?.[0] || null;
+
+    if (!user || user.isSuspended) {
+      return next(new Error('Utilizador não autorizado.'));
+    }
+
+    socket.data.user = user;
+    return next();
+  } catch {
+    return next(new Error('Token de autenticação inválido.'));
+  }
 });
 setupSocketIO(io);
 app.set('io', io);

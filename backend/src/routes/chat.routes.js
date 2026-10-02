@@ -1,12 +1,16 @@
 ﻿import { Router } from 'express';
 import { queryAll, queryOne, execute } from '../database/connection.js';
 import { authenticate } from '../middleware/auth.js';
+import { canAccessChannel } from '../middleware/channelAccess.js';
 const router = Router();
 router.get('/channels/:channelId/messages', authenticate, async (req, res) => {
   try {
     const {
       channelId
     } = req.params;
+    if (!canAccessChannel(req.user, channelId)) {
+      return res.status(403).json({ error: 'Não tem acesso a este canal.' });
+    }
     const messages = queryAll(`SELECT m.*,
               u.id as user_id, u.name as user_name, u.username as user_username, u.avatarUrl as user_avatarUrl, u.role as user_role
        FROM messages m
@@ -69,6 +73,9 @@ router.post('/channels/:channelId/messages', authenticate, async (req, res) => {
       attachments
     } = req.body;
     const userId = req.user.id;
+    if (!canAccessChannel(req.user, channelId)) {
+      return res.status(403).json({ error: 'Não tem acesso a este canal.' });
+    }
     const now = new Date().toISOString();
     if (!content || !content.trim()) {
       return res.status(400).json({
@@ -114,6 +121,13 @@ router.post('/messages/:messageId/reactions', authenticate, async (req, res) => 
       emoji
     } = req.body;
     const userId = req.user.id;
+    const message = queryOne('SELECT channelId FROM messages WHERE id = ?', [messageId]);
+    if (!message) {
+      return res.status(404).json({ error: 'Mensagem não encontrada.' });
+    }
+    if (!canAccessChannel(req.user, message.channelId)) {
+      return res.status(403).json({ error: 'Não tem acesso a este canal.' });
+    }
     if (!emoji) {
       return res.status(400).json({
         error: 'O emoji é obrigatório'

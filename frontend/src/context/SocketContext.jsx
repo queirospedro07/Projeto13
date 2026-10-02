@@ -6,13 +6,20 @@ export const SocketProvider = ({
   children
 }) => {
   const {
-    user
+    user,
+    token
   } = useAuth();
   const [socket, setSocket] = useState(null);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
   const serverUrlRef = useRef('');
   useEffect(() => {
+    if (!user?.id || !token) {
+      setSocket(null);
+      setIsConnected(false);
+      return undefined;
+    }
+
     const envSocketUrl = import.meta.env?.VITE_SOCKET_URL || import.meta.env?.VITE_API_URL;
     let socketServerUrl = envSocketUrl ? envSocketUrl.replace(/\/api\/?$/, '').replace(/\/$/, '') : window.location.origin;
     if (!envSocketUrl && window.location.hostname === 'localhost') {
@@ -21,6 +28,7 @@ export const SocketProvider = ({
     serverUrlRef.current = socketServerUrl;
     const newSocket = io(socketServerUrl, {
       transports: ['websocket', 'polling'],
+      auth: { token },
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 10000,
@@ -31,7 +39,7 @@ export const SocketProvider = ({
       if (user) {
         newSocket.emit('user-connected', {
           userId: user.id,
-          username: user.username
+          username: user.username || user.name || 'Utilizador'
         });
       }
     });
@@ -45,15 +53,7 @@ export const SocketProvider = ({
     return () => {
       newSocket.disconnect();
     };
-  }, [user?.id]);
-  useEffect(() => {
-    if (socket && isConnected && user) {
-      socket.emit('user-connected', {
-        userId: user.id,
-        username: user.username
-      });
-    }
-  }, [socket, isConnected, user?.id]);
+  }, [user?.id, token]);
   useEffect(() => {
     const url = serverUrlRef.current;
     if (!url || url.includes('localhost') || url.includes('127.0.0.1')) return;
@@ -75,18 +75,12 @@ export const SocketProvider = ({
   };
   const sendTyping = channelId => {
     if (user && socket) {
-      socket.emit('typing', {
-        channelId,
-        username: user.name || user.username
-      });
+      socket.emit('typing', { channelId });
     }
   };
   const sendStopTyping = channelId => {
     if (user && socket) {
-      socket.emit('stop-typing', {
-        channelId,
-        username: user.name || user.username
-      });
+      socket.emit('stop-typing', { channelId });
     }
   };
   return <SocketContext.Provider value={{

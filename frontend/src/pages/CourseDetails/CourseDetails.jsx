@@ -48,6 +48,7 @@ export const CourseDetails = () => {
 
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [openModuleIndex, setOpenModuleIndex] = useState(null);
   const [showEnrollModal, setShowEnrollModal] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(() => {
@@ -608,10 +609,10 @@ export const CourseDetails = () => {
                 {course.modules?.length || 0} módulos no total • {totalLessons} aulas programadas
               </span>
               <button
-                onClick={() => setOpenModuleIndex(openModuleIndex === -1 ? 0 : -1)}
+                onClick={() => setOpenModuleIndex(openModuleIndex === -1 ? null : -1)}
                 className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
               >
-                {openModuleIndex === -1 ? 'Expandir Todos' : 'Recolher Todos'}
+                {openModuleIndex === -1 ? 'Recolher Todos' : 'Expandir Todos'}
               </button>
             </div>
 

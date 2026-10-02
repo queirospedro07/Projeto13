@@ -2,7 +2,11 @@ import jwt from 'jsonwebtoken';
 import { queryOne } from '../database/connection.js';
 
 const DEV_FALLBACK_SECRET = 'nexo-platform-default-dev-secret-key-32-chars-minimum';
-const JWT_SECRET = process.env.JWT_SECRET || DEV_FALLBACK_SECRET;
+const configuredJwtSecret = process.env.JWT_SECRET?.trim();
+if (process.env.NODE_ENV === 'production' && (!configuredJwtSecret || configuredJwtSecret.length < 32)) {
+  throw new Error('JWT_SECRET tem de estar configurado com pelo menos 32 caracteres em produção.');
+}
+const JWT_SECRET = configuredJwtSecret || DEV_FALLBACK_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 
 export function signJwtToken(payload) {
@@ -13,7 +17,7 @@ export function signJwtToken(payload) {
   );
 }
 
-function verifyJwtToken(token) {
+export function verifyJwtToken(token) {
   return jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
 }
 

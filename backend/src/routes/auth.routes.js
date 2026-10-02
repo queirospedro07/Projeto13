@@ -40,7 +40,9 @@ export const loginValidation = [
 router.post('/register', registerValidation, register);
 router.post('/login', loginValidation, login);
 router.get('/me', protect, getMe);
-router.get('/demo/:role?', demoLogin);
+if (process.env.NODE_ENV !== 'production') {
+  router.get('/demo/:role?', demoLogin);
+}
 
 // Mount remaining profile/social endpoints from legacyAuthRoutes seamlessly
 router.use('/', legacyAuthRoutes);

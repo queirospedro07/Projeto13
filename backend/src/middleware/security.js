@@ -1,30 +1,43 @@
 import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
-export const allowedOrigins = (process.env.CLIENT_URL || process.env.FRONTEND_URL || '').split(',').map(url => url.trim().replace(/\/$/, '')).filter(Boolean);
+
+const normalizeOrigin = value => {
+  if (!value || typeof value !== 'string') return '';
+  const trimmed = value.trim().replace(/\/$/, '');
+  try {
+    const url = new URL(trimmed);
+    return `${url.protocol}//${url.host}`;
+  } catch {
+    return trimmed;
+  }
+};
+
+export const allowedOrigins = [...new Set(
+  [process.env.CLIENT_URL, process.env.FRONTEND_URL]
+    .filter(Boolean)
+    .flatMap(value => value.split(','))
+    .map(normalizeOrigin)
+    .filter(Boolean)
+    .filter(url => url !== '*')
+)];
+
 if (process.env.NODE_ENV !== 'production') {
-  allowedOrigins.push('http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173');
+  allowedOrigins.push(
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:3000',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:5174'
+  );
 }
+
 export function isOriginAllowed(origin) {
   if (!origin) return true;
-  if (process.env.NODE_ENV !== 'production' || allowedOrigins.includes('*')) {
-    return true;
-  }
-  if (allowedOrigins.includes(origin)) {
-    return true;
-  }
-  try {
-    const hostname = new URL(origin).hostname;
-    if (hostname === 'vercel.app' || hostname.endsWith('.vercel.app')) {
-      return true;
-    }
-  } catch {
-    if (origin.endsWith('.vercel.app')) {
-      return true;
-    }
-  }
-  return false;
+  const normalizedOrigin = normalizeOrigin(origin);
+  return allowedOrigins.includes(normalizedOrigin);
 }
+
 export const helmetMiddleware = helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
@@ -45,11 +58,18 @@ export const helmetMiddleware = helmet({
   },
   ieNoOpen: true,
   noSniff: true,
+  permissionsPolicy: {
+    camera: ['self'],
+    microphone: ['self'],
+    fullscreen: ['self'],
+    geolocation: []
+  },
   referrerPolicy: {
     policy: 'strict-origin-when-cross-origin'
   },
   xssFilter: true
 });
+
 export const corsMiddleware = cors({
   origin: (origin, callback) => {
     if (isOriginAllowed(origin)) {
@@ -60,9 +80,10 @@ export const corsMiddleware = cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   maxAge: 86400
 });
+
 export const socketCorsConfig = {
   origin: (origin, callback) => {
     if (isOriginAllowed(origin)) {
@@ -74,6 +95,7 @@ export const socketCorsConfig = {
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 };
+
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 1000,
@@ -83,6 +105,7 @@ export const apiLimiter = rateLimit({
     error: 'Muitos pedidos realizados a partir deste endereço. Tente novamente mais tarde.'
   }
 });
+
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 30,
@@ -92,6 +115,7 @@ export const authLimiter = rateLimit({
     error: 'Demasiadas tentativas de autenticação. Por favor, aguarde alguns minutos.'
   }
 });
+
 export function sanitizeInputs(req, res, next) {
   const clean = obj => {
     if (!obj || typeof obj !== 'object') return obj;
