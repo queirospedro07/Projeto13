@@ -6,7 +6,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import rateLimit from 'express-rate-limit';
 import { isPostgres, query, queryOne, execute, transaction } from '../database/connection.js';
-import { hasEmailTransport, sendPasswordResetEmail } from '../config/email.js';
+import { hasEmailTransport, sendPasswordResetEmail, verifyEmailTransport } from '../config/email.js';
 import { authenticate, optionalAuth } from '../middleware/auth.js';
 
 const router = Router();
@@ -287,6 +287,14 @@ router.post('/forgot-password', passwordResetLimiter, async (req, res) => {
   if (!frontendUrl || (process.env.NODE_ENV === 'production' && !smtpConfigured)) {
     return res.status(503).json({ message: 'A recuperação de palavra-passe está temporariamente indisponível.' });
   }
+  if (smtpConfigured) {
+    try {
+      await verifyEmailTransport();
+    } catch (error) {
+      console.error('SMTP transport verification failed:', error.message);
+      return res.status(503).json({ message: 'O serviço de email está indisponível. Verifique a configuração SMTP.' });
+    }
+  }
 
   try {
     const userResult = await query(
@@ -318,6 +326,7 @@ router.post('/forgot-password', passwordResetLimiter, async (req, res) => {
     } catch (error) {
       console.error('Password reset email failed:', error.message);
       await query('DELETE FROM password_reset_tokens WHERE token_hash = $1', [tokenHash]);
+      return res.status(503).json({ message: 'Não foi possível enviar o email de recuperação. Tente novamente mais tarde.' });
     }
 
     return res.json({ message: recoveryMessage });

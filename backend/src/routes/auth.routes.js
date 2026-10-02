@@ -21,7 +21,11 @@ export const registerValidation = [
     .normalizeEmail(),
   body('password')
     .isLength({ min: 6 }).withMessage('A palavra-passe deve ter pelo menos 6 caracteres')
-    .isLength({ max: 128 }).withMessage('A palavra-passe não pode exceder 128 caracteres')
+    .isLength({ max: 128 }).withMessage('A palavra-passe não pode exceder 128 caracteres'),
+  body('avatarUrl')
+    .optional()
+    .isURL({ protocols: ['http', 'https'], require_protocol: true })
+    .withMessage('Escolha uma imagem de perfil válida')
 ];
 
 export const loginValidation = [

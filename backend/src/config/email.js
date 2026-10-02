@@ -4,12 +4,12 @@ export function hasEmailTransport() {
   return Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
 }
 
-export async function sendPasswordResetEmail({ to, name, resetUrl }) {
+function createEmailTransport() {
   const port = Number(process.env.SMTP_PORT) || 587;
   const secure = process.env.SMTP_SECURE
     ? process.env.SMTP_SECURE === 'true'
     : port === 465;
-  const transporter = nodemailer.createTransport({
+  return nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port,
     secure,
@@ -18,6 +18,15 @@ export async function sendPasswordResetEmail({ to, name, resetUrl }) {
       pass: process.env.SMTP_PASS
     }
   });
+}
+
+export async function verifyEmailTransport() {
+  const transporter = createEmailTransport();
+  await transporter.verify();
+}
+
+export async function sendPasswordResetEmail({ to, name, resetUrl }) {
+  const transporter = createEmailTransport();
   const from = process.env.SMTP_FROM || process.env.SMTP_USER;
   const safeName = String(name || 'Utilizador').replace(/[&<>"']/g, character => ({
     '&': '&amp;',

@@ -14,20 +14,20 @@ export const User = {
     return queryOne('SELECT id, name, username, email, role, avatarUrl, bio, location, streakDays, xp, level, isSuspended, createdAt FROM users WHERE id = ?', [id]);
   },
 
-  async create({ name, username, email, password, role = 'STUDENT' }) {
+  async create({ name, username, email, password, avatarUrl, role = 'STUDENT' }) {
     const cleanUsername = username.toLowerCase().trim();
     const cleanEmail = email.toLowerCase().trim();
     const passwordHash = await bcrypt.hash(password, 10);
     const userId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
     const now = new Date().toISOString();
-    const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${cleanUsername}`;
+    const selectedAvatarUrl = avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${cleanUsername}`;
     const targetRole = role === 'CREATOR' ? 'CREATOR' : 'STUDENT';
 
     transaction(() => {
       execute(
         `INSERT INTO users (id, email, username, passwordHash, name, role, avatarUrl, bio, location, streakDays, dailyGoalMinutes, minutesToday, totalMinutes, xp, level, isSuspended, createdAt, updatedAt)
          VALUES (?, ?, ?, ?, ?, ?, ?, '', '', 0, 45, 0, 0, 0, 1, 0, ?, ?)`,
-        [userId, cleanEmail, cleanUsername, passwordHash, name.trim(), targetRole, avatarUrl, now, now]
+        [userId, cleanEmail, cleanUsername, passwordHash, name.trim(), targetRole, selectedAvatarUrl, now, now]
       );
       execute(
         `INSERT INTO profiles (id, userId, headline, isPublic, showStreak, showLeaderboard, themePreference)
@@ -47,7 +47,7 @@ export const User = {
       username: cleanUsername,
       email: cleanEmail,
       role: targetRole,
-      avatarUrl,
+      avatarUrl: selectedAvatarUrl,
       xp: 0,
       level: 1,
       streakDays: 0

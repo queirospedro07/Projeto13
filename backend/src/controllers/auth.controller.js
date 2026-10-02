@@ -16,7 +16,7 @@ export const register = async (req, res) => {
   }
 
   try {
-    const { name, username, email, password, role } = req.body;
+    const { name, username, email, password, avatarUrl } = req.body;
 
     const existingEmail = User.findByEmail(email);
     if (existingEmail) {
@@ -35,7 +35,7 @@ export const register = async (req, res) => {
     }
 
     // Registo de conta é sempre como aluno
-    const newUser = await User.create({ name, username, email, password, role: 'STUDENT' });
+    const newUser = await User.create({ name, username, email, password, avatarUrl, role: 'STUDENT' });
     const token = generateToken(newUser);
 
     return res.status(201).json({

@@ -54,9 +54,11 @@ export const ForgotPassword = () => {
                 Verifique o seu correio eletrónico
               </h3>
               <p className="text-sm text-slate-600 mt-2 mb-8 leading-relaxed">
-                Se existir uma conta associada a{' '}
-                <span className="font-bold text-slate-900">{email}</span>, enviámos instruções para
-                redefinir a palavra-passe.
+                {devResetUrl ? (
+                  <>O email não foi enviado neste ambiente local. Use a ligação de teste para redefinir a palavra-passe de <span className="font-bold text-slate-900">{email}</span>.</>
+                ) : (
+                  <>Se existir uma conta associada a <span className="font-bold text-slate-900">{email}</span>, receberá instruções para redefinir a palavra-passe.</>
+                )}
               </p>
               {devResetUrl && (
                 <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-left text-sm text-amber-900">
