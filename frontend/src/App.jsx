@@ -6,36 +6,41 @@ import { SocketProvider } from './context/SocketContext';
 import { ToastProvider } from './components/ui/Toast';
 import { ActiveCallProvider } from './context/ActiveCallContext';
 import { AppLayout } from './components/layout/AppLayout';
-import { LandingPage } from './pages/LandingPage';
-import { Login } from './pages/auth/Login';
-import { Register } from './pages/auth/Register';
-import { ForgotPassword } from './pages/auth/ForgotPassword';
-import { Dashboard } from './pages/Dashboard';
-import { CourseDetails } from './pages/CourseDetails';
-import { CoursePlayer } from './pages/learn/CoursePlayer';
-import { DiscoverSpaces } from './pages/community/DiscoverSpaces';
-import { SpaceChat } from './pages/community/SpaceChat';
-import { LibraryPage } from './pages/LibraryPage';
-import { CreatorDashboard } from './pages/creator/CreatorDashboard';
-import { CourseBuilder } from './pages/creator/CourseBuilder';
-import { CreatorMembers } from './pages/creator/CreatorMembers';
-import { ApplyCreator } from './pages/creator/ApplyCreator';
-import { AdminDashboard } from './pages/admin/AdminDashboard';
-import { CertificateView } from './pages/certificates/CertificateView';
-import { SettingsPage } from './pages/SettingsPage';
-import { MessagesPage } from './pages/messages/MessagesPage';
-import { ProfilePage } from './pages/profile/ProfilePage';
-import { HelpSupportPage } from './pages/HelpSupportPage';
-import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
-import { TermsPage } from './pages/TermsPage';
-import { SearchResultsPage } from './pages/SearchResults';
-import { NotFoundPage } from './pages/NotFoundPage';
 import { CookieConsent } from './components/common/CookieConsent';
 import { trackPageView } from './utils/analytics';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { IncomingCallModal } from './components/call/IncomingCallModal';
 import { CallRoomModal } from './components/call/CallRoomModal';
 import { useLocation } from 'react-router-dom';
+
+const lazyPage = (loadPage, exportName) => React.lazy(() =>
+  loadPage().then((module) => ({ default: module[exportName] }))
+);
+
+const LandingPage = lazyPage(() => import('./pages/LandingPage'), 'LandingPage');
+const Login = lazyPage(() => import('./pages/auth/Login'), 'Login');
+const Register = lazyPage(() => import('./pages/auth/Register'), 'Register');
+const ForgotPassword = lazyPage(() => import('./pages/auth/ForgotPassword'), 'ForgotPassword');
+const Dashboard = lazyPage(() => import('./pages/Dashboard'), 'Dashboard');
+const CourseDetails = lazyPage(() => import('./pages/CourseDetails'), 'CourseDetails');
+const CoursePlayer = lazyPage(() => import('./pages/learn/CoursePlayer'), 'CoursePlayer');
+const DiscoverSpaces = lazyPage(() => import('./pages/community/DiscoverSpaces'), 'DiscoverSpaces');
+const SpaceChat = lazyPage(() => import('./pages/community/SpaceChat'), 'SpaceChat');
+const LibraryPage = lazyPage(() => import('./pages/LibraryPage'), 'LibraryPage');
+const CreatorDashboard = lazyPage(() => import('./pages/creator/CreatorDashboard'), 'CreatorDashboard');
+const CourseBuilder = lazyPage(() => import('./pages/creator/CourseBuilder'), 'CourseBuilder');
+const CreatorMembers = lazyPage(() => import('./pages/creator/CreatorMembers'), 'CreatorMembers');
+const ApplyCreator = lazyPage(() => import('./pages/creator/ApplyCreator'), 'ApplyCreator');
+const AdminDashboard = lazyPage(() => import('./pages/admin/AdminDashboard'), 'AdminDashboard');
+const CertificateView = lazyPage(() => import('./pages/certificates/CertificateView'), 'CertificateView');
+const SettingsPage = lazyPage(() => import('./pages/SettingsPage'), 'SettingsPage');
+const MessagesPage = lazyPage(() => import('./pages/messages/MessagesPage'), 'MessagesPage');
+const ProfilePage = lazyPage(() => import('./pages/profile/ProfilePage'), 'ProfilePage');
+const HelpSupportPage = lazyPage(() => import('./pages/HelpSupportPage'), 'HelpSupportPage');
+const PrivacyPolicyPage = lazyPage(() => import('./pages/PrivacyPolicyPage'), 'PrivacyPolicyPage');
+const TermsPage = lazyPage(() => import('./pages/TermsPage'), 'TermsPage');
+const SearchResultsPage = lazyPage(() => import('./pages/SearchResults'), 'SearchResultsPage');
+const NotFoundPage = lazyPage(() => import('./pages/NotFoundPage'), 'NotFoundPage');
 
 const PageViewTracker = () => {
   const location = useLocation();
@@ -66,8 +71,9 @@ export const App = () => {
                   onClose={() => setActiveDirectCall(null)}
                 />
               )}
-              <Routes>
-                <Route path="/" element={<AppLayout />}>
+              <React.Suspense fallback={<div className="flex min-h-[50vh] items-center justify-center text-sm text-slate-500" role="status">A carregar...</div>}>
+                <Routes>
+                  <Route path="/" element={<AppLayout />}>
                   <Route index element={<LandingPage />} />
                   <Route path="login" element={<Login />} />
                   <Route path="register" element={<Register />} />
@@ -203,8 +209,9 @@ export const App = () => {
                   <Route path="leaderboard" element={<Navigate to="/explore" replace />} />
 
                   <Route path="*" element={<NotFoundPage />} />
-                </Route>
-              </Routes>
+                  </Route>
+                </Routes>
+              </React.Suspense>
             </BrowserRouter>
           </ToastProvider>
         </ActiveCallProvider>
