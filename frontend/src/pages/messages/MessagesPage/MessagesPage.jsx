@@ -88,6 +88,7 @@ export const MessagesPage = () => {
       const next = isPinned ? prev.filter((id) => id !== peerId) : [peerId, ...prev];
       if (user?.id) {
         localStorage.setItem(`nexo_pinned_peers_${user.id}`, JSON.stringify(next));
+        window.dispatchEvent(new Event('nexo_pins_changed'));
       }
       toast({
         title: isPinned ? 'Contacto Desafixado' : 'Contacto Afixado',

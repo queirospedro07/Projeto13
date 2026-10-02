@@ -53,6 +53,7 @@ export const Dashboard = () => {
       const next = isPinned ? prev.filter((id) => id !== courseId) : [courseId, ...prev];
       if (user?.id) {
         localStorage.setItem(`nexo_pinned_courses_${user.id}`, JSON.stringify(next));
+        window.dispatchEvent(new Event('nexo_pins_changed'));
       }
       return next;
     });

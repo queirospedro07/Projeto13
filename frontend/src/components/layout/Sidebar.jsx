@@ -31,16 +31,10 @@ export const Sidebar = () => {
   const [unreadDms, setUnreadDms] = useState(0);
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
   const [recentPeers, setRecentPeers] = useState([]);
-  const [hiddenCourseIds, setHiddenCourseIds] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('nexo_hidden_courses') || localStorage.getItem('learnspace_hidden_courses') || '[]');
-    } catch {
-      return [];
-    }
-  });
-  const [hideCompleted, setHideCompleted] = useState(() => {
-    return (localStorage.getItem('nexo_hide_completed') ?? localStorage.getItem('learnspace_hide_completed')) === 'true';
-  });
+  const [pinnedPeerIds, setPinnedPeerIds] = useState([]);
+  const [pinnedCourseIds, setPinnedCourseIds] = useState([]);
+  const [hiddenCourseIds, setHiddenCourseIds] = useState([]);
+  const [hideCompleted, setHideCompleted] = useState(false);
 
   const isCreator = user?.role === 'CREATOR';
   const isAdmin = user?.role === 'ADMIN';
@@ -51,7 +45,7 @@ export const Sidebar = () => {
       api.getDirectConversations().then(convs => {
         const total = (convs || []).reduce((acc, c) => acc + (c.unreadCount || 0), 0);
         setUnreadDms(total);
-        const peers = (convs || []).slice(0, 4).map(c => ({
+        const peers = (convs || []).map(c => ({
           ...c.peer,
           unreadCount: c.unreadCount || 0
         })).filter(p => p && p.id);
@@ -67,24 +61,31 @@ export const Sidebar = () => {
     fetchSidebarData();
   }, [user?.id, isCreator, location.pathname]);
 
-  // Sincronizar cursos ocultos imediatamente com eventos locais e de armazenamento
+  // Keep sidebar pins and course visibility in sync with same-tab changes.
   useEffect(() => {
     const handleSync = () => {
       try {
+        setPinnedPeerIds(JSON.parse(localStorage.getItem(`nexo_pinned_peers_${user?.id}`) || '[]'));
+        setPinnedCourseIds(JSON.parse(localStorage.getItem(`nexo_pinned_courses_${user?.id}`) || '[]'));
         setHiddenCourseIds(JSON.parse(localStorage.getItem('nexo_hidden_courses') || localStorage.getItem('learnspace_hidden_courses') || '[]'));
       } catch {
+        setPinnedPeerIds([]);
+        setPinnedCourseIds([]);
         setHiddenCourseIds([]);
       }
       setHideCompleted((localStorage.getItem('nexo_hide_completed') ?? localStorage.getItem('learnspace_hide_completed')) === 'true');
     };
 
+    handleSync();
     window.addEventListener('storage', handleSync);
     window.addEventListener('nexo_courses_visibility_changed', handleSync);
+    window.addEventListener('nexo_pins_changed', handleSync);
     return () => {
       window.removeEventListener('storage', handleSync);
       window.removeEventListener('nexo_courses_visibility_changed', handleSync);
+      window.removeEventListener('nexo_pins_changed', handleSync);
     };
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     if (!socket) return;
@@ -106,6 +107,7 @@ export const Sidebar = () => {
     const visibleCourses = enrolledCourses.filter(e => {
       const courseId = e.course?.id || e.courseId;
       if (!courseId) return false;
+      if (!pinnedCourseIds.includes(courseId)) return false;
       const isFinished = e.isCompleted || Math.round(e.progressPercent || e.progressPercentage || 0) >= 100;
       if (hiddenCourseIds.includes(courseId)) return false;
       if (hideCompleted && isFinished) return false;
@@ -113,31 +115,11 @@ export const Sidebar = () => {
     });
 
     return [...visibleCourses].sort((a, b) => {
-      const progA = Math.round(a.progressPercent || a.progressPercentage || 0);
-      const progB = Math.round(b.progressPercent || b.progressPercentage || 0);
-      const isCompletedA = progA >= 100;
-      const isCompletedB = progB >= 100;
-
-      // Cursos incompletos têm prioridade sobre cursos já terminados
-      if (!isCompletedA && isCompletedB) return -1;
-      if (isCompletedA && !isCompletedB) return 1;
-
-      // Se ambos incompletos: prioriza maior progresso ("quase a acabar")
-      if (!isCompletedA && !isCompletedB) {
-        if (progA !== progB) {
-          return progB - progA;
-        }
-        const dateA = new Date(a.enrolledAt || 0).getTime();
-        const dateB = new Date(b.enrolledAt || 0).getTime();
-        return dateA - dateB;
-      }
-
-      // Se ambos completos
-      const compA = new Date(a.completedAt || a.enrolledAt || 0).getTime();
-      const compB = new Date(b.completedAt || b.enrolledAt || 0).getTime();
-      return compB - compA;
+      const idA = a.course?.id || a.courseId;
+      const idB = b.course?.id || b.courseId;
+      return pinnedCourseIds.indexOf(idA) - pinnedCourseIds.indexOf(idB);
     });
-  }, [enrolledCourses, hiddenCourseIds, hideCompleted]);
+  }, [enrolledCourses, hiddenCourseIds, hideCompleted, pinnedCourseIds]);
 
   const hiddenCoursesCount = useMemo(() => {
     if (!enrolledCourses || enrolledCourses.length === 0) return 0;
@@ -154,6 +136,7 @@ export const Sidebar = () => {
 
   const isMessagesActive =
     location.pathname === '/messages' && !isFriendsActive;
+  const pinnedPeers = recentPeers.filter(peer => pinnedPeerIds.includes(peer.id));
 
   const getNavItemClass = (isActive) =>
     `group flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all select-none ${
@@ -285,9 +268,9 @@ export const Sidebar = () => {
             )}
           </Link>
 
-          {!collapsed && recentPeers.length > 0 && (
+          {!collapsed && pinnedPeers.length > 0 && (
             <div className="flex flex-col gap-0.5 mt-1">
-              {recentPeers.map(p => {
+              {pinnedPeers.map(p => {
                 const isPeerActive = location.pathname === '/messages' && location.search.includes(`userId=${p.id}`);
                 return (
                   <Link
@@ -381,7 +364,7 @@ export const Sidebar = () => {
             </div>
 
             <div className="flex flex-col gap-1">
-              {sortedEnrolledCourses.slice(0, 4).map((e) => {
+              {sortedEnrolledCourses.map((e) => {
                 const course = e.course;
                 if (!course) return null;
                 const progress = Math.round(e.progressPercent || e.progressPercentage || 0);
