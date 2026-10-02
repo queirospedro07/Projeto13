@@ -19,6 +19,7 @@ import { LogoIcon } from '../../components/ui/Logo';
 import Footer from '../../components/layout/Footer';
 import { useAuth } from '../../context/AuthContext';
 import { SEO } from '../../components/common/SEO';
+import { formatCoursePrice } from '../../utils/formatters';
 
 export const LandingPage = () => {
   const { user, isLoading } = useAuth();

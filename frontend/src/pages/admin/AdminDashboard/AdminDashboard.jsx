@@ -28,6 +28,7 @@ import { Avatar } from '../../../components/ui/Avatar';
 import { Modal } from '../../../components/ui/Modal';
 import { useToast } from '../../../components/ui/Toast';
 import { api } from '../../../services/api';
+import { formatCoursePrice } from '../../../utils/formatters';
 
 export const AdminDashboard = () => {
   const [stats, setStats] = useState(null);

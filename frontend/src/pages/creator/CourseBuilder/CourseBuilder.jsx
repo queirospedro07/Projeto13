@@ -9,6 +9,7 @@ import { useToast } from '../../../components/ui/Toast';
 import { useAuth } from '../../../context/AuthContext';
 import { soundEffects } from '../../../services/soundEffects';
 import { api } from '../../../services/api';
+import { formatCoursePrice } from '../../../utils/formatters';
 export const QuizLessonEditor = ({
   quiz,
   onChange

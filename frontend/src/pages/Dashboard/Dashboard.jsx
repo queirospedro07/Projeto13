@@ -17,6 +17,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { ProgressBar } from '../../components/ui/ProgressBar';
 import { api } from '../../services/api';
+import { formatCoursePrice } from '../../utils/formatters';
 
 export const Dashboard = () => {
   const { user } = useAuth();

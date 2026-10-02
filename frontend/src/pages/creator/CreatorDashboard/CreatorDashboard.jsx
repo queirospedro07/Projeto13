@@ -10,6 +10,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { api } from '../../../services/api';
+import { formatCoursePrice } from '../../../utils/formatters';
 
 export const CreatorDashboard = () => {
   const [stats, setStats] = useState(null);
