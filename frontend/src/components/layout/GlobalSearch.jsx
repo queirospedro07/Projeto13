@@ -4,6 +4,18 @@ import { Search, BookOpen, User, X, ArrowRight, Loader2, MessageSquare } from 'l
 import { Avatar } from '../ui/Avatar';
 import { api } from '../../services/api';
 
+const formatCoursePrice = (course) => {
+  if (!course) return 'Grátis';
+
+  const price = Number(course.price);
+
+  if (course.isFree || course.price === 0 || course.price === null || course.price === undefined || Number.isNaN(price) || price === 0) {
+    return 'Grátis';
+  }
+
+  return `€${price.toFixed(2).replace(/\.00$/, '')}`;
+};
+
 export const GlobalSearch = ({ onClose } = {}) => {
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -59,7 +71,7 @@ export const GlobalSearch = ({ onClose } = {}) => {
     if (!query.trim()) return;
     setIsOpen(false);
     onClose?.();
-    navigate(`/explore?search=${encodeURIComponent(query.trim())}`);
+    navigate(`/search?q=${encodeURIComponent(query.trim())}`);
   };
 
   const handleSelectCourse = (course) => {
@@ -146,7 +158,7 @@ export const GlobalSearch = ({ onClose } = {}) => {
                       </p>
                     </div>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 shrink-0">
-                      {course.isFree ? 'Grátis' : `${course.price}€`}
+                      {formatCoursePrice(course)}
                     </span>
                   </button>
                 ))}

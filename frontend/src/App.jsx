@@ -28,6 +28,7 @@ import { ProfilePage } from './pages/profile/ProfilePage';
 import { HelpSupportPage } from './pages/HelpSupportPage';
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 import { TermsPage } from './pages/TermsPage';
+import { SearchResultsPage } from './pages/SearchResults';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { CookieConsent } from './components/common/CookieConsent';
 import { trackPageView } from './utils/analytics';
@@ -78,6 +79,7 @@ export const App = () => {
                   <Route path="support" element={<HelpSupportPage />} />
                   <Route path="privacy" element={<PrivacyPolicyPage />} />
                   <Route path="terms" element={<TermsPage />} />
+                  <Route path="search" element={<SearchResultsPage />} />
 
                   <Route
                     path="dashboard"
