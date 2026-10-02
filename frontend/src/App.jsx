@@ -21,6 +21,7 @@ const LandingPage = lazyPage(() => import('./pages/LandingPage'), 'LandingPage')
 const Login = lazyPage(() => import('./pages/auth/Login'), 'Login');
 const Register = lazyPage(() => import('./pages/auth/Register'), 'Register');
 const ForgotPassword = lazyPage(() => import('./pages/auth/ForgotPassword'), 'ForgotPassword');
+const ResetPassword = lazyPage(() => import('./pages/auth/ResetPassword'), 'ResetPassword');
 const Dashboard = lazyPage(() => import('./pages/Dashboard'), 'Dashboard');
 const CourseDetails = lazyPage(() => import('./pages/CourseDetails'), 'CourseDetails');
 const CoursePlayer = lazyPage(() => import('./pages/learn/CoursePlayer'), 'CoursePlayer');
@@ -78,6 +79,7 @@ export const App = () => {
                   <Route path="login" element={<Login />} />
                   <Route path="register" element={<Register />} />
                   <Route path="forgot-password" element={<ForgotPassword />} />
+                  <Route path="reset-password" element={<ResetPassword />} />
                   <Route path="explore" element={<DiscoverSpaces />} />
                   <Route path="courses/:id" element={<CourseDetails />} />
                   <Route path="certificates/verify/:id" element={<CertificateView />} />

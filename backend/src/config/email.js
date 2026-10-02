@@ -1,0 +1,37 @@
+import nodemailer from 'nodemailer';
+
+export function hasEmailTransport() {
+  return Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+}
+
+export async function sendPasswordResetEmail({ to, name, resetUrl }) {
+  const port = Number(process.env.SMTP_PORT) || 587;
+  const secure = process.env.SMTP_SECURE
+    ? process.env.SMTP_SECURE === 'true'
+    : port === 465;
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port,
+    secure,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS
+    }
+  });
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+  const safeName = String(name || 'Utilizador').replace(/[&<>"']/g, character => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  })[character]);
+
+  return transporter.sendMail({
+    from,
+    to,
+    subject: 'Redefinir a palavra-passe da sua conta NEXO',
+    text: `Olá ${name || 'Utilizador'},\n\nUse esta ligação para redefinir a sua palavra-passe (válida durante 30 minutos):\n${resetUrl}\n\nSe não pediu esta alteração, ignore este email.`,
+    html: `<p>Olá ${safeName},</p><p>Recebemos um pedido para redefinir a palavra-passe da sua conta NEXO.</p><p><a href="${resetUrl}">Criar nova palavra-passe</a></p><p>Esta ligação é válida durante 30 minutos e só pode ser utilizada uma vez.</p><p>Se não pediu esta alteração, ignore este email.</p>`
+  });
+}

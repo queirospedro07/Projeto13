@@ -2,10 +2,31 @@
 // Rotas de autenticação (register, login, me, demo) estão em auth.routes.js
 
 import { Router } from 'express';
-import { queryOne, execute, transaction } from '../database/connection.js';
+import { createHash, randomBytes } from 'node:crypto';
+import bcrypt from 'bcryptjs';
+import rateLimit from 'express-rate-limit';
+import { isPostgres, query, queryOne, execute, transaction } from '../database/connection.js';
+import { hasEmailTransport, sendPasswordResetEmail } from '../config/email.js';
 import { authenticate, optionalAuth } from '../middleware/auth.js';
 
 const router = Router();
+const passwordResetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Demasiados pedidos de recuperação. Tente novamente mais tarde.' }
+});
+
+const recoveryMessage = 'Se existir uma conta associada a este email, receberá instruções para redefinir a palavra-passe.';
+
+function getFrontendUrl() {
+  const configuredUrl = (process.env.CLIENT_URL || process.env.FRONTEND_URL || '').split(',')[0].trim();
+  if (configuredUrl) return configuredUrl.replace(/\/+$/, '');
+  return process.env.NODE_ENV === 'production' ? null : 'http://localhost:5173';
+}
+
+const hashResetToken = token => createHash('sha256').update(token).digest('hex');
 
 // GET /auth/user/:identifier — Perfil público de um utilizador
 router.get('/user/:identifier', optionalAuth, async (req, res) => {
@@ -254,12 +275,101 @@ router.post('/profile/clear-field', authenticate, async (req, res) => {
   }
 });
 
-// POST /auth/forgot-password — Placeholder de recuperação de palavra-passe
-router.post('/forgot-password', async (req, res) => {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ error: 'Email obrigatório' });
-  // TODO: implementar envio real de email de recuperação
-  return res.json({ message: `Ligação de recuperação enviada para ${email}.` });
+// POST /auth/forgot-password — Enviar ligação segura de recuperação
+router.post('/forgot-password', passwordResetLimiter, async (req, res) => {
+  const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ message: 'Introduza um endereço de email válido.' });
+  }
+
+  const frontendUrl = getFrontendUrl();
+  const smtpConfigured = hasEmailTransport();
+  if (!frontendUrl || (process.env.NODE_ENV === 'production' && !smtpConfigured)) {
+    return res.status(503).json({ message: 'A recuperação de palavra-passe está temporariamente indisponível.' });
+  }
+
+  try {
+    const userResult = await query(
+      'SELECT id, name, email FROM users WHERE LOWER(email) = $1 LIMIT 1',
+      [email]
+    );
+    const user = userResult.rows?.[0];
+    if (!user) return res.json({ message: recoveryMessage });
+
+    const token = randomBytes(32).toString('hex');
+    const tokenHash = hashResetToken(token);
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 30 * 60 * 1000).toISOString();
+    const resetUrl = `${frontendUrl}/reset-password?token=${encodeURIComponent(token)}`;
+
+    await query('DELETE FROM password_reset_tokens WHERE user_id = $1', [user.id]);
+    await query(
+      `INSERT INTO password_reset_tokens (id, user_id, token_hash, expires_at, created_at)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [`reset-${randomBytes(12).toString('hex')}`, user.id, tokenHash, expiresAt, now.toISOString()]
+    );
+
+    if (!smtpConfigured && process.env.NODE_ENV !== 'production') {
+      return res.json({ message: recoveryMessage, devResetUrl: resetUrl });
+    }
+
+    try {
+      await sendPasswordResetEmail({ to: user.email, name: user.name, resetUrl });
+    } catch (error) {
+      console.error('Password reset email failed:', error.message);
+      await query('DELETE FROM password_reset_tokens WHERE token_hash = $1', [tokenHash]);
+    }
+
+    return res.json({ message: recoveryMessage });
+  } catch (error) {
+    console.error('Password reset request failed:', error.message);
+    return res.status(500).json({ message: 'Não foi possível processar o pedido. Tente novamente mais tarde.' });
+  }
+});
+
+// POST /auth/reset-password — Validar e consumir o token de utilização única
+router.post('/reset-password', passwordResetLimiter, async (req, res) => {
+  const { token, password } = req.body || {};
+  if (typeof token !== 'string' || !/^[a-f\d]{64}$/i.test(token)) {
+    return res.status(400).json({ message: 'A ligação é inválida ou expirou. Peça uma nova ligação.' });
+  }
+  if (typeof password !== 'string' || password.length < 8 || password.length > 128) {
+    return res.status(400).json({ message: 'A palavra-passe deve ter entre 8 e 128 caracteres.' });
+  }
+
+  try {
+    const tokenHash = hashResetToken(token);
+    const tokenResult = await query(
+      'SELECT user_id, expires_at FROM password_reset_tokens WHERE token_hash = $1 LIMIT 1',
+      [tokenHash]
+    );
+    const resetRecord = tokenResult.rows?.[0];
+    if (!resetRecord || !Number.isFinite(Date.parse(resetRecord.expires_at)) || Date.parse(resetRecord.expires_at) <= Date.now()) {
+      if (resetRecord) await query('DELETE FROM password_reset_tokens WHERE token_hash = $1', [tokenHash]);
+      return res.status(400).json({ message: 'A ligação é inválida ou expirou. Peça uma nova ligação.' });
+    }
+
+    const consumed = await query(
+      'DELETE FROM password_reset_tokens WHERE token_hash = $1 AND expires_at > $2',
+      [tokenHash, new Date().toISOString()]
+    );
+    if ((consumed.rowCount ?? consumed.changes ?? 0) !== 1) {
+      return res.status(400).json({ message: 'A ligação é inválida ou expirou. Peça uma nova ligação.' });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordColumn = isPostgres ? 'password_hash' : 'passwordHash';
+    const updatedAtColumn = isPostgres ? 'updated_at' : 'updatedAt';
+    await query(
+      `UPDATE users SET ${passwordColumn} = $1, ${updatedAtColumn} = $2 WHERE id = $3`,
+      [passwordHash, new Date().toISOString(), resetRecord.user_id]
+    );
+
+    return res.json({ message: 'Palavra-passe atualizada. Já pode iniciar sessão.' });
+  } catch (error) {
+    console.error('Password reset failed:', error.message);
+    return res.status(500).json({ message: 'Não foi possível redefinir a palavra-passe. Tente novamente.' });
+  }
 });
 
 export default router;

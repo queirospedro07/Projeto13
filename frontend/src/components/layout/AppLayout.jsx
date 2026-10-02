@@ -24,7 +24,8 @@ export const AppLayout = () => {
   const isAuthPage =
     location.pathname === '/login' ||
     location.pathname === '/register' ||
-    location.pathname === '/forgot-password';
+    location.pathname === '/forgot-password' ||
+    location.pathname === '/reset-password';
   const isLearnPlayer = location.pathname.startsWith('/learn/');
   const isCourseBuilder = location.pathname.startsWith('/creator/courses/');
 

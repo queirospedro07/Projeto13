@@ -105,6 +105,21 @@ Para que o backend autorize com total segurança as chamadas da sua aplicação 
 
 *(Nota: O backend foi configurado para aceitar automaticamente qualquer subdomínio `*.vercel.app` em produção, mas definir a `CLIENT_URL` explícita é uma boa prática de segurança.)*
 
+### Recuperação da palavra-passe
+
+Para enviar ligações reais de recuperação, configure no serviço do Render:
+
+| Variável | Valor |
+| :--- | :--- |
+| `SMTP_HOST` | Host do seu fornecedor de email |
+| `SMTP_PORT` | `587` (STARTTLS) ou `465` (TLS) |
+| `SMTP_SECURE` | `false` para 587; `true` para 465 |
+| `SMTP_USER` | Utilizador SMTP |
+| `SMTP_PASS` | Palavra-passe ou token SMTP |
+| `SMTP_FROM` | Endereço remetente (opcional; por omissão usa `SMTP_USER`) |
+
+Mantenha `CLIENT_URL` definido com o domínio do frontend para construir as ligações. Em SQLite, a tabela de tokens é criada automaticamente. Se usar PostgreSQL, execute `npm run migrate` na pasta `backend` após atualizar o código. Sem SMTP, o backend só devolve a ligação de teste em ambiente local; em produção, a recuperação fica indisponível até configurar o serviço.
+
 ---
 
 ## 👥 Contas Demo Pré-Configuradas para Testes
