@@ -8,6 +8,17 @@ import { MobileBottomNav } from './MobileBottomNav';
 export const AppLayout = () => {
   const { user } = useAuth();
   const location = useLocation();
+  const mainContentRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const mainContent = mainContentRef.current ?? document.getElementById('main-content');
+
+    if (mainContent) {
+      mainContent.scrollTop = 0;
+    }
+
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [location.pathname]);
 
   const isLanding = location.pathname === '/';
   const isAuthPage =
@@ -30,6 +41,7 @@ export const AppLayout = () => {
 
         <main
           id="main-content"
+          ref={mainContentRef}
           className={`min-h-0 flex-1 overflow-y-auto overscroll-y-none ${
             isLearnPlayer || isLanding || isAuthPage || isCourseBuilder
               ? 'p-0'
