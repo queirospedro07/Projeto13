@@ -85,7 +85,7 @@ export const Register = () => {
             </div>}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <DefaultAvatarPicker value={avatarUrl} onChange={setAvatarUrl} label="Escolha o seu avatar NFT" />
+            <DefaultAvatarPicker value={avatarUrl} onChange={setAvatarUrl} label="Escolha o seu avatar" />
             <div>
               <label className="block text-xs font-semibold text-slate-800 dark:text-neutral-200 mb-1.5">
                 Nome Completo
