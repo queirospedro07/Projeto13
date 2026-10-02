@@ -30,7 +30,7 @@ export const AppLayout = () => {
 
         <main
           id="main-content"
-          className={`flex-1 overflow-y-auto ${
+          className={`flex-1 overflow-y-auto overscroll-y-none ${
             isLearnPlayer || isLanding || isAuthPage || isCourseBuilder
               ? 'p-0'
               : isMessages
