@@ -302,6 +302,7 @@ export const DiscoverSpaces = () => {
       <CourseEnrollModal
         isOpen={Boolean(enrollingCourse)}
         course={enrollingCourse}
+        isSpace
         onClose={() => setEnrollingCourse(null)}
         onEnrollSuccess={() => {
           fetchSpaces();

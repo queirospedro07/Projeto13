@@ -21,7 +21,8 @@ export const CourseEnrollModal = ({
   isOpen,
   onClose,
   course,
-  onEnrollSuccess
+  onEnrollSuccess,
+  isSpace = false
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -74,7 +75,11 @@ export const CourseEnrollModal = ({
 
     setIsSubmitting(true);
     try {
-      await api.enrollCourse(course.id);
+      if (isSpace) {
+        await api.joinSpace(course.id);
+      } else {
+        await api.enrollCourse(course.id);
+      }
       toast({
         title: 'Matrícula Confirmada!',
         message: `Inscrição concluída com sucesso em "${courseTitle}". Bons estudos!`,

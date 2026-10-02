@@ -93,20 +93,20 @@ router.get('/stats', authenticate, requireRole('CREATOR', 'ADMIN'), async (req, 
     const courses = queryAll(`SELECT c.*,
               (SELECT COUNT(*) FROM enrollments WHERE courseId = c.id AND userId != ? AND userId != COALESCE(c.creatorId, c.instructorId, '')) as studentsCount
        FROM courses c
-       WHERE c.creatorId = ? OR c.instructorId = ?`, [creatorId, creatorId, creatorId]);
+      WHERE c.creatorId = ?`, [creatorId]);
     const totalStudents = courses.reduce((acc, c) => acc + (c.studentsCount || 0), 0);
     const totalRevenue = courses.reduce((acc, c) => acc + (c.studentsCount || 0) * (c.price || 0), 0);
     const recentEnrollments = queryAll(`SELECT e.*, u.id as user_id, u.name, u.username, u.avatarUrl, u.email, c.title as course_title
        FROM enrollments e
        JOIN courses c ON e.courseId = c.id
        JOIN users u ON e.userId = u.id
-       WHERE (c.creatorId = ? OR c.instructorId = ?) AND e.userId != ?
+       WHERE c.creatorId = ? AND e.userId != ?
        ORDER BY e.enrolledAt DESC
-       LIMIT 6`, [creatorId, creatorId, creatorId]);
-    const completedEnrollments = queryOne(`SELECT COUNT(*) as c FROM enrollments e JOIN courses c ON e.courseId = c.id WHERE (c.creatorId = ? OR c.instructorId = ?) AND e.userId != ? AND e.progressPercent >= 100`, [creatorId, creatorId, creatorId])?.c || 0;
+       LIMIT 6`, [creatorId, creatorId]);
+     const completedEnrollments = queryOne(`SELECT COUNT(*) as c FROM enrollments e JOIN courses c ON e.courseId = c.id WHERE c.creatorId = ? AND e.userId != ? AND e.progressPercent >= 100`, [creatorId, creatorId])?.c || 0;
     const completionRate = totalStudents > 0 ? Math.round((completedEnrollments / totalStudents) * 100) : 0;
 
-    const ratingRow = queryOne(`SELECT AVG(r.rating) as avgRating FROM reviews r JOIN courses c ON r.courseId = c.id WHERE c.creatorId = ? OR c.instructorId = ?`, [creatorId, creatorId]);
+    const ratingRow = queryOne(`SELECT AVG(r.rating) as avgRating FROM reviews r JOIN courses c ON r.courseId = c.id WHERE c.creatorId = ?`, [creatorId]);
     const averageRating = ratingRow?.avgRating ? Number(ratingRow.avgRating).toFixed(1) : '0.0';
 
     const quizRow = queryOne(`SELECT AVG(qa.score) as avgScore FROM quiz_attempts qa JOIN quizzes q ON qa.quizId = q.id JOIN lessons l ON q.lessonId = l.id JOIN course_modules cm ON l.moduleId = cm.id JOIN courses c ON cm.courseId = c.id WHERE c.creatorId = ?`, [creatorId]);

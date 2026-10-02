@@ -17,6 +17,11 @@ router.get('/', optionalAuth, async (req, res) => {
       FROM spaces s
       JOIN users u ON s.ownerId = u.id
       WHERE 1=1
+        AND NOT EXISTS (
+          SELECT 1 FROM courses c
+          WHERE c.spaceId = s.id
+            AND (c.isPublished <> 1 OR (c.approvalStatus IS NOT NULL AND c.approvalStatus <> 'APPROVED'))
+        )
     `;
     const params = [];
     if (category && category !== 'all') {
@@ -224,6 +229,15 @@ router.post('/:id/join', authenticate, async (req, res) => {
       return res.status(404).json({
         error: 'Comunidade não encontrada'
       });
+    }
+    const pendingCourse = queryOne(`
+      SELECT id FROM courses
+      WHERE spaceId = ?
+        AND (isPublished <> 1 OR (approvalStatus IS NOT NULL AND approvalStatus <> 'APPROVED'))
+      LIMIT 1
+    `, [space.id]);
+    if (pendingCourse) {
+      return res.status(403).json({ error: 'Este curso ainda aguarda aprovação.' });
     }
     const existing = queryOne('SELECT id FROM memberships WHERE spaceId = ? AND userId = ?', [space.id, userId]);
     if (!existing) {
