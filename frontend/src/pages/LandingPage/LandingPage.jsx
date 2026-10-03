@@ -124,42 +124,63 @@ export const LandingPage = () => {
       />
       <div className="min-h-screen bg-white dark:bg-[#06070a] text-slate-900 dark:text-white font-sans transition-colors selection:bg-blue-600 selection:text-white">
       
-      <section className="bg-white dark:bg-[#06070a] text-slate-900 dark:text-white">
-        <div className="mx-auto grid max-w-7xl items-center gap-8 px-4 py-10 sm:px-8 sm:py-16 lg:min-h-[calc(100svh-4rem)] lg:grid-cols-2 lg:gap-14 lg:px-12 lg:py-20">
-          <div className="max-w-xl">
-            <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">Formação online</p>
-            <h1 className="mt-3 text-4xl font-bold leading-tight text-slate-950 dark:text-white sm:text-5xl lg:text-6xl">
-              Aprenda. Pratique. Avance.
+      <section className="bg-[#f7f8fa] text-slate-900 dark:bg-[#080a0e] dark:text-white">
+        <div className="mx-auto grid max-w-7xl items-center gap-9 px-4 py-10 sm:px-8 sm:py-16 lg:min-h-[calc(100svh-4rem)] lg:grid-cols-[0.92fr_1.08fr] lg:gap-14 lg:px-12 lg:py-20">
+          <div className="max-w-xl lg:py-8">
+            <p className="inline-flex items-center gap-2 border-b border-blue-200 pb-2 text-xs font-bold text-blue-700 dark:border-blue-900 dark:text-blue-300 sm:text-sm">
+              <span className="h-2 w-2 rounded-full bg-blue-600 dark:bg-blue-400" />
+              Aprendizagem prática NEXO
+            </p>
+            <h1 className="mt-5 text-[2.35rem] font-bold leading-[1.08] text-slate-950 dark:text-white sm:text-5xl lg:text-6xl">
+              Aprenda na prática.
+              <span className="mt-1 block text-blue-700 dark:text-blue-400">Avance com confiança.</span>
             </h1>
-            <p className="mt-4 max-w-lg text-base leading-relaxed text-slate-600 dark:text-neutral-300 sm:text-lg">
-              Cursos práticos e mentoria para levar as suas competências mais longe.
+            <p className="mt-5 max-w-lg text-base leading-relaxed text-slate-600 dark:text-neutral-300 sm:text-lg">
+              Cursos orientados a projetos, mentoria em direto e uma comunidade para continuar a evoluir na sua área.
             </p>
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               {user ? (
-                <Link to={dashboardPath} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-slate-950 px-5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 sm:w-auto">
+                <Link to={dashboardPath} className="group inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-blue-700 px-5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-800 hover:shadow-md dark:bg-blue-500 dark:text-white dark:hover:bg-blue-400 sm:w-auto">
                   Ir para o meu painel
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </Link>
               ) : (
-                <Link to="/register" className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-slate-950 px-5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 sm:w-auto">
-                  Começar a aprender
-                  <ArrowRight className="h-4 w-4" />
+                <Link to="/register" className="group inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-blue-700 px-5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-800 hover:shadow-md dark:bg-blue-500 dark:text-white dark:hover:bg-blue-400 sm:w-auto">
+                  Criar conta gratuita
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </Link>
               )}
-              <Link to="/explore" className="inline-flex min-h-12 w-full items-center justify-center rounded-md border border-slate-300 px-5 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-50 dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-900 sm:w-auto">
-                Explorar formações
+              <Link to="/explore" className="inline-flex min-h-12 w-full items-center justify-center rounded-md border border-slate-300 bg-white/70 px-5 text-sm font-semibold text-slate-800 transition-colors hover:border-slate-400 hover:bg-white dark:border-neutral-700 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 sm:w-auto">
+                Explorar cursos
               </Link>
+            </div>
+
+            <div className="mt-8 grid grid-cols-1 gap-3 border-t border-slate-200 pt-5 text-sm text-slate-600 dark:border-neutral-800 dark:text-neutral-300 min-[420px]:grid-cols-3 sm:mt-10">
+              <span><strong className="block text-slate-950 dark:text-white">Aprender</strong>Aulas práticas</span>
+              <span><strong className="block text-slate-950 dark:text-white">Partilhar</strong>Mentoria em direto</span>
+              <span><strong className="block text-slate-950 dark:text-white">Comprovar</strong>Certificados digitais</span>
             </div>
           </div>
 
-          <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-slate-100 dark:bg-neutral-900">
-            <img
-              src="/hero-showcase.jpg"
-              alt="Profissional a trabalhar num projeto digital"
-              className="h-full w-full object-cover"
-              fetchPriority="high"
-            />
+          <div className="min-w-0">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-slate-200 shadow-xl shadow-slate-900/10 dark:bg-neutral-900 dark:shadow-black/30">
+              <img
+                src="/hero-showcase.jpg"
+                alt="Profissional a desenvolver um projeto digital num espaço de trabalho moderno"
+                className="h-full w-full object-cover transition-transform duration-700 hover:scale-[1.025]"
+                fetchPriority="high"
+              />
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/80 via-slate-950/35 to-transparent px-5 pb-5 pt-16 sm:px-7 sm:pb-7">
+                <p className="text-xs font-semibold text-white/75">NEXO · FORMAÇÃO ONLINE</p>
+                <p className="mt-1 text-lg font-semibold text-white sm:text-xl">Conhecimento que se transforma em prática.</p>
+              </div>
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-3 text-xs text-slate-500 dark:text-neutral-400">
+              <span>Aprenda ao seu ritmo</span>
+              <span className="h-px min-w-8 flex-1 bg-slate-300 dark:bg-neutral-700" />
+              <span>Continue a evoluir</span>
+            </div>
           </div>
         </div>
       </section>
