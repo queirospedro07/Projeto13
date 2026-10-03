@@ -4,13 +4,27 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { Home, Compass, BookOpen, Settings, BarChart3, PlusCircle, Users, MessageSquare, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
+import { useActiveCall } from '../../context/ActiveCallContext';
 import { api } from '../../services/api';
 
 export const MobileBottomNav = () => {
   const { user } = useAuth();
   const { socket } = useSocket();
+  const { activeCall } = useActiveCall();
   const location = useLocation();
   const [unreadDms, setUnreadDms] = useState(0);
+  const [hasInCallClass, setHasInCallClass] = useState(false);
+
+  useEffect(() => {
+    const checkCallClass = () => {
+      const inCall = document.body.classList.contains('in-active-call') || Boolean(document.querySelector('[data-call-stage]'));
+      setHasInCallClass(inCall);
+    };
+    checkCallClass();
+    const observer = new MutationObserver(checkCallClass);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'], childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
 
   const isCreator = user?.role === 'CREATOR';
 
@@ -57,6 +71,10 @@ export const MobileBottomNav = () => {
   ];
 
   const navItems = isCreator ? creatorItems : studentItems;
+
+  if (hasInCallClass || Boolean(activeCall)) {
+    return null;
+  }
 
   return createPortal(
     <nav

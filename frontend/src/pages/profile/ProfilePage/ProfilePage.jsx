@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { MapPin, Award, BookOpen, Flame, Users, Edit3, MessageSquare, UserPlus, UserCheck, Clock, Globe, Github, Instagram, Camera, ImagePlus, X, ExternalLink, Loader2, Eye, EyeOff, Linkedin, Youtube, Twitch, Move, Check, RotateCcw } from 'lucide-react';
 import { Card } from '../../../components/ui/Card';
@@ -151,34 +151,58 @@ export const ProfilePage = () => {
     friendsCount: 0
   });
   const [activeTab, setActiveTab] = useState('courses');
+  const [courseFilter, setCourseFilter] = useState('all');
   const [myCourses, setMyCourses] = useState([]);
-  const [hideCompleted, setHideCompleted] = useState(() => {
-    return localStorage.getItem('learnspace_hide_completed') === 'true';
-  });
   const [hiddenCourseIds, setHiddenCourseIds] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem('learnspace_hidden_courses') || '[]');
+      return JSON.parse(localStorage.getItem('nexo_hidden_courses') || localStorage.getItem('learnspace_hidden_courses') || '[]');
     } catch {
       return [];
     }
   });
 
-  const toggleHideCourse = (courseId) => {
+  useEffect(() => {
+    const handleVisChange = () => {
+      try {
+        const stored = JSON.parse(localStorage.getItem('nexo_hidden_courses') || localStorage.getItem('learnspace_hidden_courses') || '[]');
+        setHiddenCourseIds(stored);
+      } catch (_) {}
+    };
+    window.addEventListener('nexo_courses_visibility_changed', handleVisChange);
+    return () => window.removeEventListener('nexo_courses_visibility_changed', handleVisChange);
+  }, []);
+
+  const toggleHideCourse = async (courseId, courseTitle = 'Curso') => {
+    const isCurrentlyHidden = hiddenCourseIds.includes(courseId);
+    const nextHidden = !isCurrentlyHidden;
+
     setHiddenCourseIds(prev => {
       const next = prev.includes(courseId) ? prev.filter(id => id !== courseId) : [...prev, courseId];
+      localStorage.setItem('nexo_hidden_courses', JSON.stringify(next));
       localStorage.setItem('learnspace_hidden_courses', JSON.stringify(next));
+      window.dispatchEvent(new Event('nexo_courses_visibility_changed'));
       return next;
     });
-  };
 
-  const toggleHideAllCompleted = () => {
-    setHideCompleted(prev => {
-      const next = !prev;
-      localStorage.setItem('learnspace_hide_completed', String(next));
-      return next;
+    setMyCourses(prev => prev.map(e => {
+      if (e.course?.id === courseId || e.courseId === courseId) {
+        return { ...e, isHidden: nextHidden };
+      }
+      return e;
+    }));
+
+    toast({
+      title: nextHidden ? 'Curso Ocultado dos Outros' : 'Curso Visível no Perfil',
+      message: nextHidden
+        ? `"${courseTitle}" está agora ocultado para outros utilizadores. Apenas você consegue visualizá-lo aqui no seu perfil.`
+        : `"${courseTitle}" está agora visível para quem visitar o seu perfil público.`,
+      type: nextHidden ? 'info' : 'success'
     });
+
+    try {
+      await api.toggleHideCourse(courseId);
+    } catch (_) {}
   };
-  const [achievements, setAchievements] = useState([]);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editName, setEditName] = useState('');
@@ -225,8 +249,18 @@ export const ProfilePage = () => {
       setBannerPosition(currentUser?.profile?.bannerPosition || localPos || '50% 50%');
       setLoading(false);
       setNotFound(false);
-      api.getMyCourses().then(d => setMyCourses(d || [])).catch(() => {});
-      api.getAchievements().then(d => setAchievements((d || []).filter(a => a.isUnlocked))).catch(() => {});
+      api.getMyCourses().then(d => {
+        setMyCourses(d || []);
+        const serverHidden = (d || []).filter(e => e.isHidden).map(e => e.course?.id || e.courseId).filter(Boolean);
+        if (serverHidden.length > 0) {
+          setHiddenCourseIds(prev => {
+            const merged = Array.from(new Set([...prev, ...serverHidden]));
+            localStorage.setItem('nexo_hidden_courses', JSON.stringify(merged));
+            localStorage.setItem('learnspace_hidden_courses', JSON.stringify(merged));
+            return merged;
+          });
+        }
+      }).catch(() => {});
       api.getSocialStatus(currentUser.id).then(st => setSocialStatus(st)).catch(() => {});
     } else if (!isMe && username) {
       setLoading(true);
@@ -234,6 +268,7 @@ export const ProfilePage = () => {
       api.getUserProfile(username).then(userData => {
         setProfileUser(userData);
         setBannerPosition(userData?.profile?.bannerPosition || '50% 50%');
+        setMyCourses(userData?.courses || []);
         setLoading(false);
         if (userData?.id) {
           api.getSocialStatus(userData.id).then(st => setSocialStatus(st)).catch(() => {});
@@ -503,15 +538,6 @@ export const ProfilePage = () => {
             )}
             {isCustomBanner && <div className="absolute inset-0 bg-black/20 pointer-events-none" />}
 
-            <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
-              <span className="px-3 py-1 rounded-xl bg-black/40 backdrop-blur-sm text-xs font-extrabold text-white border border-white/20">
-                Nível {u?.level || 1}
-              </span>
-              <span className="px-3 py-1 rounded-xl bg-blue-600/90 backdrop-blur-sm text-white font-extrabold text-xs">
-                {u?.xp || 0} XP
-              </span>
-            </div>
-
             {isMe && (
               <div className="absolute bottom-3 right-3 z-10 flex items-center gap-2">
                 {isCustomBanner && (
@@ -661,10 +687,6 @@ export const ProfilePage = () => {
               </span>{' '}
               A Seguir
             </button>
-            {(u?.streakDays ?? 0) > 0 && <span className="flex items-center gap-1.5 text-amber-600">
-                <Flame className="w-4 h-4 fill-amber-500 text-amber-500" />
-                {u.streakDays} dias seguidos
-              </span>}
           </div>
         </div>
       </div>
@@ -675,10 +697,6 @@ export const ProfilePage = () => {
         id: 'courses',
         icon: BookOpen,
         label: 'Cursos'
-      }, {
-        id: 'achievements',
-        icon: Award,
-        label: `Conquistas (${achievements.length})`
       }, {
         id: 'friends',
         icon: Users,
@@ -694,95 +712,220 @@ export const ProfilePage = () => {
 
       
       {activeTab === 'courses' && (() => {
-        const visibleProfileCourses = myCourses.filter(e => {
-          const isFinished = (e.progressPercent || 0) >= 100;
-          if (isFinished && (hideCompleted || hiddenCourseIds.includes(e.course?.id))) {
-            return false;
-          }
-          return true;
-        });
+        const isCourseHidden = (e) => {
+          const courseId = e.course?.id || e.courseId;
+          return Boolean(e.isHidden || hiddenCourseIds.includes(courseId));
+        };
+
+        const totalCourses = myCourses.length;
+        const hiddenCoursesList = myCourses.filter(isCourseHidden);
+        const visibleCoursesList = myCourses.filter(e => !isCourseHidden(e));
+        const hiddenCount = hiddenCoursesList.length;
+        const visibleCount = visibleCoursesList.length;
+
+        let displayCourses = myCourses;
+        if (!isMe) {
+          displayCourses = visibleCoursesList;
+        } else if (courseFilter === 'visible') {
+          displayCourses = visibleCoursesList;
+        } else if (courseFilter === 'hidden') {
+          displayCourses = hiddenCoursesList;
+        }
 
         return (
           <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                Cursos Inscritos ({myCourses.length})
-              </h3>
-              {myCourses.some(e => (e.progressPercent || 0) >= 100) && (
-                <button
-                  onClick={toggleHideAllCompleted}
-                  className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                    hideCompleted
-                      ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900/50'
-                      : 'bg-white dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 border-slate-200 dark:border-zinc-700'
-                  }`}
-                >
-                  {hideCompleted ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  <span>{hideCompleted ? 'Concluídos Ocultados' : 'Ocultar Concluídos'}</span>
-                </button>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                  Cursos Inscritos ({totalCourses})
+                </h3>
+                {isMe && (
+                  <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+                    Gira a visibilidade das suas formações para terceiros no seu perfil público.
+                  </p>
+                )}
+              </div>
+
+              {isMe && totalCourses > 0 && (
+                <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-zinc-800/80 border border-slate-200/80 dark:border-zinc-700/80 self-start sm:self-auto text-xs">
+                  <button
+                    onClick={() => setCourseFilter('all')}
+                    className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                      courseFilter === 'all'
+                        ? 'bg-white dark:bg-zinc-900 text-blue-600 dark:text-blue-400 shadow-xs'
+                        : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    Todos ({totalCourses})
+                  </button>
+                  <button
+                    onClick={() => setCourseFilter('visible')}
+                    className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                      courseFilter === 'visible'
+                        ? 'bg-white dark:bg-zinc-900 text-blue-600 dark:text-blue-400 shadow-xs'
+                        : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    Visíveis ({visibleCount})
+                  </button>
+                  <button
+                    onClick={() => setCourseFilter('hidden')}
+                    className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      courseFilter === 'hidden'
+                        ? 'bg-white dark:bg-zinc-900 text-amber-600 dark:text-amber-400 shadow-xs'
+                        : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <EyeOff className="w-3.5 h-3.5" />
+                    <span>Ocultados para Outros ({hiddenCount})</span>
+                  </button>
+                </div>
               )}
             </div>
 
-            {visibleProfileCourses.length === 0 ? (
+            {isMe && courseFilter === 'hidden' && hiddenCount > 0 && (
+              <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 text-amber-900 dark:text-amber-200 text-xs flex items-center gap-2.5">
+                <EyeOff className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                <span>Estes cursos estão ocultados para outros utilizadores que visitem o seu perfil público. Apenas você consegue visualizá-los aqui.</span>
+              </div>
+            )}
+
+            {displayCourses.length === 0 ? (
               <Card className="p-10 text-center bg-slate-50 dark:bg-zinc-800/50 border-slate-200 dark:border-zinc-700 rounded-xl">
-                <BookOpen className="w-10 h-10 text-slate-300 dark:text-zinc-600 mx-auto mb-3" />
-                <p className="text-sm font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                  {myCourses.length > 0 ? 'Os seus cursos concluídos estão ocultados.' : 'Nenhum curso ainda.'}
-                </p>
-                {myCourses.length > 0 ? (
-                  <button
-                    onClick={toggleHideAllCompleted}
-                    className="mt-2 text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
-                  >
-                    Voltar a exibir todos os cursos
-                  </button>
+                {courseFilter === 'hidden' ? (
+                  <>
+                    <Eye className="w-10 h-10 text-slate-300 dark:text-zinc-600 mx-auto mb-3" />
+                    <p className="text-sm font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                      Não tem cursos ocultados
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-sm mx-auto mb-4">
+                      Todos os seus cursos inscritos estão visíveis publicamente no seu perfil.
+                    </p>
+                    <button
+                      onClick={() => setCourseFilter('all')}
+                      className="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white cursor-pointer transition-colors shadow-xs"
+                    >
+                      Ver Todos os Cursos
+                    </button>
+                  </>
                 ) : (
-                  <Link to="/explore">
-                    <Button variant="primary" size="sm" className="mt-3">
-                      Explorar Catálogo
-                    </Button>
-                  </Link>
+                  <>
+                    <BookOpen className="w-10 h-10 text-slate-300 dark:text-zinc-600 mx-auto mb-3" />
+                    <p className="text-sm font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                      {isMe ? 'Ainda não está inscrito em nenhum curso.' : 'Nenhum curso visível no momento.'}
+                    </p>
+                    {isMe && (
+                      <Link to="/explore">
+                        <Button variant="primary" size="sm" className="mt-3">
+                          Explorar Catálogo
+                        </Button>
+                      </Link>
+                    )}
+                  </>
                 )}
               </Card>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {visibleProfileCourses.map(e => {
+                {displayCourses.map(e => {
+                  const courseId = e.course?.id || e.courseId;
+                  const isHidden = isCourseHidden(e);
                   const isFinished = (e.progressPercent || 0) >= 100;
+
                   return (
-                    <Card key={e.id} hover className="p-4 flex items-center justify-between border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 shadow-xs rounded-lg gap-4">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <img src={e.course?.thumbnailUrl} alt={e.course?.title} className="w-14 h-14 rounded-xl object-cover border border-slate-200 dark:border-zinc-700 shrink-0" />
-                        <div className="min-w-0">
-                          <h4 className="font-bold text-slate-900 dark:text-white text-sm truncate">
+                    <Card key={e.id || courseId} hover className="p-4 flex flex-col justify-between border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 shadow-xs rounded-xl gap-4">
+                      <div className="flex items-start gap-3.5 min-w-0">
+                        <div className="relative shrink-0">
+                          <img
+                            src={e.course?.thumbnailUrl || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=80'}
+                            alt={e.course?.title}
+                            className="w-16 h-16 rounded-xl object-cover border border-slate-200 dark:border-zinc-700"
+                          />
+                          {isMe && isHidden && (
+                            <div className="absolute -top-1.5 -right-1.5 p-1 rounded-full bg-amber-500 text-white shadow-xs" title="Ocultado para terceiros">
+                              <EyeOff className="w-3 h-3" />
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                            {isMe && (
+                              isHidden ? (
+                                <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-extrabold border border-amber-500/20 inline-flex items-center gap-1">
+                                  <EyeOff className="w-3 h-3" /> Ocultado para terceiros
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-extrabold border border-emerald-500/20 inline-flex items-center gap-1">
+                                  <Eye className="w-3 h-3" /> Visível no perfil
+                                </span>
+                              )
+                            )}
+                            {e.course?.category && (
+                              <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-700 text-slate-600 dark:text-zinc-300 text-[10px] font-bold">
+                                {e.course.category}
+                              </span>
+                            )}
+                          </div>
+
+                          <h4 className="font-bold text-slate-900 dark:text-white text-sm line-clamp-1 mb-1.5">
                             {e.course?.title}
                           </h4>
-                          <div className="mt-1 w-full bg-slate-100 dark:bg-zinc-700 rounded-full h-1.5">
-                            <div className="bg-blue-600 h-1.5 rounded-full transition-all" style={{
-                              width: `${Math.round(e.progressPercent || 0)}%`
-                            }} />
+
+                          <div className="w-full bg-slate-100 dark:bg-zinc-700 rounded-full h-1.5">
+                            <div
+                              className={`h-1.5 rounded-full transition-all ${
+                                isFinished ? 'bg-emerald-500' : 'bg-blue-600'
+                              }`}
+                              style={{ width: `${Math.round(e.progressPercent || 0)}%` }}
+                            />
                           </div>
+
                           <div className="flex items-center justify-between mt-1 text-xs text-slate-500 dark:text-zinc-400">
-                            <span>{Math.round(e.progressPercent || 0)}% completo</span>
-                            {isFinished && isMe && (
-                              <button
-                                onClick={(ev) => {
-                                  ev.preventDefault();
-                                  ev.stopPropagation();
-                                  toggleHideCourse(e.course?.id);
-                                }}
-                                className="text-[11px] font-bold text-amber-500 hover:underline flex items-center gap-0.5 cursor-pointer"
-                              >
-                                <EyeOff className="w-3 h-3" /> Ocultar
-                              </button>
+                            <span>{Math.round(e.progressPercent || 0)}% concluído</span>
+                            {isFinished && (
+                              <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                                <Check className="w-3 h-3" /> Concluído
+                              </span>
                             )}
                           </div>
                         </div>
                       </div>
-                      <Link to={`/learn/${e.courseId}`} className="shrink-0">
-                        <Button variant="primary" size="sm" className="font-bold">
-                          Aceder
-                        </Button>
-                      </Link>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-zinc-700/60 gap-2">
+                        {isMe ? (
+                          <button
+                            onClick={(ev) => {
+                              ev.preventDefault();
+                              ev.stopPropagation();
+                              toggleHideCourse(courseId, e.course?.title);
+                            }}
+                            className={`text-xs font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors cursor-pointer ${
+                              isHidden
+                                ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900/50 hover:bg-blue-100 dark:hover:bg-blue-900/60'
+                                : 'bg-slate-50 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-700 hover:text-amber-600 dark:hover:text-amber-400'
+                            }`}
+                            title={isHidden ? 'Tornar este curso visível no seu perfil público' : 'Ocultar este curso para outros utilizadores'}
+                          >
+                            {isHidden ? (
+                              <>
+                                <Eye className="w-3.5 h-3.5" />
+                                <span>Tornar Visível</span>
+                              </>
+                            ) : (
+                              <>
+                                <EyeOff className="w-3.5 h-3.5" />
+                                <span>Ocultar de Outros</span>
+                              </>
+                            )}
+                          </button>
+                        ) : <span />}
+
+                        <Link to={`/learn/${courseId}`} className="shrink-0">
+                          <Button variant="primary" size="sm" className="font-bold">
+                            Aceder
+                          </Button>
+                        </Link>
+                      </div>
                     </Card>
                   );
                 })}
@@ -791,36 +934,6 @@ export const ProfilePage = () => {
           </div>
         );
       })()}
-
-      
-      {activeTab === 'achievements' && <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-              Conquistas Desbloqueadas
-            </h3>
-            <Link to="/achievements" className="text-sm font-bold text-blue-600 hover:underline">
-              Ver Todos
-            </Link>
-          </div>
-          {achievements.length === 0 ? <Card className="p-10 text-center bg-slate-50 dark:bg-zinc-800/50 border-slate-200 dark:border-zinc-700 rounded-xl">
-              <Award className="w-10 h-10 text-slate-300 dark:text-zinc-600 mx-auto mb-3" />
-              <p className="text-sm text-slate-500 dark:text-zinc-400">
-                Ainda sem conquistas. Continue a aprender!
-              </p>
-            </Card> : <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {achievements.map(ach => <Card key={ach.id} className="p-4 flex items-center gap-3 bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 shadow-xs rounded-lg">
-                  <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 text-amber-600 flex items-center justify-center shrink-0">
-                    <Award className="w-5 h-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-bold text-slate-900 dark:text-white text-xs truncate">
-                      {ach.title || ach.name}
-                    </p>
-                    <p className="text-xs text-amber-600 font-bold">+{ach.xpReward} XP</p>
-                  </div>
-                </Card>)}
-            </div>}
-        </div>}
 
       
       {activeTab === 'friends' && <Card className="p-8 text-center bg-slate-50 dark:bg-zinc-800/50 border-slate-200 dark:border-zinc-700 rounded-xl">

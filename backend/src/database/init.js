@@ -119,6 +119,7 @@ export function initializeSchemaAndSeed(db) {
       completedAt TEXT,
       progressPercent REAL NOT NULL DEFAULT 0,
       lastLessonId TEXT,
+      isHidden INTEGER NOT NULL DEFAULT 0,
       FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE,
       FOREIGN KEY(courseId) REFERENCES courses(id) ON DELETE CASCADE,
       UNIQUE(userId, courseId)
@@ -555,6 +556,9 @@ export function initializeSchemaAndSeed(db) {
   } catch (_) {}
   try {
     db.exec(`ALTER TABLE profiles ADD COLUMN showBadges INTEGER DEFAULT 1`);
+  } catch (_) {}
+  try {
+    db.exec(`ALTER TABLE enrollments ADD COLUMN isHidden INTEGER DEFAULT 0`);
   } catch (_) {}
   try {
     db.exec(`

@@ -28,8 +28,8 @@ export const JoinCallModal = ({
   roomType = 'voice'
 }) => {
   const { user } = useAuth();
-  const { activeCall } = useActiveCall();
-  const [isMicOn, setIsMicOn] = useState(false); // Mutado por defeito (boas práticas)
+  const { activeCall, isMicMuted, isDeafened } = useActiveCall();
+  const [isMicOn, setIsMicOn] = useState(() => !isMicMuted && !isDeafened);
   const [isCameraOn, setIsCameraOn] = useState(false);
   const [mediaStream, setMediaStream] = useState(null);
   const [permissionError, setPermissionError] = useState(null);
@@ -79,11 +79,12 @@ export const JoinCallModal = ({
   useEffect(() => {
     if (!isOpen) {
       stopTracks();
-      setIsMicOn(false);
       setIsCameraOn(false);
       setPermissionError(null);
+    } else {
+      setIsMicOn(!isMicMuted && !isDeafened);
     }
-  }, [isOpen]);
+  }, [isOpen, isMicMuted, isDeafened]);
 
   // Gestão simples de câmara e microfone na pré-visualização
   useEffect(() => {

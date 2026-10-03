@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import {
   HelpCircle,
@@ -222,8 +222,28 @@ export const HelpSupportPage = () => {
   const [openFaqIndices, setOpenFaqIndices] = useState({});
   const [loadingFaq, setLoadingFaq] = useState(false);
 
-  // Manual Section State
-  const [selectedManualSection, setSelectedManualSection] = useState('student');
+  // Manual Section State (Apresentação interativa em acordeão idêntica ao FAQ)
+  const [manualSearchQuery, setManualSearchQuery] = useState('');
+  const [selectedManualCategory, setSelectedManualCategory] = useState('ALL');
+  const [openManualIndices, setOpenManualIndices] = useState({ '0-0': true, '0-1': true });
+
+  const toggleManualItem = (mIdx, sIdx) => {
+    const key = `${mIdx}-${sIdx}`;
+    setOpenManualIndices((prev) => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
+  const toggleAllModuleItems = (mIdx, sections, expand) => {
+    setOpenManualIndices((prev) => {
+      const next = { ...prev };
+      sections.forEach((_, sIdx) => {
+        next[`${mIdx}-${sIdx}`] = expand;
+      });
+      return next;
+    });
+  };
 
   // Tickets State
   const [myTickets, setMyTickets] = useState([]);
@@ -570,45 +590,6 @@ export const HelpSupportPage = () => {
       ]
     },
     {
-      id: 'gamification',
-      title: 'Manual de Gamificação, XP & Medalhas',
-      subtitle: 'Pontuação de XP, Níveis, Sequências & Rankings',
-      icon: Flame,
-      badge: 'Conquistas',
-      overview: 'Descubra como o sistema de gamificação pedagógica reconhece a sua assiduidade e dedicação: ganhe experiência (XP), evolua de nível, mantenha a sua sequência diária e conquiste medalhas exclusivas.',
-      sections: [
-        {
-          title: '5.1 Tabela de Atribuição de Experiência (XP)',
-          icon: Sparkles,
-          content: 'A cada ação pedagógica concluída, recebe pontos de experiência no seu perfil: Concluir aula em vídeo (+30 a +50 XP), Superar questionário (+50 a +100 XP), Concluir curso integral (+500 XP), e Resposta marcada como solução no fórum (+25 XP).'
-        },
-        {
-          title: '5.2 Níveis de Estudante & Evolução Contínua',
-          icon: GraduationCap,
-          content: 'O seu nível no NEXO progride com base na quantidade total de XP acumulada. Cada nível desbloqueia novas insígnias visuais que são exibidas junto ao seu avatar em canais comunitários, comentários e no perfil público.'
-        },
-        {
-          title: '5.3 Sequência Diária de Estudos (Daily Streak)',
-          icon: Flame,
-          content: 'O contador de sequência regista os dias consecutivos em que estuda na plataforma. Defina a sua meta diária de minutos nas Definições. Manter sequências ininterruptas confere bónus multiplicadores de XP e medalhas de persistência.'
-        },
-        {
-          title: '5.4 Galeria de Conquistas & Medalhas de Mérito',
-          icon: Award,
-          content: 'Aceda à galeria de conquistas no seu perfil para acompanhar as medalhas desbloqueadas e os próximos desafios pedagógicos (ex: "Primeiro Passo", "Mestre dos Quizzes", "Maratonista de 30 Dias", "Líder Comunitário").'
-        },
-        {
-          title: '5.5 Tabela de Classificação Global & Semanal',
-          icon: Users,
-          content: 'Consulte a tabela de classificação no Dashboard para comparar a sua pontuação semanal com outros estudantes de todo o país. Uma competição saudável pensada para motivar a consistência diária nos estudos.'
-        }
-      ],
-      proTips: [
-        'Mesmo em dias atarefados, rever uma aula rápida de 5 minutos é suficiente para manter a sua sequência (streak) viva.',
-        'Partilhar conhecimento e ajudar colegas no fórum é uma das formas mais gratificantes de acelerar a obtenção de XP.'
-      ]
-    },
-    {
       id: 'privacy',
       title: 'Manual de Privacidade & Mensagens (DMs)',
       subtitle: 'Controlo de DMs, Pedidos Prévios & Proteção RGPD',
@@ -617,22 +598,22 @@ export const HelpSupportPage = () => {
       overview: 'Compreenda todas as opções de controlo e privacidade do NEXO: regule quem lhe pode enviar mensagens privadas, ative pedidos prévios de conversa e controle a visibilidade dos seus dados segundo o RGPD.',
       sections: [
         {
-          title: '6.1 Permissões Granulares de Mensagens Diretas (DMs)',
+          title: '5.1 Permissões Granulares de Mensagens Diretas (DMs)',
           icon: MessageSquare,
           content: 'Na página de Definições (/settings), secção "Mensagens & Comunicação", selecione quem tem autorização para lhe enviar mensagens privadas: "Todos os Utilizadores", "Apenas Amigos Mútuos", "Apenas Colegas de Turma & Formadores" ou "Desativado".'
         },
         {
-          title: '6.2 Sistema de Pedidos Prévios de Mensagem',
+          title: '5.2 Sistema de Pedidos Prévios de Mensagem',
           icon: Shield,
           content: 'Ao ativar a funcionalidade "Exigir Pedido Prévio de Mensagem", mensagens de utilizadores que ainda não segue ficam retidas numa aba separada de pedidos. Poderá aceitar ou rejeitar a conversa sem que o remetente saiba se a mensagem foi lida.'
         },
         {
-          title: '6.3 Visibilidade Pública de Perfil, Cursos e Medalhas',
+          title: '5.3 Visibilidade Pública de Perfil e Cursos',
           icon: Settings,
-          content: 'Pode escolher tornar o seu perfil 100% público ou ocultar elementos específicos, como o seu endereço de email, lista de cursos em que está matriculado, medalhas conquistadas ou a sua posição na tabela de classificação.'
+          content: 'Pode escolher tornar o seu perfil público ou ocultar elementos específicos, como o seu endereço de email, lista de cursos em que está matriculado ou links das redes sociais.'
         },
         {
-          title: '6.4 Proteção de Dados & Conformidade com o RGPD',
+          title: '5.4 Proteção de Dados & Conformidade com o RGPD',
           icon: Lock,
           content: 'A plataforma NEXO cumpre integralmente o Regulamento Geral sobre a Proteção de Dados (RGPD). Os seus dados pessoais não são comercializados e pode solicitar a exportação ou eliminação definitiva da sua conta a qualquer instante.'
         }
@@ -641,8 +622,116 @@ export const HelpSupportPage = () => {
         'Recomendamos manter as DMs configuradas para "Amigos Mútuos" ou "Colegas & Formadores" para evitar mensagens não solicitadas.',
         'Utilize o centro de suporte ou a abertura de tickets caso identifique qualquer conduta em violação das regras comunitárias.'
       ]
+    },
+    {
+      id: 'admin',
+      title: 'Manual de Administração & Moderação',
+      subtitle: 'Aprovação de Cursos, Candidaturas de Formadores & Auditoria',
+      icon: Shield,
+      badge: 'Administração',
+      overview: 'Guia operacional para a coordenação e administração do NEXO: validação de novos cursos submetidos, triagem curricular de candidaturas de formadores, gestão de utilizadores e monitorização global.',
+      sections: [
+        {
+          title: '6.1 Painel Central de Administração (/admin)',
+          icon: Shield,
+          content: 'Aceda à consola administrativa no menu do perfil ou em /admin. O dashboard apresenta as métricas vitais da plataforma: total de alunos, formadores ativos, cursos em aprovação, volume de inscrições e tickets pendentes de resposta.'
+        },
+        {
+          title: '6.2 Validação & Aprovação de Cursos Pendentes',
+          icon: CheckCircle2,
+          content: 'Na aba "Cursos", filtre por estado "Pendente". Abra os detalhes para auditar a estrutura pedagógica, os módulos, a pré-visualização de vídeos, os PDFs e a clareza do sumário. Clique em "Aprovar" para disponibilizar imediatamente o curso no catálogo público, ou "Rejeitar" com notas de melhoria.'
+        },
+        {
+          title: '6.3 Triagem de Candidaturas a Formador',
+          icon: Award,
+          content: 'Em "Candidaturas", avalie o portfólio, anos de experiência e propostas curriculares submetidas pelos alunos. Ao validar uma candidatura, o perfil do utilizador é promovido para a função "CREATOR" e o Estúdio de Criação é desbloqueado no respetivo painel.'
+        },
+        {
+          title: '6.4 Gestão de Utilizadores, Papéis e Suspensões',
+          icon: Users,
+          content: 'Na secção "Utilizadores", pesquise por nome, email ou username. Pode alterar funções de utilizadores (STUDENT, CREATOR, ADMIN) ou suspender temporariamente contas que desrespeitem os termos comunitários de convivência.'
+        },
+        {
+          title: '6.5 Triagem e Resposta a Tickets de Suporte',
+          icon: Ticket,
+          content: 'Na secção de Tickets, consulte pedidos de suporte abertos por estudantes e formadores. Pode atribuir prioridade, responder diretamente ao utilizador e encerrar o ticket assim que a dúvida técnica ou pedagógica estiver resolvida.'
+        }
+      ],
+      proTips: [
+        'Verifique sempre se os links de vídeo de um curso estão acessíveis antes de emitir a aprovação final.',
+        'Mantenha o tempo de resposta a candidaturas de formadores dentro das primeiras 24 horas para fomentar novos criadores.'
+      ]
+    },
+    {
+      id: 'troubleshoot',
+      title: 'Resolução de Problemas & Requisitos',
+      subtitle: 'Diagnóstico de Aulas, Permissões WebRTC & Recuperação',
+      icon: AlertCircle,
+      badge: 'Diagnóstico',
+      overview: 'Procedimentos rápidos para diagnóstico e resolução de problemas técnicos frequentes relacionados com vídeo, microfone, sessões e inscrições na plataforma NEXO.',
+      sections: [
+        {
+          title: '7.1 Requisitos Mínimos de Sistema e Navegadores',
+          icon: Laptop,
+          content: 'O NEXO funciona de forma nativa e sem necessidade de plugins nos navegadores modernos: Google Chrome 90+, Mozilla Firefox 88+, Microsoft Edge 90+ e Safari 15+. Recomenda-se ligação à Internet de pelo menos 5 Mbps para reprodução fluida em Full HD e 10 Mbps para transmissão de ecrã a 60 FPS.'
+        },
+        {
+          title: '7.2 O vídeo da aula não carrega ou apresenta ecrã negro',
+          icon: Tv,
+          content: '1) Desative bloqueadores de anúncios (adblockers) agressivos que possam impedir a incorporação de leitores; 2) Atualize a página com [Ctrl + F5] ou limpe a cache do navegador; 3) Confirme se a aceleração por hardware do navegador está ativa; 4) Caso o problema persista, contacte o suporte indicando o ID da aula.'
+        },
+        {
+          title: '7.3 Sem som ou sem imagem nas Salas de Mentoria WebRTC',
+          icon: Radio,
+          content: 'Ao ingressar na sala, confirme se concedeu permissão de microfone/câmara nas definições de permissão do site (ícone de cadeado junto à barra de endereço do navegador). Certifique-se de que nenhuma outra aplicação (Teams, Zoom, Discord) está a monopolizar o dispositivo de captura.'
+        },
+        {
+          title: '7.4 Esqueci-me da palavra-passe ou sessão expirada',
+          icon: Lock,
+          content: 'Na janela de início de sessão (/login), selecione "Esqueceu-se da palavra-passe?" e introduza o seu email registado. Receberá um link seguro válido por 15 minutos para redefinir as suas credenciais. Se a sessão expirar enquanto estuda, inicie sessão novamente sem receio: o seu progresso anterior está gravado no servidor.'
+        },
+        {
+          title: '7.5 O curso não surge na biblioteca após inscrição',
+          icon: CheckCircle2,
+          content: 'Normalmente a sincronização é imediata. Aceda a /courses ou ao seu /dashboard e recarregue a página. Se o curso não aparecer, aceda à página do curso e clique em "Continuar a Estudar". Se ainda assim não constar, abra um ticket na aba "Os Meus Tickets" indicando o título do curso.'
+        }
+      ],
+      proTips: [
+        'Utilize modo de navegação anónima para despistar extensões do browser que possam interferir na reprodução de conteúdos.',
+        'Nos dispositivos móveis, prefira redes Wi-Fi estáveis durante transmissões de voz e vídeo WebRTC para poupar tráfego de dados.'
+      ]
     }
   ];
+
+  // Filtered Manual Modules based on search and category
+  const filteredManualModules = manualModules
+    .map((mod) => {
+      if (selectedManualCategory !== 'ALL' && mod.id !== selectedManualCategory) {
+        return null;
+      }
+      const sections = mod.sections || [];
+      if (!manualSearchQuery.trim()) {
+        return mod;
+      }
+      const query = manualSearchQuery.toLowerCase();
+      const matchesMod =
+        (mod.title && mod.title.toLowerCase().includes(query)) ||
+        (mod.subtitle && mod.subtitle.toLowerCase().includes(query)) ||
+        (mod.overview && mod.overview.toLowerCase().includes(query));
+
+      const matchedSections = sections.filter(
+        (s) =>
+          (s.title && s.title.toLowerCase().includes(query)) ||
+          (s.content && s.content.toLowerCase().includes(query))
+      );
+
+      if (!matchesMod && matchedSections.length === 0) return null;
+      return {
+        ...mod,
+        sections: matchesMod ? sections : matchedSections
+      };
+    })
+    .filter(Boolean);
 
   return (
     <>
@@ -886,159 +975,184 @@ export const HelpSupportPage = () => {
 
         {/* ── TAB 2: MANUAL DO UTILIZADOR ── */}
         {activeTab === 'manual' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-fade-in">
-            {/* Sidebar with Manual Modules */}
-            <div className="lg:col-span-4 flex flex-col gap-2.5">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500 px-2 mb-1">
-                Módulos do Manual ({manualModules.length})
-              </span>
-              {manualModules.map((module) => {
-                const Icon = module.icon;
-                const isSelected = selectedManualSection === module.id;
-                return (
+          <div className="flex flex-col gap-8 animate-fade-in">
+            {/* Search Bar & Category Filters (Idêntico ao estilo do FAQ) */}
+            <div className="p-6 rounded-2xl bg-white dark:bg-[#0b0c0e] border border-slate-200 dark:border-neutral-800 shadow-xs flex flex-col gap-4">
+              <div className="relative">
+                <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Pesquise no manual de instruções (ex.: matrícula, atalhos de vídeo, estúdio, notas, aprovação, salas webrtc, certificados, streaks)..."
+                  value={manualSearchQuery}
+                  onChange={(e) => setManualSearchQuery(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
+
+              {/* Category Pills */}
+              <div className="flex flex-wrap items-center gap-2 pt-2">
+                <span className="text-xs font-bold text-slate-500 dark:text-neutral-400 mr-1">Filtrar por Módulo:</span>
+                <button
+                  onClick={() => setSelectedManualCategory('ALL')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                    selectedManualCategory === 'ALL'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'bg-slate-100 dark:bg-neutral-900 text-slate-600 dark:text-neutral-400 hover:bg-slate-200 dark:hover:bg-neutral-800'
+                  }`}
+                >
+                  Todos os Guias
+                </button>
+                {manualModules.map((mod) => (
                   <button
-                    key={module.id}
-                    onClick={() => setSelectedManualSection(module.id)}
-                    className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-3.5 ${
-                      isSelected
-                        ? 'border-blue-600 bg-blue-50/60 dark:bg-blue-950/20 shadow-xs ring-2 ring-blue-500/20'
-                        : 'border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#0b0c0e] hover:bg-slate-50 dark:hover:bg-neutral-900'
+                    key={mod.id}
+                    onClick={() => setSelectedManualCategory(mod.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                      selectedManualCategory === mod.id
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'bg-slate-100 dark:bg-neutral-900 text-slate-600 dark:text-neutral-400 hover:bg-slate-200 dark:hover:bg-neutral-800'
                     }`}
                   >
-                    <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                        isSelected
-                          ? 'bg-blue-600 text-white shadow-xs'
-                          : 'bg-slate-100 dark:bg-neutral-900 text-slate-600 dark:text-neutral-400'
-                      }`}
-                    >
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-1">
-                        <h4 className="font-bold text-sm text-slate-900 dark:text-white truncate">
-                          {module.title}
-                        </h4>
-                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-100 dark:bg-neutral-800 text-slate-500 dark:text-neutral-400 shrink-0">
-                          {module.badge}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5 line-clamp-1">
-                        {module.subtitle}
-                      </p>
-                    </div>
+                    {mod.title.replace('Manual d', 'D').replace('Manual de ', '')}
                   </button>
-                );
-              })}
+                ))}
+              </div>
             </div>
 
-            {/* Module Content Display */}
-            <div className="lg:col-span-8">
-              {(() => {
-                const currentModule = manualModules.find((m) => m.id === selectedManualSection) || manualModules[0];
-                const ModuleIcon = currentModule.icon;
+            {/* List of Modules & Accordion Items (Like FAQ) */}
+            {filteredManualModules.length === 0 ? (
+              <Card className="p-12 text-center border border-slate-200 dark:border-neutral-800">
+                <BookOpen className="w-12 h-12 text-slate-300 dark:text-neutral-700 mx-auto mb-3" />
+                <h3 className="font-bold text-base text-slate-900 dark:text-white">Nenhum guia encontrado</h3>
+                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 max-w-sm mx-auto mb-4">
+                  Não encontrámos tópicos no manual correspondentes a &quot;{manualSearchQuery}&quot;. Experimente outros termos ou consulte as Perguntas Frequentes.
+                </p>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setManualSearchQuery('');
+                    setSelectedManualCategory('ALL');
+                  }}
+                  className="text-xs font-bold"
+                >
+                  Limpar Pesquisa
+                </Button>
+              </Card>
+            ) : (
+              <div className="space-y-8">
+                {filteredManualModules.map((module, mIdx) => {
+                  const ModuleIcon = module.icon;
+                  const sections = module.sections || [];
+                  const allExpanded = sections.length > 0 && sections.every((_, sIdx) => openManualIndices[`${mIdx}-${sIdx}`]);
 
-                return (
-                  <Card className="p-6 sm:p-10 border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#0b0c0e] space-y-8 shadow-xs">
-                    {/* Header */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100 dark:border-neutral-800">
-                      <div className="flex items-center gap-3.5">
-                        <div className="w-12 h-12 rounded-2xl bg-blue-600/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 flex items-center justify-center shrink-0">
-                          <ModuleIcon className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[11px] font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-                              Manual Oficial
-                            </span>
-                            <span className="text-xs text-slate-300 dark:text-neutral-700">•</span>
-                            <span className="text-xs font-bold text-slate-500">{currentModule.badge}</span>
+                  return (
+                    <div
+                      key={module.id}
+                      className="p-6 sm:p-8 rounded-2xl bg-white dark:bg-[#0b0c0e] border border-slate-200 dark:border-neutral-800 shadow-xs space-y-6"
+                    >
+                      {/* Module Header */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-neutral-800/80">
+                        <div className="flex items-center gap-3.5">
+                          <div className="w-11 h-11 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                            <ModuleIcon className="w-5 h-5" />
                           </div>
-                          <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                            {currentModule.title}
-                          </h2>
-                        </div>
-                      </div>
-
-                      <Badge size="sm" variant="outline" className="shrink-0 self-start sm:self-auto font-bold">
-                        {currentModule.sections.length} Secções Passo a Passo
-                      </Badge>
-                    </div>
-
-                    {/* Overview Box */}
-                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-neutral-900/60 border border-slate-200/80 dark:border-neutral-800 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-neutral-300">
-                      {currentModule.overview}
-                    </div>
-
-                    {/* Step by Step Sub-Sections */}
-                    <div className="space-y-5">
-                      {currentModule.sections.map((sec, sIdx) => {
-                        const SecIcon = sec.icon;
-                        return (
-                          <div
-                            key={sIdx}
-                            className="p-5 rounded-2xl bg-white dark:bg-[#08090b] border border-slate-200/80 dark:border-neutral-800 space-y-2.5 shadow-xs"
-                          >
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-                                <SecIcon className="w-4 h-4" />
-                              </div>
-                              <h3 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">
-                                {sec.title}
-                              </h3>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                                Guia Prático
+                              </span>
+                              <span className="text-xs text-slate-300 dark:text-neutral-700">•</span>
+                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-100 dark:bg-neutral-800 text-slate-500 dark:text-neutral-400">
+                                {module.badge}
+                              </span>
                             </div>
-                            <p className="text-xs sm:text-sm text-slate-600 dark:text-neutral-300 leading-relaxed pl-9">
-                              {sec.content}
+                            <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight mt-0.5">
+                              {module.title}
+                            </h2>
+                            <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
+                              {module.subtitle}
                             </p>
                           </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Pro Tips Box */}
-                    {currentModule.proTips && currentModule.proTips.length > 0 && (
-                      <div className="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-2">
-                        <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-extrabold text-xs uppercase tracking-wider">
-                          <Sparkles className="w-4 h-4" />
-                          <span>Dicas Chave & Recomendações</span>
                         </div>
-                        <ul className="space-y-1.5 pl-5 list-disc text-xs sm:text-sm text-amber-900 dark:text-amber-200/90 leading-relaxed">
-                          {currentModule.proTips.map((tip, tIdx) => (
-                            <li key={tIdx}>{tip}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
 
-                    {/* Bottom CTA */}
-                    <div className="pt-4 border-t border-slate-100 dark:border-neutral-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                      <span className="text-xs text-slate-500 dark:text-neutral-400">
-                        Restou alguma dúvida sobre este módulo?
-                      </span>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => {
-                          if (!user) {
-                            toast({
-                              title: 'Início de Sessão Necessário',
-                              message: 'Inicie sessão para abrir um ticket.',
-                              type: 'info'
-                            });
-                            return;
-                          }
-                          setShowNewTicketModal(true);
-                        }}
-                        leftIcon={<Ticket className="w-3.5 h-3.5" />}
-                        className="text-xs font-bold"
-                      >
-                        Abrir Ticket de Suporte
-                      </Button>
+                        <div className="flex items-center gap-2 self-start sm:self-center">
+                          <button
+                            type="button"
+                            onClick={() => toggleAllModuleItems(mIdx, sections, !allExpanded)}
+                            className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-neutral-800 text-[11px] font-bold text-slate-600 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+                          >
+                            {allExpanded ? 'Recolher Todos' : 'Expandir Todos'}
+                          </button>
+                          <span className="text-xs text-slate-400 font-medium hidden sm:inline">
+                            {sections.length} {sections.length === 1 ? 'tópico' : 'tópicos'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Module Overview */}
+                      <p className="text-xs sm:text-sm text-slate-600 dark:text-neutral-300 leading-relaxed bg-slate-50 dark:bg-neutral-900/40 p-4 rounded-xl border border-slate-100 dark:border-neutral-800/60">
+                        {module.overview}
+                      </p>
+
+                      {/* Accordion Items List (Exactly like FAQ) */}
+                      <div className="space-y-2.5">
+                        {sections.map((sec, sIdx) => {
+                          const SecIcon = sec.icon || CheckCircle2;
+                          const isOpen = openManualIndices[`${mIdx}-${sIdx}`];
+
+                          return (
+                            <div
+                              key={sIdx}
+                              className="rounded-xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#08090b] overflow-hidden transition-all shadow-xs"
+                            >
+                              <button
+                                onClick={() => toggleManualItem(mIdx, sIdx)}
+                                className="w-full p-4 sm:p-4.5 flex items-center justify-between text-left gap-3.5 hover:bg-slate-50/70 dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
+                              >
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                                    <SecIcon className="w-4 h-4" />
+                                  </div>
+                                  <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
+                                    {sec.title}
+                                  </span>
+                                </div>
+                                <ChevronDown
+                                  className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
+                                    isOpen ? 'rotate-180 text-blue-600 dark:text-blue-400' : ''
+                                  }`}
+                                />
+                              </button>
+
+                              {isOpen && (
+                                <div className="px-4 sm:px-5 pb-4 pt-1 text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-neutral-300 border-t border-slate-100 dark:border-neutral-800/80">
+                                  <p className="pl-10">{sec.content}</p>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Pro Tips Box */}
+                      {module.proTips && module.proTips.length > 0 && (
+                        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-2">
+                          <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-extrabold text-xs uppercase tracking-wider">
+                            <Sparkles className="w-4 h-4" />
+                            <span>Dicas Recomendadas & Boas Práticas</span>
+                          </div>
+                          <ul className="space-y-1.5 pl-5 list-disc text-xs text-amber-900 dark:text-amber-200/90 leading-relaxed">
+                            {module.proTips.map((tip, tIdx) => (
+                              <li key={tIdx}>{tip}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
-                  </Card>
-                );
-              })()}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import { Modal } from '../../../components/ui/Modal';
@@ -47,6 +47,7 @@ export const SpaceChat = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [inVoiceRoom, setInVoiceRoom] = useState(null);
   const [pendingVoiceRoom, setPendingVoiceRoom] = useState(null);
+  const [voiceRoomPreferences, setVoiceRoomPreferences] = useState({ startMuted: false, startVideoOff: true });
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [showChannelModal, setShowChannelModal] = useState(false);
   const [newChName, setNewChName] = useState('');
@@ -269,7 +270,7 @@ export const SpaceChat = () => {
       </div>
 
       
-      {inVoiceRoom ? <CallStage key={`${space?.id || id || 'community'}_${inVoiceRoom}`} roomName={inVoiceRoom} roomId={`space_${space?.id || id || 'community'}_${inVoiceRoom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '_')}`} roomType={inVoiceRoom.toLowerCase().includes('palco') || inVoiceRoom.toLowerCase().includes('masterclass') ? 'stage' : inVoiceRoom.toLowerCase().includes('dúvida') || inVoiceRoom.toLowerCase().includes('duvidas') ? 'qa' : 'voice'} isStageMode={inVoiceRoom.toLowerCase().includes('palco') || inVoiceRoom.toLowerCase().includes('masterclass')} onDisconnect={() => {
+      {inVoiceRoom ? <CallStage key={`${space?.id || id || 'community'}_${inVoiceRoom}`} roomName={inVoiceRoom} roomId={`space_${space?.id || id || 'community'}_${inVoiceRoom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '_')}`} roomType={inVoiceRoom.toLowerCase().includes('palco') || inVoiceRoom.toLowerCase().includes('masterclass') ? 'stage' : inVoiceRoom.toLowerCase().includes('dúvida') || inVoiceRoom.toLowerCase().includes('duvidas') ? 'qa' : 'voice'} isStageMode={inVoiceRoom.toLowerCase().includes('palco') || inVoiceRoom.toLowerCase().includes('masterclass')} initialMuted={voiceRoomPreferences.startMuted} initialCameraOn={!voiceRoomPreferences.startVideoOff} onDisconnect={() => {
         setInVoiceRoom(null);
         endCall();
       }} /> : <>
@@ -404,6 +405,7 @@ export const SpaceChat = () => {
           if (activeCall) {
             endCall();
           }
+          setVoiceRoomPreferences({ startMuted, startVideoOff });
           setInVoiceRoom(room);
           soundEffects.playJoinCall();
           const cleanRoomId = `space_${space?.id || id || 'community'}_${room.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '_')}`;

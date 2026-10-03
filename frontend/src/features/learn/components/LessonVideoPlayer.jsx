@@ -133,17 +133,17 @@ export const LessonVideoPlayer = ({
         <div>
           <h2 className="text-base sm:text-lg font-bold text-slate-950 tracking-tight">{title}</h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Duração estimada: {durationMin} minutos • Recompensa: +{xpReward} XP
+            Duração estimada: {durationMin} minutos
           </p>
         </div>
 
         {onMarkComplete && <button onClick={onMarkComplete} className={`px-5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${isCompleted ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/80 shadow-2xs' : 'bg-slate-950 text-white hover:bg-slate-800 shadow-xs'}`}>
             {isCompleted ? <>
                 <Check className="w-4 h-4 text-emerald-600" />
-                <span>Aula Concluída (+{xpReward} XP)</span>
+                <span>Aula Concluída</span>
               </> : <>
-                <Award className="w-4 h-4" />
-                <span>Concluir Aula (+{xpReward} XP)</span>
+                <Check className="w-4 h-4" />
+                <span>Concluir Aula</span>
               </>}
           </button>}
       </div>

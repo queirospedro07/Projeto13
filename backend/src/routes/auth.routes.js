@@ -23,9 +23,21 @@ export const registerValidation = [
     .isLength({ min: 6 }).withMessage('A palavra-passe deve ter pelo menos 6 caracteres')
     .isLength({ max: 128 }).withMessage('A palavra-passe não pode exceder 128 caracteres'),
   body('avatarUrl')
-    .optional()
-    .isURL({ protocols: ['http', 'https'], require_protocol: true })
-    .withMessage('Escolha uma imagem de perfil válida')
+    .optional({ nullable: true, checkFalsy: true })
+    .custom((val) => {
+      if (!val) return true;
+      if (typeof val === 'string') {
+        const trimmed = val.trim();
+        if (
+          trimmed.startsWith('/') ||
+          trimmed.startsWith('data:image/') ||
+          /^https?:\/\//i.test(trimmed)
+        ) {
+          return true;
+        }
+      }
+      throw new Error('Escolha uma imagem de perfil válida');
+    })
 ];
 
 export const loginValidation = [

@@ -91,7 +91,7 @@ export const CourseEnrollModal = ({
 
     setIsSubmitting(true);
     try {
-      if (isSpace) {
+      if (isSpace && !String(course.id).startsWith('course-') && !String(course.id).startsWith('demo-course-')) {
         await api.joinSpace(course.id);
       } else {
         await api.enrollCourse(course.id);

@@ -8,7 +8,9 @@ export const CallRoomModal = ({
   roomType = 'voice',
   isOpen,
   onClose,
-  initialParticipants = []
+  initialParticipants = [],
+  initialMuted = false,
+  initialCameraOn = false
 }) => {
   const [mounted, setMounted] = useState(false);
 
@@ -36,6 +38,9 @@ export const CallRoomModal = ({
         roomType={roomType}
         initialParticipants={initialParticipants}
         onDisconnect={onClose}
+        isModal={true}
+        initialMuted={initialMuted}
+        initialCameraOn={initialCameraOn}
       />
     </div>
   );

@@ -13,7 +13,12 @@ import {
   ChevronRight,
   BarChart3,
   UserPlus,
-  HelpCircle
+  HelpCircle,
+  Mic,
+  MicOff,
+  Headphones,
+  HeadphoneOff,
+  PhoneOff
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
@@ -24,7 +29,7 @@ import { api } from '../../services/api';
 export const Sidebar = () => {
   const { user } = useAuth();
   const { socket } = useSocket();
-  const { activeCall } = useActiveCall();
+  const { activeCall, isMicMuted, isDeafened, toggleMic, toggleDeafen, leaveCall } = useActiveCall();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [enrolledCourses, setEnrolledCourses] = useState([]);
@@ -158,11 +163,11 @@ export const Sidebar = () => {
 
   return (
     <aside
-      className={`hidden md:flex flex-col justify-between border-r border-slate-200/90 dark:border-neutral-900 bg-white dark:bg-black transition-all duration-300 select-none z-30 shrink-0 ${
+      className={`hidden md:flex flex-col justify-between border-r border-slate-200/90 dark:border-neutral-900 bg-white dark:bg-black transition-all duration-300 select-none z-30 shrink-0 sticky top-16 h-[calc(100dvh-4rem)] ${
         collapsed ? 'w-18' : 'w-64'
       }`}
     >
-      <div className="flex-1 pt-2 pb-4 px-2.5 overflow-y-auto custom-scrollbar flex flex-col gap-3.5">
+      <div className="flex-1 min-h-0 pt-2 pb-4 px-2.5 overflow-y-auto custom-scrollbar flex flex-col gap-3.5">
         <div className="flex items-center justify-between px-2 pt-0.5 pb-1">
           {!collapsed ? (
             <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
@@ -441,8 +446,42 @@ export const Sidebar = () => {
         )}
       </div>
 
+      {Boolean(activeCall) && (
+        <div className={`border-t border-slate-200/80 dark:border-zinc-800 bg-emerald-500/10 dark:bg-emerald-950/30 flex items-center justify-between shrink-0 transition-all ${
+          collapsed ? 'p-2 justify-center' : 'px-3 py-2'
+        }`}>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+            {!collapsed && (
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 truncate leading-tight">
+                  Voz Conectada
+                </p>
+                <p className="text-[10px] text-slate-500 dark:text-zinc-400 truncate leading-tight">
+                  {activeCall.roomName || 'Chamada em curso'}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              leaveCall();
+            }}
+            className="p-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:text-white hover:bg-rose-600 bg-rose-500/15 dark:bg-rose-500/25 transition-all cursor-pointer shrink-0 shadow-xs active:scale-95 border border-rose-500/20"
+            title="Desconectar / Sair da Chamada"
+            aria-label="Sair da chamada"
+          >
+            <PhoneOff className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {user && (
-        <div className="p-3 border-t border-slate-100 dark:border-zinc-800/80 bg-slate-50/50 dark:bg-[#08080a]">
+        <div className="p-3 border-t border-slate-100 dark:border-zinc-800/80 bg-slate-50/50 dark:bg-[#08080a] shrink-0 mt-auto">
           <div className="flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800/60 transition-colors">
             <Link to="/profile" className="flex items-center gap-2.5 min-w-0 flex-1">
               <Avatar src={user.avatarUrl} name={user.name} size="sm" status="online" className="shrink-0" />
@@ -459,13 +498,67 @@ export const Sidebar = () => {
             </Link>
 
             {!collapsed && (
-              <Link
-                to="/settings"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-zinc-700 transition-colors shrink-0"
-                title="Definições da conta"
-              >
-                <Settings className="w-3.5 h-3.5" />
-              </Link>
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleMic();
+                  }}
+                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                    isMicMuted
+                      ? 'text-rose-600 bg-rose-500/10 hover:bg-rose-500/20'
+                      : 'text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-zinc-700'
+                  }`}
+                  title={isMicMuted ? 'Ativar Microfone' : 'Silenciar Microfone'}
+                  aria-label={isMicMuted ? 'Ativar Microfone' : 'Silenciar Microfone'}
+                >
+                  {isMicMuted ? <MicOff className="w-3.5 h-3.5 text-rose-500" /> : <Mic className="w-3.5 h-3.5" />}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleDeafen();
+                  }}
+                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                    isDeafened
+                      ? 'text-rose-600 bg-rose-500/10 hover:bg-rose-500/20'
+                      : 'text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-zinc-700'
+                  }`}
+                  title={isDeafened ? 'Desativar Ensurdecer' : 'Ensurdecer'}
+                  aria-label={isDeafened ? 'Desativar Ensurdecer' : 'Ensurdecer'}
+                >
+                  {isDeafened ? <HeadphoneOff className="w-3.5 h-3.5 text-rose-500" /> : <Headphones className="w-3.5 h-3.5" />}
+                </button>
+
+                {Boolean(activeCall) && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      leaveCall();
+                    }}
+                    className="p-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:text-white hover:bg-rose-600 bg-rose-500/10 dark:bg-rose-500/20 transition-all cursor-pointer shrink-0 shadow-xs active:scale-95"
+                    title="Desconectar / Sair da Chamada"
+                    aria-label="Sair da chamada"
+                  >
+                    <PhoneOff className="w-3.5 h-3.5" />
+                  </button>
+                )}
+
+                <Link
+                  to="/settings"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-zinc-700 transition-colors shrink-0"
+                  title="Definições da conta"
+                >
+                  <Settings className="w-3.5 h-3.5" />
+                </Link>
+              </div>
             )}
           </div>
         </div>

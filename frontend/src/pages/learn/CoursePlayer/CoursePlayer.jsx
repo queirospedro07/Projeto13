@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Play, Hash, Radio, HelpCircle, FileCode2, Check, Award, ChevronRight, ChevronLeft, Video, Code2, Download, FolderArchive, Lightbulb, CheckSquare, Square, Terminal, Rocket, Clock, CheckCircle2, Menu, BookOpen, Plus, Settings, Users, Lock, Sparkles, PhoneCall } from 'lucide-react';
 import { Modal } from '../../../components/ui/Modal';
@@ -24,8 +24,7 @@ export const CoursePlayer = () => {
   } = useParams();
   const navigate = useNavigate();
   const {
-    user,
-    triggerXpCelebration
+    user
   } = useAuth();
   const {
     activeCall,
@@ -72,6 +71,7 @@ export const CoursePlayer = () => {
   const [liveRoomName, setLiveRoomName] = useState('Live Mentoria & Ecrã');
   const [inLiveRoom, setInLiveRoom] = useState(false);
   const [pendingJoinRoom, setPendingJoinRoom] = useState(null);
+  const [liveRoomPreferences, setLiveRoomPreferences] = useState({ startMuted: false, startVideoOff: true });
   const [activeLessonTab, setActiveLessonTab] = useState('overview');
   const [channelMessages, setChannelMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
@@ -191,7 +191,9 @@ export const CoursePlayer = () => {
       setCourse(data);
       const completed = new Set();
       data.userEnrollment?.lessonProgresses?.forEach(lp => {
-        if (lp.isCompleted) completed.add(lp.lessonId);
+        if (lp.completed === 1 || lp.completed === true || lp.isCompleted) {
+          completed.add(lp.lessonId);
+        }
       });
       setCompletedLessonIds(completed);
       const allLessons = data.modules?.flatMap(m => m.lessons) || [];
@@ -367,11 +369,26 @@ export const CoursePlayer = () => {
     try {
       const res = await api.completeLesson(course.id, currentLesson.id);
       setCompletedLessonIds(prev => new Set([...prev, currentLesson.id]));
-      triggerXpCelebration(res.xpGained || 25, `+${res.xpGained} XP! Aula Concluída`);
+      setCourse(prev => {
+        if (!prev) return prev;
+        const updatedLessonProgresses = res.enrollment?.lessonProgresses || [
+          ...(prev.userEnrollment?.lessonProgresses || []).filter(lp => lp.lessonId !== currentLesson.id),
+          { enrollmentId: res.enrollment?.id, lessonId: currentLesson.id, completed: 1, isCompleted: true }
+        ];
+        return {
+          ...prev,
+          userEnrollment: {
+            ...prev.userEnrollment,
+            ...res.enrollment,
+            lessonProgresses: updatedLessonProgresses,
+            progressPercent: res.enrollment?.progressPercent ?? prev.userEnrollment?.progressPercent
+          }
+        };
+      });
       soundEffects.playSuccess();
       toast({
         title: 'Aula Concluída!',
-        message: `+${res.xpGained || 25} XP conquistados. Progresso: ${res.enrollment.progressPercent}%`,
+        message: `Progresso: ${res.enrollment?.progressPercent ?? 0}%`,
         type: 'success'
       });
     } catch (err) {
@@ -699,8 +716,8 @@ export const CoursePlayer = () => {
             {activeView === 'lesson' && currentLesson && <button onClick={handleMarkComplete} className={`px-2.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1 sm:gap-2 transition-all cursor-pointer shrink-0 ${isCurrentCompleted ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-500/20'}`}>
                 {isCurrentCompleted ? <>
                     <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600" />
-                    <span className="hidden xs:inline">Concluída (+25 XP)</span>
-                    <span className="xs:hidden">Feito (+25)</span>
+                    <span className="hidden xs:inline">Concluída</span>
+                    <span className="xs:hidden">Feito</span>
                   </> : <>
                     <span className="hidden xs:inline">Marcar como Concluída</span>
                     <span className="xs:hidden">Concluir</span>
@@ -715,7 +732,7 @@ export const CoursePlayer = () => {
         </header>
 
         {activeView === 'live-room' && inLiveRoom && <div className="flex-1 flex flex-col min-w-0 bg-slate-100 dark:bg-slate-950 overflow-hidden">
-            <CallStage key={`${courseId}_${liveRoomName || 'live'}`} roomName={liveRoomName || 'Sala ao Vivo do Curso'} roomId={`course_${courseId}_${(liveRoomName || 'live').toLowerCase().replace(/[^a-z0-9]/g, '_')}`} isStageMode={liveRoomName.toLowerCase().includes('dúvida') || liveRoomName.toLowerCase().includes('duvidas') || liveRoomName.toLowerCase().includes('mentoria')} onDisconnect={() => {
+            <CallStage key={`${courseId}_${liveRoomName || 'live'}`} roomName={liveRoomName || 'Sala ao Vivo do Curso'} roomId={`course_${courseId}_${(liveRoomName || 'live').toLowerCase().replace(/[^a-z0-9]/g, '_')}`} isStageMode={liveRoomName.toLowerCase().includes('dúvida') || liveRoomName.toLowerCase().includes('duvidas') || liveRoomName.toLowerCase().includes('mentoria')} initialMuted={liveRoomPreferences.startMuted} initialCameraOn={!liveRoomPreferences.startVideoOff} onDisconnect={() => {
           setInLiveRoom(false);
           endCall();
           const fallback = customChannels.find(c => c.type !== 'voice') || customChannels[0];
@@ -772,8 +789,7 @@ export const CoursePlayer = () => {
             } catch (_) {}
           }
           return undefined;
-        })()} onCompleteQuiz={(score, xp) => {
-          triggerXpCelebration(xp, `+${xp} XP! Quiz Aprovado (${score}%)`);
+        })()} onCompleteQuiz={() => {
           if (!isCurrentCompleted) {
             handleMarkComplete();
           }
@@ -793,10 +809,6 @@ export const CoursePlayer = () => {
                       </span>
                     </div>
                   </div>
-
-                  <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20">
-                    +{currentLesson.xpReward || 40} XP
-                  </span>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-[#181a24] border border-[#262a3b] text-xs text-zinc-300 leading-relaxed">
@@ -848,10 +860,6 @@ export const CoursePlayer = () => {
                       </span>
                     </div>
                   </div>
-
-                  <span className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs font-bold border border-blue-500/20">
-                    +{currentLesson.xpReward || 15} XP
-                  </span>
                 </div>
 
                 <p className="text-xs text-zinc-300 leading-relaxed">
@@ -915,10 +923,6 @@ export const CoursePlayer = () => {
                       </span>
                     </div>
                   </div>
-
-                  <span className="px-3 py-1 rounded-full bg-purple-500/10 text-purple-400 text-xs font-bold border border-purple-500/20">
-                    +{currentLesson.xpReward || 100} XP
-                  </span>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-[#181a24] border border-[#262a3b] text-xs text-zinc-300 leading-relaxed flex flex-col gap-2">
@@ -936,7 +940,6 @@ export const CoursePlayer = () => {
             if (!projectSubmissionUrl.trim()) return;
             setProjectSubmitted(true);
             soundEffects.play('success');
-            triggerXpCelebration(100, '+100 XP! Projeto Submetido');
             toast({
               title: 'Projeto Submetido',
               message: 'O seu projeto foi enviado para revisão dos mentores.',
@@ -992,9 +995,6 @@ export const CoursePlayer = () => {
                       Guia de Estudo & Artigo Técnico
                     </span>
                   </div>
-                  <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-bold border border-blue-200 dark:border-blue-800/40">
-                    +{currentLesson.xpReward || 25} XP
-                  </span>
                 </div>
 
                 
@@ -1097,9 +1097,7 @@ export const CoursePlayer = () => {
           </div>))}
 
         
-        {activeView === 'quiz' && <CourseQuizView quizTitle={`Quiz: ${course.title}`} onCompleteQuiz={(score, xp) => {
-        triggerXpCelebration(xp, `+${xp} XP! Quiz Aprovado`);
-      }} />}
+        {activeView === 'quiz' && <CourseQuizView quizTitle={`Quiz: ${course.title}`} onCompleteQuiz={() => {}} />}
 
         
         {activeView === 'documents' && <CourseDocumentsView documents={course.documents || course.resources || []} />}
@@ -1283,6 +1281,7 @@ export const CoursePlayer = () => {
           if (activeCall) {
             endCall();
           }
+          setLiveRoomPreferences({ startMuted, startVideoOff });
           const roomId = `course_${courseId}_${(room || 'live').toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
           setLiveRoomName(room);
           setInLiveRoom(true);

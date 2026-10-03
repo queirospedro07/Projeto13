@@ -1,4 +1,4 @@
-﻿// Rotas de perfil e utilizador — montadas via auth.routes.js
+// Rotas de perfil e utilizador — montadas via auth.routes.js
 // Rotas de autenticação (register, login, me, demo) estão em auth.routes.js
 
 import { Router } from 'express';
@@ -103,6 +103,36 @@ router.get('/user/:identifier', optionalAuth, async (req, res) => {
         showCourses:      user.showCourses      !== 0 ? 1 : 0,
         showBadges:       user.showBadges       !== 0 ? 1 : 0,
       },
+      courses: (() => {
+        const showCourses = user.showCourses !== 0;
+        if (!isSelf && !showCourses) return [];
+        const enrollmentRows = queryAll(`SELECT e.id as enrollmentId, e.progressPercent, e.completedAt, e.isHidden,
+                c.id, c.title, c.slug, c.description, c.category, c.thumbnailUrl, c.bannerUrl, c.durationHours
+         FROM enrollments e
+         JOIN courses c ON e.courseId = c.id
+         WHERE e.userId = ?
+         ORDER BY e.enrolledAt DESC`, [user.id]);
+
+        return enrollmentRows
+          .filter(r => isSelf || (r.isHidden !== 1))
+          .map(r => ({
+            id: r.enrollmentId,
+            courseId: r.id,
+            progressPercent: r.progressPercent || 0,
+            completedAt: r.completedAt,
+            isHidden: r.isHidden === 1,
+            course: {
+              id: r.id,
+              title: r.title,
+              slug: r.slug,
+              description: r.description,
+              category: r.category,
+              thumbnailUrl: r.thumbnailUrl,
+              bannerUrl: r.bannerUrl,
+              durationHours: r.durationHours
+            }
+          }));
+      })(),
       achievementsCount: (!isSelf && !showBadges) ? 0 : (user.achievementsCount || 0),
       createdAt: user.createdAt
     });
@@ -126,7 +156,7 @@ router.put('/profile', authenticate, async (req, res) => {
 
     // Validar avatarUrl
     if (avatarUrl && typeof avatarUrl === 'string') {
-      const ok = avatarUrl.startsWith('data:image/') || avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://');
+      const ok = avatarUrl.startsWith('/') || avatarUrl.startsWith('data:image/') || avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://');
       if (!ok) return res.status(400).json({ error: 'URL de avatar inválido' });
       if (avatarUrl.startsWith('data:image/') && avatarUrl.length > 2_800_000)
         return res.status(400).json({ error: 'A imagem de perfil não pode exceder 2MB' });

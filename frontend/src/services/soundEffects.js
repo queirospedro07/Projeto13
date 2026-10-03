@@ -82,6 +82,16 @@ class SoundService {
     this.playTone(600, 'sine', 0.08, 0.04);
   }
 
+  playDeafen() {
+    this.playTone(280, 'triangle', 0.09, 0.05);
+    setTimeout(() => this.playTone(190, 'triangle', 0.12, 0.05), 80);
+  }
+
+  playUndeafen() {
+    this.playTone(190, 'sine', 0.08, 0.05);
+    setTimeout(() => this.playTone(380, 'sine', 0.12, 0.05), 80);
+  }
+
   playMessage() {
     this.playTone(880, 'sine', 0.08, 0.05);
   }

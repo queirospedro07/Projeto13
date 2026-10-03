@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Users, BookOpen, MessageSquare, Plus, Search, ArrowRight, Check, Star, GraduationCap } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
@@ -19,65 +19,58 @@ export const DiscoverSpaces = () => {
   const {
     toast
   } = useToast();
-  const categories = [{
-    id: 'all',
-    label: 'Todas as Categorias'
-  }, {
-    id: 'Programming',
-    label: 'Programação'
-  }, {
-    id: 'Design',
-    label: 'Design'
-  }, {
-    id: 'AI & Data',
-    label: 'IA & Dados'
-  }, {
-    id: 'Cybersecurity',
-    label: 'Cibersegurança'
-  }, {
-    id: 'Cloud & DevOps',
-    label: 'Cloud & DevOps'
-  }];
+  const categories = [
+    { id: 'all', label: 'Todas as Categorias' },
+    { id: 'programming', label: 'Programação' },
+    { id: 'design', label: 'Design' },
+    { id: 'ai', label: 'IA & Dados' },
+    { id: 'cloud', label: 'Cloud & DevOps' },
+  ];
+
   const fetchSpaces = async () => {
     setLoading(true);
     try {
       const params = {};
       if (selectedCategory !== 'all') params.category = selectedCategory;
       if (search) params.search = search;
-      const data = await api.getSpaces(params);
+      const data = await api.getCourses(params);
       setSpaces(data || []);
     } catch (err) {
-      console.error(err);
+      console.error('Failed to load courses in explore:', err);
     } finally {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     fetchSpaces();
   }, [selectedCategory]);
-  const handleJoin = async (spaceId, spaceName) => {
+
+  const handleJoin = async (courseId, courseTitle) => {
     try {
-      await api.joinSpace(spaceId);
+      await api.enrollCourse(courseId);
       toast({
         title: 'Inscrição Confirmada',
-        message: `Agora tem acesso ao curso ${spaceName}.`,
+        message: `Agora tem acesso ao curso ${courseTitle}.`,
         type: 'success'
       });
       fetchSpaces();
     } catch (err) {
       toast({
         title: 'Erro',
-        message: 'Não foi possível concluir a inscrição',
+        message: err.message || 'Não foi possível concluir a inscrição',
         type: 'error'
       });
     }
   };
+
   const filteredSpaces = spaces.filter(space => {
-    if (priceFilter === 'free' && !(space.price === 0 || space.isFree)) return false;
-    if (priceFilter === 'paid' && (space.price === 0 || space.isFree)) return false;
-    const hasCommunity = space.channelsCount && space.channelsCount > 0 || space.hasCommunity !== false;
+    const isFree = space.isFree || space.price === 0 || space.price === null || space.price === undefined;
+    if (priceFilter === 'free' && !isFree) return false;
+    if (priceFilter === 'paid' && isFree) return false;
+    const hasCommunity = Boolean(space.spaceId || (space.channelsCount && space.channelsCount > 0));
     if (formatFilter === 'community' && !hasCommunity) return false;
-    if (formatFilter === 'self-paced' && hasCommunity && space.channelsCount > 2) return false;
+    if (formatFilter === 'self-paced' && hasCommunity) return false;
     return true;
   });
   return <div className="max-w-7xl mx-auto flex flex-col gap-10 animate-fade-in pb-16">
@@ -303,7 +296,7 @@ export const DiscoverSpaces = () => {
       <CourseEnrollModal
         isOpen={Boolean(enrollingCourse)}
         course={enrollingCourse}
-        isSpace
+        isSpace={false}
         onClose={() => setEnrollingCourse(null)}
         onEnrollSuccess={() => {
           fetchSpaces();

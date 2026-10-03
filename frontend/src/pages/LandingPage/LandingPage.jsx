@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   ChevronDown,
   Star,
-  Clock,
   Sparkles,
   Radio,
   FileCode2,
@@ -17,15 +16,12 @@ import {
   Volume2,
   VolumeX
 } from 'lucide-react';
-import { api } from '../../services/api';
 import Footer from '../../components/layout/Footer';
 import { useAuth } from '../../context/AuthContext';
 import { SEO } from '../../components/common/SEO';
-import { formatCoursePrice } from '../../utils/formatters';
 
 export const LandingPage = () => {
   const { user, isLoading } = useAuth();
-  const [courses, setCourses] = useState([]);
   const [openFaq, setOpenFaq] = useState(0);
   const [isMuted, setIsMuted] = useState(true);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -56,11 +52,13 @@ export const LandingPage = () => {
     }
   }, [isMuted, isPlaying]);
 
-  const toggleMute = () => {
+  const toggleMute = (e) => {
+    if (e) e.stopPropagation();
     setIsMuted((current) => !current);
   };
 
-  const togglePlay = () => {
+  const togglePlay = (e) => {
+    if (e) e.stopPropagation();
     const video = videoRef.current;
     if (!video) return;
     if (video.paused) {
@@ -71,61 +69,6 @@ export const LandingPage = () => {
       setIsPlaying(false);
     }
   };
-
-  const fallbackCourses = [
-    {
-      id: 'course-react-ts',
-      title: 'React 19 & TypeScript de Alta Performance',
-      description: 'Domine os novos padrões do React 19, Server Components, Gestão de Estado Eficiente, Hooks Modernos e TypeScript Avançado com projetos reais.',
-      category: 'Programação',
-      price: 0,
-      isFree: true,
-      thumbnailUrl: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&auto=format&fit=crop&q=80',
-      durationHours: 14.5,
-      rating: 4.9,
-      enrolledCount: 1420
-    },
-    {
-      id: 'course-ui-ux',
-      title: 'Design Systems & Interfaces Cinemáticas no Figma',
-      description: 'Crie sistemas de design industriais, tokens de cores, tipografia responsiva, componentes reutilizáveis e protótipos de alta fidelidade.',
-      category: 'Design UI/UX',
-      price: 29.0,
-      isFree: false,
-      thumbnailUrl: 'https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?w=800&auto=format&fit=crop&q=80',
-      durationHours: 18,
-      rating: 4.8,
-      enrolledCount: 890
-    },
-    {
-      id: 'course-cloud-devops',
-      title: 'Docker, Contentores e Arquitetura de Produção',
-      description: 'Domine contentores, orquestração, servidores Linux e fluxos de integração contínua para colocar projetos escaláveis em produção.',
-      category: 'DevOps',
-      price: 39.0,
-      isFree: false,
-      thumbnailUrl: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&auto=format&fit=crop&q=80',
-      durationHours: 20,
-      rating: 4.9,
-      enrolledCount: 1105
-    }
-  ];
-
-  useEffect(() => {
-    if (user) return;
-    api
-      .getCourses({ sort: 'popular' })
-      .then((data) => {
-        if (data && data.length > 0) {
-          setCourses(data.slice(0, 3));
-        } else {
-          setCourses(fallbackCourses);
-        }
-      })
-      .catch(() => {
-        setCourses(fallbackCourses);
-      });
-  }, [user]);
 
   if (isLoading) {
     return null;
@@ -173,6 +116,7 @@ export const LandingPage = () => {
       />
       <div className="min-h-screen bg-white dark:bg-[#06070a] text-slate-900 dark:text-white font-sans transition-colors selection:bg-blue-600 selection:text-white">
       
+      {/* 1. HERO SECTION */}
       <section
         ref={heroRef}
         onMouseMove={handleHeroMouseMove}
@@ -192,9 +136,55 @@ export const LandingPage = () => {
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-20 flex-1 flex flex-col justify-center">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 lg:gap-16 items-center">
-            <div className="lg:col-span-6 space-y-5 sm:space-y-8">
-              <h1 className="text-3xl sm:text-5xl lg:text-7xl font-sans font-bold tracking-tight text-slate-950 dark:text-white leading-[1.08] sm:leading-[1.04] text-balance">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 lg:gap-14 items-center">
+            
+            {/* 1. Coluna de Vídeo (Acima do título no telemóvel: order-1; à direita no desktop: lg:order-2, maior com lg:col-span-7) */}
+            <div className="order-1 lg:order-2 lg:col-span-7 w-full flex flex-col items-center justify-center">
+              <div className="relative w-full aspect-[16/9] sm:aspect-[16/10] overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-neutral-800 bg-slate-950 shadow-[0_30px_90px_rgba(15,23,42,0.28)] ring-1 ring-slate-200/70 dark:ring-neutral-700/60">
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-900/40 via-transparent to-blue-900/20 pointer-events-none" />
+                <video
+                  ref={videoRef}
+                  className="h-full w-full object-cover"
+                  autoPlay
+                  muted={isMuted}
+                  loop
+                  playsInline
+                  preload="metadata"
+                  aria-label="Vídeo de demonstração da plataforma NEXO"
+                >
+                  <source src="/video.mp4" type="video/mp4" />
+                  O seu navegador não suporta a reprodução de vídeo.
+                </video>
+
+                <div className="absolute inset-x-0 bottom-0 flex items-center justify-end gap-2 bg-gradient-to-t from-slate-950/60 via-slate-950/10 to-transparent p-3 sm:p-4">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={toggleMute}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-black/30 text-white backdrop-blur-md transition hover:bg-black/50 cursor-pointer"
+                      aria-label={isMuted ? 'Ativar som' : 'Silenciar som'}
+                      title={isMuted ? 'Ativar som' : 'Silenciar som'}
+                    >
+                      {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={togglePlay}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-600/30 transition hover:bg-blue-500 cursor-pointer"
+                      aria-label={isPlaying ? 'Pausar vídeo' : 'Reproduzir vídeo'}
+                      title={isPlaying ? 'Pausar vídeo' : 'Reproduzir vídeo'}
+                    >
+                      {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 fill-current ml-0.5" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Coluna de Texto (Abaixo do vídeo no telemóvel: order-2; à esquerda no desktop: lg:order-1) */}
+            <div className="order-2 lg:order-1 lg:col-span-5 space-y-5 sm:space-y-8">
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-sans font-bold tracking-tight text-slate-950 dark:text-white leading-[1.08] sm:leading-[1.04] text-balance">
                 Aprenda, construa e evolua.
               </h1>
               <p className="text-sm sm:text-lg lg:text-xl text-slate-600 dark:text-slate-300 font-normal leading-relaxed max-w-xl">
@@ -238,59 +228,6 @@ export const LandingPage = () => {
                 </div>
               </div>
             </div>
-
-            <div className="lg:col-span-6 flex flex-col items-center justify-center">
-              <div className="relative w-full aspect-[16/10] overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 shadow-[0_30px_80px_rgba(15,23,42,0.25)] ring-1 ring-slate-200/70 dark:border-neutral-800 dark:ring-neutral-700/60">
-                <div className="absolute inset-0 bg-gradient-to-br from-slate-900/65 via-slate-950/20 to-blue-900/30" />
-                <video
-                  ref={videoRef}
-                  className="h-full w-full object-cover"
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  preload="metadata"
-                  aria-label="Vídeo de demonstração da plataforma NEXO"
-                >
-                  <source src="/video.mp4" type="video/mp4" />
-                  O seu navegador não suporta a reprodução de vídeo.
-                </video>
-
-                <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-3 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent p-4 sm:p-5">
-                  <div className="min-w-0">
-                    <div className="mb-1 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/7 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/80 backdrop-blur-sm">
-                      <Radio className="h-3 w-3 text-blue-300" />
-                      Demo NEXO
-                    </div>
-                    <p className="truncate text-sm font-semibold text-white sm:text-base">
-                      Salas, cursos e comunidade em movimento.
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={toggleMute}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-black/20 text-white backdrop-blur-sm transition hover:bg-black/30"
-                      aria-label={isMuted ? 'Ativar som' : 'Silenciar som'}
-                      title={isMuted ? 'Ativar som' : 'Silenciar som'}
-                    >
-                      {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={togglePlay}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-600/30 transition hover:bg-blue-500"
-                      aria-label={isPlaying ? 'Pausar vídeo' : 'Reproduzir vídeo'}
-                      title={isPlaying ? 'Pausar vídeo' : 'Reproduzir vídeo'}
-                    >
-                      {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 fill-current" />}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -303,7 +240,7 @@ export const LandingPage = () => {
               </div>
               <div>
                 <span className="text-slate-500 dark:text-slate-400 block text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold">Salas de Estudo</span>
-                <strong className="text-slate-950 dark:text-white text-sm sm:text-base lg:text-lg font-bold block mt-0.5 truncate">Mentoria & Voz WebRTC</strong>
+                <strong className="text-slate-950 dark:text-white text-sm sm:text-base lg:text-lg font-bold block mt-0.5 truncate">Mentoria &amp; Voz WebRTC</strong>
               </div>
               <div>
                 <span className="text-slate-500 dark:text-slate-400 block text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold">Credenciais</span>
@@ -471,91 +408,6 @@ export const LandingPage = () => {
         </div>
       </section>
 
-      {/* 4. REAL COURSES SHOWCASE (Catálogo de Destaque da Base de Dados) */}
-      <section id="formacao" className="scroll-mt-20 py-12 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-200 dark:border-neutral-800">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-              Formações em Destaque
-            </span>
-            <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-slate-950 dark:text-white mt-1">
-              Explore Cursos Validados
-            </h2>
-          </div>
-
-          <Link
-            to="/explore"
-            className="text-sm font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 inline-flex items-center gap-1.5 transition-colors"
-          >
-            <span>Ver Catálogo Completo</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {courses.map((course) => (
-            <div
-              key={course.id}
-              className="group rounded-xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#0c0d12] overflow-hidden shadow-xs hover:border-slate-300 dark:hover:border-neutral-700 transition-all flex flex-col justify-between"
-            >
-              <div>
-                <div className="relative aspect-video w-full bg-slate-900 overflow-hidden">
-                  <img
-                    src={course.thumbnailUrl || 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&auto=format&fit=crop&q=80'}
-                    alt={course.title}
-                    className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-200"
-                  />
-                  <span className="absolute top-3 left-3 px-2.5 py-1 rounded-md bg-black/75 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wider border border-white/10">
-                    {course.category}
-                  </span>
-                </div>
-
-                <div className="p-5">
-                  <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-neutral-400 mb-2">
-                    {course.rating || course.averageRating ? (
-                      <span className="flex items-center gap-1 text-amber-500 font-bold">
-                        <Star className="w-3.5 h-3.5 fill-amber-500" />
-                        {course.rating || course.averageRating}
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1 text-slate-400 dark:text-neutral-500 font-medium">
-                        <Star className="w-3.5 h-3.5 text-slate-300 dark:text-neutral-700" />
-                        Sem avaliações
-                      </span>
-                    )}
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" />
-                      {course.durationHours || 12}h
-                    </span>
-                  </div>
-
-                  <h3 className="font-bold text-base text-slate-950 dark:text-white line-clamp-2">
-                    {course.title}
-                  </h3>
-
-                  <p className="text-xs text-slate-600 dark:text-neutral-400 line-clamp-2 mt-2 leading-relaxed">
-                    {course.description}
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-5 pt-0 border-t border-slate-100 dark:border-neutral-800/80 mt-2 flex items-center justify-between">
-                <span className="text-base font-bold text-slate-950 dark:text-white">
-                  {formatCoursePrice(course)}
-                </span>
-
-                <Link
-                  to={`/courses/${course.id}`}
-                  className="px-4 py-2 rounded-lg bg-slate-950 hover:bg-black text-white dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 text-xs font-bold transition-colors cursor-pointer"
-                >
-                  Ver Detalhes
-                </Link>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* 5. CREATOR CANDIDATURE BANNER */}
       <section className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">

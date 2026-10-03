@@ -74,7 +74,10 @@ export function setupSocketIO(io) {
     });
     socket.on('join-voice-room', ({
       roomId,
-      user
+      user,
+      isMuted,
+      isDeafened,
+      isCameraOn
     }) => {
       if (!roomId || !user) return;
       for (const [prevRoomId, prevRoom] of voiceRooms.entries()) {
@@ -100,6 +103,7 @@ export function setupSocketIO(io) {
         user: p.user,
         socketId: p.socketId,
         isMuted: p.isMuted,
+        isDeafened: p.isDeafened !== undefined ? Boolean(p.isDeafened) : false,
         isCameraOn: p.isCameraOn,
         isScreenSharing: p.isScreenSharing,
         cameraTrackId: p.cameraTrackId,
@@ -113,8 +117,9 @@ export function setupSocketIO(io) {
         socketId: socket.id,
         user,
         roomId,
-        isMuted: false,
-        isCameraOn: false,
+        isMuted: isMuted !== undefined ? Boolean(isMuted) : false,
+        isDeafened: isDeafened !== undefined ? Boolean(isDeafened) : false,
+        isCameraOn: isCameraOn !== undefined ? Boolean(isCameraOn) : false,
         isScreenSharing: false,
         cameraTrackId: null,
         screenTrackId: null,
@@ -124,7 +129,10 @@ export function setupSocketIO(io) {
       });
       socket.to(`voice_${roomId}`).emit('user-joined-voice', {
         user,
-        socketId: socket.id
+        socketId: socket.id,
+        isMuted: isMuted !== undefined ? Boolean(isMuted) : false,
+        isDeafened: isDeafened !== undefined ? Boolean(isDeafened) : false,
+        isCameraOn: isCameraOn !== undefined ? Boolean(isCameraOn) : false
       });
     });
     socket.on('leave-voice-room', ({
@@ -146,6 +154,7 @@ export function setupSocketIO(io) {
       roomId,
       userId,
       isMuted,
+      isDeafened,
       isCameraOn,
       isScreenSharing,
       cameraTrackId,
@@ -157,6 +166,7 @@ export function setupSocketIO(io) {
       if (room && room.has(socket.id)) {
         const current = room.get(socket.id);
         if (isMuted !== undefined) current.isMuted = isMuted;
+        if (isDeafened !== undefined) current.isDeafened = isDeafened;
         if (isCameraOn !== undefined) current.isCameraOn = isCameraOn;
         if (isScreenSharing !== undefined) current.isScreenSharing = isScreenSharing;
         if (cameraTrackId !== undefined) current.cameraTrackId = cameraTrackId;
@@ -168,6 +178,7 @@ export function setupSocketIO(io) {
         userId,
         socketId: socket.id,
         isMuted,
+        isDeafened,
         isCameraOn,
         isScreenSharing,
         cameraTrackId,

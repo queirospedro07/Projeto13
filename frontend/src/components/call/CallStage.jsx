@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Mic, MicOff, Video, VideoOff, Monitor, MonitorOff,
   PhoneOff, MessageSquare, Users, Maximize2, Minimize2,
   X, Send, Volume2, ShieldCheck, Crown, LayoutGrid, Check,
-  Radio
+  Radio, Headphones, HeadphoneOff
 } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
+import { useActiveCall } from '../../context/ActiveCallContext';
 import { useToast } from '../ui/Toast';
 import { soundEffects } from '../../services/soundEffects';
 
@@ -63,15 +65,49 @@ export const CallStage = ({
   roomId,
   roomType = 'voice',
   initialParticipants = [],
-  onDisconnect
+  onDisconnect,
+  isModal = false,
+  initialMuted = false,
+  initialCameraOn = false
 }) => {
   const effectiveRoomId = roomId || roomName;
   const { user } = useAuth();
   const { socket } = useSocket();
   const { toast } = useToast();
+  const { updateCallAudioState, isMicMuted: contextMicMuted, isDeafened: contextDeafened } = useActiveCall();
 
-  const [isMicMuted, setIsMicMuted] = useState(false);
-  const [isCameraOn, setIsCameraOn] = useState(false);
+  const startMutedCalc = Boolean(initialMuted || contextMicMuted || contextDeafened);
+  const startDeafenedCalc = Boolean(contextDeafened);
+
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth < 768;
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    document.body.classList.add('in-active-call');
+    const prevOverflow = document.body.style.overflow;
+    if (isMobile || isModal) {
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.body.classList.remove('in-active-call');
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isMobile, isModal]);
+
+  const [isMicMuted, setIsMicMuted] = useState(startMutedCalc);
+  const [isDeafened, setIsDeafened] = useState(startDeafenedCalc);
+  const isDeafenedRef = useRef(startDeafenedCalc);
+  const [isCameraOn, setIsCameraOn] = useState(Boolean(initialCameraOn));
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -91,8 +127,9 @@ export const CallStage = ({
       role: user.role,
       isSelf: true,
       isSpeaking: false,
-      isMuted: false,
-      isCameraOn: false,
+      isMuted: startMutedCalc,
+      isDeafened: startDeafenedCalc,
+      isCameraOn: Boolean(initialCameraOn),
       isScreenSharing: false
     }];
   });
@@ -215,6 +252,11 @@ export const CallStage = ({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
         video: false
       });
+      if (initialMuted) {
+        stream.getAudioTracks().forEach(t => {
+          t.enabled = false;
+        });
+      }
       localAudioStreamRef.current = stream;
       setupAudioAnalyser(stream);
       return stream;
@@ -355,8 +397,11 @@ export const CallStage = ({
           audio = document.createElement('audio');
           audio.autoplay = true;
           audio.playsInline = true;
+          audio.muted = isDeafenedRef.current;
           document.body.appendChild(audio);
           remoteAudioElementsRef.current.set(targetSocketId, audio);
+        } else {
+          audio.muted = isDeafenedRef.current;
         }
         audio.srcObject = stream;
         audio.play().catch(() => setAutoplayBlocked(true));
@@ -418,7 +463,10 @@ export const CallStage = ({
           username: userRef.current.username,
           avatarUrl: userRef.current.avatarUrl,
           role: userRef.current.role
-        }
+        },
+        isMuted: isMicMuted,
+        isDeafened: isDeafened,
+        isCameraOn: Boolean(initialCameraOn)
       });
     }
 
@@ -427,6 +475,9 @@ export const CallStage = ({
       if (stream && isMounted) {
         const audioTrack = stream.getAudioTracks()[0];
         if (audioTrack) {
+          if (isMicMuted) {
+            audioTrack.enabled = false;
+          }
           for (const [targetSocketId, pc] of peerConnectionsRef.current.entries()) {
             try {
               const sender = pc.addTrack(audioTrack, stream);
@@ -437,6 +488,40 @@ export const CallStage = ({
         }
       }
     });
+
+    // 3. If user chose to enter with camera on, initialize camera stream
+    if (initialCameraOn) {
+      navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+        audio: false
+      }).then(camStream => {
+        if (!isMounted) {
+          camStream.getTracks().forEach(t => t.stop());
+          return;
+        }
+        localCameraStreamRef.current = camStream;
+        setLocalCameraStream(camStream);
+        setIsCameraOn(true);
+        const camTrack = camStream.getVideoTracks()[0];
+        for (const [targetSocketId, pc] of peerConnectionsRef.current.entries()) {
+          try {
+            const sender = pc.addTrack(camTrack, camStream);
+            cameraSendersRef.current.set(targetSocketId, sender);
+            sendOfferToPeer(targetSocketId);
+          } catch (_) {}
+        }
+        setParticipants(prev => prev.map(p => p.isSelf ? { ...p, isCameraOn: true } : p));
+        socket?.emit('voice-state-update', {
+          roomId: effectiveRoomId,
+          userId: userRef.current?.id,
+          isCameraOn: true,
+          cameraTrackId: camTrack?.id,
+          cameraStreamId: camStream.id
+        });
+      }).catch(err => {
+        console.warn('Erro ao ligar câmara na entrada:', err);
+      });
+    }
 
     if (socket && userRef.current?.id) {
       // 1. Existing participants in the room
@@ -476,6 +561,7 @@ export const CallStage = ({
                 isSelf: false,
                 isSpeaking: false,
                 isMuted: !!item.isMuted,
+                isDeafened: !!item.isDeafened,
                 isCameraOn: !!item.isCameraOn,
                 isScreenSharing: !!item.isScreenSharing,
                 screenTrackId: item.screenTrackId,
@@ -504,7 +590,7 @@ export const CallStage = ({
       });
 
       // 2. New remote user joined
-      socket.on('user-joined-voice', ({ user: remoteUser, socketId: remoteSocketId }) => {
+      socket.on('user-joined-voice', ({ user: remoteUser, socketId: remoteSocketId, isMuted: remoteMuted, isDeafened: remoteDeafened, isCameraOn: remoteCameraOn }) => {
         if (!remoteUser || !remoteSocketId || remoteSocketId === socket.id || !isMounted) return;
 
         socketToUserRef.current.set(remoteSocketId, remoteUser.id);
@@ -521,8 +607,9 @@ export const CallStage = ({
             role: remoteUser.role,
             isSelf: false,
             isSpeaking: false,
-            isMuted: false,
-            isCameraOn: false,
+            isMuted: remoteMuted !== undefined ? Boolean(remoteMuted) : false,
+            isDeafened: remoteDeafened !== undefined ? Boolean(remoteDeafened) : false,
+            isCameraOn: remoteCameraOn !== undefined ? Boolean(remoteCameraOn) : false,
             isScreenSharing: false
           };
           if (existingIdx >= 0) {
@@ -652,6 +739,7 @@ export const CallStage = ({
         userId,
         socketId,
         isMuted,
+        isDeafened: remoteDeafened,
         isCameraOn: remoteCameraOn,
         isScreenSharing: remoteScreenSharing,
         cameraTrackId,
@@ -719,6 +807,7 @@ export const CallStage = ({
             ...p,
             socketId: p.socketId || socketId,
             isMuted: isMuted !== undefined ? isMuted : p.isMuted,
+            isDeafened: remoteDeafened !== undefined ? remoteDeafened : p.isDeafened,
             isCameraOn: remoteCameraOn !== undefined ? remoteCameraOn : p.isCameraOn,
             isScreenSharing: remoteScreenSharing !== undefined ? remoteScreenSharing : p.isScreenSharing,
             screenTrackId: screenTrackId || p.screenTrackId,
@@ -825,30 +914,116 @@ export const CallStage = ({
   }, [effectiveRoomId, socket, getOrCreatePeerConnection, sendOfferToPeer, toast]);
 
   // Controls: Toggle Mic
-  const toggleMic = () => {
-    const nextMuted = !isMicMuted;
-    setIsMicMuted(nextMuted);
+  const toggleMic = useCallback(() => {
+    setIsMicMuted(prevMuted => {
+      const nextMuted = !prevMuted;
 
-    if (localAudioStreamRef.current) {
-      localAudioStreamRef.current.getAudioTracks().forEach(t => {
-        t.enabled = !nextMuted;
+      if (localAudioStreamRef.current) {
+        localAudioStreamRef.current.getAudioTracks().forEach(t => {
+          t.enabled = !nextMuted;
+        });
+      }
+
+      if (nextMuted) {
+        soundEffects.playMute();
+      } else {
+        soundEffects.playUnmute();
+      }
+
+      // If unmuting while deafened, automatically undeafen!
+      let nextDeafened = isDeafenedRef.current;
+      if (!nextMuted && isDeafenedRef.current) {
+        nextDeafened = false;
+        isDeafenedRef.current = false;
+        setIsDeafened(false);
+        remoteAudioElementsRef.current.forEach(audio => {
+          audio.muted = false;
+        });
+      }
+
+      const currentUserId = userRef.current?.id;
+      setParticipants(prev => prev.map(p => p.id === currentUserId ? { ...p, isMuted: nextMuted, isDeafened: nextDeafened } : p));
+      socket?.emit('voice-state-update', {
+        roomId: effectiveRoomId,
+        userId: currentUserId,
+        isMuted: nextMuted,
+        isDeafened: nextDeafened
       });
+
+      updateCallAudioState({ isMuted: nextMuted, isDeafened: nextDeafened });
+
+      return nextMuted;
+    });
+  }, [effectiveRoomId, socket, updateCallAudioState]);
+
+  // Controls: Toggle Deafen
+  const toggleDeafen = useCallback(() => {
+    const nextDeafened = !isDeafenedRef.current;
+    isDeafenedRef.current = nextDeafened;
+    setIsDeafened(nextDeafened);
+
+    // 1. Mute or unmute all remote audio elements
+    remoteAudioElementsRef.current.forEach(audio => {
+      audio.muted = nextDeafened;
+    });
+
+    // 2. Play sound effects
+    if (nextDeafened) {
+      soundEffects.playDeafen();
+    } else {
+      soundEffects.playUndeafen();
     }
 
-    if (nextMuted) {
-      soundEffects.playMute();
-    } else {
-      soundEffects.playUnmute();
+    // 3. Ao ficar deafen, o microfone fica OFF também!
+    let nextMicMuted = isMicMuted;
+    if (nextDeafened) {
+      nextMicMuted = true;
+      setIsMicMuted(true);
+      if (localAudioStreamRef.current) {
+        localAudioStreamRef.current.getAudioTracks().forEach(t => {
+          t.enabled = false;
+        });
+      }
     }
 
     const currentUserId = userRef.current?.id;
-    setParticipants(prev => prev.map(p => p.id === currentUserId ? { ...p, isMuted: nextMuted } : p));
+    setParticipants(prev => prev.map(p => p.id === currentUserId ? { ...p, isMuted: nextMicMuted, isDeafened: nextDeafened } : p));
+
     socket?.emit('voice-state-update', {
       roomId: effectiveRoomId,
       userId: currentUserId,
-      isMuted: nextMuted
+      isMuted: nextMicMuted,
+      isDeafened: nextDeafened
     });
-  };
+
+    updateCallAudioState({ isMuted: nextMicMuted, isDeafened: nextDeafened });
+  }, [effectiveRoomId, isMicMuted, socket, updateCallAudioState]);
+
+  // Sync initial audio state to ActiveCallContext
+  useEffect(() => {
+    updateCallAudioState({ isMuted: isMicMuted, isDeafened: false });
+  }, [updateCallAudioState]);
+
+  // Listen to remote toggle & leave events from Sidebar / Global controls
+  useEffect(() => {
+    const handleRemoteToggleMic = () => {
+      toggleMic();
+    };
+    const handleRemoteToggleDeafen = () => {
+      toggleDeafen();
+    };
+    const handleRemoteLeave = () => {
+      onDisconnect?.();
+    };
+    window.addEventListener('nexo_call_toggle_mic', handleRemoteToggleMic);
+    window.addEventListener('nexo_call_toggle_deafen', handleRemoteToggleDeafen);
+    window.addEventListener('nexo_call_leave', handleRemoteLeave);
+    return () => {
+      window.removeEventListener('nexo_call_toggle_mic', handleRemoteToggleMic);
+      window.removeEventListener('nexo_call_toggle_deafen', handleRemoteToggleDeafen);
+      window.removeEventListener('nexo_call_leave', handleRemoteLeave);
+    };
+  }, [toggleMic, toggleDeafen, onDisconnect]);
 
   // Controls: Toggle Camera
   const toggleCamera = async () => {
@@ -1087,10 +1262,15 @@ export const CallStage = ({
   const spotlightStream = currentScreenShare?.stream || null;
   const isViewingScreen = spotlightStream && selectedScreenUserId !== 'none';
 
-  return (
+  const stageContent = (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-50 flex h-[100dvh] min-h-0 w-full flex-1 flex-col overflow-hidden bg-slate-100 font-sans text-slate-900 dark:bg-[#090a0f] dark:text-slate-100 md:relative md:inset-auto md:z-auto md:h-full"
+      data-call-stage="true"
+      className={
+        isMobile || isModal
+          ? "fixed inset-0 z-[9999] flex h-[100dvh] w-full flex-col overflow-hidden bg-slate-100 font-sans text-slate-900 dark:bg-[#090a0f] dark:text-slate-100 select-none"
+          : "relative inset-auto z-auto flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-slate-100 font-sans text-slate-900 dark:bg-[#090a0f] dark:text-slate-100"
+      }
     >
       {/* Audio Autoplay Unblock Banner */}
       {autoplayBlocked && (
@@ -1140,6 +1320,21 @@ export const CallStage = ({
             aria-label="Alternar ecrã inteiro"
           >
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </button>
+
+          {/* Quick Leave Button for Mobile in Header */}
+          <button
+            type="button"
+            onClick={() => {
+              soundEffects.playLeaveCall();
+              onDisconnect?.();
+            }}
+            className="sm:hidden min-h-[34px] px-2.5 py-1 rounded-xl bg-rose-600/15 text-rose-600 dark:text-rose-400 hover:bg-rose-600/25 transition-colors flex items-center gap-1 text-xs font-bold shrink-0 cursor-pointer touch-manipulation active:scale-95 border border-rose-500/20"
+            title="Sair da chamada"
+            aria-label="Sair da chamada"
+          >
+            <PhoneOff className="w-3.5 h-3.5" />
+            <span>Sair</span>
           </button>
         </div>
       </header>
@@ -1252,7 +1447,12 @@ export const CallStage = ({
                               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
                             )}
                           </div>
-                          {p.isMuted && (
+                          {p.isDeafened && (
+                            <span className="text-[10px] text-rose-500 dark:text-rose-400 flex items-center gap-0.5 font-medium">
+                              <HeadphoneOff className="w-2.5 h-2.5" /> Ensurdecido
+                            </span>
+                          )}
+                          {p.isMuted && !p.isDeafened && (
                             <span className="text-[10px] text-rose-500 dark:text-rose-400 flex items-center gap-0.5 font-medium">
                               <MicOff className="w-2.5 h-2.5" /> Silenciado
                             </span>
@@ -1333,6 +1533,11 @@ export const CallStage = ({
                       </div>
 
                       <div className="flex items-center gap-1.5">
+                        {p.isDeafened && (
+                          <div className="p-1.5 rounded-lg backdrop-blur-md border shadow-xs bg-rose-500 text-white border-rose-400/30" title="Ensurdecido">
+                            <HeadphoneOff className="w-3.5 h-3.5" />
+                          </div>
+                        )}
                         <div className={`p-1.5 rounded-lg backdrop-blur-md border shadow-xs ${
                           p.isMuted ? 'bg-rose-500 text-white border-rose-400/30' : 'bg-white/90 dark:bg-black/60 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/10'
                         }`}>
@@ -1349,30 +1554,85 @@ export const CallStage = ({
 
         {/* Side Drawer: Chat or Participants */}
         {sideDrawer !== 'none' && (
-          <aside className="fixed inset-0 sm:static sm:w-80 border-l border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-950 flex flex-col shrink-0 animate-fade-in z-40 sm:z-20 shadow-2xl">
-            <div className="h-14 px-4 border-b border-slate-200 dark:border-white/10 flex items-center justify-between">
-              <h3 className="text-xs font-bold text-slate-800 dark:text-slate-300 uppercase tracking-wider">
-                {sideDrawer === 'chat' ? 'Mensagens da Chamada' : 'Participantes Conectados'}
-              </h3>
-              <button
-                type="button"
-                onClick={() => {
-                  soundEffects.playLeaveCall();
-                  onDisconnect?.();
-                }}
-                className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-rose-600 px-3 text-xs font-bold text-white hover:bg-rose-500"
-                aria-label="Sair da chamada"
-              >
-                <PhoneOff className="h-4 w-4" />
-                Sair
-              </button>
-              <button
-                onClick={() => setSideDrawer('none')}
-                className="p-2 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer"
-                title="Fechar painel"
-              >
-                <X className="w-5 h-5 sm:w-4 sm:h-4" />
-              </button>
+          <aside className="fixed inset-0 sm:static sm:w-80 border-l border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-950 flex flex-col shrink-0 animate-fade-in z-50 sm:z-20 shadow-2xl">
+            <div className="min-h-14 px-3 sm:px-4 border-b border-slate-200 dark:border-white/10 flex items-center justify-between gap-2 shrink-0 pt-[env(safe-area-inset-top)] sm:pt-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <button
+                  type="button"
+                  onClick={() => setSideDrawer('none')}
+                  className="p-2 -ml-1 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer flex items-center gap-1 text-xs font-bold shrink-0 touch-manipulation"
+                  aria-label="Voltar para a chamada"
+                  title="Voltar para a chamada"
+                >
+                  <X className="w-5 h-5" />
+                  <span className="hidden min-[360px]:inline">Voltar</span>
+                </button>
+                <h3 className="text-xs font-bold text-slate-800 dark:text-slate-300 uppercase tracking-wider truncate">
+                  {sideDrawer === 'chat' ? 'Chat da Chamada' : `Participantes (${participants.length})`}
+                </h3>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                {/* Quick Mic in Drawer Header */}
+                <button
+                  type="button"
+                  onClick={toggleMic}
+                  className={`min-w-[36px] min-h-[36px] p-2 rounded-xl text-xs font-bold flex items-center justify-center transition-all cursor-pointer touch-manipulation active:scale-95 ${
+                    isMicMuted
+                      ? 'bg-rose-600 text-white shadow-sm shadow-rose-600/30'
+                      : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-200'
+                  }`}
+                  title={isMicMuted ? 'Ativar Microfone' : 'Silenciar'}
+                  aria-label={isMicMuted ? 'Ativar Microfone' : 'Silenciar'}
+                >
+                  {isMicMuted ? <MicOff className="w-4 h-4 text-white" /> : <Mic className="w-4 h-4 text-emerald-500" />}
+                </button>
+
+                {/* Quick Deafen in Drawer Header */}
+                <button
+                  type="button"
+                  onClick={toggleDeafen}
+                  className={`min-w-[36px] min-h-[36px] p-2 rounded-xl text-xs font-bold flex items-center justify-center transition-all cursor-pointer touch-manipulation active:scale-95 ${
+                    isDeafened
+                      ? 'bg-rose-600 text-white shadow-sm shadow-rose-600/30'
+                      : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-200'
+                  }`}
+                  title={isDeafened ? 'Desativar Ensurdecer' : 'Ensurdecer'}
+                  aria-label={isDeafened ? 'Desativar Ensurdecer' : 'Ensurdecer'}
+                >
+                  {isDeafened ? <HeadphoneOff className="w-4 h-4 text-white" /> : <Headphones className="w-4 h-4 text-slate-600 dark:text-slate-300" />}
+                </button>
+
+                {/* Quick Camera in Drawer Header */}
+                <button
+                  type="button"
+                  onClick={toggleCamera}
+                  className={`min-w-[36px] min-h-[36px] p-2 rounded-xl text-xs font-bold flex items-center justify-center transition-all cursor-pointer touch-manipulation active:scale-95 ${
+                    isCameraOn
+                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/30'
+                      : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-200'
+                  }`}
+                  title={isCameraOn ? 'Desligar Câmara' : 'Ligar Câmara'}
+                  aria-label={isCameraOn ? 'Desligar Câmara' : 'Ligar Câmara'}
+                >
+                  {isCameraOn ? <Video className="w-4 h-4 text-white" /> : <VideoOff className="w-4 h-4 text-slate-400" />}
+                </button>
+
+                {/* Quick Leave in Drawer Header */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    soundEffects.playLeaveCall();
+                    onDisconnect?.();
+                  }}
+                  className="min-h-[36px] px-2.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold flex items-center gap-1 cursor-pointer touch-manipulation shadow-sm shadow-rose-600/20 active:scale-95"
+                  title="Sair da chamada"
+                  aria-label="Sair da chamada"
+                >
+                  <PhoneOff className="w-4 h-4" />
+                  <span className="hidden min-[400px]:inline">Sair</span>
+                </button>
+              </div>
             </div>
 
             {sideDrawer === 'chat' ? (
@@ -1393,25 +1653,26 @@ export const CallStage = ({
                   ))}
                   <div ref={chatMessagesEndRef} />
                 </div>
-                <form onSubmit={handleSendChatMessage} className="p-3 border-t border-slate-200 dark:border-white/10 flex gap-2 pb-safe">
+                <form onSubmit={handleSendChatMessage} className="p-3 border-t border-slate-200 dark:border-white/10 flex gap-2 pb-[max(0.75rem,calc(env(safe-area-inset-bottom)+0.5rem))] bg-white dark:bg-zinc-950">
                   <input
                     type="text"
                     value={chatInput}
                     onChange={e => setChatInput(e.target.value)}
                     placeholder="Enviar mensagem..."
-                    className="flex-1 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+                    className="flex-1 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
                   />
                   <button
                     type="submit"
-                    className="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white cursor-pointer transition-colors shadow-sm shrink-0"
+                    className="min-w-[42px] min-h-[42px] p-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white cursor-pointer transition-colors shadow-sm shrink-0 flex items-center justify-center touch-manipulation active:scale-95"
                     title="Enviar"
+                    aria-label="Enviar mensagem"
                   >
                     <Send className="w-4 h-4" />
                   </button>
                 </form>
               </div>
             ) : (
-              <div className="flex-1 p-3 space-y-2 overflow-y-auto custom-scrollbar">
+              <div className="flex-1 p-3 space-y-2 overflow-y-auto custom-scrollbar pb-[max(1rem,calc(env(safe-area-inset-bottom)+1rem))]">
                 {participants.map(p => (
                   <div key={p.socketId || p.id} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200 dark:border-white/5">
                     <div className="flex items-center gap-2.5">
@@ -1422,6 +1683,7 @@ export const CallStage = ({
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 text-slate-400">
+                      {p.isDeafened && <HeadphoneOff className="w-3.5 h-3.5 text-rose-500" />}
                       {p.isMuted ? <MicOff className="w-3.5 h-3.5 text-rose-500" /> : <Mic className="w-3.5 h-3.5 text-emerald-500" />}
                       {p.isCameraOn && <Video className="w-3.5 h-3.5 text-blue-500" />}
                       {p.isScreenSharing && <Monitor className="w-3.5 h-3.5 text-blue-500" />}
@@ -1435,81 +1697,107 @@ export const CallStage = ({
       </main>
 
       {/* Control Bar Footer */}
-      <footer className="shrink-0 border-t border-slate-200 bg-slate-100 px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 dark:border-white/5 dark:bg-[#090a0f] sm:px-6 sm:py-3.5 pointer-events-auto">
-        <div className="mx-auto flex w-full max-w-2xl flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-slate-200 bg-white/95 px-2 py-1.5 shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-zinc-900/95 sm:flex-nowrap sm:gap-2 sm:px-3.5 sm:py-2 pointer-events-auto">
+      <footer className="shrink-0 border-t border-slate-200/80 bg-white/95 px-2 pb-[max(0.85rem,calc(env(safe-area-inset-bottom)+0.5rem))] pt-2 dark:border-white/10 dark:bg-[#090a0f]/95 backdrop-blur-xl sm:px-6 sm:py-3.5 pointer-events-auto z-30">
+        <div className="mx-auto flex w-full max-w-lg items-center justify-between sm:justify-center gap-1.5 sm:gap-3 rounded-2xl border border-slate-200/80 bg-slate-100/90 px-2.5 py-1.5 shadow-lg backdrop-blur-xl dark:border-white/10 dark:bg-zinc-900/90 sm:px-4 sm:py-2">
           {/* Mic */}
           <button
             type="button"
             onClick={toggleMic}
-            className={`min-w-[42px] min-h-[42px] sm:min-w-[46px] sm:min-h-[46px] p-2.5 sm:p-3 rounded-xl font-bold flex items-center justify-center transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 ${
+            className={`min-w-[44px] min-h-[44px] sm:min-w-[48px] sm:min-h-[48px] p-2.5 sm:p-3 rounded-xl font-bold flex items-center justify-center transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 ${
               isMicMuted
-                ? 'bg-rose-600 text-white hover:bg-rose-500 shadow-sm shadow-rose-600/30'
-                : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-white/15 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-rose-600 text-white hover:bg-rose-500 shadow-md shadow-rose-600/30'
+                : 'bg-white dark:bg-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-white/15 hover:text-slate-900 dark:hover:text-white border border-slate-200/60 dark:border-white/5'
             }`}
             title={isMicMuted ? 'Ativar Microfone' : 'Silenciar Microfone'}
+            aria-label={isMicMuted ? 'Ativar Microfone' : 'Silenciar Microfone'}
           >
-            {isMicMuted ? <MicOff className="w-4 h-4 text-white" /> : <Mic className="w-4 h-4 text-emerald-500" />}
+            {isMicMuted ? <MicOff className="w-5 h-5 text-white" /> : <Mic className="w-5 h-5 text-emerald-500" />}
+          </button>
+
+          {/* Deafen (Ensurdecer) */}
+          <button
+            type="button"
+            onClick={toggleDeafen}
+            className={`min-w-[44px] min-h-[44px] sm:min-w-[48px] sm:min-h-[48px] p-2.5 sm:p-3 rounded-xl font-bold flex items-center justify-center transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 ${
+              isDeafened
+                ? 'bg-rose-600 text-white hover:bg-rose-500 shadow-md shadow-rose-600/30'
+                : 'bg-white dark:bg-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-white/15 hover:text-slate-900 dark:hover:text-white border border-slate-200/60 dark:border-white/5'
+            }`}
+            title={isDeafened ? 'Desativar Ensurdecer (Ouvir Chamada)' : 'Ensurdecer (Desativar Áudio da Chamada)'}
+            aria-label={isDeafened ? 'Desativar Ensurdecer' : 'Ensurdecer'}
+          >
+            {isDeafened ? <HeadphoneOff className="w-5 h-5 text-white" /> : <Headphones className="w-5 h-5 text-slate-600 dark:text-slate-300" />}
           </button>
 
           {/* Camera */}
           <button
             type="button"
             onClick={toggleCamera}
-            className={`min-w-[42px] min-h-[42px] sm:min-w-[46px] sm:min-h-[46px] p-2.5 sm:p-3 rounded-xl font-bold flex items-center justify-center transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 ${
+            className={`min-w-[44px] min-h-[44px] sm:min-w-[48px] sm:min-h-[48px] p-2.5 sm:p-3 rounded-xl font-bold flex items-center justify-center transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 ${
               isCameraOn
-                ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-sm shadow-blue-600/30'
-                : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-white/15 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-md shadow-blue-600/30'
+                : 'bg-white dark:bg-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-white/15 hover:text-slate-900 dark:hover:text-white border border-slate-200/60 dark:border-white/5'
             }`}
             title={isCameraOn ? 'Desligar Câmara' : 'Ligar Câmara'}
+            aria-label={isCameraOn ? 'Desligar Câmara' : 'Ligar Câmara'}
           >
-            {isCameraOn ? <Video className="w-4 h-4 text-white" /> : <VideoOff className="w-4 h-4 text-slate-400" />}
+            {isCameraOn ? <Video className="w-5 h-5 text-white" /> : <VideoOff className="w-5 h-5 text-slate-400" />}
           </button>
 
           {/* Screen Share */}
           <button
             type="button"
             onClick={toggleScreenShare}
-            className={`min-w-[42px] min-h-[42px] sm:min-w-[46px] sm:min-h-[46px] p-2.5 sm:p-3 rounded-xl font-bold flex items-center justify-center transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 ${
+            className={`hidden sm:flex min-w-[44px] min-h-[44px] sm:min-w-[48px] sm:min-h-[48px] p-2.5 sm:p-3 rounded-xl font-bold items-center justify-center transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 ${
               isScreenSharing
-                ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-sm shadow-blue-600/30 animate-pulse'
-                : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-white/15 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-md shadow-blue-600/30 animate-pulse'
+                : 'bg-white dark:bg-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-white/15 hover:text-slate-900 dark:hover:text-white border border-slate-200/60 dark:border-white/5'
             }`}
             title={isScreenSharing ? 'Parar Partilha de Ecrã' : 'Partilhar Ecrã'}
+            aria-label={isScreenSharing ? 'Parar Partilha de Ecrã' : 'Partilhar Ecrã'}
           >
-            {isScreenSharing ? <MonitorOff className="w-4 h-4 text-white" /> : <Monitor className="w-4 h-4 text-slate-400" />}
+            {isScreenSharing ? <MonitorOff className="w-5 h-5 text-white" /> : <Monitor className="w-5 h-5 text-slate-400" />}
           </button>
 
-          <div className="hidden h-5 w-px bg-slate-200 dark:bg-white/10 sm:mx-1 sm:block shrink-0" />
+          <div className="hidden h-5 w-px bg-slate-200 dark:bg-white/10 sm:block shrink-0" />
 
           {/* Chat Drawer Toggle */}
           <button
             type="button"
             onClick={() => setSideDrawer(prev => prev === 'chat' ? 'none' : 'chat')}
-            className={`min-w-[42px] min-h-[42px] sm:min-w-[46px] sm:min-h-[46px] p-2.5 sm:p-3 rounded-xl font-bold transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 relative flex items-center justify-center ${
+            className={`min-w-[44px] min-h-[44px] sm:min-w-[48px] sm:min-h-[48px] p-2.5 sm:p-3 rounded-xl font-bold transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 relative flex items-center justify-center ${
               sideDrawer === 'chat'
                 ? 'bg-blue-600 text-white'
-                : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/15 hover:text-slate-900 dark:hover:text-white'
+                : 'bg-white dark:bg-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/15 hover:text-slate-900 dark:hover:text-white border border-slate-200/60 dark:border-white/5'
             }`}
             title="Chat da chamada"
+            aria-label="Abrir chat da chamada"
           >
-            <MessageSquare className="w-4 h-4" />
+            <MessageSquare className="w-5 h-5" />
+            {chatMessages.length > 1 && (
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-500 rounded-full ring-2 ring-white dark:ring-zinc-900" />
+            )}
           </button>
 
           {/* Participants Drawer Toggle */}
           <button
             type="button"
             onClick={() => setSideDrawer(prev => prev === 'participants' ? 'none' : 'participants')}
-            className={`min-w-[42px] min-h-[42px] sm:min-w-[46px] sm:min-h-[46px] p-2.5 sm:p-3 rounded-xl font-bold transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 flex items-center justify-center ${
+            className={`min-w-[44px] min-h-[44px] sm:min-w-[48px] sm:min-h-[48px] p-2.5 sm:p-3 rounded-xl font-bold transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 flex items-center justify-center relative ${
               sideDrawer === 'participants'
                 ? 'bg-blue-600 text-white'
-                : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/15 hover:text-slate-900 dark:hover:text-white'
+                : 'bg-white dark:bg-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/15 hover:text-slate-900 dark:hover:text-white border border-slate-200/60 dark:border-white/5'
             }`}
             title="Participantes"
+            aria-label="Ver participantes da chamada"
           >
-            <Users className="w-4 h-4" />
+            <Users className="w-5 h-5" />
+            <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-slate-700 dark:bg-slate-300 text-white dark:text-slate-900 text-[9px] font-bold flex items-center justify-center">
+              {participants.length}
+            </span>
           </button>
 
-          <div className="hidden h-5 w-px bg-slate-200 dark:bg-white/10 sm:mx-1 sm:block shrink-0" />
+          <div className="hidden h-5 w-px bg-slate-200 dark:bg-white/10 sm:block shrink-0" />
 
           {/* Leave Call */}
           <button
@@ -1518,16 +1806,23 @@ export const CallStage = ({
               soundEffects.playLeaveCall();
               onDisconnect?.();
             }}
-            className="min-h-[42px] sm:min-h-[46px] px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer touch-manipulation active:scale-95 shadow-sm shadow-rose-600/20 transition-all shrink-0"
+            className="min-h-[44px] min-w-[44px] sm:min-h-[48px] px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer touch-manipulation active:scale-95 shadow-md shadow-rose-600/30 transition-all shrink-0"
             title="Sair da chamada"
+            aria-label="Sair da chamada"
           >
-            <PhoneOff className="w-4 h-4 shrink-0" />
-            <span>Sair</span>
+            <PhoneOff className="w-5 h-5 shrink-0" />
+            <span className="hidden min-[380px]:inline">Sair</span>
           </button>
         </div>
       </footer>
     </div>
   );
+
+  if (isMobile && !isModal) {
+    return createPortal(stageContent, document.body);
+  }
+
+  return stageContent;
 };
 
 export default CallStage;

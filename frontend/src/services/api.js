@@ -135,6 +135,10 @@ export const api = {
   },
   getCourse: (id) => request(`/courses/${id}`),
   getMyCourses: () => request('/courses/my-learning'),
+  toggleHideCourse: (courseId) =>
+    request(`/courses/${courseId}/toggle-hide`, {
+      method: 'POST',
+    }),
   enrollCourse: (id) =>
     request(`/courses/${id}/enroll`, {
       method: 'POST',

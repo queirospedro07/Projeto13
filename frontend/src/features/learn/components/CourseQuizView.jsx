@@ -101,7 +101,7 @@ const DEFAULT_SAMPLE_QUESTIONS = [{
 }];
 export const CourseQuizView = ({
   quizTitle = 'Questionário de Avaliação',
-  description = 'Responda às questões abaixo para validar os seus conhecimentos e desbloquear pontos de experiência.',
+  description = 'Responda às questões abaixo para validar os seus conhecimentos.',
   passingScore = 70,
   xpReward = 50,
   questions,
@@ -318,12 +318,11 @@ export const CourseQuizView = ({
 
           <div className="text-left sm:text-right shrink-0 bg-slate-50 dark:bg-[#171a24] border border-slate-200/80 dark:border-[#222636] rounded-lg p-3.5 sm:min-w-[120px]">
             <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
-              Recompensa
+              Critério
             </span>
             <div className="flex items-center sm:justify-end gap-1.5 mt-0.5">
-              <Sparkles className="w-4 h-4 text-amber-500" />
-              <span className="text-lg font-extrabold text-slate-950 dark:text-white">
-                +{effectiveXpReward} XP
+              <span className="text-sm font-extrabold text-slate-950 dark:text-white">
+                Mín. {effectivePassingScore}%
               </span>
             </div>
           </div>
@@ -344,7 +343,7 @@ export const CourseQuizView = ({
                   <p className="text-xs sm:text-sm opacity-80 mt-1">
                     Acertou <strong>{quizResults.correctCount}</strong> de{' '}
                     <strong>{quizResults.totalCount}</strong> questões ({quizResults.score}%).
-                    {quizResults.passed ? ` Ganhou +${quizResults.earnedXp} XP!` : ` Mínimo exigido: ${effectivePassingScore}%. Reveja as correções abaixo e tente novamente.`}
+                    {quizResults.passed ? ' Parabéns pela aprovação nesta avaliação.' : ` Mínimo exigido: ${effectivePassingScore}%. Reveja as correções abaixo e tente novamente.`}
                   </p>
                 </div>
               </div>

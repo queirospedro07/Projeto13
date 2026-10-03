@@ -1,5 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   Star,
@@ -10,16 +9,13 @@ import {
   ChevronDown,
   ChevronUp,
   Sparkles,
-  Download,
   ArrowRight,
   BookOpen,
   MessageSquare,
   Award,
   ShieldCheck,
-  Video,
   HelpCircle,
   FileCode2,
-  Share2,
   ArrowLeft,
   Check,
   Calendar,
@@ -32,7 +28,6 @@ import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Avatar } from '../../components/ui/Avatar';
 import { CourseEnrollModal } from '../../components/course/CourseEnrollModal';
-import { SocialShareModal } from '../../components/common/SocialShareModal';
 import { SEO } from '../../components/common/SEO';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/ui/Toast';
@@ -51,7 +46,6 @@ export const CourseDetails = () => {
   const [loading, setLoading] = useState(true);
   const [openModuleIndex, setOpenModuleIndex] = useState(null);
   const [showEnrollModal, setShowEnrollModal] = useState(false);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(() => {
     try {
       return localStorage.getItem('nexo_course_details_tab') || 'overview';
@@ -92,7 +86,6 @@ export const CourseDetails = () => {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
-  const [showVideoModal, setShowVideoModal] = useState(false);
 
   const fetchCourse = async () => {
     if (!id) return;
@@ -206,7 +199,6 @@ export const CourseDetails = () => {
   const isEnrolled = Boolean(course?.isEnrolled || course?.userEnrollment || (user && course?.creator?.id === user.id));
   const userProgress = Math.round(course?.userProgress ?? course?.userEnrollment?.progressPercent ?? 0);
   const totalLessons = (course.modules || []).reduce((acc, m) => acc + (m.lessons?.length || 0), 0);
-  const previewVideo = course.previewVideoUrl || course.modules?.[0]?.lessons?.[0]?.videoUrl;
   const classmates = course.classmates || (course.space?.members?.map(m => m.user || m) || []);
 
   const difficultyMap = {
@@ -241,15 +233,6 @@ export const CourseDetails = () => {
               {course.title}
             </span>
           </div>
-
-          <button
-            onClick={() => setIsShareModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-neutral-800 hover:bg-slate-100 dark:hover:bg-neutral-900 text-slate-700 dark:text-zinc-300 transition-colors cursor-pointer"
-            title="Partilhar curso"
-          >
-            <Share2 className="w-3.5 h-3.5" />
-            <span>Partilhar</span>
-          </button>
         </div>
 
       {/* ── Hero / Card Principal de Apresentação ── */}
@@ -336,35 +319,14 @@ export const CourseDetails = () => {
           <div className="lg:col-span-5 w-full">
             <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-neutral-800 bg-slate-50/60 dark:bg-[#0a0a0a] shadow-lg sticky top-6">
               
-              {/* Media Thumbnail / Preview */}
-              <div className="relative aspect-video w-full bg-neutral-900 group overflow-hidden">
+              {/* Media Thumbnail (Apenas Foto) */}
+              <div className="relative aspect-video w-full bg-neutral-900 overflow-hidden">
                 <img
                   src={course.bannerUrl || course.thumbnailUrl || 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200&auto=format&fit=crop&q=80'}
                   alt={course.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
+                  className="w-full h-full object-cover"
                   style={{ objectPosition: course.bannerPosition || course.thumbnailPosition || 'center' }}
                 />
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                  {previewVideo ? (
-                    <button
-                      onClick={() => setShowVideoModal(true)}
-                      className="w-16 h-16 rounded-full bg-white/90 hover:bg-white text-slate-950 flex items-center justify-center shadow-xl hover:scale-110 transition-all cursor-pointer group/btn"
-                      title="Ver pré-visualização do curso"
-                    >
-                      <Play className="w-7 h-7 fill-current ml-1 text-blue-600 transition-transform group-hover/btn:scale-110" />
-                    </button>
-                  ) : (
-                    <div className="w-14 h-14 rounded-full bg-white/80 text-slate-950 flex items-center justify-center shadow-md">
-                      <GraduationCap className="w-7 h-7 text-blue-600" />
-                    </div>
-                  )}
-                </div>
-                {previewVideo && (
-                  <span className="absolute bottom-3 right-3 px-2.5 py-1 rounded-md bg-black/75 backdrop-blur-md text-[11px] font-bold text-white flex items-center gap-1">
-                    <Video className="w-3.5 h-3.5 text-blue-400" />
-                    Trailer / Aula Piloto
-                  </span>
-                )}
               </div>
 
               {/* Corpo de Ações */}
@@ -470,7 +432,7 @@ export const CourseDetails = () => {
                   </div>
                   <div className="flex items-center gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Documentos e materiais de apoio para download</span>
+                    <span>Recursos e materiais de apoio incluídos</span>
                   </div>
                   <div className="flex items-center gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -683,7 +645,7 @@ export const CourseDetails = () => {
                                 <div className="flex items-center gap-2 mt-0.5">
                                   {les.type === 'quiz' ? (
                                     <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded">
-                                      Quiz Avaliativo (+{les.xpReward || 50} XP)
+                                      Quiz Avaliativo
                                     </span>
                                   ) : les.type === 'code' ? (
                                     <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded">
@@ -812,49 +774,26 @@ export const CourseDetails = () => {
           </div>
         )}
 
-        {/* 4. RECURSOS E FICHEIROS */}
+        {/* 4. RECURSOS E FICHEIROS (Apenas o nome) */}
         {activeTab === 'resources' && (
-          <div className="max-w-3xl flex flex-col gap-4">
+          <div className="max-w-3xl flex flex-col gap-3">
             {(!courseDocs || courseDocs.length === 0) ? (
               <div className="py-12 text-center rounded-2xl bg-white dark:bg-black border border-slate-200 dark:border-neutral-800 text-slate-500 dark:text-zinc-400 font-medium text-sm">
                 Sem ficheiros adicionais associados a este curso neste momento.
               </div>
             ) : (
               courseDocs.map((doc, dIdx) => {
-                const docUrl = doc.url || doc.data || '#';
                 const docTitle = doc.title || doc.name || `Documento ${dIdx + 1}`;
-                const docType = (doc.type || 'PDF').toUpperCase();
-                const docSize = doc.sizeBytes
-                  ? `${(doc.sizeBytes / 1024 / 1024).toFixed(2)} MB`
-                  : doc.size || 'Ficheiro de Apoio';
 
                 return (
                   <div
                     key={doc.id || dIdx}
-                    className="flex items-center justify-between p-5 rounded-xl bg-white dark:bg-black border border-slate-200 dark:border-neutral-800 shadow-xs hover:border-blue-400 dark:hover:border-blue-600 transition-colors"
+                    className="flex items-center gap-3 p-4 rounded-xl bg-white dark:bg-black border border-slate-200 dark:border-neutral-800 shadow-xs"
                   >
-                    <div className="flex items-center gap-4 min-w-0 pr-4">
-                      <div className="w-11 h-11 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-xs uppercase shrink-0">
-                        {docType.length > 4 ? docType.slice(0, 4) : docType}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{docTitle}</p>
-                        <p className="text-xs text-slate-500 dark:text-zinc-400 font-medium mt-0.5">
-                          {docSize} • Disponibilizado pelo Formador
-                        </p>
-                      </div>
-                    </div>
-                    <a
-                      href={docUrl}
-                      download={docTitle}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="shrink-0"
-                    >
-                      <Button variant="secondary" size="sm" rightIcon={<Download className="w-4 h-4" />}>
-                        Descarregar
-                      </Button>
-                    </a>
+                    <FileCode2 className="w-4 h-4 text-blue-500 shrink-0" />
+                    <span className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                      {docTitle}
+                    </span>
                   </div>
                 );
               })
@@ -869,40 +808,6 @@ export const CourseDetails = () => {
         course={course}
         onClose={() => setShowEnrollModal(false)}
         onEnrollSuccess={handleEnrollSuccess}
-      />
-
-      {/* Modal de Pré-visualização de Vídeo */}
-      {showVideoModal && previewVideo && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/90 animate-fade-in" style={{ isolation: 'isolate' }}>
-          <div className="fixed inset-0 bg-black/90" onClick={() => setShowVideoModal(false)} aria-hidden="true" />
-          <div className="relative w-full max-w-4xl bg-black rounded-2xl overflow-hidden border border-neutral-800 shadow-2xl z-10 animate-scale-in">
-            <button
-              onClick={() => setShowVideoModal(false)}
-              className="absolute top-4 right-4 z-20 px-3 py-1.5 rounded-lg bg-black/70 hover:bg-black text-white text-xs font-bold transition-colors cursor-pointer"
-            >
-              Fechar Pré-visualização
-            </button>
-            <div className="aspect-video w-full">
-              <iframe
-                src={previewVideo}
-                title="Pré-visualização do Curso"
-                className="w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* Social Share Modal */}
-      <SocialShareModal
-        isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
-        title={course.title}
-        text={`Estou a aprender no curso "${course.title}" na plataforma NEXO! Recomendo vivamente:`}
-        url={window.location.href}
       />
     </div>
     </>

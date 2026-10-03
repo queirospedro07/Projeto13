@@ -1,4 +1,4 @@
-﻿import { Router } from 'express';
+import { Router } from 'express';
 import { queryAll, queryOne, execute, transaction } from '../database/connection.js';
 import { authenticate, optionalAuth } from '../middleware/auth.js';
 
@@ -19,7 +19,7 @@ router.get('/my-learning', authenticate, async (req, res) => {
     const userId = req.user.id;
     const rows = queryAll(`SELECT DISTINCT 
               c.id as course_id, c.title, c.slug, c.description, c.category, c.difficulty, c.thumbnailUrl, c.bannerUrl, c.price, c.isFree, c.durationHours, c.language, c.creatorId, c.spaceId,
-              e.id as enrollment_id, e.userId as enrollment_userId, e.enrolledAt, e.completedAt, e.progressPercent, e.lastLessonId,
+              e.id as enrollment_id, e.userId as enrollment_userId, e.enrolledAt, e.completedAt, e.progressPercent, e.lastLessonId, e.isHidden,
               u.id as creator_id, u.name as creator_name, u.username as creator_username, u.avatarUrl as creator_avatarUrl
        FROM enrollments e
        JOIN courses c ON e.courseId = c.id
@@ -43,7 +43,10 @@ router.get('/my-learning', authenticate, async (req, res) => {
           lessons
         };
       });
-      const lessonProgresses = queryAll(`SELECT * FROM lesson_progress WHERE enrollmentId = ?`, [enrollmentId]);
+      const lessonProgresses = queryAll(`SELECT * FROM lesson_progress WHERE enrollmentId = ?`, [enrollmentId]).map(lp => ({
+        ...lp,
+        isCompleted: Boolean(lp.completed)
+      }));
       return {
         id: enrollmentId,
         userId: userId,
@@ -52,6 +55,7 @@ router.get('/my-learning', authenticate, async (req, res) => {
         completedAt: r.completedAt,
         progressPercent: progressPercent,
         lastLessonId: r.lastLessonId,
+        isHidden: r.isHidden === 1,
         isCreator: isCreator,
         course: {
           id: r.course_id,
@@ -85,6 +89,24 @@ router.get('/my-learning', authenticate, async (req, res) => {
     });
   }
 });
+
+router.post('/:courseId/toggle-hide', authenticate, async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const userId = req.user.id;
+    const enrollment = queryOne('SELECT * FROM enrollments WHERE userId = ? AND (courseId = ? OR courseId IN (SELECT id FROM courses WHERE slug = ?))', [userId, courseId, courseId]);
+    if (!enrollment) {
+      return res.status(404).json({ error: 'Inscrição não encontrada' });
+    }
+    const nextHidden = enrollment.isHidden === 1 ? 0 : 1;
+    execute('UPDATE enrollments SET isHidden = ? WHERE id = ?', [nextHidden, enrollment.id]);
+    return res.json({ success: true, isHidden: nextHidden === 1, courseId: enrollment.courseId });
+  } catch (err) {
+    console.error('Failed to toggle hide course:', err);
+    return res.status(500).json({ error: 'Falha ao alterar visibilidade do curso' });
+  }
+});
+
 router.get('/', optionalAuth, async (req, res) => {
   try {
     const {
@@ -99,6 +121,7 @@ router.get('/', optionalAuth, async (req, res) => {
              u.id as creator_id, u.name as creator_name, u.username as creator_username, u.avatarUrl as creator_avatarUrl,
              (SELECT COUNT(*) FROM enrollments WHERE courseId = c.id) as studentsCount,
              (SELECT COUNT(*) FROM course_modules WHERE courseId = c.id) as modulesCount,
+             (SELECT COUNT(*) FROM channels WHERE spaceId = c.spaceId) as channelsCount,
              COALESCE((SELECT ROUND(AVG(rating), 1) FROM reviews WHERE courseId = c.id), 0.0) as averageRating
       FROM courses c
       JOIN users u ON c.creatorId = u.id
@@ -110,8 +133,21 @@ router.get('/', optionalAuth, async (req, res) => {
       params.push(`%${search}%`, `%${search}%`);
     }
     if (category && category !== 'all') {
-      sql += ` AND c.category = ?`;
-      params.push(category);
+      const catLower = category.toLowerCase();
+      if (catLower === 'programming') {
+        sql += ` AND LOWER(c.category) = 'programming'`;
+      } else if (catLower === 'design') {
+        sql += ` AND LOWER(c.category) = 'design'`;
+      } else if (catLower === 'ai & data' || catLower === 'ai' || catLower === 'data') {
+        sql += ` AND (LOWER(c.category) LIKE '%ai%' OR LOWER(c.category) LIKE '%data%' OR LOWER(c.category) LIKE '%dados%')`;
+      } else if (catLower === 'cybersecurity') {
+        sql += ` AND (LOWER(c.category) LIKE '%cyber%' OR LOWER(c.category) LIKE '%ciber%')`;
+      } else if (catLower === 'cloud & devops' || catLower === 'cloud' || catLower === 'devops') {
+        sql += ` AND (LOWER(c.category) LIKE '%cloud%' OR LOWER(c.category) LIKE '%devops%')`;
+      } else {
+        sql += ` AND LOWER(c.category) = ?`;
+        params.push(catLower);
+      }
     }
     if (difficulty && difficulty !== 'all') {
       sql += ` AND c.difficulty = ?`;
@@ -136,14 +172,17 @@ router.get('/', optionalAuth, async (req, res) => {
       return {
         id: course.id,
         title: course.title,
+        name: course.title,
         slug: course.slug,
         description: course.description,
         category: course.category,
         difficulty: course.difficulty,
         thumbnailUrl: course.thumbnailUrl,
-        bannerUrl: course.bannerUrl,
+        bannerUrl: course.bannerUrl || course.thumbnailUrl,
+        thumbnailPosition: course.thumbnailPosition,
+        bannerPosition: course.bannerPosition,
         price: course.price,
-        isFree: course.isFree === 1,
+        isFree: course.isFree === 1 || course.price === 0,
         featured: course.featured === 1,
         durationHours: course.durationHours,
         language: course.language,
@@ -153,11 +192,22 @@ router.get('/', optionalAuth, async (req, res) => {
           username: course.creator_username,
           avatarUrl: course.creator_avatarUrl
         },
+        owner: {
+          id: course.creator_id,
+          name: course.creator_name,
+          username: course.creator_username,
+          avatarUrl: course.creator_avatarUrl
+        },
         studentsCount: course.studentsCount,
+        membersCount: course.studentsCount,
         reviewsCount: 12,
         modulesCount: course.modulesCount,
-        averageRating: 4.9,
+        channelsCount: course.channelsCount || 0,
+        hasCommunity: Boolean(course.spaceId),
+        spaceId: course.spaceId,
+        averageRating: course.averageRating > 0 ? course.averageRating : 4.9,
         isEnrolled,
+        isMember: isEnrolled,
         isCreator,
         userProgress
       };
@@ -398,7 +448,10 @@ router.get('/:id', optionalAuth, async (req, res) => {
     if (req.user) {
       const enrollmentRow = queryOne('SELECT * FROM enrollments WHERE userId = ? AND courseId = ?', [req.user.id, course.id]);
       if (enrollmentRow) {
-        const progresses = queryAll('SELECT * FROM lesson_progress WHERE enrollmentId = ?', [enrollmentRow.id]);
+        const progresses = queryAll('SELECT * FROM lesson_progress WHERE enrollmentId = ?', [enrollmentRow.id]).map(lp => ({
+          ...lp,
+          isCompleted: Boolean(lp.completed)
+        }));
         userEnrollment = {
           ...enrollmentRow,
           lessonProgresses: progresses
@@ -632,7 +685,10 @@ router.post('/:id/lessons/:lessonId/complete', authenticate, async (req, res) =>
          VALUES (?, ?, ?, ?, ?, ?, ?, 100)`, [`cert-${Date.now()}`, userId, course.id, user?.name || 'Estudante', course.title, credId, now]);
     }
     const updatedEnrollment = queryOne('SELECT * FROM enrollments WHERE id = ?', [enrollment.id]);
-    const lessonProgresses = queryAll('SELECT * FROM lesson_progress WHERE enrollmentId = ?', [enrollment.id]);
+    const lessonProgresses = queryAll('SELECT * FROM lesson_progress WHERE enrollmentId = ?', [enrollment.id]).map(lp => ({
+      ...lp,
+      isCompleted: Boolean(lp.completed)
+    }));
     return res.json({
       enrollment: {
         ...updatedEnrollment,
