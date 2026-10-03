@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import { seedDemoShowcaseData } from './demoSeed.js';
 
 export function initializeSchemaAndSeed(db) {
   db.exec(`
@@ -583,6 +584,9 @@ export function initializeSchemaAndSeed(db) {
   const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
   if (userCount === 0) {
     seedData(db);
+  }
+  if (process.env.NODE_ENV !== 'production') {
+    seedDemoShowcaseData(db);
   }
 }
 

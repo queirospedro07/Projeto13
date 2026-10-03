@@ -104,6 +104,15 @@ npm run dev
 O backend inicia em `http://localhost:5000`.  
 Na primeira execução, o esquema SQLite e os dados de seed são criados automaticamente.
 
+### Contas e Cursos de Demonstração
+
+Em desenvolvimento, o seed acrescenta oito perfis com fotografias, cinco cursos e dez aulas com vídeos diferentes do YouTube. As contas de demonstração partilham a palavra-passe `nexoDemo2026!`.
+
+- Formadores: `sofia.almeida@nexo.pt` e `miguel.ferreira@nexo.pt`
+- Alunos: `marta.lopes@nexo.pt`, `diogo.costa@nexo.pt`, `beatriz.martins@nexo.pt`, `joao.neves@nexo.pt`, `ines.carvalho@nexo.pt` e `rafael.moreira@nexo.pt`
+
+Os dados de demonstração não são inseridos quando `NODE_ENV=production`.
+
 ### 3. Iniciar o Frontend
 
 ```bash
