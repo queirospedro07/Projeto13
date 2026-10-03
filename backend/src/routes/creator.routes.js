@@ -458,6 +458,42 @@ router.get('/courses', authenticate, requireRole('CREATOR', 'ADMIN'), async (req
     });
   }
 });
+router.delete('/courses/:courseId', authenticate, requireRole('CREATOR', 'ADMIN'), async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const course = queryOne(`
+      SELECT c.id, c.creatorId, c.spaceId, s.ownerId AS spaceOwnerId
+      FROM courses c
+      LEFT JOIN spaces s ON s.id = c.spaceId
+      WHERE c.id = ?
+    `, [courseId]);
+
+    if (!course) {
+      return res.status(404).json({ error: 'Curso não encontrado' });
+    }
+    if (req.user.role !== 'ADMIN' && course.creatorId !== req.user.id) {
+      return res.status(403).json({ error: 'Só pode eliminar cursos que criou' });
+    }
+
+    const otherCourseUsesSpace = course.spaceId && queryOne(
+      'SELECT id FROM courses WHERE spaceId = ? AND id != ? LIMIT 1',
+      [course.spaceId, courseId]
+    );
+    const deleteOwnedSpace = course.spaceId && course.spaceOwnerId === course.creatorId && !otherCourseUsesSpace;
+
+    transaction(() => {
+      execute('DELETE FROM courses WHERE id = ?', [courseId]);
+      if (deleteOwnedSpace) {
+        execute('DELETE FROM spaces WHERE id = ? AND ownerId = ?', [course.spaceId, course.creatorId]);
+      }
+    });
+
+    return res.json({ success: true, id: courseId });
+  } catch (err) {
+    console.error('Delete course error:', err);
+    return res.status(500).json({ error: 'Falha ao eliminar curso' });
+  }
+});
 router.post('/courses', authenticate, requireRole('CREATOR', 'ADMIN'), async (req, res) => {
   try {
     const creatorId = req.user.id;

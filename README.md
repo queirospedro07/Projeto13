@@ -106,14 +106,33 @@ npm run dev
 O backend inicia em `http://localhost:5000`.  
 Na primeira execução, o esquema SQLite e os dados de seed são criados automaticamente.
 
-### Contas e Cursos de Demonstração
+### Contas de Demonstração
 
-Em desenvolvimento, o seed acrescenta oito perfis com fotografias, cinco cursos e dez aulas com vídeos diferentes do YouTube. As contas de demonstração partilham a palavra-passe `nexoDemo2026!`.
+As contas abaixo são criadas pelos seeds locais. Não são inseridas quando `NODE_ENV=production`.
 
-- Formadores: `sofia.almeida@nexo.pt` e `miguel.ferreira@nexo.pt`
-- Alunos: `marta.lopes@nexo.pt`, `diogo.costa@nexo.pt`, `beatriz.martins@nexo.pt`, `joao.neves@nexo.pt`, `ines.carvalho@nexo.pt` e `rafael.moreira@nexo.pt`
+**Contas iniciais** — palavra-passe comum: `password123`
 
-Os dados de demonstração não são inseridos quando `NODE_ENV=production`.
+| Email | Perfil inicial |
+|-------|----------------|
+| `aluno@nexo.pt` | Aluno |
+| `sarah@nexo.pt` | Formadora |
+| `alex@nexo.pt` | Administrador |
+| `tiago@nexo.pt` | Aluno com candidatura a formador |
+
+**Contas adicionais** — palavra-passe comum: `nexoDemo2026!`
+
+| Email | Perfil |
+|-------|--------|
+| `sofia.almeida@nexo.pt` | Formadora |
+| `miguel.ferreira@nexo.pt` | Formador |
+| `marta.lopes@nexo.pt` | Aluna |
+| `diogo.costa@nexo.pt` | Aluno |
+| `beatriz.martins@nexo.pt` | Aluna |
+| `joao.neves@nexo.pt` | Aluno |
+| `ines.carvalho@nexo.pt` | Aluna |
+| `rafael.moreira@nexo.pt` | Aluno |
+
+Em desenvolvimento, estes seeds criam cursos de demonstração com aulas ligadas a vídeos distintos do YouTube.
 
 ### 3. Iniciar o Frontend
 
@@ -264,15 +283,7 @@ Projeto/
 
 Sem configuração necessária. Na primeira execução, o servidor cria o ficheiro `backend/data/nexo.db` com todo o esquema e dados de demonstração.
 
-Contas de demonstração criadas automaticamente:
-
-| Utilizador | Email | Role |
-|------------|-------|------|
-| aluno | aluno@nexo.pt | STUDENT |
-| sarah_dev | sarah@nexo.pt | CREATOR |
-| alex_admin | alex@nexo.pt | ADMIN |
-
-Palavra-passe de todas as contas: `password123`
+Consulte a secção [Contas de Demonstração](#contas-de-demonstração) acima para ver todos os emails, perfis e palavras-passe seedados.
 
 ### PostgreSQL (Produção)
 

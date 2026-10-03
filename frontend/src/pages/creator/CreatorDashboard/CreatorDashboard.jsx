@@ -7,7 +7,8 @@ import {
   PlusCircle,
   Eye,
   BarChart3,
-  CheckCircle2
+  CheckCircle2,
+  Trash2
 } from 'lucide-react';
 import { api } from '../../../services/api';
 import { formatCoursePrice } from '../../../utils/formatters';
@@ -16,6 +17,7 @@ export const CreatorDashboard = () => {
   const [stats, setStats] = useState(null);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deletingCourseId, setDeletingCourseId] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -31,6 +33,21 @@ export const CreatorDashboard = () => {
   const totalStudents =
     stats?.totalStudents ||
     courses.reduce((acc, c) => acc + (c._count?.enrollments || 0), 0);
+
+  const handleDeleteCourse = async (course) => {
+    const confirmed = window.confirm(`Tem a certeza de que pretende eliminar "${course.title}"? Esta ação não pode ser desfeita.`);
+    if (!confirmed) return;
+
+    setDeletingCourseId(course.id);
+    try {
+      await api.deleteCourse(course.id);
+      setCourses((currentCourses) => currentCourses.filter((item) => item.id !== course.id));
+    } catch (error) {
+      window.alert(`Não foi possível eliminar o curso: ${error.message}`);
+    } finally {
+      setDeletingCourseId(null);
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-8 animate-fade-in pb-16">
@@ -194,7 +211,7 @@ export const CreatorDashboard = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                  <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:shrink-0 sm:self-center">
                     {course.approvalStatus !== 'APPROVED' && (
                       <button
                         onClick={async () => {
@@ -223,6 +240,16 @@ export const CreatorDashboard = () => {
                         <span>Editar Aulas</span>
                       </button>
                     </Link>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteCourse(course)}
+                      disabled={deletingCourseId === course.id}
+                      aria-label={`Eliminar curso ${course.title}`}
+                      title="Eliminar curso"
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-red-200 text-red-600 transition-colors hover:bg-red-50 disabled:cursor-wait disabled:opacity-50 dark:border-red-900/60 dark:text-red-400 dark:hover:bg-red-950/40"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
               ))}
