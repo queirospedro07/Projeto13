@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   LogOut,
   Plus,
@@ -29,7 +29,6 @@ export const Navbar = () => {
   const { theme, toggleTheme, actualTheme } = useTheme();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const location = useLocation();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
 
@@ -46,13 +45,12 @@ export const Navbar = () => {
 
   const isCreator = user?.role === 'CREATOR';
   const isAdmin = user?.role === 'ADMIN';
-  const isPublicHome = !user && location.pathname === '/';
   const homeTarget = user ? (isCreator ? '/creator' : '/dashboard') : '/';
 
   return (
     <>
       <header className="sticky top-0 z-40 w-full bg-white/90 dark:bg-black/95 backdrop-blur-md text-slate-900 dark:text-white border-b border-slate-200/90 dark:border-neutral-900 transition-colors shadow-xs">
-        <div className="w-full px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
+        <div className="w-full px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
 
           {/* ── Left ── */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
@@ -63,17 +61,9 @@ export const Navbar = () => {
           </div>
 
           {/* ── Center search — visible sm+ for all, hidden on mobile ── */}
-          {isPublicHome ? (
-            <nav aria-label="Navegação principal" className="hidden flex-1 items-center justify-center gap-8 text-sm font-medium text-slate-600 lg:flex">
-              <a href="#vantagens" className="transition-colors hover:text-slate-950">A plataforma</a>
-              <a href="#formacao" className="transition-colors hover:text-slate-950">Formações</a>
-              <a href="#faq" className="transition-colors hover:text-slate-950">Perguntas</a>
-            </nav>
-          ) : (
-            <div className="mx-2 hidden max-w-md flex-1 justify-center sm:mx-4 sm:flex">
-              <GlobalSearch />
-            </div>
-          )}
+          <div className="mx-2 hidden max-w-md flex-1 justify-center sm:mx-4 sm:flex">
+            <GlobalSearch />
+          </div>
 
           {/* ── Right ── */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
@@ -90,34 +80,32 @@ export const Navbar = () => {
               </button>
             )}
 
-            {!isPublicHome && (
-              <button
-                onClick={toggleTheme}
-                className="p-2 rounded-lg text-slate-600 dark:text-neutral-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-neutral-900 transition-colors cursor-pointer shrink-0"
-                aria-label="Alternar tema"
-                title="Alternar Tema"
-              >
-                {theme === 'system' ? (
-                  <Monitor className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                ) : actualTheme === 'dark' ? (
-                  <Moon className="w-4 h-4 text-blue-400" />
-                ) : (
-                  <Sun className="w-4 h-4 text-amber-500" />
-                )}
-              </button>
-            )}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg text-slate-600 dark:text-neutral-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-neutral-900 transition-colors cursor-pointer shrink-0"
+              aria-label="Alternar tema"
+              title="Alternar Tema"
+            >
+              {theme === 'system' ? (
+                <Monitor className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              ) : actualTheme === 'dark' ? (
+                <Moon className="w-4 h-4 text-blue-400" />
+              ) : (
+                <Sun className="w-4 h-4 text-amber-500" />
+              )}
+            </button>
 
             {!user ? (
               <div className="flex items-center gap-1.5 shrink-0">
                 <Link
                   to="/login"
-                  className="hidden sm:inline-flex px-3 py-1.5 text-xs sm:text-sm font-semibold text-slate-700 dark:text-neutral-200 hover:text-black dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-neutral-900 transition-colors whitespace-nowrap"
+                  className="px-3 py-1.5 text-xs sm:text-sm font-semibold text-slate-700 dark:text-neutral-200 hover:text-black dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-neutral-900 transition-colors whitespace-nowrap"
                 >
                   Iniciar Sessão
                 </Link>
                 <Link
                   to="/register"
-                  className="px-2.5 sm:px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-white bg-slate-900 hover:bg-black dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 rounded-lg shadow-xs transition-all flex items-center gap-1 sm:gap-1.5 whitespace-nowrap shrink-0 border border-slate-900 dark:border-white"
+                  className="px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-white bg-slate-900 hover:bg-black dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 rounded-lg shadow-xs transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 border border-slate-900 dark:border-white"
                 >
                   <span>Criar Conta</span>
                   <ArrowRight className="w-3.5 h-3.5" />

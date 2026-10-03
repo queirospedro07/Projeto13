@@ -3,8 +3,6 @@ import { Link, Navigate } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   ArrowRight,
-  Compass,
-  CheckCircle2,
   ChevronDown,
   Star,
   Clock,
@@ -126,51 +124,42 @@ export const LandingPage = () => {
       />
       <div className="min-h-screen bg-white dark:bg-[#06070a] text-slate-900 dark:text-white font-sans transition-colors selection:bg-blue-600 selection:text-white">
       
-      <section className="relative flex min-h-[min(640px,calc(100svh-4rem))] items-center overflow-hidden bg-[#111615] text-white">
-        <img
-          src="/hero-showcase.jpg"
-          alt="Profissional a desenvolver um projeto num estúdio de trabalho moderno"
-          className="absolute inset-0 h-full w-full object-cover object-[58%_center]"
-          fetchPriority="high"
-        />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#101615]/95 via-[#101615]/78 to-[#101615]/20" />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#101615]/65 via-transparent to-[#101615]/10" />
-        <div className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-8 sm:py-24 lg:px-12 lg:py-28">
-          <div className="max-w-3xl animate-[fadeInUp_700ms_ease-out_both]">
-            <p className="mb-4 flex items-center gap-3 text-[0.65rem] font-semibold uppercase text-white/65 sm:mb-5 sm:text-sm">
-              <span className="h-px w-8 bg-white/45" />
-              Formação para o mundo real
-            </p>
-            <h1 className="max-w-3xl text-[2rem] font-bold leading-[1.1] text-white sm:text-6xl lg:text-7xl">
-              O próximo passo da sua carreira começa aqui.
+      <section className="bg-white dark:bg-[#06070a] text-slate-900 dark:text-white">
+        <div className="mx-auto grid max-w-7xl items-center gap-8 px-4 py-10 sm:px-8 sm:py-16 lg:min-h-[calc(100svh-4rem)] lg:grid-cols-2 lg:gap-14 lg:px-12 lg:py-20">
+          <div className="max-w-xl">
+            <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">Formação online</p>
+            <h1 className="mt-3 text-4xl font-bold leading-tight text-slate-950 dark:text-white sm:text-5xl lg:text-6xl">
+              Aprenda. Pratique. Avance.
             </h1>
-            <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/75 sm:mt-6 sm:text-lg lg:text-xl">
-              Aprenda com projetos práticos, troque conhecimento com especialistas e transforme novas competências em oportunidades.
+            <p className="mt-4 max-w-lg text-base leading-relaxed text-slate-600 dark:text-neutral-300 sm:text-lg">
+              Cursos práticos e mentoria para levar as suas competências mais longe.
             </p>
 
-            <div className="mt-7 flex flex-col gap-3 sm:mt-9 sm:flex-row sm:items-center">
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               {user ? (
-                <Link to={dashboardPath} className="inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-md bg-white px-6 text-sm font-bold text-slate-950 transition-colors hover:bg-slate-100 sm:w-auto">
+                <Link to={dashboardPath} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-slate-950 px-5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 sm:w-auto">
                   Ir para o meu painel
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               ) : (
-                <Link to="/register" className="inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-md bg-white px-6 text-sm font-bold text-slate-950 transition-colors hover:bg-slate-100 sm:w-auto">
+                <Link to="/register" className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-slate-950 px-5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 sm:w-auto">
                   Começar a aprender
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               )}
-              <Link to="/explore" className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md border border-white/35 px-6 text-sm font-semibold text-white transition-colors hover:border-white hover:bg-white/10 sm:w-auto">
-                <Compass className="h-4 w-4" />
+              <Link to="/explore" className="inline-flex min-h-12 w-full items-center justify-center rounded-md border border-slate-300 px-5 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-50 dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-900 sm:w-auto">
                 Explorar formações
               </Link>
             </div>
+          </div>
 
-            <div className="mt-8 grid grid-cols-1 gap-3 border-t border-white/20 pt-5 text-xs font-medium text-white/75 min-[420px]:grid-cols-2 sm:mt-10 sm:grid-cols-3 sm:gap-x-7 sm:gap-y-3 sm:text-sm">
-              <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-white/70" />Projetos práticos</span>
-              <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-white/70" />Mentoria em direto</span>
-              <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-white/70" />Certificados verificáveis</span>
-            </div>
+          <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-slate-100 dark:bg-neutral-900">
+            <img
+              src="/hero-showcase.jpg"
+              alt="Profissional a trabalhar num projeto digital"
+              className="h-full w-full object-cover"
+              fetchPriority="high"
+            />
           </div>
         </div>
       </section>
