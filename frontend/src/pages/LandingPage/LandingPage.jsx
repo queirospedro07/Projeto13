@@ -11,7 +11,11 @@ import {
   Sparkles,
   Radio,
   FileCode2,
-  Award
+  Award,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { api } from '../../services/api';
 import Footer from '../../components/layout/Footer';
@@ -23,8 +27,11 @@ export const LandingPage = () => {
   const { user, isLoading } = useAuth();
   const [courses, setCourses] = useState([]);
   const [openFaq, setOpenFaq] = useState(0);
+  const [isMuted, setIsMuted] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(true);
   const reduceMotion = useReducedMotion();
   const heroRef = useRef(null);
+  const videoRef = useRef(null);
   const [heroMouse, setHeroMouse] = useState({ x: -1000, y: -1000, active: false });
 
   const handleHeroMouseMove = (event) => {
@@ -35,6 +42,34 @@ export const LandingPage = () => {
 
   const handleHeroMouseLeave = () => {
     setHeroMouse((current) => ({ ...current, active: false }));
+  };
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.muted = isMuted;
+    if (isPlaying) {
+      video.play().catch(() => {});
+    } else {
+      video.pause();
+    }
+  }, [isMuted, isPlaying]);
+
+  const toggleMute = () => {
+    setIsMuted((current) => !current);
+  };
+
+  const togglePlay = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      video.play().catch(() => {});
+      setIsPlaying(true);
+    } else {
+      video.pause();
+      setIsPlaying(false);
+    }
   };
 
   const fallbackCourses = [
@@ -205,10 +240,11 @@ export const LandingPage = () => {
             </div>
 
             <div className="lg:col-span-6 flex flex-col items-center justify-center">
-              <div className="w-full aspect-[16/10] rounded-xl sm:rounded-2xl overflow-hidden border border-slate-200 dark:border-neutral-800 shadow-xl relative group bg-slate-950">
+              <div className="relative w-full aspect-[16/10] overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 shadow-[0_30px_80px_rgba(15,23,42,0.25)] ring-1 ring-slate-200/70 dark:border-neutral-800 dark:ring-neutral-700/60">
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-900/65 via-slate-950/20 to-blue-900/30" />
                 <video
+                  ref={videoRef}
                   className="h-full w-full object-cover"
-                  controls
                   autoPlay
                   muted
                   loop
@@ -219,6 +255,40 @@ export const LandingPage = () => {
                   <source src="/video.mp4" type="video/mp4" />
                   O seu navegador não suporta a reprodução de vídeo.
                 </video>
+
+                <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-3 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent p-4 sm:p-5">
+                  <div className="min-w-0">
+                    <div className="mb-1 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/7 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/80 backdrop-blur-sm">
+                      <Radio className="h-3 w-3 text-blue-300" />
+                      Demo NEXO
+                    </div>
+                    <p className="truncate text-sm font-semibold text-white sm:text-base">
+                      Salas, cursos e comunidade em movimento.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={toggleMute}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-black/20 text-white backdrop-blur-sm transition hover:bg-black/30"
+                      aria-label={isMuted ? 'Ativar som' : 'Silenciar som'}
+                      title={isMuted ? 'Ativar som' : 'Silenciar som'}
+                    >
+                      {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={togglePlay}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-600/30 transition hover:bg-blue-500"
+                      aria-label={isPlaying ? 'Pausar vídeo' : 'Reproduzir vídeo'}
+                      title={isPlaying ? 'Pausar vídeo' : 'Reproduzir vídeo'}
+                    >
+                      {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 fill-current" />}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
