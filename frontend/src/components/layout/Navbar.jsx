@@ -51,7 +51,7 @@ export const Navbar = () => {
 
   return (
     <>
-      <header className="relative z-40 w-full bg-white dark:bg-black text-slate-900 dark:text-white border-b border-slate-200/90 dark:border-neutral-900 transition-colors">
+      <header className="sticky top-0 z-40 w-full bg-white/90 dark:bg-black/95 backdrop-blur-md text-slate-900 dark:text-white border-b border-slate-200/90 dark:border-neutral-900 transition-colors shadow-xs">
         <div className="w-full px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
 
           {/* ── Left ── */}

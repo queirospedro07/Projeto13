@@ -127,7 +127,14 @@ export const LandingPage = () => {
       <div className="min-h-screen bg-white dark:bg-[#06070a] text-slate-900 dark:text-white font-sans transition-colors selection:bg-blue-600 selection:text-white">
       
       <section className="relative flex min-h-[min(640px,calc(100svh-4rem))] items-center overflow-hidden bg-[#111615] text-white">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_75%_20%,rgba(223,199,131,0.09),transparent_48%)]" />
+        <img
+          src="/hero-showcase.jpg"
+          alt="Profissional a desenvolver um projeto num estúdio de trabalho moderno"
+          className="absolute inset-0 h-full w-full object-cover object-[58%_center]"
+          fetchPriority="high"
+        />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#101615]/95 via-[#101615]/78 to-[#101615]/20" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#101615]/65 via-transparent to-[#101615]/10" />
         <div className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-8 sm:py-24 lg:px-12 lg:py-28">
           <div className="max-w-3xl animate-[fadeInUp_700ms_ease-out_both]">
             <p className="mb-4 flex items-center gap-3 text-[0.65rem] font-semibold uppercase text-white/65 sm:mb-5 sm:text-sm">
