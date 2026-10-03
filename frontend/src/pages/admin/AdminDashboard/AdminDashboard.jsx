@@ -35,7 +35,12 @@ export const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [reports, setReports] = useState([]);
   const [applications, setApplications] = useState([]);
+  const [subAdminApplications, setSubAdminApplications] = useState([]);
   const [courses, setCourses] = useState([]);
+  const [courseStatusFilter, setCourseStatusFilter] = useState('PENDING');
+  const [courseSearch, setCourseSearch] = useState('');
+  const [selectedCourseDetail, setSelectedCourseDetail] = useState(null);
+  const [courseDetailLoading, setCourseDetailLoading] = useState(false);
   const [supportTickets, setSupportTickets] = useState([]);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [ticketReply, setTicketReply] = useState('');
@@ -46,6 +51,7 @@ export const AdminDashboard = () => {
 
   // Modais de ação
   const [selectedApp, setSelectedApp] = useState(null);
+  const [selectedSubAdminApplication, setSelectedSubAdminApplication] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [rejectFeedback, setRejectFeedback] = useState('');
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -56,11 +62,12 @@ export const AdminDashboard = () => {
 
   const fetchAdminData = async () => {
     try {
-      const [statsData, usersData, reportsData, appsData, coursesData, ticketsData] = await Promise.all([
+      const [statsData, usersData, reportsData, appsData, subAdminAppsData, coursesData, ticketsData] = await Promise.all([
         api.getAdminStats(),
         api.getAdminUsers(),
         api.getAdminReports(),
         api.getAdminCreatorApplications(),
+        api.getSubAdminApplications().catch(() => []),
         api.getAdminCourses('all'),
         api.getAdminSupportTickets().catch(() => []),
       ]);
@@ -68,6 +75,7 @@ export const AdminDashboard = () => {
       setUsers(usersData || []);
       setReports(reportsData || []);
       setApplications(appsData || []);
+      setSubAdminApplications(subAdminAppsData || []);
       setCourses(coursesData || []);
       setSupportTickets(ticketsData || []);
     } catch (err) {
@@ -177,20 +185,43 @@ export const AdminDashboard = () => {
     }
   };
 
-  // Rejeitar candidatura a criador
-  const handleConfirmRejectApplication = async () => {
-    if (!selectedApp) return;
+  const handleApproveSubAdminApplication = async (applicationId) => {
     setActionLoading(true);
     try {
-      await api.rejectCreatorApplication(selectedApp.id, rejectFeedback);
+      await api.approveSubAdminApplication(applicationId);
       toast({
-        title: 'Candidatura Rejeitada',
+        title: 'Candidatura aprovada',
+        message: 'O candidato foi promovido a Sub-Administrador.',
+        type: 'success'
+      });
+      fetchAdminData();
+    } catch (err) {
+      toast({ title: 'Falha ao aprovar', message: err.message || 'Não foi possível aprovar a candidatura.', type: 'error' });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Rejeitar candidatura a criador
+  const handleConfirmRejectApplication = async () => {
+    if (rejectType === 'subadmin' ? !selectedSubAdminApplication : !selectedApp) return;
+    const targetId = rejectType === 'subadmin' ? selectedSubAdminApplication.id : selectedApp.id;
+    setActionLoading(true);
+    try {
+      if (rejectType === 'subadmin') {
+        await api.rejectSubAdminApplication(targetId, rejectFeedback);
+      } else {
+        await api.rejectCreatorApplication(targetId, rejectFeedback);
+      }
+      toast({
+        title: 'Candidatura rejeitada',
         message: 'O candidato foi notificado com o feedback fornecido.',
         type: 'info',
       });
       setShowRejectModal(false);
       setRejectFeedback('');
       setSelectedApp(null);
+      setSelectedSubAdminApplication(null);
       fetchAdminData();
     } catch (err) {
       toast({
@@ -214,6 +245,7 @@ export const AdminDashboard = () => {
         type: 'success',
       });
       fetchAdminData();
+      if (selectedCourseDetail?.id === courseId) setSelectedCourseDetail(null);
       if (selectedCourse?.id === courseId) setSelectedCourse(null);
     } catch (err) {
       toast({
@@ -239,6 +271,7 @@ export const AdminDashboard = () => {
       });
       setShowRejectModal(false);
       setRejectFeedback('');
+      setSelectedCourseDetail(null);
       setSelectedCourse(null);
       fetchAdminData();
     } catch (err) {
@@ -252,8 +285,28 @@ export const AdminDashboard = () => {
     }
   };
 
+  const handleOpenCourseReview = async (course) => {
+    setSelectedCourseDetail(course);
+    setCourseDetailLoading(true);
+    try {
+      const details = await api.getCourse(course.id);
+      setSelectedCourseDetail(details);
+    } catch (err) {
+      toast({ title: 'Não foi possível carregar o curso', message: err.message || 'Tente novamente.', type: 'error' });
+    } finally {
+      setCourseDetailLoading(false);
+    }
+  };
+
   const pendingApps = applications.filter((a) => a.status === 'PENDING');
+  const pendingSubAdminApps = subAdminApplications.filter((a) => a.status === 'PENDING');
   const pendingCourses = courses.filter((c) => c.approvalStatus === 'PENDING');
+  const visibleAdminCourses = courses.filter((course) => {
+    const matchesStatus = courseStatusFilter === 'ALL' || course.approvalStatus === courseStatusFilter;
+    const query = courseSearch.trim().toLocaleLowerCase('pt-PT');
+    const matchesQuery = !query || `${course.title} ${course.description} ${course.creator?.name} ${course.category}`.toLocaleLowerCase('pt-PT').includes(query);
+    return matchesStatus && matchesQuery;
+  });
   const pendingTickets = supportTickets.filter((t) => t.status === 'ABERTO' || t.status === 'EM_ANALISE');
 
   return (
@@ -299,6 +352,22 @@ export const AdminDashboard = () => {
             {pendingApps.length > 0 && (
               <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-amber-500 text-slate-950">
                 {pendingApps.length}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('subadmins')}
+            className={`px-3.5 py-2 rounded-md text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
+              activeTab === 'subadmins'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-neutral-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/[0.08]'
+            }`}
+          >
+            <span>Candidaturas a Subadmin</span>
+            {pendingSubAdminApps.length > 0 && (
+              <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-amber-500 text-slate-950">
+                {pendingSubAdminApps.length}
               </span>
             )}
           </button>
@@ -414,7 +483,7 @@ export const AdminDashboard = () => {
           </div>
 
           {/* Quick Action Alerts */}
-          {(pendingApps.length > 0 || pendingCourses.length > 0) && (
+          {(pendingApps.length > 0 || pendingSubAdminApps.length > 0 || pendingCourses.length > 0) && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {pendingApps.length > 0 && (
                 <div className="p-6 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
@@ -438,6 +507,27 @@ export const AdminDashboard = () => {
                     className="cursor-pointer"
                   >
                     Rever Agora
+                  </Button>
+                </div>
+              )}
+
+              {pendingSubAdminApps.length > 0 && (
+                <div className="p-6 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold">
+                      <ShieldCheck className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 dark:text-white">
+                        {pendingSubAdminApps.length} candidatura(s) a Subadmin
+                      </h4>
+                      <p className="text-xs text-slate-600 dark:text-neutral-400 mt-0.5">
+                        Rever experiência, disponibilidade e resposta ao cenário.
+                      </p>
+                    </div>
+                  </div>
+                  <Button variant="primary" size="sm" onClick={() => setActiveTab('subadmins')} className="cursor-pointer">
+                    Rever
                   </Button>
                 </div>
               )}
@@ -641,18 +731,133 @@ export const AdminDashboard = () => {
 
 
 
+      {activeTab === 'subadmins' && (
+        <section className="space-y-5">
+          <header>
+            <h2 className="text-xl font-bold font-display text-slate-900 dark:text-white">
+              Candidaturas a Sub-Administrador ({subAdminApplications.length})
+            </h2>
+            <p className="mt-1 text-sm text-slate-500 dark:text-neutral-400">
+              Reveja experiência, áreas de atuação, disponibilidade e critério de moderação antes de atribuir permissões globais.
+            </p>
+          </header>
+
+          {subAdminApplications.length === 0 ? (
+            <Card className="p-12 text-center text-slate-500 dark:text-neutral-400">
+              <ShieldCheck className="mx-auto mb-3 h-10 w-10 opacity-30" />
+              <p className="text-sm font-semibold">Ainda não há candidaturas a Sub-Administrador.</p>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {subAdminApplications.map((application) => (
+                <Card key={application.id} className={`border p-5 sm:p-6 ${application.status === 'PENDING' ? 'border-amber-500/40' : 'border-black/5 dark:border-white/10'}`}>
+                  <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+                    <div className="min-w-0 flex-1 space-y-4">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <Avatar src={application.user?.avatarUrl} name={application.fullName} size="sm" />
+                        <div className="min-w-0">
+                          <h3 className="font-bold text-slate-900 dark:text-white">{application.fullName}</h3>
+                          <p className="break-all text-xs text-slate-500 dark:text-neutral-400">{application.email}</p>
+                        </div>
+                        <Badge size="sm" variant={application.status === 'APPROVED' ? 'success' : application.status === 'REJECTED' ? 'error' : 'warning'}>
+                          {application.status === 'APPROVED' ? 'Aprovada' : application.status === 'REJECTED' ? 'Rejeitada' : 'Pendente'}
+                        </Badge>
+                        <span className="text-xs text-slate-400">{new Date(application.createdAt).toLocaleDateString('pt-PT')}</span>
+                      </div>
+
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        {[
+                          ['Experiência', application.experience],
+                          ['Motivação', application.motivation],
+                          ['Áreas de atuação', application.areasOfInterest || 'Não indicado'],
+                          ['Disponibilidade semanal', `${application.weeklyAvailabilityHours} horas`],
+                          ['Resposta ao cenário de moderação', application.situationScenario || 'Sem resposta']
+                        ].map(([label, value], index) => (
+                          <div key={label} className={`rounded-lg p-4 ${index === 4 ? 'bg-indigo-50 dark:bg-indigo-950/20 sm:col-span-2' : 'bg-slate-50 dark:bg-white/[0.03]'}`}>
+                            <p className="mb-1 text-xs font-bold text-slate-500 dark:text-neutral-400">{label}</p>
+                            <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-800 dark:text-neutral-200">{value}</p>
+                          </div>
+                        ))}
+                      </div>
+
+                      {application.adminFeedback && (
+                        <div className="rounded-lg border border-slate-200 p-3 text-sm dark:border-neutral-800">
+                          <p className="mb-1 text-xs font-bold text-slate-500 dark:text-neutral-400">Parecer administrativo</p>
+                          <p className="whitespace-pre-wrap text-slate-800 dark:text-neutral-200">{application.adminFeedback}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {application.status === 'PENDING' && (
+                      <div className="flex w-full gap-2 sm:w-auto xl:flex-col">
+                        <Button variant="primary" size="sm" disabled={actionLoading} onClick={() => handleApproveSubAdminApplication(application.id)} className="flex-1 bg-emerald-600 text-white hover:bg-emerald-700 xl:flex-none">
+                          Aprovar
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          disabled={actionLoading}
+                          onClick={() => {
+                            setSelectedSubAdminApplication(application);
+                            setSelectedApp(null);
+                            setRejectType('subadmin');
+                            setShowRejectModal(true);
+                          }}
+                          className="flex-1 border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:hover:bg-red-950/30 xl:flex-none"
+                        >
+                          Rejeitar
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
       {/* 3. MODERAÇÃO E APROVAÇÃO DE CURSOS */}
       {activeTab === 'courses' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold font-display text-slate-900 dark:text-white">
-                Cursos Submetidos para Moderação ({courses.length})
+                Revisão de Cursos ({visibleAdminCourses.length})
               </h2>
               <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-                Apenas cursos validados e aprovados pelo Administrador ficam visíveis no catálogo público.
+                Consulte a proposta e o currículo completo antes de aprovar ou pedir alterações.
               </p>
             </div>
+          </div>
+
+          <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 dark:border-neutral-800 dark:bg-white/[0.02] sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filtrar cursos por estado">
+              {[
+                ['PENDING', `Pendentes (${pendingCourses.length})`],
+                ['APPROVED', 'Aprovados'],
+                ['REJECTED', 'Rejeitados'],
+                ['ALL', 'Todos']
+              ].map(([status, label]) => (
+                <button
+                  key={status}
+                  type="button"
+                  aria-pressed={courseStatusFilter === status}
+                  onClick={() => setCourseStatusFilter(status)}
+                  className={`min-h-9 rounded-md px-3 text-xs font-semibold transition-colors ${courseStatusFilter === status ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950' : 'text-slate-600 hover:bg-slate-100 dark:text-neutral-300 dark:hover:bg-neutral-800'}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <input
+              type="search"
+              value={courseSearch}
+              onChange={(event) => setCourseSearch(event.target.value)}
+              placeholder="Pesquisar curso ou formador"
+              aria-label="Pesquisar curso ou formador"
+              className="min-h-10 w-full rounded-md border border-slate-300 bg-slate-50 px-3 text-sm text-slate-900 outline-none focus:border-blue-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white sm:max-w-xs"
+            />
           </div>
 
           {courses.length === 0 ? (
@@ -660,9 +865,16 @@ export const AdminDashboard = () => {
               <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-30" />
               <p className="text-sm font-semibold">Nenhum curso registado.</p>
             </Card>
+          ) : visibleAdminCourses.length === 0 ? (
+            <Card className="p-10 text-center text-slate-500 dark:text-neutral-400">
+              <p className="text-sm font-semibold">Não há cursos neste filtro.</p>
+              <button type="button" onClick={() => { setCourseStatusFilter('ALL'); setCourseSearch(''); }} className="mt-2 text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400">
+                Limpar filtros
+              </button>
+            </Card>
           ) : (
             <div className="space-y-4">
-              {courses.map((course) => (
+              {visibleAdminCourses.map((course) => (
                 <Card
                   key={course.id}
                   className={`p-6 border transition-all ${
@@ -728,52 +940,16 @@ export const AdminDashboard = () => {
                     </div>
 
                     {/* Action buttons */}
-                    <div className="flex sm:flex-col items-center gap-2 shrink-0">
-                      {course.approvalStatus === 'PENDING' ? (
-                        <>
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            leftIcon={<Check className="w-4 h-4" />}
-                            disabled={actionLoading}
-                            onClick={() => handleApproveCourse(course.id)}
-                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold cursor-pointer"
-                          >
-                            Aprovar Curso
+                    <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:shrink-0">
+                      <Button variant="secondary" size="sm" leftIcon={<Eye className="w-3.5 h-3.5" />} onClick={() => handleOpenCourseReview(course)}>
+                        Rever conteúdo
+                      </Button>
+                      {course.approvalStatus === 'APPROVED' && (
+                        <Link to={`/courses/${course.id}`}>
+                          <Button variant="secondary" size="sm" rightIcon={<Eye className="w-3.5 h-3.5" />}>
+                            Ver público
                           </Button>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            leftIcon={<X className="w-4 h-4" />}
-                            disabled={actionLoading}
-                            onClick={() => {
-                              setSelectedCourse(course);
-                              setRejectType('course');
-                              setShowRejectModal(true);
-                            }}
-                            className="w-full text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 border-red-200 dark:border-red-900/50 cursor-pointer"
-                          >
-                            Rejeitar
-                          </Button>
-                        </>
-                      ) : (
-                        <div className="flex gap-2">
-                          <Link to={`/courses/${course.id}`}>
-                            <Button variant="secondary" size="sm" rightIcon={<Eye className="w-3.5 h-3.5" />}>
-                              Ver Curso
-                            </Button>
-                          </Link>
-                          {course.approvalStatus === 'REJECTED' && (
-                            <Button
-                              variant="primary"
-                              size="sm"
-                              onClick={() => handleApproveCourse(course.id)}
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                            >
-                              Reaprovar
-                            </Button>
-                          )}
-                        </div>
+                        </Link>
                       )}
                     </div>
                   </div>
@@ -1151,6 +1327,124 @@ export const AdminDashboard = () => {
         </div>
       )}
 
+      <Modal
+        isOpen={Boolean(selectedCourseDetail)}
+        onClose={() => setSelectedCourseDetail(null)}
+        title="Revisão de curso"
+        maxWidth="4xl"
+        bodyClassName="p-4 sm:p-6 overflow-y-auto custom-scrollbar text-slate-900 dark:text-neutral-100 flex-1 min-h-0"
+      >
+        {courseDetailLoading ? (
+          <div className="flex min-h-48 items-center justify-center text-sm text-slate-500">A carregar currículo e aulas…</div>
+        ) : selectedCourseDetail && (
+          <div className="space-y-6">
+            <div className="grid gap-5 md:grid-cols-[220px_1fr]">
+              <img
+                src={selectedCourseDetail.thumbnailUrl || '/hero-showcase.jpg'}
+                alt={selectedCourseDetail.title}
+                className="aspect-video w-full rounded-lg object-cover"
+              />
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge size="sm" variant={selectedCourseDetail.approvalStatus === 'APPROVED' ? 'success' : selectedCourseDetail.approvalStatus === 'REJECTED' ? 'error' : 'warning'}>
+                    {selectedCourseDetail.approvalStatus === 'APPROVED' ? 'Aprovado' : selectedCourseDetail.approvalStatus === 'REJECTED' ? 'Rejeitado' : 'Pendente'}
+                  </Badge>
+                  <span className="text-xs text-slate-500 dark:text-neutral-400">{selectedCourseDetail.category}</span>
+                </div>
+                <h3 className="mt-2 text-xl font-bold text-slate-950 dark:text-white">{selectedCourseDetail.title}</h3>
+                <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-600 dark:text-neutral-300">{selectedCourseDetail.description || 'Sem descrição.'}</p>
+                <div className="mt-4 grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
+                  <div><span className="block text-slate-500">Formador</span><strong>{selectedCourseDetail.creator?.name || selectedCourseDetail.creator_name || 'Não indicado'}</strong></div>
+                  <div><span className="block text-slate-500">Nível</span><strong>{selectedCourseDetail.difficulty || 'Não indicado'}</strong></div>
+                  <div><span className="block text-slate-500">Duração</span><strong>{selectedCourseDetail.durationHours || 0} h</strong></div>
+                  <div><span className="block text-slate-500">Preço</span><strong>{formatCoursePrice(selectedCourseDetail)}</strong></div>
+                  <div><span className="block text-slate-500">Idioma</span><strong>{selectedCourseDetail.language || 'Português'}</strong></div>
+                  <div><span className="block text-slate-500">Inscritos</span><strong>{selectedCourseDetail.studentsCount || 0}</strong></div>
+                </div>
+              </div>
+            </div>
+
+            {selectedCourseDetail.adminNotes && (
+              <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm dark:border-amber-900/60 dark:bg-amber-950/20">
+                <p className="mb-1 text-xs font-bold text-amber-800 dark:text-amber-300">Parecer anterior</p>
+                <p className="whitespace-pre-wrap text-slate-800 dark:text-neutral-200">{selectedCourseDetail.adminNotes}</p>
+              </div>
+            )}
+
+            <section>
+              <h4 className="mb-3 text-sm font-bold text-slate-900 dark:text-white">Currículo e aulas ({selectedCourseDetail.modules?.length || 0} módulos)</h4>
+              {selectedCourseDetail.modules?.length ? (
+                <div className="space-y-3">
+                  {selectedCourseDetail.modules.map((module, moduleIndex) => (
+                    <details key={module.id} open={moduleIndex === 0} className="rounded-lg border border-slate-200 dark:border-neutral-800">
+                      <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white">
+                        {moduleIndex + 1}. {module.title} <span className="ml-1 text-xs font-normal text-slate-500">({module.lessons?.length || 0} aulas)</span>
+                      </summary>
+                      {module.description && <p className="px-4 pb-3 text-xs text-slate-500 dark:text-neutral-400">{module.description}</p>}
+                      {module.lessons?.length ? (
+                        <ol className="divide-y divide-slate-100 border-t border-slate-100 dark:divide-neutral-800 dark:border-neutral-800">
+                          {module.lessons.map((lesson, lessonIndex) => (
+                            <li key={lesson.id} className="flex flex-col gap-2 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                              <div className="min-w-0">
+                                <p className="font-medium text-slate-800 dark:text-neutral-200">{lessonIndex + 1}. {lesson.title}</p>
+                                <p className="mt-0.5 text-xs text-slate-500">{lesson.type || 'video'} · {lesson.durationMin || 0} min</p>
+                              </div>
+                              {lesson.videoUrl && (
+                                <a href={lesson.videoUrl} target="_blank" rel="noopener noreferrer" className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400">
+                                  Abrir vídeo <ExternalLink className="h-3 w-3" />
+                                </a>
+                              )}
+                            </li>
+                          ))}
+                        </ol>
+                      ) : <p className="border-t border-slate-100 px-4 py-3 text-xs text-slate-500 dark:border-neutral-800">Este módulo ainda não tem aulas.</p>}
+                    </details>
+                  ))}
+                </div>
+              ) : <p className="rounded-lg border border-slate-200 p-4 text-sm text-slate-500 dark:border-neutral-800">O curso ainda não tem módulos. Peça ao formador para completar o currículo antes de publicar.</p>}
+            </section>
+
+            {[
+              ['Resultados de aprendizagem', selectedCourseDetail.learningOutcomes],
+              ['Requisitos prévios', selectedCourseDetail.requirements],
+              ['Materiais e documentos', selectedCourseDetail.documents]
+            ].map(([label, value]) => {
+              const items = Array.isArray(value) ? value : value ? [value] : [];
+              if (!items.length) return null;
+              return (
+                <section key={label}>
+                  <h4 className="mb-2 text-sm font-bold text-slate-900 dark:text-white">{label}</h4>
+                  <ul className="list-disc space-y-1 pl-5 text-sm text-slate-600 dark:text-neutral-300">
+                    {items.map((item, index) => <li key={`${label}-${index}`}>{typeof item === 'string' ? item : item.title || item.name || JSON.stringify(item)}</li>)}
+                  </ul>
+                </section>
+              );
+            })}
+
+            {selectedCourseDetail.approvalStatus !== 'APPROVED' && (
+              <div className="flex flex-col-reverse gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end dark:border-neutral-800">
+                <Button
+                  variant="secondary"
+                  disabled={actionLoading}
+                  onClick={() => {
+                    setSelectedCourse(selectedCourseDetail);
+                    setRejectType('course');
+                    setSelectedCourseDetail(null);
+                    setShowRejectModal(true);
+                  }}
+                  className="border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:hover:bg-red-950/30"
+                >
+                  Pedir alterações
+                </Button>
+                <Button disabled={actionLoading} onClick={() => handleApproveCourse(selectedCourseDetail.id)} className="bg-emerald-600 text-white hover:bg-emerald-700">
+                  Aprovar e publicar
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
+
       {/* Rejection Modal with Feedback Input */}
       {showRejectModal && createPortal(
         <div className="fixed inset-0 z-[9999] overflow-y-auto" style={{ isolation: 'isolate' }}>
@@ -1169,7 +1463,9 @@ export const AdminDashboard = () => {
                 <h3 className="font-bold text-lg text-slate-900 dark:text-white">
                   {rejectType === 'app'
                     ? 'Rejeitar Candidatura a Formador'
-                    : 'Rejeitar Curso'}
+                    : rejectType === 'subadmin'
+                    ? 'Rejeitar Candidatura a Sub-Administrador'
+                    : 'Pedir alterações ao curso'}
                 </h3>
               </div>
               <p className="text-xs text-slate-600 dark:text-neutral-400">

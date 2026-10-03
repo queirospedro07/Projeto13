@@ -1090,7 +1090,7 @@ export const CallStage = ({
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-50 md:relative md:inset-auto md:z-auto flex-1 w-full h-full bg-slate-100 dark:bg-[#090a0f] text-slate-900 dark:text-slate-100 flex flex-col overflow-hidden font-sans"
+      className="fixed inset-0 z-50 flex h-[100dvh] min-h-0 w-full flex-1 flex-col overflow-hidden bg-slate-100 font-sans text-slate-900 dark:bg-[#090a0f] dark:text-slate-100 md:relative md:inset-auto md:z-auto md:h-full"
     >
       {/* Audio Autoplay Unblock Banner */}
       {autoplayBlocked && (
@@ -1107,11 +1107,11 @@ export const CallStage = ({
       )}
 
       {/* Header */}
-      <header className="h-14 px-3 sm:px-5 border-b border-slate-200 dark:border-white/5 bg-white/90 dark:bg-[#090a0f]/90 backdrop-blur-md flex items-center justify-between z-20 shrink-0 pt-safe sm:pt-0">
+      <header className="min-h-14 px-2 sm:px-5 border-b border-slate-200 dark:border-white/5 bg-white/90 dark:bg-[#090a0f]/90 backdrop-blur-md flex items-center justify-between gap-2 z-20 shrink-0 pt-[env(safe-area-inset-top)] sm:pt-0">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <h2 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight truncate max-w-[200px] sm:max-w-md">
+            <h2 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white tracking-tight truncate max-w-[calc(100vw-190px)] sm:max-w-md">
               {roomName}
             </h2>
           </div>
@@ -1123,20 +1123,21 @@ export const CallStage = ({
           )}
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <div className="text-xs font-mono text-slate-600 dark:text-slate-400 bg-slate-200/60 dark:bg-white/5 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/5">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2.5">
+          <div className="hidden min-[360px]:block text-[10px] sm:text-xs font-mono text-slate-600 dark:text-slate-400 bg-slate-200/60 dark:bg-white/5 px-2 sm:px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/5">
             {formatTime(callDuration)}
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-200/60 dark:bg-white/5 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/5">
+          <div className="flex items-center gap-1 text-[10px] sm:text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-200/60 dark:bg-white/5 px-1.5 sm:px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/5">
             <Users className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
             <span>{participants.length}</span>
           </div>
 
           <button
             onClick={toggleFullscreen}
-            className="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5 transition-colors cursor-pointer"
+            className="hidden min-[360px]:inline-flex p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5 transition-colors cursor-pointer"
             title="Ecrã inteiro"
+            aria-label="Alternar ecrã inteiro"
           >
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>
@@ -1184,8 +1185,8 @@ export const CallStage = ({
       )}
 
       {/* Stage Body */}
-      <main className="flex-1 flex overflow-hidden relative">
-        <div className="flex-1 p-4 sm:p-6 flex flex-col overflow-y-auto custom-scrollbar">
+      <main className="relative flex min-h-0 flex-1 overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto custom-scrollbar p-2 sm:p-6">
           {/* Spotlight View for Screen Share */}
           {isViewingScreen ? (
             <div className="flex-1 flex flex-col gap-3 min-h-0">
@@ -1354,6 +1355,18 @@ export const CallStage = ({
                 {sideDrawer === 'chat' ? 'Mensagens da Chamada' : 'Participantes Conectados'}
               </h3>
               <button
+                type="button"
+                onClick={() => {
+                  soundEffects.playLeaveCall();
+                  onDisconnect?.();
+                }}
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-rose-600 px-3 text-xs font-bold text-white hover:bg-rose-500"
+                aria-label="Sair da chamada"
+              >
+                <PhoneOff className="h-4 w-4" />
+                Sair
+              </button>
+              <button
                 onClick={() => setSideDrawer('none')}
                 className="p-2 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer"
                 title="Fechar painel"
@@ -1422,8 +1435,8 @@ export const CallStage = ({
       </main>
 
       {/* Control Bar Footer */}
-      <footer className="py-2.5 sm:py-3.5 px-2 sm:px-6 border-t border-slate-200 dark:border-white/5 bg-slate-100 dark:bg-[#090a0f] flex items-center justify-center relative z-30 shrink-0 pb-safe pointer-events-auto">
-        <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl px-2 sm:px-3.5 py-1.5 sm:py-2 rounded-2xl border border-slate-200 dark:border-white/10 flex items-center gap-1.5 sm:gap-2 shadow-xl dark:shadow-2xl max-w-full overflow-x-auto no-scrollbar pointer-events-auto">
+      <footer className="shrink-0 border-t border-slate-200 bg-slate-100 px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 dark:border-white/5 dark:bg-[#090a0f] sm:px-6 sm:py-3.5 pointer-events-auto">
+        <div className="mx-auto flex w-full max-w-2xl flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-slate-200 bg-white/95 px-2 py-1.5 shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-zinc-900/95 sm:flex-nowrap sm:gap-2 sm:px-3.5 sm:py-2 pointer-events-auto">
           {/* Mic */}
           <button
             type="button"
@@ -1466,7 +1479,7 @@ export const CallStage = ({
             {isScreenSharing ? <MonitorOff className="w-4 h-4 text-white" /> : <Monitor className="w-4 h-4 text-slate-400" />}
           </button>
 
-          <div className="h-5 w-px bg-slate-200 dark:bg-white/10 mx-0.5 sm:mx-1 shrink-0" />
+          <div className="hidden h-5 w-px bg-slate-200 dark:bg-white/10 sm:mx-1 sm:block shrink-0" />
 
           {/* Chat Drawer Toggle */}
           <button
@@ -1496,7 +1509,7 @@ export const CallStage = ({
             <Users className="w-4 h-4" />
           </button>
 
-          <div className="h-5 w-px bg-slate-200 dark:bg-white/10 mx-0.5 sm:mx-1 shrink-0" />
+          <div className="hidden h-5 w-px bg-slate-200 dark:bg-white/10 sm:mx-1 sm:block shrink-0" />
 
           {/* Leave Call */}
           <button

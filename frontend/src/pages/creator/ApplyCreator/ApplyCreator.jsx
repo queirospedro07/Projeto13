@@ -601,12 +601,14 @@ export const ApplyCreator = () => {
                   <textarea
                     name="motivation"
                     required
+                    minLength={20}
                     rows={3}
                     value={formData.motivation}
                     onChange={handleChange}
                     placeholder="Explique como pretende estruturar os desafios práticos, o acompanhamento em salas ao vivo e a metodologia 'aprender fazendo'."
                     className="w-full bg-slate-50 dark:bg-neutral-900/60 border border-slate-300 dark:border-neutral-800 focus:border-blue-600 focus:bg-white dark:focus:bg-neutral-900 rounded-xl p-4 text-sm text-slate-900 dark:text-white focus:outline-none transition-all leading-relaxed"
                   />
+                  <p className="mt-1 text-right text-[11px] text-slate-400">{formData.motivation.trim().length}/20 caracteres mínimos</p>
                 </div>
 
                 <div>
@@ -616,6 +618,7 @@ export const ApplyCreator = () => {
                   <textarea
                     name="proposedCourses"
                     required
+                    minLength={30}
                     rows={6}
                     value={formData.proposedCourses}
                     onChange={handleChange}
@@ -631,6 +634,7 @@ export const ApplyCreator = () => {
                   <span className="text-[11px] text-slate-400 dark:text-neutral-500 mt-1 block">
                     Uma ementa clara com módulos bem definidos acelera a homologação direta pelo Administrador.
                   </span>
+                  <p className="mt-1 text-right text-[11px] text-slate-400">{formData.proposedCourses.trim().length}/30 caracteres mínimos</p>
                 </div>
               </div>
 
@@ -678,7 +682,7 @@ export const ApplyCreator = () => {
                 </div>
 
                 {/* Consolidated Review Box */}
-                <div className="p-5 rounded-2xl bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 space-y-3 text-xs">
+                <div className="p-5 rounded-2xl bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 space-y-4 text-xs">
                   <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500 mb-1">
                     Resumo do Inquérito a Enviar
                   </div>
@@ -695,11 +699,31 @@ export const ApplyCreator = () => {
                     <span className="font-bold text-slate-900 dark:text-white">{formData.experienceYears} Anos</span>
                   </div>
                   <div>
-                    <span className="text-slate-500 dark:text-neutral-400 block mb-1">Cursos Propostos:</span>
-                    <p className="font-medium text-slate-800 dark:text-neutral-200 line-clamp-2 leading-relaxed">
+                    <span className="text-slate-500 dark:text-neutral-400 block mb-1">Perfil profissional:</span>
+                    <p className="whitespace-pre-wrap leading-relaxed text-slate-800 dark:text-neutral-200">{formData.bio}</p>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 dark:text-neutral-400 block mb-1">Motivação e metodologia:</span>
+                    <p className="whitespace-pre-wrap leading-relaxed text-slate-800 dark:text-neutral-200">{formData.motivation}</p>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 dark:text-neutral-400 block mb-1">Ementa e módulos propostos:</span>
+                    <p className="max-h-40 overflow-y-auto whitespace-pre-wrap font-medium text-slate-800 dark:text-neutral-200 leading-relaxed">
                       {formData.proposedCourses}
                     </p>
                   </div>
+                  {formData.portfolioUrl && (
+                    <div className="break-all">
+                      <span className="text-slate-500 dark:text-neutral-400">Portfólio: </span>
+                      <span className="font-medium text-blue-600 dark:text-blue-400">{formData.portfolioUrl}</span>
+                    </div>
+                  )}
+                  {formData.sampleVideoUrl && (
+                    <div className="break-all">
+                      <span className="text-slate-500 dark:text-neutral-400">Vídeo demonstrativo: </span>
+                      <span className="font-medium text-blue-600 dark:text-blue-400">{formData.sampleVideoUrl}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Code of Ethics Agreement */}

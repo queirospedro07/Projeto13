@@ -229,9 +229,13 @@ router.get('/:id', optionalAuth, async (req, res) => {
       });
     }
 
-    // Apenas Administradores ou o próprio Formador criador podem ver cursos ainda não aprovados
-    const isOwnerOrAdmin = req.user && (req.user.role === 'ADMIN' || req.user.id === course.creatorId || req.user.id === course.creator_id);
-    if (course.approvalStatus && course.approvalStatus !== 'APPROVED' && !isOwnerOrAdmin) {
+    // Apenas o Formador dono e a equipa de moderação podem pré-visualizar cursos pendentes.
+    const canReviewPendingCourse = req.user && (
+      ['ADMIN', 'SUBADMIN'].includes(req.user.role) ||
+      req.user.id === course.creatorId ||
+      req.user.id === course.creator_id
+    );
+    if (course.approvalStatus && course.approvalStatus !== 'APPROVED' && !canReviewPendingCourse) {
       return res.status(403).json({
         error: 'Este curso está atualmente a aguardar validação e aprovação pela administração NEXO.'
       });

@@ -206,12 +206,19 @@ export const LandingPage = () => {
 
             <div className="lg:col-span-6 flex flex-col items-center justify-center">
               <div className="w-full aspect-[16/10] rounded-xl sm:rounded-2xl overflow-hidden border border-slate-200 dark:border-neutral-800 shadow-xl relative group bg-slate-950">
-                <img
-                  src="/hero-code.jpg"
-                  alt="Plataforma de Formação NEXO"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
-                  loading="eager"
-                />
+                <video
+                  className="h-full w-full object-cover"
+                  controls
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                  aria-label="Vídeo de demonstração da plataforma NEXO"
+                >
+                  <source src="/video.mp4" type="video/mp4" />
+                  O seu navegador não suporta a reprodução de vídeo.
+                </video>
               </div>
             </div>
           </div>

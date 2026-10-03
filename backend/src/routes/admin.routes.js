@@ -20,10 +20,17 @@ router.post('/subadmin-apply', async (req, res) => {
       userId: providedUserId
     } = req.body;
 
-    if (!fullName || !email || !motivation || !experience) {
+    if (!fullName?.trim() || !email?.trim() || experience?.trim().length < 40 || motivation?.trim().length < 40 || situationScenario?.trim().length < 60) {
       return res.status(400).json({
-        error: 'Preencha todos os campos obrigatórios do formulário de candidatura.'
+        error: 'A experiência e a motivação devem ter pelo menos 40 caracteres, e o cenário prático pelo menos 60.'
       });
+    }
+    const selectedAreas = Array.isArray(areasOfInterest)
+      ? areasOfInterest.filter((area) => typeof area === 'string' && area.trim())
+      : String(areasOfInterest || '').split(',').map((area) => area.trim()).filter(Boolean);
+    const availability = Number(weeklyAvailabilityHours);
+    if (selectedAreas.length === 0 || !Number.isInteger(availability) || availability < 2 || availability > 40) {
+      return res.status(400).json({ error: 'Selecione pelo menos uma área e indique uma disponibilidade entre 2 e 40 horas.' });
     }
 
     let user = null;
@@ -35,6 +42,14 @@ router.post('/subadmin-apply', async (req, res) => {
     }
 
     const userId = user ? user.id : (providedUserId || `guest-${Date.now()}`);
+    const existingApplication = queryOne(`
+      SELECT id FROM admin_applications
+      WHERE status = 'PENDING' AND (userId = ? OR LOWER(email) = LOWER(?))
+      LIMIT 1
+    `, [userId, email.trim()]);
+    if (existingApplication) {
+      return res.status(409).json({ error: 'Já existe uma candidatura pendente associada a esta conta ou email.' });
+    }
     const appId = `subapp-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
     const now = new Date().toISOString();
 
@@ -51,9 +66,9 @@ router.post('/subadmin-apply', async (req, res) => {
       email.trim(),
       motivation.trim(),
       experience.trim(),
-      Number(weeklyAvailabilityHours) || 10,
-      areasOfInterest ? (Array.isArray(areasOfInterest) ? areasOfInterest.join(', ') : areasOfInterest) : 'Moderação Geral',
-      situationScenario ? situationScenario.trim() : 'Não especificado',
+      availability,
+      selectedAreas.join(', '),
+      situationScenario.trim(),
       now,
       now
     ]);

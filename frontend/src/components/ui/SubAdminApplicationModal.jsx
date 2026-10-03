@@ -25,10 +25,7 @@ export const SubAdminApplicationModal = ({ isOpen, onClose }) => {
   const [experience, setExperience] = useState('');
   const [motivation, setMotivation] = useState('');
   const [weeklyAvailabilityHours, setWeeklyAvailabilityHours] = useState('10');
-  const [areasOfInterest, setAreasOfInterest] = useState([
-    'Moderação de Comunidade & Canais',
-    'Revisão e Moderação de Cursos'
-  ]);
+  const [areasOfInterest, setAreasOfInterest] = useState([]);
   const [situationScenario, setSituationScenario] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -72,10 +69,10 @@ export const SubAdminApplicationModal = ({ isOpen, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!fullName.trim() || !email.trim() || !motivation.trim() || !experience.trim()) {
+    if (!fullName.trim() || !email.trim() || experience.trim().length < 40 || motivation.trim().length < 40 || situationScenario.trim().length < 60 || areasOfInterest.length === 0) {
       toast({
-        title: 'Campos Obrigatórios',
-        message: 'Por favor, preencha todos os campos do inquérito de candidatura.',
+        title: 'Reveja a candidatura',
+        message: 'Preencha experiência e motivação (40 caracteres), selecione uma área e responda ao cenário (60 caracteres).',
         type: 'warning'
       });
       return;
@@ -90,7 +87,7 @@ export const SubAdminApplicationModal = ({ isOpen, onClose }) => {
         experience: experience.trim(),
         weeklyAvailabilityHours: Number(weeklyAvailabilityHours) || 10,
         areasOfInterest,
-        situationScenario: situationScenario.trim() || 'Resposta padrão ao inquérito de moderação.',
+        situationScenario: situationScenario.trim(),
         userId: user?.id || null
       });
 
@@ -225,11 +222,13 @@ export const SubAdminApplicationModal = ({ isOpen, onClose }) => {
                   <textarea
                     rows={3}
                     required
+                    minLength={40}
                     value={experience}
                     onChange={(e) => setExperience(e.target.value)}
                     placeholder="Descreva a sua experiência em moderação de comunidades, grupos de estudo, fóruns ou gestão de conteúdos..."
                     className="w-full bg-slate-50 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600 leading-relaxed"
                   />
+                  <p className="mt-1 text-right text-[11px] text-slate-400">{experience.trim().length}/40 caracteres mínimos</p>
                 </div>
 
                 {/* Motivação */}
@@ -240,11 +239,13 @@ export const SubAdminApplicationModal = ({ isOpen, onClose }) => {
                   <textarea
                     rows={3}
                     required
+                    minLength={40}
                     value={motivation}
                     onChange={(e) => setMotivation(e.target.value)}
                     placeholder="Explique o que o motiva a dedicar tempo à gestão e segurança da plataforma..."
                     className="w-full bg-slate-50 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600 leading-relaxed"
                   />
+                  <p className="mt-1 text-right text-[11px] text-slate-400">{motivation.trim().length}/40 caracteres mínimos</p>
                 </div>
 
                 {/* Disponibilidade Semanal */}
@@ -255,6 +256,7 @@ export const SubAdminApplicationModal = ({ isOpen, onClose }) => {
                   <div className="flex items-center gap-3">
                     <input
                       type="number"
+                      required
                       min="2"
                       max="40"
                       value={weeklyAvailabilityHours}
@@ -280,6 +282,7 @@ export const SubAdminApplicationModal = ({ isOpen, onClose }) => {
                           key={area}
                           type="button"
                           onClick={() => toggleArea(area)}
+                          aria-pressed={selected}
                           className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                             selected
                               ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
@@ -296,18 +299,21 @@ export const SubAdminApplicationModal = ({ isOpen, onClose }) => {
                 {/* Resolução de Caso Prático */}
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-neutral-300 mb-1.5">
-                    Cenário Prático de Moderação
+                    Cenário Prático de Moderação *
                   </label>
                   <p className="text-[11px] text-slate-500 dark:text-neutral-400 mb-2">
                     Se detetar um curso submetido com partes com direitos de autor não autorizados ou um utilizador recorrentemente conflituoso no chat ao vivo, que passos adotaria?
                   </p>
                   <textarea
                     rows={2}
+                    required
+                    minLength={60}
                     value={situationScenario}
                     onChange={(e) => setSituationScenario(e.target.value)}
                     placeholder="Explique resumidamente a sua postura e critério de ação..."
                     className="w-full bg-slate-50 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600 leading-relaxed"
                   />
+                  <p className="mt-1 text-right text-[11px] text-slate-400">{situationScenario.trim().length}/60 caracteres mínimos</p>
                 </div>
 
                 {/* Actions */}
