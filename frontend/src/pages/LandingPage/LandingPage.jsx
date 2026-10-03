@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   ArrowRight,
   Compass,
@@ -22,6 +23,7 @@ export const LandingPage = () => {
   const { user, isLoading } = useAuth();
   const [courses, setCourses] = useState([]);
   const [openFaq, setOpenFaq] = useState(0);
+  const reduceMotion = useReducedMotion();
 
   const fallbackCourses = [
     {
@@ -128,8 +130,8 @@ export const LandingPage = () => {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_75%_20%,rgba(223,199,131,0.09),transparent_48%)]" />
         <div className="mx-auto w-full max-w-7xl px-5 py-20 sm:px-8 sm:py-24 lg:px-12 lg:py-28">
           <div className="max-w-3xl animate-[fadeInUp_700ms_ease-out_both]">
-            <p className="mb-5 flex items-center gap-3 text-xs font-semibold uppercase text-[#dfc783] sm:text-sm">
-              <span className="h-px w-8 bg-[#dfc783]" />
+            <p className="mb-5 flex items-center gap-3 text-xs font-semibold uppercase text-white/65 sm:text-sm">
+              <span className="h-px w-8 bg-white/45" />
               Formação para o mundo real
             </p>
             <h1 className="max-w-3xl text-4xl font-bold leading-[1.06] text-white sm:text-6xl lg:text-7xl">
@@ -141,12 +143,12 @@ export const LandingPage = () => {
 
             <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
               {user ? (
-                <Link to={dashboardPath} className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-[#dfc783] px-6 text-sm font-bold text-[#17201d] transition-colors hover:bg-[#ead69c]">
+                <Link to={dashboardPath} className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-white px-6 text-sm font-bold text-slate-950 transition-colors hover:bg-slate-100">
                   Ir para o meu painel
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               ) : (
-                <Link to="/register" className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-[#dfc783] px-6 text-sm font-bold text-[#17201d] transition-colors hover:bg-[#ead69c]">
+                <Link to="/register" className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-white px-6 text-sm font-bold text-slate-950 transition-colors hover:bg-slate-100">
                   Começar a aprender
                   <ArrowRight className="h-4 w-4" />
                 </Link>
@@ -158,9 +160,9 @@ export const LandingPage = () => {
             </div>
 
             <div className="mt-10 flex flex-wrap gap-x-7 gap-y-3 border-t border-white/20 pt-5 text-xs font-medium text-white/75 sm:text-sm">
-              <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#dfc783]" />Projetos práticos</span>
-              <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#dfc783]" />Mentoria em direto</span>
-              <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#dfc783]" />Certificados verificáveis</span>
+              <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-white/70" />Projetos práticos</span>
+              <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-white/70" />Mentoria em direto</span>
+              <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-white/70" />Certificados verificáveis</span>
             </div>
           </div>
         </div>
@@ -442,7 +444,10 @@ export const LandingPage = () => {
               className="rounded-xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#0c0d12] overflow-hidden shadow-xs"
             >
               <button
+                id={`faq-question-${idx}`}
                 onClick={() => setOpenFaq(openFaq === idx ? -1 : idx)}
+                aria-expanded={openFaq === idx}
+                aria-controls={`faq-answer-${idx}`}
                 className="w-full p-5 text-left flex items-center justify-between gap-4 font-bold text-base text-slate-950 dark:text-white cursor-pointer"
               >
                 <span>{faq.q}</span>
@@ -453,11 +458,24 @@ export const LandingPage = () => {
                 />
               </button>
 
-              {openFaq === idx && (
-                <div className="px-5 pb-5 text-sm text-slate-600 dark:text-neutral-400 leading-relaxed border-t border-slate-100 dark:border-neutral-800/80 pt-3">
-                  {faq.a}
-                </div>
-              )}
+              <AnimatePresence initial={false}>
+                {openFaq === idx && (
+                  <motion.div
+                    id={`faq-answer-${idx}`}
+                    role="region"
+                    aria-labelledby={`faq-question-${idx}`}
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: reduceMotion ? 0 : 0.24, ease: [0.22, 1, 0.36, 1] }}
+                    className="overflow-hidden"
+                  >
+                    <div className="px-5 pb-5 text-sm text-slate-600 dark:text-neutral-400 leading-relaxed border-t border-slate-100 dark:border-neutral-800/80 pt-3">
+                      {faq.a}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           ))}
         </div>
