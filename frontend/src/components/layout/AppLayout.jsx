@@ -77,7 +77,7 @@ export const AppLayout = () => {
               : 'p-3.5 sm:p-6 lg:p-8'
           }`}
         >
-          <div key={location.pathname} className="route-enter">
+          <div key={location.pathname} className={`route-enter ${showAppSidebar ? 'pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0' : ''}`}>
             <Outlet />
           </div>
         </main>

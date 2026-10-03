@@ -4,6 +4,8 @@
 
 **Disciplina:** Programação Web | **Curso:** CTeSP TPSI - IPVC
 
+Consulte o [Manual de Utilizador](MANUAL_UTILIZADOR.md) para instruções práticas de utilização como aluno, formador ou administrador.
+
 ---
 
 ## Funcionalidades

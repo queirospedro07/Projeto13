@@ -60,9 +60,10 @@ export const MobileBottomNav = () => {
   return (
     <nav
       aria-label="Navegação móvel"
-      className="md:hidden relative z-40 mt-auto w-full bg-white dark:bg-black border-t border-slate-200 dark:border-neutral-800 pt-1.5 pb-safe px-2 flex items-center justify-around shadow-sm transition-colors select-none"
+      className="md:hidden fixed inset-x-0 bottom-0 z-40 w-full border-t border-slate-200 bg-white/95 px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(15,23,42,0.08)] backdrop-blur-md transition-colors dark:border-neutral-800 dark:bg-black/95 select-none"
     >
-      {navItems.map((item) => (
+      <div className="mx-auto flex w-full max-w-xl items-center justify-around">
+        {navItems.map((item) => (
         <NavLink
           key={item.to}
           to={item.to}
@@ -86,6 +87,7 @@ export const MobileBottomNav = () => {
           <span className="truncate max-w-[62px]">{item.label}</span>
         </NavLink>
       ))}
+      </div>
     </nav>
   );
 };
