@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LogOut,
   Plus,
@@ -29,6 +29,7 @@ export const Navbar = () => {
   const { theme, toggleTheme, actualTheme } = useTheme();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
 
@@ -45,6 +46,7 @@ export const Navbar = () => {
 
   const isCreator = user?.role === 'CREATOR';
   const isAdmin = user?.role === 'ADMIN';
+  const isPublicHome = !user && location.pathname === '/';
   const homeTarget = user ? (isCreator ? '/creator' : '/dashboard') : '/';
 
   return (
@@ -61,9 +63,17 @@ export const Navbar = () => {
           </div>
 
           {/* ── Center search — visible sm+ for all, hidden on mobile ── */}
-          <div className={`flex-1 max-w-md mx-2 sm:mx-4 hidden sm:flex justify-center`}>
-            <GlobalSearch />
-          </div>
+          {isPublicHome ? (
+            <nav aria-label="Navegação principal" className="hidden flex-1 items-center justify-center gap-8 text-sm font-medium text-slate-600 lg:flex">
+              <a href="#vantagens" className="transition-colors hover:text-slate-950">A plataforma</a>
+              <a href="#formacao" className="transition-colors hover:text-slate-950">Formações</a>
+              <a href="#faq" className="transition-colors hover:text-slate-950">Perguntas</a>
+            </nav>
+          ) : (
+            <div className="mx-2 hidden max-w-md flex-1 justify-center sm:mx-4 sm:flex">
+              <GlobalSearch />
+            </div>
+          )}
 
           {/* ── Right ── */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
@@ -80,20 +90,22 @@ export const Navbar = () => {
               </button>
             )}
 
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-lg text-slate-600 dark:text-neutral-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-neutral-900 transition-colors cursor-pointer shrink-0"
-              aria-label="Alternar tema"
-              title="Alternar Tema"
-            >
-              {theme === 'system' ? (
-                <Monitor className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              ) : actualTheme === 'dark' ? (
-                <Moon className="w-4 h-4 text-blue-400" />
-              ) : (
-                <Sun className="w-4 h-4 text-amber-500" />
-              )}
-            </button>
+            {!isPublicHome && (
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-lg text-slate-600 dark:text-neutral-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-neutral-900 transition-colors cursor-pointer shrink-0"
+                aria-label="Alternar tema"
+                title="Alternar Tema"
+              >
+                {theme === 'system' ? (
+                  <Monitor className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                ) : actualTheme === 'dark' ? (
+                  <Moon className="w-4 h-4 text-blue-400" />
+                ) : (
+                  <Sun className="w-4 h-4 text-amber-500" />
+                )}
+              </button>
+            )}
 
             {!user ? (
               <div className="flex items-center gap-1.5 shrink-0">

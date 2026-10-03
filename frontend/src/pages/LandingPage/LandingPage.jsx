@@ -1,10 +1,9 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import {
   ArrowRight,
   Compass,
   CheckCircle2,
-  Play,
   ChevronDown,
   Star,
   Clock,
@@ -14,8 +13,6 @@ import {
   Award
 } from 'lucide-react';
 import { api } from '../../services/api';
-import { motion } from 'framer-motion';
-import { LogoIcon } from '../../components/ui/Logo';
 import Footer from '../../components/layout/Footer';
 import { useAuth } from '../../context/AuthContext';
 import { SEO } from '../../components/common/SEO';
@@ -25,23 +22,6 @@ export const LandingPage = () => {
   const { user, isLoading } = useAuth();
   const [courses, setCourses] = useState([]);
   const [openFaq, setOpenFaq] = useState(0);
-
-  const heroRef = useRef(null);
-  const [heroMouse, setHeroMouse] = useState({ x: -1000, y: -1000, active: false });
-
-  const handleHeroMouseMove = (e) => {
-    if (!heroRef.current) return;
-    const rect = heroRef.current.getBoundingClientRect();
-    setHeroMouse({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-      active: true,
-    });
-  };
-
-  const handleHeroMouseLeave = () => {
-    setHeroMouse((prev) => ({ ...prev, active: false }));
-  };
 
   const fallbackCourses = [
     {
@@ -144,175 +124,58 @@ export const LandingPage = () => {
       />
       <div className="min-h-screen bg-white dark:bg-[#06070a] text-slate-900 dark:text-white font-sans transition-colors selection:bg-blue-600 selection:text-white">
       
-      {/* 1. FULLSCREEN HERO SECTION (Ocupa o ecrã inteiro no Desktop e adapta-se com fluidez no Telemóvel) */}
-      <section
-        ref={heroRef}
-        onMouseMove={handleHeroMouseMove}
-        onMouseLeave={handleHeroMouseLeave}
-        className="relative w-full min-h-0 lg:min-h-[calc(100vh-4rem)] bg-white dark:bg-[#06070a] text-slate-900 dark:text-white flex flex-col justify-between overflow-visible lg:overflow-hidden border-b border-slate-200 dark:border-neutral-900 transition-colors"
-      >
-        
-        {/* Clean Minimalist Ambient Background with Dynamic Mouse Spotlight */}
-        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-          {/* Subtle Top Ambient Soft Glow */}
-          <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[550px] bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.08),transparent_70%)] dark:bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.15),transparent_70%)] blur-3xl" />
+      <section className="relative isolate flex min-h-[calc(100svh-7rem)] items-center overflow-hidden bg-[#111615] text-white">
+        <img
+          src="/hero-showcase.jpg"
+          alt="Profissional a desenvolver um projeto num estúdio de trabalho moderno"
+          className="absolute inset-0 -z-20 h-full w-full object-cover object-[58%_center]"
+          fetchPriority="high"
+        />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#101615]/95 via-[#101615]/78 to-[#101615]/20" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[#101615]/65 via-transparent to-[#101615]/10" />
 
-          {/* Real-Time Interactive Mouse Spotlight in Hero Background */}
-          <div
-            className="pointer-events-none absolute inset-0 transition-opacity duration-300"
-            style={{
-              opacity: heroMouse.active ? 1 : 0,
-              background: `radial-gradient(600px circle at ${heroMouse.x}px ${heroMouse.y}px, rgba(37, 99, 235, 0.16) 0%, rgba(59, 130, 246, 0.06) 45%, transparent 75%)`
-            }}
-          />
+        <div className="mx-auto w-full max-w-7xl px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
+          <div className="max-w-3xl animate-[fadeInUp_700ms_ease-out_both]">
+            <p className="mb-5 flex items-center gap-3 text-xs font-semibold uppercase text-[#dfc783] sm:text-sm">
+              <span className="h-px w-8 bg-[#dfc783]" />
+              Formação para o mundo real
+            </p>
+            <h1 className="max-w-3xl text-4xl font-bold leading-[1.06] text-white sm:text-6xl lg:text-7xl">
+              O próximo passo da sua carreira começa aqui.
+            </h1>
+            <p className="mt-6 max-w-2xl text-base leading-relaxed text-white/75 sm:text-lg lg:text-xl">
+              Aprenda com projetos práticos, troque conhecimento com especialistas e transforme novas competências em oportunidades.
+            </p>
 
-          {/* Smooth Bottom Edge Fade into next section */}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white dark:to-[#06070a]" />
-        </div>
-
-        {/* Hero Main Content (Clean, Spacious & Clutter-Free) */}
-        <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-20 flex-1 flex flex-col justify-center">
-          
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 lg:gap-16 items-center">
-            
-            {/* Left Column: Bold Typography & Clean Square CTAs */}
-            <div className="lg:col-span-6 space-y-5 sm:space-y-8">
-
-              {/* Headline */}
-              <h1 className="text-3xl sm:text-5xl lg:text-7xl font-sans font-bold tracking-tight text-slate-950 dark:text-white leading-[1.08] sm:leading-[1.04] text-balance">
-                Aprenda, construa e evolua.
-              </h1>
-
-              {/* Concise Subhead */}
-              <p className="text-sm sm:text-lg lg:text-xl text-slate-600 dark:text-slate-300 font-normal leading-relaxed max-w-xl">
-                Aceda à plataforma de excelência desenhada para impulsionar as suas competências: cursos práticos estruturados, salas de mentoria WebRTC em direto e certificação verificada.
-              </p>
-
-              {/* Action Buttons */}
-              <div className="pt-1 sm:pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
-                {user ? (
-                  <Link to={dashboardPath} className="w-full sm:w-auto">
-                    <button className="w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm transition-all flex items-center justify-center gap-3 shadow-lg shadow-blue-600/20 cursor-pointer group">
-                      <span>Ir para o Meu Painel</span>
-                      <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                    </button>
-                  </Link>
-                ) : (
-                  <Link to="/register" className="w-full sm:w-auto">
-                    <button className="w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 rounded-lg bg-slate-950 hover:bg-black text-white dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 font-bold text-sm transition-all flex items-center justify-center gap-3 shadow-lg hover:shadow-xl cursor-pointer group">
-                      <span>Criar Conta Gratuita</span>
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                      >
-                        <path
-                          d="M7 17L17 7M17 7H7M17 7V17"
-                          stroke="currentColor"
-                          strokeWidth="2.2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </button>
-                  </Link>
-                )}
-
-                <Link to="/explore" className="w-full sm:w-auto">
-                  <button className="w-full sm:w-auto px-6 sm:px-7 py-3.5 sm:py-4 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-900 dark:text-white font-bold text-sm backdrop-blur-md transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs">
-                    <Compass className="w-4 h-4 text-slate-500 dark:text-slate-300" />
-                    <span>Explorar Catálogo</span>
-                  </button>
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
+              {user ? (
+                <Link to={dashboardPath} className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-[#dfc783] px-6 text-sm font-bold text-[#17201d] transition-colors hover:bg-[#ead69c]">
+                  Ir para o meu painel
+                  <ArrowRight className="h-4 w-4" />
                 </Link>
-              </div>
-
-              {/* Trust Tag */}
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-slate-500 dark:text-slate-400 pt-1">
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                  <span>Acesso flexível</span>
-                </div>
-                <span className="hidden xs:inline">•</span>
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                  <span>Comunidade ativa</span>
-                </div>
-              </div>
-
+              ) : (
+                <Link to="/register" className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-[#dfc783] px-6 text-sm font-bold text-[#17201d] transition-colors hover:bg-[#ead69c]">
+                  Começar a aprender
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              )}
+              <Link to="/explore" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-white/35 px-6 text-sm font-semibold text-white transition-colors hover:border-white hover:bg-white/10">
+                <Compass className="h-4 w-4" />
+                Explorar formações
+              </Link>
             </div>
 
-            {/* Right Column: Simple Clean Code Background Image */}
-            <div className="lg:col-span-6 flex flex-col items-center justify-center">
-              <div className="w-full aspect-[16/10] rounded-xl sm:rounded-2xl overflow-hidden border border-slate-200 dark:border-neutral-800 shadow-xl relative group bg-slate-950">
-                <img
-                  src="/hero-code.jpg"
-                  alt="Plataforma de Formação NEXO"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
-                  loading="eager"
-                />
-              </div>
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* Bottom Telemetry Strip (Spans full width across screen) */}
-        <div className="relative z-10 w-full border-t border-slate-200 dark:border-neutral-900 bg-slate-50/90 dark:bg-black/40 backdrop-blur-md transition-colors">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 text-slate-600 dark:text-slate-300 text-xs sm:text-sm">
-              <div>
-                <span className="text-slate-500 dark:text-slate-400 block text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold">
-                  Disponibilidade
-                </span>
-                <strong className="text-slate-950 dark:text-white text-sm sm:text-base lg:text-lg font-bold block mt-0.5">
-                  Operação 24/7
-                </strong>
-              </div>
-
-              <div>
-                <span className="text-slate-500 dark:text-slate-400 block text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold">
-                  Salas de Estudo
-                </span>
-                <strong className="text-slate-950 dark:text-white text-sm sm:text-base lg:text-lg font-bold block mt-0.5 truncate">
-                  Mentoria & Voz WebRTC
-                </strong>
-              </div>
-
-              <div>
-                <span className="text-slate-500 dark:text-slate-400 block text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold">
-                  Credenciais
-                </span>
-                <strong className="text-slate-950 dark:text-white text-sm sm:text-base lg:text-lg font-bold block mt-0.5">
-                  100% Certificadas
-                </strong>
-              </div>
-
-              <div>
-                <span className="text-slate-500 dark:text-slate-400 block text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold">
-                  Avaliação Média
-                </span>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <div className="flex items-center gap-0.5 text-amber-500">
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <Star key={s} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                    ))}
-                  </div>
-                  <strong className="text-slate-950 dark:text-white text-sm sm:text-base lg:text-lg font-bold">
-                    4.9 / 5
-                  </strong>
-                </div>
-              </div>
+            <div className="mt-10 flex flex-wrap gap-x-7 gap-y-3 border-t border-white/20 pt-5 text-xs font-medium text-white/75 sm:text-sm">
+              <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#dfc783]" />Projetos práticos</span>
+              <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#dfc783]" />Mentoria em direto</span>
+              <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#dfc783]" />Certificados verificáveis</span>
             </div>
           </div>
         </div>
-
       </section>
 
       {/* 2. THE 3 USP VISUAL CARDS (Cards arquiteturais sem imagens, com ícones e botão de ação) */}
-      <section className="py-12 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <section id="vantagens" className="scroll-mt-20 py-12 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="mb-8 sm:mb-14 max-w-3xl">
           <h2 className="text-2xl sm:text-4xl lg:text-5xl font-sans font-bold tracking-tight text-slate-950 dark:text-white leading-tight">
             Construa o seu conhecimento a partir de uma única plataforma, desenhada para o futuro.
@@ -460,7 +323,7 @@ export const LandingPage = () => {
       </section>
 
       {/* 4. REAL COURSES SHOWCASE (Catálogo de Destaque da Base de Dados) */}
-      <section className="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-200 dark:border-neutral-800">
+      <section id="formacao" className="scroll-mt-20 py-12 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-200 dark:border-neutral-800">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
