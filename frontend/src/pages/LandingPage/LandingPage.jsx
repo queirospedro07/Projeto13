@@ -1,8 +1,10 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   ArrowRight,
+  Compass,
+  CheckCircle2,
   ChevronDown,
   Star,
   Clock,
@@ -22,6 +24,18 @@ export const LandingPage = () => {
   const [courses, setCourses] = useState([]);
   const [openFaq, setOpenFaq] = useState(0);
   const reduceMotion = useReducedMotion();
+  const heroRef = useRef(null);
+  const [heroMouse, setHeroMouse] = useState({ x: -1000, y: -1000, active: false });
+
+  const handleHeroMouseMove = (event) => {
+    if (!heroRef.current) return;
+    const rect = heroRef.current.getBoundingClientRect();
+    setHeroMouse({ x: event.clientX - rect.left, y: event.clientY - rect.top, active: true });
+  };
+
+  const handleHeroMouseLeave = () => {
+    setHeroMouse((current) => ({ ...current, active: false }));
+  };
 
   const fallbackCourses = [
     {
@@ -124,62 +138,109 @@ export const LandingPage = () => {
       />
       <div className="min-h-screen bg-white dark:bg-[#06070a] text-slate-900 dark:text-white font-sans transition-colors selection:bg-blue-600 selection:text-white">
       
-      <section className="bg-[#f7f8fa] text-slate-900 dark:bg-[#080a0e] dark:text-white">
-        <div className="mx-auto grid max-w-7xl items-center gap-9 px-4 py-10 sm:px-8 sm:py-16 lg:min-h-[calc(100svh-4rem)] lg:grid-cols-[0.92fr_1.08fr] lg:gap-14 lg:px-12 lg:py-20">
-          <div className="max-w-xl lg:py-8">
-            <p className="inline-flex items-center gap-2 border-b border-blue-200 pb-2 text-xs font-bold text-blue-700 dark:border-blue-900 dark:text-blue-300 sm:text-sm">
-              <span className="h-2 w-2 rounded-full bg-blue-600 dark:bg-blue-400" />
-              Aprendizagem prática NEXO
-            </p>
-            <h1 className="mt-5 text-[2.35rem] font-bold leading-[1.08] text-slate-950 dark:text-white sm:text-5xl lg:text-6xl">
-              Aprenda na prática.
-              <span className="mt-1 block text-blue-700 dark:text-blue-400">Avance com confiança.</span>
-            </h1>
-            <p className="mt-5 max-w-lg text-base leading-relaxed text-slate-600 dark:text-neutral-300 sm:text-lg">
-              Cursos orientados a projetos, mentoria em direto e uma comunidade para continuar a evoluir na sua área.
-            </p>
+      <section
+        ref={heroRef}
+        onMouseMove={handleHeroMouseMove}
+        onMouseLeave={handleHeroMouseLeave}
+        className="relative w-full min-h-0 lg:min-h-[calc(100vh-4rem)] bg-white dark:bg-[#06070a] text-slate-900 dark:text-white flex flex-col justify-between overflow-visible lg:overflow-hidden border-b border-slate-200 dark:border-neutral-900 transition-colors"
+      >
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+          <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[550px] bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.08),transparent_70%)] dark:bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.15),transparent_70%)] blur-3xl" />
+          <div
+            className="pointer-events-none absolute inset-0 transition-opacity duration-300"
+            style={{
+              opacity: heroMouse.active ? 1 : 0,
+              background: `radial-gradient(600px circle at ${heroMouse.x}px ${heroMouse.y}px, rgba(37, 99, 235, 0.16) 0%, rgba(59, 130, 246, 0.06) 45%, transparent 75%)`
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white dark:to-[#06070a]" />
+        </div>
 
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              {user ? (
-                <Link to={dashboardPath} className="group inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-blue-700 px-5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-800 hover:shadow-md dark:bg-blue-500 dark:text-white dark:hover:bg-blue-400 sm:w-auto">
-                  Ir para o meu painel
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+        <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-20 flex-1 flex flex-col justify-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 lg:gap-16 items-center">
+            <div className="lg:col-span-6 space-y-5 sm:space-y-8">
+              <h1 className="text-3xl sm:text-5xl lg:text-7xl font-sans font-bold tracking-tight text-slate-950 dark:text-white leading-[1.08] sm:leading-[1.04] text-balance">
+                Aprenda, construa e evolua.
+              </h1>
+              <p className="text-sm sm:text-lg lg:text-xl text-slate-600 dark:text-slate-300 font-normal leading-relaxed max-w-xl">
+                Aceda à plataforma de excelência desenhada para impulsionar as suas competências: cursos práticos estruturados, salas de mentoria WebRTC em direto e certificação verificada.
+              </p>
+
+              <div className="pt-1 sm:pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+                {user ? (
+                  <Link to={dashboardPath} className="w-full sm:w-auto">
+                    <button className="w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm transition-all flex items-center justify-center gap-3 shadow-lg shadow-blue-600/20 cursor-pointer group">
+                      <span>Ir para o Meu Painel</span>
+                      <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                    </button>
+                  </Link>
+                ) : (
+                  <Link to="/register" className="w-full sm:w-auto">
+                    <button className="w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 rounded-lg bg-slate-950 hover:bg-black text-white dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 font-bold text-sm transition-all flex items-center justify-center gap-3 shadow-lg hover:shadow-xl cursor-pointer group">
+                      <span>Criar Conta Gratuita</span>
+                      <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                    </button>
+                  </Link>
+                )}
+
+                <Link to="/explore" className="w-full sm:w-auto">
+                  <button className="w-full sm:w-auto px-6 sm:px-7 py-3.5 sm:py-4 rounded-lg border border-slate-300 dark:border-white/20 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-900 dark:text-white font-bold text-sm backdrop-blur-md transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs">
+                    <Compass className="w-4 h-4 text-slate-500 dark:text-slate-300" />
+                    <span>Explorar Catálogo</span>
+                  </button>
                 </Link>
-              ) : (
-                <Link to="/register" className="group inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-blue-700 px-5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-800 hover:shadow-md dark:bg-blue-500 dark:text-white dark:hover:bg-blue-400 sm:w-auto">
-                  Criar conta gratuita
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                </Link>
-              )}
-              <Link to="/explore" className="inline-flex min-h-12 w-full items-center justify-center rounded-md border border-slate-300 bg-white/70 px-5 text-sm font-semibold text-slate-800 transition-colors hover:border-slate-400 hover:bg-white dark:border-neutral-700 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 sm:w-auto">
-                Explorar cursos
-              </Link>
-            </div>
+              </div>
 
-            <div className="mt-8 grid grid-cols-1 gap-3 border-t border-slate-200 pt-5 text-sm text-slate-600 dark:border-neutral-800 dark:text-neutral-300 min-[420px]:grid-cols-3 sm:mt-10">
-              <span><strong className="block text-slate-950 dark:text-white">Aprender</strong>Aulas práticas</span>
-              <span><strong className="block text-slate-950 dark:text-white">Partilhar</strong>Mentoria em direto</span>
-              <span><strong className="block text-slate-950 dark:text-white">Comprovar</strong>Certificados digitais</span>
-            </div>
-          </div>
-
-          <div className="min-w-0">
-            <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-slate-200 shadow-xl shadow-slate-900/10 dark:bg-neutral-900 dark:shadow-black/30">
-              <img
-                src="/hero-showcase.jpg"
-                alt="Profissional a desenvolver um projeto digital num espaço de trabalho moderno"
-                className="h-full w-full object-cover transition-transform duration-700 hover:scale-[1.025]"
-                fetchPriority="high"
-              />
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/80 via-slate-950/35 to-transparent px-5 pb-5 pt-16 sm:px-7 sm:pb-7">
-                <p className="text-xs font-semibold text-white/75">NEXO · FORMAÇÃO ONLINE</p>
-                <p className="mt-1 text-lg font-semibold text-white sm:text-xl">Conhecimento que se transforma em prática.</p>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-slate-500 dark:text-slate-400 pt-1">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                  <span>Acesso flexível</span>
+                </div>
+                <span className="hidden xs:inline">•</span>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                  <span>Comunidade ativa</span>
+                </div>
               </div>
             </div>
-            <div className="mt-3 flex items-center justify-between gap-3 text-xs text-slate-500 dark:text-neutral-400">
-              <span>Aprenda ao seu ritmo</span>
-              <span className="h-px min-w-8 flex-1 bg-slate-300 dark:bg-neutral-700" />
-              <span>Continue a evoluir</span>
+
+            <div className="lg:col-span-6 flex flex-col items-center justify-center">
+              <div className="w-full aspect-[16/10] rounded-xl sm:rounded-2xl overflow-hidden border border-slate-200 dark:border-neutral-800 shadow-xl relative group bg-slate-950">
+                <img
+                  src="/hero-code.jpg"
+                  alt="Plataforma de Formação NEXO"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
+                  loading="eager"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative z-10 w-full border-t border-slate-200 dark:border-neutral-900 bg-slate-50/90 dark:bg-black/40 backdrop-blur-md transition-colors">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 text-slate-600 dark:text-slate-300 text-xs sm:text-sm">
+              <div>
+                <span className="text-slate-500 dark:text-slate-400 block text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold">Disponibilidade</span>
+                <strong className="text-slate-950 dark:text-white text-sm sm:text-base lg:text-lg font-bold block mt-0.5">Operação 24/7</strong>
+              </div>
+              <div>
+                <span className="text-slate-500 dark:text-slate-400 block text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold">Salas de Estudo</span>
+                <strong className="text-slate-950 dark:text-white text-sm sm:text-base lg:text-lg font-bold block mt-0.5 truncate">Mentoria & Voz WebRTC</strong>
+              </div>
+              <div>
+                <span className="text-slate-500 dark:text-slate-400 block text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold">Credenciais</span>
+                <strong className="text-slate-950 dark:text-white text-sm sm:text-base lg:text-lg font-bold block mt-0.5">100% Certificadas</strong>
+              </div>
+              <div>
+                <span className="text-slate-500 dark:text-slate-400 block text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold">Avaliação Média</span>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <div className="flex items-center gap-0.5 text-amber-500">
+                    {[1, 2, 3, 4, 5].map((star) => <Star key={star} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />)}
+                  </div>
+                  <strong className="text-slate-950 dark:text-white text-sm sm:text-base lg:text-lg font-bold">4.9 / 5</strong>
+                </div>
+              </div>
             </div>
           </div>
         </div>

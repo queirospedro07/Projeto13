@@ -5,7 +5,6 @@ import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Avatar } from '../../../components/ui/Avatar';
-import { DefaultAvatarPicker } from '../../../components/ui/DefaultAvatarPicker';
 import { Modal } from '../../../components/ui/Modal';
 import { DraggableImageCrop } from '../../../components/ui/DraggableImageCrop';
 import { useAuth } from '../../../context/AuthContext';
@@ -855,14 +854,6 @@ export const ProfilePage = () => {
                   </div>}
               </div>
               <div className="flex flex-col gap-2 flex-1 min-w-0">
-                <DefaultAvatarPicker
-                  value={editAvatarUrl}
-                  onChange={url => {
-                    setEditAvatarUrl(url);
-                    setAvatarPreview(url);
-                  }}
-                  label="Escolher avatar predefinido"
-                />
                 <button type="button" onClick={() => avatarInputRef.current?.click()} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-zinc-700 hover:bg-slate-200 dark:hover:bg-zinc-600 text-slate-700 dark:text-zinc-200 text-xs font-bold transition-colors cursor-pointer border border-slate-200 dark:border-zinc-600 w-fit">
                   <Camera className="w-4 h-4" />
                   Carregar Foto

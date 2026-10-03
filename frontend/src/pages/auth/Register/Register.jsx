@@ -4,7 +4,6 @@ import { User, Mail, Lock, AlertCircle } from 'lucide-react';
 import { Logo } from '../../../components/ui/Logo';
 import { SEO } from '../../../components/common/SEO';
 import { useAuth } from '../../../context/AuthContext';
-import { DefaultAvatarPicker } from '../../../components/ui/DefaultAvatarPicker';
 import { DEFAULT_AVATAR_URL } from '../../../constants/defaultAvatars';
 export const Register = () => {
   const {
@@ -16,7 +15,6 @@ export const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState(DEFAULT_AVATAR_URL);
   const [acceptTerms, setAcceptTerms] = useState(true);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -47,7 +45,7 @@ export const Register = () => {
         username,
         email,
         password,
-        avatarUrl
+        avatarUrl: DEFAULT_AVATAR_URL
       });
       navigate('/dashboard');
     } catch (err) {
@@ -85,7 +83,6 @@ export const Register = () => {
             </div>}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <DefaultAvatarPicker value={avatarUrl} onChange={setAvatarUrl} label="Escolha o seu avatar" />
             <div>
               <label className="block text-xs font-semibold text-slate-800 dark:text-neutral-200 mb-1.5">
                 Nome Completo
