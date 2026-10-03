@@ -52,7 +52,7 @@ export const Navbar = () => {
   return (
     <>
       <header className="relative z-40 w-full bg-white dark:bg-black text-slate-900 dark:text-white border-b border-slate-200/90 dark:border-neutral-900 transition-colors">
-        <div className="w-full px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
+        <div className="w-full px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
 
           {/* ── Left ── */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
@@ -111,13 +111,13 @@ export const Navbar = () => {
               <div className="flex items-center gap-1.5 shrink-0">
                 <Link
                   to="/login"
-                  className="px-3 py-1.5 text-xs sm:text-sm font-semibold text-slate-700 dark:text-neutral-200 hover:text-black dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-neutral-900 transition-colors whitespace-nowrap"
+                  className="hidden sm:inline-flex px-3 py-1.5 text-xs sm:text-sm font-semibold text-slate-700 dark:text-neutral-200 hover:text-black dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-neutral-900 transition-colors whitespace-nowrap"
                 >
                   Iniciar Sessão
                 </Link>
                 <Link
                   to="/register"
-                  className="px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-white bg-slate-900 hover:bg-black dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 rounded-lg shadow-xs transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 border border-slate-900 dark:border-white"
+                  className="px-2.5 sm:px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-white bg-slate-900 hover:bg-black dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 rounded-lg shadow-xs transition-all flex items-center gap-1 sm:gap-1.5 whitespace-nowrap shrink-0 border border-slate-900 dark:border-white"
                 >
                   <span>Criar Conta</span>
                   <ArrowRight className="w-3.5 h-3.5" />

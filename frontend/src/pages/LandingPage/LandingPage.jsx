@@ -126,40 +126,40 @@ export const LandingPage = () => {
       />
       <div className="min-h-screen bg-white dark:bg-[#06070a] text-slate-900 dark:text-white font-sans transition-colors selection:bg-blue-600 selection:text-white">
       
-      <section className="relative flex min-h-[min(720px,calc(100svh-7rem))] items-center overflow-hidden bg-[#111615] text-white">
+      <section className="relative flex min-h-[min(640px,calc(100svh-4rem))] items-center overflow-hidden bg-[#111615] text-white">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_75%_20%,rgba(223,199,131,0.09),transparent_48%)]" />
-        <div className="mx-auto w-full max-w-7xl px-5 py-20 sm:px-8 sm:py-24 lg:px-12 lg:py-28">
+        <div className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-8 sm:py-24 lg:px-12 lg:py-28">
           <div className="max-w-3xl animate-[fadeInUp_700ms_ease-out_both]">
-            <p className="mb-5 flex items-center gap-3 text-xs font-semibold uppercase text-white/65 sm:text-sm">
+            <p className="mb-4 flex items-center gap-3 text-[0.65rem] font-semibold uppercase text-white/65 sm:mb-5 sm:text-sm">
               <span className="h-px w-8 bg-white/45" />
               Formação para o mundo real
             </p>
-            <h1 className="max-w-3xl text-4xl font-bold leading-[1.06] text-white sm:text-6xl lg:text-7xl">
+            <h1 className="max-w-3xl text-[2rem] font-bold leading-[1.1] text-white sm:text-6xl lg:text-7xl">
               O próximo passo da sua carreira começa aqui.
             </h1>
-            <p className="mt-6 max-w-2xl text-base leading-relaxed text-white/75 sm:text-lg lg:text-xl">
+            <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/75 sm:mt-6 sm:text-lg lg:text-xl">
               Aprenda com projetos práticos, troque conhecimento com especialistas e transforme novas competências em oportunidades.
             </p>
 
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="mt-7 flex flex-col gap-3 sm:mt-9 sm:flex-row sm:items-center">
               {user ? (
-                <Link to={dashboardPath} className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-white px-6 text-sm font-bold text-slate-950 transition-colors hover:bg-slate-100">
+                <Link to={dashboardPath} className="inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-md bg-white px-6 text-sm font-bold text-slate-950 transition-colors hover:bg-slate-100 sm:w-auto">
                   Ir para o meu painel
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               ) : (
-                <Link to="/register" className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-white px-6 text-sm font-bold text-slate-950 transition-colors hover:bg-slate-100">
+                <Link to="/register" className="inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-md bg-white px-6 text-sm font-bold text-slate-950 transition-colors hover:bg-slate-100 sm:w-auto">
                   Começar a aprender
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               )}
-              <Link to="/explore" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-white/35 px-6 text-sm font-semibold text-white transition-colors hover:border-white hover:bg-white/10">
+              <Link to="/explore" className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md border border-white/35 px-6 text-sm font-semibold text-white transition-colors hover:border-white hover:bg-white/10 sm:w-auto">
                 <Compass className="h-4 w-4" />
                 Explorar formações
               </Link>
             </div>
 
-            <div className="mt-10 flex flex-wrap gap-x-7 gap-y-3 border-t border-white/20 pt-5 text-xs font-medium text-white/75 sm:text-sm">
+            <div className="mt-8 grid grid-cols-1 gap-3 border-t border-white/20 pt-5 text-xs font-medium text-white/75 min-[420px]:grid-cols-2 sm:mt-10 sm:grid-cols-3 sm:gap-x-7 sm:gap-y-3 sm:text-sm">
               <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-white/70" />Projetos práticos</span>
               <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-white/70" />Mentoria em direto</span>
               <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-white/70" />Certificados verificáveis</span>
