@@ -26,14 +26,10 @@
 @tailwind components;
 @tailwind utilities;
 @layer base {
-  html,
-  body {
-    overscroll-behavior-y: none;
-  }
-
   html {
     overflow-x: clip;
     scrollbar-gutter: stable;
+    scroll-behavior: smooth;
   }
 
   #root {
@@ -78,6 +74,40 @@
   html.dark textarea, 
   html.dark select {
     color-scheme: dark;
+  }
+}
+
+@keyframes route-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.route-enter {
+  animation: route-enter 320ms ease-out both;
+}
+
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 550ms ease, transform 550ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.scroll-reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .scroll-reveal {
+    opacity: 1;
+    transform: none;
   }
 }
 .custom-scrollbar::-webkit-scrollbar {

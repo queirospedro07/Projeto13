@@ -60,7 +60,7 @@ export const MobileBottomNav = () => {
   return (
     <nav
       aria-label="Navegação móvel"
-      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-black/95 backdrop-blur-lg border-t border-slate-200 dark:border-neutral-800 pt-1.5 pb-safe px-2 flex items-center justify-around shadow-2xl transition-colors select-none"
+      className="md:hidden relative z-40 mt-auto w-full bg-white dark:bg-black border-t border-slate-200 dark:border-neutral-800 pt-1.5 pb-safe px-2 flex items-center justify-around shadow-sm transition-colors select-none"
     >
       {navItems.map((item) => (
         <NavLink

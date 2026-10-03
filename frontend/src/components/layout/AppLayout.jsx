@@ -11,13 +11,39 @@ export const AppLayout = () => {
   const mainContentRef = React.useRef(null);
 
   React.useEffect(() => {
-    const mainContent = mainContentRef.current ?? document.getElementById('main-content');
-
-    if (mainContent) {
-      mainContent.scrollTop = 0;
-    }
-
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [location.pathname]);
+
+  React.useEffect(() => {
+    const mainContent = mainContentRef.current;
+    if (!mainContent || !('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
+
+    const observedElements = new Set();
+    const intersectionObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-visible');
+        intersectionObserver.unobserve(entry.target);
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -32px 0px' });
+
+    const observeSections = () => {
+      mainContent.querySelectorAll('section, article, [data-scroll-reveal]').forEach((element) => {
+        if (observedElements.has(element)) return;
+        observedElements.add(element);
+        element.classList.add('scroll-reveal');
+        intersectionObserver.observe(element);
+      });
+    };
+
+    observeSections();
+    const mutationObserver = new MutationObserver(observeSections);
+    mutationObserver.observe(mainContent, { childList: true, subtree: true });
+
+    return () => {
+      mutationObserver.disconnect();
+      intersectionObserver.disconnect();
+    };
   }, [location.pathname]);
 
   const isLanding = location.pathname === '/';
@@ -34,24 +60,26 @@ export const AppLayout = () => {
   const showAppSidebar = Boolean(user) && !isLanding && !isAuthPage;
 
   return (
-    <div className="h-dvh overflow-hidden bg-slate-50 dark:bg-black text-slate-900 dark:text-white flex flex-col transition-colors duration-200">
+    <div className="min-h-dvh bg-slate-50 dark:bg-black text-slate-900 dark:text-white flex flex-col transition-colors duration-200">
       <Navbar />
 
-      <div className="flex-1 min-h-0 flex overflow-hidden">
+      <div className="flex-1 min-w-0 flex">
         {showAppSidebar && <Sidebar />}
 
         <main
           id="main-content"
           ref={mainContentRef}
-          className={`min-h-0 flex-1 overflow-y-auto overscroll-y-none ${
+          className={`min-w-0 flex-1 ${
             isLearnPlayer || isLanding || isAuthPage || isCourseBuilder
               ? 'p-0'
               : isMessages
-              ? 'p-2 sm:p-4 lg:p-6 pb-20 md:pb-6'
-              : 'p-3.5 sm:p-6 lg:p-8 pb-24 md:pb-10'
+              ? 'p-2 sm:p-4 lg:p-6'
+              : 'p-3.5 sm:p-6 lg:p-8'
           }`}
         >
-          <Outlet />
+          <div key={location.pathname} className="route-enter">
+            <Outlet />
+          </div>
         </main>
       </div>
 
