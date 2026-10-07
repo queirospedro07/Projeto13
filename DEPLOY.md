@@ -80,18 +80,18 @@ Se preferir criar manualmente sem usar Blueprint:
 1. Aceda ao [Vercel Dashboard](https://vercel.com/dashboard).
 2. Clique em **Add New...** > **Project**.
 3. Importe o mesmo repositório do GitHub.
-4. Na tela de configuração do projeto (**Configure Project**):
+4. No ecrã de configuração do projeto (**Configure Project**):
    - **Framework Preset**: `Vite`
-   - **Root Directory**: Clique em **Edit** e selecione a pasta `client`.
+   - **Root Directory**: Clique em **Edit** e selecione a pasta `frontend`.
    - **Build and Output Settings**: Deixe os padrões (`npm run build` e `dist`).
 5. Abra a secção **Environment Variables** e adicione:
    | Chave | Valor |
    | :--- | :--- |
-   | `VITE_API_URL` | `https://learnspace-backend.onrender.com` *(substitua pela sua URL do Render sem barra final)* |
-   | `VITE_SOCKET_URL` | `https://learnspace-backend.onrender.com` *(mesma URL do Render)* |
+   | `VITE_API_URL` | `https://nexo-backend.onrender.com` *(substitua pelo URL do seu serviço no Render sem barra final)* |
+   | `VITE_SOCKET_URL` | `https://nexo-backend.onrender.com` *(mesmo URL do Render)* |
 6. Clique em **Deploy**.
 
-> 🚀 O Vercel compilará a aplicação React em segundos e fornecerá uma URL como `https://learnspace.vercel.app`.
+> 🚀 O Vercel compilará a aplicação React em segundos e fornecerá um URL como `https://nexo.vercel.app`.
 
 ---
 
@@ -102,8 +102,8 @@ Para que o backend autorize com total segurança as chamadas da sua aplicação 
 1. Volte ao painel do seu serviço no **Render**.
 2. Vá ao separador **Environment**.
 3. Adicione ou edite a variável:
-   - **`CLIENT_URL`**: `https://sua-aplicacao.vercel.app` *(a URL gerada pelo Vercel no Passo 3)*
-4. Salve as alterações. O Render fará um redeploy rápido automaticamente.
+   - **`CLIENT_URL`**: `https://sua-aplicacao.vercel.app` *(o URL gerado pelo Vercel no Passo 3)*
+4. Guarde as alterações. O Render fará um redeploy rápido automaticamente.
 
 *(Nota: O backend foi configurado para aceitar automaticamente qualquer subdomínio `*.vercel.app` em produção, mas definir a `CLIENT_URL` explícita é uma boa prática de segurança.)*
 
@@ -128,11 +128,11 @@ Mantenha `CLIENT_URL` definido com o domínio do frontend para construir as liga
 
 O backend inicializa e popula automaticamente a base de dados SQLite no arranque com dados e contas de teste:
 
-| Utilizador | E-mail | Senha | Função |
+| Utilizador | E-mail | Palavra-passe | Função |
 | :--- | :--- | :--- | :--- |
-| **Pedro Silva** | `pedro@learnspace.io` | `password123` | Aluno / Estudante |
-| **Sarah Jenkins** | `sarah@learnspace.io` | `password123` | Criador de Conteúdo / Instrutor |
-| **Alex Vance** | `alex@learnspace.io` | `password123` | Administrador |
+| **Pedro Silva** | `aluno@nexo.pt` | `password123` | Aluno / Estudante |
+| **Sarah Jenkins** | `sarah@nexo.pt` | `password123` | Criador de Conteúdo / Instrutor |
+| **Alex Vance** | `alex@nexo.pt` | `password123` | Administrador |
 
 Também pode usar o botão de **Login Demo com 1 Clique** disponível no topo do site e na página de autenticação.
 

@@ -3,15 +3,40 @@ import { queryOne, queryAll, execute, transaction } from '../database/connection
 
 export const User = {
   findByEmail(email) {
-    return queryOne('SELECT * FROM users WHERE email = ?', [email.toLowerCase().trim()]);
+    return queryOne(`
+      SELECT id, email, nome_utilizador AS username, hash_palavra_passe AS passwordHash,
+             nome AS name, papel AS role, url_avatar AS avatarUrl, biografia AS bio,
+             localizacao AS location, dias_sequencia AS streakDays, data_ultima_atividade AS lastActiveDate,
+             meta_diaria_minutos AS dailyGoalMinutes, minutos_hoje AS minutesToday,
+             minutos_totais AS totalMinutes, xp, nivel AS level, esta_suspenso AS isSuspended,
+             criado_em AS createdAt, atualizado_em AS updatedAt
+      FROM utilizadores
+      WHERE LOWER(email) = ?
+    `, [email.toLowerCase().trim()]);
   },
 
   findByUsername(username) {
-    return queryOne('SELECT * FROM users WHERE username = ?', [username.toLowerCase().trim()]);
+    return queryOne(`
+      SELECT id, email, nome_utilizador AS username, hash_palavra_passe AS passwordHash,
+             nome AS name, papel AS role, url_avatar AS avatarUrl, biografia AS bio,
+             localizacao AS location, dias_sequencia AS streakDays, data_ultima_atividade AS lastActiveDate,
+             meta_diaria_minutos AS dailyGoalMinutes, minutos_hoje AS minutesToday,
+             minutos_totais AS totalMinutes, xp, nivel AS level, esta_suspenso AS isSuspended,
+             criado_em AS createdAt, atualizado_em AS updatedAt
+      FROM utilizadores
+      WHERE LOWER(nome_utilizador) = ?
+    `, [username.toLowerCase().trim()]);
   },
 
   findById(id) {
-    return queryOne('SELECT id, name, username, email, role, avatarUrl, bio, location, streakDays, xp, level, isSuspended, createdAt FROM users WHERE id = ?', [id]);
+    return queryOne(`
+      SELECT id, nome AS name, nome_utilizador AS username, email, papel AS role,
+             url_avatar AS avatarUrl, biografia AS bio, localizacao AS location,
+             dias_sequencia AS streakDays, xp, nivel AS level, esta_suspenso AS isSuspended,
+             criado_em AS createdAt
+      FROM utilizadores
+      WHERE id = ?
+    `, [id]);
   },
 
   async create({ name, username, email, password, avatarUrl, role = 'STUDENT' }) {
@@ -25,17 +50,17 @@ export const User = {
 
     transaction(() => {
       execute(
-        `INSERT INTO users (id, email, username, passwordHash, name, role, avatarUrl, bio, location, streakDays, dailyGoalMinutes, minutesToday, totalMinutes, xp, level, isSuspended, createdAt, updatedAt)
+        `INSERT INTO utilizadores (id, email, nome_utilizador, hash_palavra_passe, nome, papel, url_avatar, biografia, localizacao, dias_sequencia, meta_diaria_minutos, minutos_hoje, minutos_totais, xp, nivel, esta_suspenso, criado_em, atualizado_em)
          VALUES (?, ?, ?, ?, ?, ?, ?, '', '', 0, 45, 0, 0, 0, 1, 0, ?, ?)`,
         [userId, cleanEmail, cleanUsername, passwordHash, name.trim(), targetRole, selectedAvatarUrl, now, now]
       );
       execute(
-        `INSERT INTO profiles (id, userId, headline, isPublic, showStreak, showLeaderboard, themePreference)
+        `INSERT INTO perfis (id, id_utilizador, titulo_perfil, e_publico, mostrar_sequencia, mostrar_classificacao, preferencia_tema)
          VALUES (?, ?, '', 1, 1, 1, 'light')`,
         [`prof-${userId}`, userId]
       );
       execute(
-        `INSERT INTO notifications (id, userId, type, title, content, link, isRead, createdAt)
+        `INSERT INTO notificacoes (id, id_utilizador, tipo, titulo, conteudo, ligacao, esta_lida, criado_em)
          VALUES (?, ?, 'achievement', 'Bem-vindo ao NEXO!', 'Explore o catálogo de cursos e conecte-se com a comunidade.', '/explore', 0, ?)`,
         [`notif-${Date.now()}`, userId, now]
       );
@@ -59,21 +84,37 @@ export const User = {
   },
 
   update(id, fields = {}) {
-    const ALLOWED_COLUMNS = new Set([
-      'name', 'bio', 'location', 'avatarUrl', 'role',
-      'streakDays', 'lastActiveDate', 'dailyGoalMinutes',
-      'minutesToday', 'totalMinutes', 'xp', 'level', 'isSuspended'
-    ]);
-    const safeKeys = Object.keys(fields).filter(k => ALLOWED_COLUMNS.has(k));
+    const COLUMN_MAP = {
+      name: 'nome',
+      bio: 'biografia',
+      location: 'localizacao',
+      avatarUrl: 'url_avatar',
+      role: 'papel',
+      streakDays: 'dias_sequencia',
+      lastActiveDate: 'data_ultima_atividade',
+      dailyGoalMinutes: 'meta_diaria_minutos',
+      minutesToday: 'minutos_hoje',
+      totalMinutes: 'minutos_totais',
+      xp: 'xp',
+      level: 'nivel',
+      isSuspended: 'esta_suspenso'
+    };
+    const safeKeys = Object.keys(fields).filter(k => COLUMN_MAP[k]);
     if (safeKeys.length === 0) return;
-    const setClauses = safeKeys.map(k => `${k} = ?`).join(', ');
+    const setClauses = safeKeys.map(k => `${COLUMN_MAP[k]} = ?`).join(', ');
     const values = safeKeys.map(k => fields[k]);
-    execute(`UPDATE users SET ${setClauses}, updatedAt = ? WHERE id = ?`, [...values, new Date().toISOString(), id]);
+    execute(`UPDATE utilizadores SET ${setClauses}, atualizado_em = ? WHERE id = ?`, [...values, new Date().toISOString(), id]);
     return this.findById(id);
   },
 
   listAll(limit = 100, offset = 0) {
-    return queryAll('SELECT id, name, username, email, role, xp, level, isSuspended, createdAt FROM users ORDER BY createdAt DESC LIMIT ? OFFSET ?', [limit, offset]);
+    return queryAll(`
+      SELECT id, nome AS name, nome_utilizador AS username, email, papel AS role,
+             xp, nivel AS level, esta_suspenso AS isSuspended, criado_em AS createdAt
+      FROM utilizadores
+      ORDER BY criado_em DESC
+      LIMIT ? OFFSET ?
+    `, [limit, offset]);
   }
 };
 

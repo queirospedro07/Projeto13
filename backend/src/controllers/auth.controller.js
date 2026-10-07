@@ -67,7 +67,13 @@ export const login = async (req, res) => {
     const { password } = req.body;
 
     const user = queryOne(
-      'SELECT * FROM users WHERE LOWER(email) = ? OR LOWER(username) = ?',
+      `SELECT id, email, nome_utilizador AS username, hash_palavra_passe AS passwordHash,
+              nome AS name, papel AS role, url_avatar AS avatarUrl, biografia AS bio,
+              localizacao AS location, dias_sequencia AS streakDays, data_ultima_atividade AS lastActiveDate,
+              meta_diaria_minutos AS dailyGoalMinutes, minutos_hoje AS minutesToday,
+              minutos_totais AS totalMinutes, xp, nivel AS level, esta_suspenso AS isSuspended
+       FROM utilizadores
+       WHERE LOWER(email) = ? OR LOWER(nome_utilizador) = ?`,
       [loginIdentifier, loginIdentifier]
     );
 
@@ -99,7 +105,7 @@ export const login = async (req, res) => {
       const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
       const newStreak = user.lastActiveDate === yesterday ? user.streakDays + 1 : 1;
       execute(
-        'UPDATE users SET streakDays = ?, lastActiveDate = ?, minutesToday = 0, updatedAt = ? WHERE id = ?',
+        'UPDATE utilizadores SET dias_sequencia = ?, data_ultima_atividade = ?, minutos_hoje = 0, atualizado_em = ? WHERE id = ?',
         [newStreak, today, new Date().toISOString(), user.id]
       );
       user.streakDays = newStreak;
@@ -136,12 +142,27 @@ export const login = async (req, res) => {
 
 export const getMe = async (req, res) => {
   try {
-    const user = queryOne('SELECT * FROM users WHERE id = ?', [req.user.id]);
+    const user = queryOne(
+      `SELECT id, email, nome_utilizador AS username, nome AS name, papel AS role,
+              url_avatar AS avatarUrl, biografia AS bio, localizacao AS location,
+              dias_sequencia AS streakDays, meta_diaria_minutos AS dailyGoalMinutes,
+              minutos_hoje AS minutesToday, minutos_totais AS totalMinutes,
+              xp, nivel AS level, esta_suspenso AS isSuspended
+       FROM utilizadores
+       WHERE id = ?`,
+      [req.user.id]
+    );
     if (!user) {
       return res.status(404).json({ message: 'Utilizador não encontrado.', error: 'Utilizador não encontrado.' });
     }
 
-    const profile = queryOne('SELECT * FROM profiles WHERE userId = ?', [user.id]) || {};
+    const profile = queryOne(
+      `SELECT titulo_perfil AS headline, website, github, twitter, linkedin, instagram,
+              url_banner AS bannerUrl, e_publico AS isPublic, preferencia_tema AS themePreference
+       FROM perfis
+       WHERE id_utilizador = ?`,
+      [user.id]
+    ) || {};
 
     const safeUser = {
       id: user.id,
@@ -183,8 +204,19 @@ export const demoLogin = async (req, res) => {
   const { role = 'student' } = req.params;
   const targetRole = role.toUpperCase();
 
-  const user = queryOne('SELECT * FROM users WHERE role = ? LIMIT 1', [targetRole])
-    || queryOne('SELECT * FROM users LIMIT 1');
+  const user = queryOne(
+    `SELECT id, email, nome_utilizador AS username, nome AS name, papel AS role,
+            url_avatar AS avatarUrl, xp, nivel AS level, dias_sequencia AS streakDays
+     FROM utilizadores
+     WHERE papel = ?
+     LIMIT 1`,
+    [targetRole]
+  ) || queryOne(
+    `SELECT id, email, nome_utilizador AS username, nome AS name, papel AS role,
+            url_avatar AS avatarUrl, xp, nivel AS level, dias_sequencia AS streakDays
+     FROM utilizadores
+     LIMIT 1`
+  );
 
   if (!user) {
     return res.status(404).json({ message: 'Conta demo não encontrada.', error: 'Conta demo não encontrada.' });

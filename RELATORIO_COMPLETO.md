@@ -53,36 +53,47 @@ O LearnSpace foi concebido sob uma arquitetura de aplicação desacoplada (Decou
 
 ---
 
-## 3. Modelo de Dados e Esquema Relacional
+## 3. Modelo de Dados e Esquema Relacional (PT-PT)
 
-O LearnSpace conta com um esquema relacional de **26 tabelas** totalmente normalizadas, com integridade referencial mantida por restrições `FOREIGN KEY ... ON DELETE CASCADE` e índices de alta performance:
+A base de dados da plataforma conta com um esquema relacional de **35 tabelas em Português de Portugal (PT-PT)** totalmente normalizadas, com integridade referencial mantida por restrições `FOREIGN KEY ... ON DELETE CASCADE` e índices de alta performance:
 
-1. `users` — Registo mestre de utilizadores, credenciais, XP, nível e suspensão.
-2. `profiles` — Informação estendida de perfil público, redes sociais e tema.
-3. `categories` — Categorização de cursos e espaços.
-4. `courses` — Registo de cursos publicados ou em rascunho.
-5. `course_modules` — Módulos temáticos ordenados de um curso.
-6. `lessons` — Unidade fundamental de conteúdo educacional (vídeo, texto, quiz).
-7. `enrollments` — Matrículas de alunos nos cursos e progresso percentual.
-8. `lesson_progress` — Rastreio granular de lições concluídas e tempo de estudo.
-9. `spaces` — Comunidades inspiradas em servidores do Discord.
-10. `channels` — Canais de texto e voz dentro de cada espaço.
-11. `memberships` — Associação e papéis de utilizadores nos espaços.
-12. `messages` — Mensagens de texto enviadas em canais com suporte a anexos.
-13. `reactions` — Reações com emojis em mensagens.
-14. `reviews` — Avaliações e comentários com nota de cursos.
-15. `quizzes` — Questionários associados a lições com pontuação mínima.
-16. `quiz_questions` — Perguntas de múltipla escolha com opções em JSON e explicações.
-17. `quiz_attempts` — Histórico e pontuações das tentativas de quizzes.
-18. `achievements` — Catálogo de conquistas/medalhas em 4 raridades.
-19. `user_achievements` — Medalhas desbloqueadas pelos utilizadores.
-20. `xp_transactions` — Extrato histórico de ganhos de pontos de experiência.
-21. `certificates` — Certificados digitais com código único de validação.
-22. `notes` — Caderno digital de anotações sincronizado por aula.
-23. `qa_questions` — Perguntas e dúvidas submetidas no fórum da aula.
-24. `qa_answers` — Respostas de colegas ou instrutores com aceitação oficial.
-25. `direct_messages` — Mensagens instantâneas privadas entre utilizadores.
-26. `friendships` & `course_roles` — Amizades entre estudantes e cargos específicos em cursos.
+1. `utilizadores` — Registo mestre de utilizadores, credenciais, XP, nível e estado de suspensão (`id`, `email`, `nome_utilizador`, `hash_palavra_passe`, `nome`, `papel`, `url_avatar`, `biografia`, `localizacao`, `dias_sequencia`, `data_ultima_atividade`, `meta_diaria_minutos`, `minutos_hoje`, `minutos_totais`, `xp`, `nivel`, `esta_suspenso`, `criado_em`, `atualizado_em`).
+2. `tokens_recuperacao_palavra_passe` — Gestão segura de tokens para redefinição de palavra-passe com expiração temporal (`id`, `id_utilizador`, `hash_token`, `expira_em`, `criado_em`).
+3. `perfis` — Informação estendida de perfil público, redes sociais, visibilidade e tema (`id`, `id_utilizador`, `titulo_perfil`, `website`, `github`, `twitter`, `linkedin`, `instagram`, `youtube`, `tiktok`, `discord`, `twitch`, `url_banner`, `posicao_banner`, `e_publico`, `mostrar_sequencia`, `mostrar_classificacao`, `mostrar_biografia`, `mostrar_localizacao`, `mostrar_redes_sociais`, `mostrar_estatisticas`, `mostrar_cursos`, `mostrar_insignias`, `preferencia_tema`).
+4. `categorias` — Categorização de cursos e espaços (`id`, `nome`, `slug`, `descricao`, `icone`).
+5. `cursos` — Registo de cursos publicados, pendentes ou em rascunho (`id`, `titulo`, `slug`, `descricao`, `categoria`, `dificuldade`, `url_miniatura`, `posicao_miniatura`, `url_banner`, `posicao_banner`, `preco`, `e_gratuito`, `e_publicado`, `estado_aprovacao`, `notas_admin`, `submetido_para_revisao_em`, `revisto_em`, `destaque`, `duracao_horas`, `idioma`, `id_criador`, `id_espaco`, `modo_chamada_padrao`, `permitir_partilha_ecra_aluno`, `permitir_camara_aluno`, `resultados_aprendizagem`, `requisitos`, `documentos`, `criado_em`, `atualizado_em`).
+6. `modulos_curso` — Módulos temáticos ordenados de um curso (`id`, `id_curso`, `titulo`, `descricao`, `indice_ordem`).
+7. `aulas` — Unidade fundamental de conteúdo educacional: vídeo, texto ou questionário (`id`, `id_modulo`, `titulo`, `tipo`, `conteudo`, `url_video`, `duracao_minutos`, `indice_ordem`, `recompensa_xp`).
+8. `inscricoes` — Matrículas e inscrições de alunos nos cursos e progresso percentual (`id`, `id_utilizador`, `id_curso`, `inscrito_em`, `concluido_em`, `percentagem_progresso`, `id_ultima_aula`, `esta_oculto`).
+9. `progresso_aulas` — Rastreio granular de aulas concluídas e tempo de estudo (`id`, `id_inscricao`, `id_aula`, `concluido`, `concluido_em`, `tempo_gasto_segundos`).
+10. `espacos` — Comunidades temáticas com canais de conversação e salas de voz (`id`, `nome`, `slug`, `descricao`, `url_icone`, `url_banner`, `posicao_banner`, `e_privado`, `categoria`, `id_proprietario`, `total_membros`, `criado_em`).
+11. `canais` — Canais de texto e voz dentro de cada espaço (`id`, `id_espaco`, `nome`, `tipo`, `topico`, `indice_ordem`, `e_voz`, `esta_bloqueado`, `modo_acesso`, `modo_voz`, `questao_orientadora`, `diretrizes`).
+12. `membros_espacos` — Associação e papéis de utilizadores nos espaços (`id`, `id_utilizador`, `id_espaco`, `papel`, `aderiu_em`).
+13. `mensagens` — Mensagens de texto enviadas em canais com suporte a anexos (`id`, `id_canal`, `id_utilizador`, `conteudo`, `id_pai`, `anexos`, `esta_afixado`, `criado_em`, `atualizado_em`).
+14. `reacoes` — Reações com emojis em mensagens (`id`, `id_mensagem`, `id_utilizador`, `emoji`).
+15. `avaliacoes` — Avaliações e comentários com nota atribuída a cursos (`id`, `id_curso`, `id_utilizador`, `classificacao`, `comentario`, `criado_em`).
+16. `quizzes` — Questionários interativos associados a aulas (`id`, `id_aula`, `titulo`, `descricao`, `pontuacao_aprovacao`, `recompensa_xp`).
+17. `perguntas_quiz` — Perguntas de escolha múltipla com opções e explicação pedagógica (`id`, `id_quiz`, `pergunta`, `opcoes`, `indice_opcao_correta`, `explicacao`, `indice_ordem`).
+18. `tentativas_quiz` — Histórico e pontuações das tentativas de questionários (`id`, `id_quiz`, `id_utilizador`, `pontuacao`, `passou`, `tentado_em`).
+19. `conquistas` — Catálogo de medalhas/conquistas com quatro níveis de raridade (`id`, `slug`, `titulo`, `descricao`, `icone`, `categoria`, `raridade`, `recompensa_xp`).
+20. `conquistas_utilizadores` — Conquistas desbloqueadas pelos utilizadores (`id`, `id_utilizador`, `id_conquista`, `desbloqueado_em`).
+21. `transacoes_xp` — Extrato histórico de ganhos de pontos de experiência (`id`, `id_utilizador`, `quantidade`, `acao`, `descricao`, `criado_em`).
+22. `certificados` — Certificados digitais emitidos com código de autenticação único (`id`, `id_utilizador`, `id_curso`, `nome_destinatario`, `titulo_curso`, `id_credencial`, `emitido_em`, `pontuacao`).
+23. `notas` — Caderno digital pessoal de anotações sincronizado por aula (`id`, `id_utilizador`, `id_aula`, `conteudo`, `criado_em`, `atualizado_em`).
+24. `perguntas_qa` — Dúvidas submetidas no fórum comunitário da aula (`id`, `id_curso`, `id_utilizador`, `titulo`, `corpo`, `esta_respondida`, `criado_em`).
+25. `respostas_qa` — Respostas de colegas ou formadores com estado de aceitação (`id`, `id_pergunta`, `id_utilizador`, `corpo`, `esta_aceite`, `criado_em`).
+26. `notificacoes` — Notificações de conquistas, avisos e cursos (`id`, `id_utilizador`, `tipo`, `titulo`, `conteudo`, `ligacao`, `esta_lida`, `criado_em`).
+27. `amizades` — Gestão de pedidos e ligações de amizade entre utilizadores (`id`, `id_solicitante`, `id_destinatario`, `estado`, `criado_em`, `atualizado_em`).
+28. `seguidores` — Sistema social de seguidores e seguidos (`id`, `id_seguidor`, `id_a_seguir`, `criado_em`).
+29. `mensagens_diretas` — Mensagens instantâneas privadas 1-para-1 (`id`, `id_remetente`, `id_destinatario`, `conteudo`, `esta_lida`, `criado_em`).
+30. `cargos_curso` — Cargos e permissões personalizadas por curso (`id`, `id_curso`, `nome`, `cor`, `pode_publicar_anuncios`, `pode_falar_palco`, `pode_partilhar_ecra`, `pode_moderar_chat`, `pode_gerir_voz`, `indice_ordem`, `criado_em`).
+31. `cargos_membros_curso` — Atribuição de cargos aos alunos nos cursos (`id`, `id_curso`, `id_utilizador`, `id_cargo`, `atribuido_em`).
+32. `candidaturas_criador` — Inquéritos de candidatura a formador com portfólio e proposta (`id`, `id_utilizador`, `nome_completo`, `biografia`, `especialidade`, `anos_experiencia`, `url_portfolio`, `motivacao`, `cursos_propostos`, `url_video_amostra`, `estado`, `parecer_admin`, `revisto_por`, `revisto_em`, `criado_em`, `atualizado_em`).
+33. `candidaturas_admin` — Candidaturas para a equipa de administração e moderação (`id`, `id_utilizador`, `nome_completo`, `email`, `motivacao`, `experiencia`, `horas_disponibilidade_semanal`, `areas_interesse`, `cenario_situacao`, `estado`, `parecer_admin`, `revisto_por`, `revisto_em`, `criado_em`, `atualizado_em`).
+34. `pedidos_suporte` — Sistema central de tickets e pedidos de assistência (`id`, `id_utilizador`, `assunto`, `categoria`, `prioridade`, `estado`, `criado_em`, `atualizado_em`, `resolvido_em`, `id_admin_atribuido`).
+35. `mensagens_suporte` — Histórico de mensagens trocadas nos pedidos de suporte (`id`, `id_pedido`, `id_remetente`, `conteudo`, `e_resposta_admin`, `criado_em`).
+
+Para além disso, a camada de base de dados conta com **vistas (VIEWs) e gatilhos (INSTEAD OF TRIGGERS)** compatíveis para interoperabilidade com ferramentas e módulos legados.
 
 ---
 

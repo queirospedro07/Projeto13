@@ -131,14 +131,14 @@ export function seedDemoShowcaseData(db) {
   db.exec('BEGIN');
   try {
     const insertUser = db.prepare(`
-      INSERT OR IGNORE INTO users (id, email, username, passwordHash, name, role, avatarUrl, bio, location, createdAt, updatedAt)
+      INSERT OR IGNORE INTO utilizadores (id, email, nome_utilizador, hash_palavra_passe, nome, papel, url_avatar, biografia, localizacao, criado_em, atualizado_em)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     const insertProfile = db.prepare(`
-      INSERT OR IGNORE INTO profiles (id, userId, headline, isPublic, showStreak, showLeaderboard, themePreference)
+      INSERT OR IGNORE INTO perfis (id, id_utilizador, titulo_perfil, e_publico, mostrar_sequencia, mostrar_classificacao, preferencia_tema)
       VALUES (?, ?, ?, 1, 1, 1, 'light')
     `);
-    const updateDemoAvatar = db.prepare('UPDATE users SET avatarUrl = ?, updatedAt = ? WHERE id = ?');
+    const updateDemoAvatar = db.prepare('UPDATE utilizadores SET url_avatar = ?, atualizado_em = ? WHERE id = ?');
 
     demoUsers.forEach((user) => {
       insertUser.run(user.id, user.email, user.username, passwordHash, user.name, user.role, user.avatarUrl, user.bio, user.location, now, now);
@@ -147,20 +147,20 @@ export function seedDemoShowcaseData(db) {
     });
 
     db.prepare(`
-      INSERT OR IGNORE INTO categories (id, name, slug, description, icon)
+      INSERT OR IGNORE INTO categorias (id, nome, slug, descricao, icone)
       VALUES ('cat-data-demo', 'Dados & Bases de Dados', 'data', 'Consultas, modelação e gestão de bases de dados.', 'Database')
     `).run();
 
     const insertCourse = db.prepare(`
-      INSERT OR IGNORE INTO courses (id, title, slug, description, category, difficulty, thumbnailUrl, bannerUrl, price, isFree, isPublished, approvalStatus, featured, durationHours, language, creatorId, spaceId, createdAt, updatedAt)
+      INSERT OR IGNORE INTO cursos (id, titulo, slug, descricao, categoria, dificuldade, url_miniatura, url_banner, preco, e_gratuito, e_publicado, estado_aprovacao, destaque, duracao_horas, idioma, id_criador, id_espaco, criado_em, atualizado_em)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'APPROVED', ?, ?, 'Português', ?, NULL, ?, ?)
     `);
     const insertModule = db.prepare(`
-      INSERT OR IGNORE INTO course_modules (id, courseId, title, description, orderIndex)
+      INSERT OR IGNORE INTO modulos_curso (id, id_curso, titulo, descricao, indice_ordem)
       VALUES (?, ?, ?, ?, 0)
     `);
     const insertLesson = db.prepare(`
-      INSERT OR IGNORE INTO lessons (id, moduleId, title, type, content, videoUrl, durationMin, orderIndex, xpReward)
+      INSERT OR IGNORE INTO aulas (id, id_modulo, titulo, tipo, conteudo, url_video, duracao_minutos, indice_ordem, recompensa_xp)
       VALUES (?, ?, ?, 'video', ?, ?, ?, ?, 25)
     `);
 
@@ -192,12 +192,12 @@ export function seedDemoShowcaseData(db) {
       ['les-ai-1', 'https://www.youtube.com/watch?v=ad79nYk2keg']
     ];
     const updateDefaultVideo = db.prepare(`
-      UPDATE lessons SET videoUrl = ? WHERE id = ? AND videoUrl LIKE '%mov_bbb.mp4'
+      UPDATE aulas SET url_video = ? WHERE id = ? AND url_video LIKE '%mov_bbb.mp4'
     `);
     defaultVideoLessons.forEach(([lessonId, videoUrl]) => updateDefaultVideo.run(videoUrl, lessonId));
 
     const insertEnrollment = db.prepare(`
-      INSERT OR IGNORE INTO enrollments (id, userId, courseId, enrolledAt, progressPercent, lastLessonId)
+      INSERT OR IGNORE INTO inscricoes (id, id_utilizador, id_curso, inscrito_em, percentagem_progresso, id_ultima_aula)
       VALUES (?, ?, ?, ?, ?, NULL)
     `);
     const demoEnrollments = [

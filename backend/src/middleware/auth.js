@@ -49,7 +49,7 @@ export const protect = async (req, res, next) => {
       });
     }
 
-    const user = queryOne('SELECT id, email, username, name, role, isSuspended FROM users WHERE id = ?', [payload.id]);
+    const user = queryOne('SELECT id, email, nome_utilizador AS username, nome AS name, papel AS role, esta_suspenso AS isSuspended FROM utilizadores WHERE id = ?', [payload.id]);
     if (!user) {
       return res.status(401).json({
         message: 'Utilizador não encontrado.',

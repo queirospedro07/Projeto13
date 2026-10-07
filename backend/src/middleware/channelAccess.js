@@ -5,9 +5,9 @@ export function canAccessChannel(user, channelId) {
   if (user.role === 'ADMIN' || user.role === 'SUBADMIN') return true;
 
   const channel = queryOne(
-    `SELECT c.spaceId, s.ownerId
-     FROM channels c
-     JOIN spaces s ON s.id = c.spaceId
+    `SELECT c.id_espaco AS spaceId, s.id_proprietario AS ownerId
+     FROM canais c
+     JOIN espacos s ON s.id = c.id_espaco
      WHERE c.id = ?`,
     [channelId]
   );
@@ -16,16 +16,16 @@ export function canAccessChannel(user, channelId) {
   if (channel.ownerId === user.id) return true;
 
   const membership = queryOne(
-    'SELECT id FROM memberships WHERE spaceId = ? AND userId = ?',
+    'SELECT id FROM membros_espacos WHERE id_espaco = ? AND id_utilizador = ?',
     [channel.spaceId, user.id]
   );
   if (membership) return true;
 
   return Boolean(queryOne(
     `SELECT e.id
-     FROM enrollments e
-     JOIN courses c ON c.id = e.courseId
-     WHERE c.spaceId = ? AND e.userId = ?
+     FROM inscricoes e
+     JOIN cursos c ON c.id = e.id_curso
+     WHERE c.id_espaco = ? AND e.id_utilizador = ?
      LIMIT 1`,
     [channel.spaceId, user.id]
   ));
