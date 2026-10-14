@@ -131,12 +131,12 @@ export function seedDemoShowcaseData(db) {
   db.exec('BEGIN');
   try {
     const insertUser = db.prepare(`
-      INSERT OR IGNORE INTO utilizadores (id, email, nome_utilizador, hash_palavra_passe, nome, papel, url_avatar, biografia, localizacao, criado_em, atualizado_em)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT OR IGNORE INTO utilizadores (id, email, nome_utilizador, hash_palavra_passe, nome, papel, url_avatar, biografia, localizacao, meta_diaria_minutos, minutos_hoje, minutos_totais, esta_suspenso, criado_em, atualizado_em)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 45, 0, 0, 0, ?, ?)
     `);
     const insertProfile = db.prepare(`
-      INSERT OR IGNORE INTO perfis (id, id_utilizador, titulo_perfil, e_publico, mostrar_sequencia, mostrar_classificacao, preferencia_tema)
-      VALUES (?, ?, ?, 1, 1, 1, 'light')
+      INSERT OR IGNORE INTO perfis (id, id_utilizador, titulo_perfil, e_publico, mostrar_classificacao, preferencia_tema)
+      VALUES (?, ?, ?, 1, 1, 'light')
     `);
     const updateDemoAvatar = db.prepare('UPDATE utilizadores SET url_avatar = ?, atualizado_em = ? WHERE id = ?');
 

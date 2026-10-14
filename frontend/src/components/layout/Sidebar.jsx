@@ -28,7 +28,7 @@ import { api } from '../../services/api';
 
 export const Sidebar = () => {
   const { user } = useAuth();
-  const { socket } = useSocket();
+  const { socket, onlineUsers = [] } = useSocket();
   const { activeCall, isMicMuted, isDeafened, toggleMic, toggleDeafen, leaveCall } = useActiveCall();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
@@ -223,14 +223,7 @@ export const Sidebar = () => {
             )}
           </NavLink>
 
-          <NavLink to="/help" className={navClass}>
-            {({ isActive }) => (
-              <div className="flex items-center gap-2.5 min-w-0">
-                <HelpCircle className={iconClass(isActive)} />
-                {!collapsed && <span className="truncate">Dúvidas & Suporte</span>}
-              </div>
-            )}
-          </NavLink>
+
         </div>
 
         <div className="flex flex-col gap-1 pt-3 border-t border-slate-100 dark:border-zinc-800/80">
@@ -276,7 +269,12 @@ export const Sidebar = () => {
           {!collapsed && pinnedPeers.length > 0 && (
             <div className="flex flex-col gap-0.5 mt-1">
               {pinnedPeers.map(p => {
-                const isPeerActive = location.pathname === '/messages' && location.search.includes(`userId=${p.id}`);
+                const isOnline = Boolean(
+                  typeof onlineUsers?.has === 'function'
+                    ? onlineUsers.has(p.id)
+                    : Array.isArray(onlineUsers) &&
+                      onlineUsers.some((u) => String(typeof u === 'string' ? u : u?.userId || u?.id) === String(p.id))
+                );
                 return (
                   <Link
                     key={p.id}
@@ -290,7 +288,7 @@ export const Sidebar = () => {
                     <div className="flex items-center gap-2 min-w-0">
                       <div className="relative shrink-0">
                         <Avatar src={p.avatarUrl} name={p.name} size="xs" />
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 border border-white dark:border-black absolute -bottom-0.5 -right-0.5" />
+                        <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-slate-400 dark:bg-zinc-600'} border border-white dark:border-black absolute -bottom-0.5 -right-0.5`} />
                       </div>
                       <span className="truncate text-xs">{p.name}</span>
                     </div>
@@ -484,7 +482,7 @@ export const Sidebar = () => {
         <div className="p-3 border-t border-slate-100 dark:border-zinc-800/80 bg-slate-50/50 dark:bg-[#08080a] shrink-0 mt-auto">
           <div className="flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800/60 transition-colors">
             <Link to="/profile" className="flex items-center gap-2.5 min-w-0 flex-1">
-              <Avatar src={user.avatarUrl} name={user.name} size="sm" status="online" className="shrink-0" />
+              <Avatar src={user.avatarUrl} name={user.name} role={user.role} size="sm" status="online" className="shrink-0" />
               {!collapsed && (
                 <div className="min-w-0">
                   <p className="text-xs font-bold text-slate-900 dark:text-white truncate">

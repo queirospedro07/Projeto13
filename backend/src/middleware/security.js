@@ -117,6 +117,7 @@ export const authLimiter = rateLimit({
 });
 
 export function sanitizeInputs(req, res, next) {
+  const noTrimKeys = new Set(['password', 'currentPassword', 'newPassword', 'content', 'code']);
   const clean = obj => {
     if (!obj || typeof obj !== 'object') return obj;
     for (const key of Object.keys(obj)) {
@@ -125,7 +126,8 @@ export function sanitizeInputs(req, res, next) {
         continue;
       }
       if (typeof obj[key] === 'string') {
-        obj[key] = obj[key].replace(/\0/g, '').trim();
+        const withoutNulls = obj[key].replace(/\0/g, '');
+        obj[key] = noTrimKeys.has(key) ? withoutNulls : withoutNulls.trim();
       } else if (typeof obj[key] === 'object') {
         clean(obj[key]);
       }

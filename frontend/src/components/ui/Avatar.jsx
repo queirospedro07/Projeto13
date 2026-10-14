@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 // Role-based fallback icon colours and backgrounds
@@ -63,13 +63,19 @@ function RoleIcon({ role, sizeKey }) {
 
 export const Avatar = ({
   src,
-  name = 'User',
+  name = 'Utilizador',
   size = 'md',
   status,
   role,        // 'ADMIN' | 'CREATOR' | 'STUDENT' — optional, drives fallback style
   shape = 'circle', // 'circle' | 'square'
   className
 }) => {
+  const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [src]);
+
   const sizes = {
     xs: 'w-6 h-6 text-[10px]',
     sm: 'w-8 h-8 text-xs',
@@ -96,8 +102,9 @@ export const Avatar = ({
   const isSquare = shape === 'square' || className?.includes('rounded-xl') || className?.includes('rounded-2xl') || className?.includes('rounded-lg');
   const roundedClass = isSquare ? (size === 'xl' || size === 'lg' ? 'rounded-2xl' : 'rounded-xl') : 'rounded-full';
 
-  const initials = name
+  const initials = (name || 'Utilizador')
     .split(' ')
+    .filter(Boolean)
     .map(n => n[0])
     .join('')
     .substring(0, 2)
@@ -112,7 +119,7 @@ export const Avatar = ({
 
   return (
     <div className={twMerge('relative inline-flex flex-shrink-0', roundedClass, className)}>
-      {src ? (
+      {src && !imgError ? (
         <img
           src={src}
           alt={name}
@@ -121,9 +128,7 @@ export const Avatar = ({
             roundedClass,
             sizes[size]
           )}
-          onError={e => {
-            e.target.style.display = 'none';
-          }}
+          onError={() => setImgError(true)}
         />
       ) : (
         <div
@@ -147,7 +152,7 @@ export const Avatar = ({
       {status && (
         <span
           className={twMerge(
-            'absolute bottom-0 right-0 rounded-full ring-[#11131a]',
+            'absolute bottom-0 right-0 rounded-full ring-white dark:ring-[#11131a]',
             statusDotSizes[size],
             statusColors[status]
           )}

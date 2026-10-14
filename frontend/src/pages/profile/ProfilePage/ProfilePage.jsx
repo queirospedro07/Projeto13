@@ -1,34 +1,16 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { MapPin, Award, BookOpen, Flame, Users, Edit3, MessageSquare, UserPlus, UserCheck, Clock, Globe, Github, Instagram, Camera, ImagePlus, X, ExternalLink, Loader2, Eye, EyeOff, Linkedin, Youtube, Twitch, Move, Check, RotateCcw } from 'lucide-react';
+import { MapPin, Award, BookOpen, Flame, Users, Edit3, MessageSquare, UserPlus, UserCheck, Clock, Globe, Github, Camera, ImagePlus, X, ExternalLink, Loader2, Eye, EyeOff, Linkedin, Move, Check, RotateCcw } from 'lucide-react';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Avatar } from '../../../components/ui/Avatar';
 import { Modal } from '../../../components/ui/Modal';
-import { DraggableImageCrop } from '../../../components/ui/DraggableImageCrop';
 import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../components/ui/Toast';
 import { soundEffects } from '../../../services/soundEffects';
 import { api } from '../../../services/api';
-
-const XIcon = ({ className = 'w-3.5 h-3.5' }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-  </svg>
-);
-
-const TikTokIcon = ({ className = 'w-3.5 h-3.5' }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.16 8.16 0 0 0 4.77 1.52V6.76a4.84 4.84 0 0 1-1-.07z"/>
-  </svg>
-);
-
-const DiscordIcon = ({ className = 'w-3.5 h-3.5' }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.045.03.055a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
-  </svg>
-);
+import { formatCategory, formatRole } from '../../../utils/formatters';
 
 const BANNER_PRESETS = [{
   label: 'Azul Índigo',
@@ -56,22 +38,22 @@ const BANNER_PRESETS = [{
   style: 'bg-gradient-to-br from-slate-800 via-slate-900 to-black'
 }];
 
-function getBannerStyle(bannerUrl, bannerPosition = '50% 50%') {
+function getBannerStyle(bannerUrl) {
   if (!bannerUrl) return {};
   const preset = BANNER_PRESETS.find(p => p.value === bannerUrl);
   if (preset) return {};
-  if (
-    bannerUrl.startsWith('#') ||
-    bannerUrl.startsWith('rgb') ||
-    bannerUrl.startsWith('hsl') ||
-    bannerUrl.startsWith('linear-gradient')
-  ) {
-    return { background: bannerUrl };
+  const raw = String(bannerUrl).trim();
+  if (/^#[0-9a-fA-F]{3,8}$/.test(raw) || /^(rgb|hsl)a?\([^;"'\\]+\)$/i.test(raw)) {
+    return { background: raw };
+  }
+  const safeUrl = raw.replace(/["'()\\;\n\r]/g, '');
+  if (!/^(https?:\/\/|data:image\/|\/)/i.test(safeUrl)) {
+    return {};
   }
   return {
-    backgroundImage: `url(${bannerUrl})`,
+    backgroundImage: `url("${safeUrl}")`,
     backgroundSize: 'cover',
-    backgroundPosition: bannerPosition || '50% 50%'
+    backgroundPosition: '50% 50%'
   };
 }
 
@@ -210,43 +192,18 @@ export const ProfilePage = () => {
   const [editLocation, setEditLocation] = useState('');
   const [editHeadline, setEditHeadline] = useState('');
   const [editGithub, setEditGithub] = useState('');
-  const [editTwitter, setEditTwitter] = useState('');
   const [editLinkedin, setEditLinkedin] = useState('');
-  const [editInstagram, setEditInstagram] = useState('');
   const [editWebsite, setEditWebsite] = useState('');
-  const [editYoutube, setEditYoutube] = useState('');
-  const [editTiktok, setEditTiktok] = useState('');
-  const [editDiscord, setEditDiscord] = useState('');
-  const [editTwitch, setEditTwitch] = useState('');
   const [editAvatarUrl, setEditAvatarUrl] = useState('');
   const [editBannerUrl, setEditBannerUrl] = useState('');
-  const [editBannerPosition, setEditBannerPosition] = useState('50% 50%');
   const [avatarPreview, setAvatarPreview] = useState('');
   const [bannerPreview, setBannerPreview] = useState('');
-  const [bannerPosition, setBannerPosition] = useState('50% 50%');
-  const initialBannerPosRef = useRef('50% 50%');
-  const [isAdjustingBanner, setIsAdjustingBanner] = useState(false);
-  const [isSavingBannerPos, setIsSavingBannerPos] = useState(false);
   const [isCompressingAvatar, setIsCompressingAvatar] = useState(false);
-  const [isCompressingBanner, setIsCompressingBanner] = useState(false);
   const avatarInputRef = useRef(null);
-  const bannerInputRef = useRef(null);
-
-  const startAdjustingBanner = () => {
-    initialBannerPosRef.current = bannerPosition || '50% 50%';
-    setIsAdjustingBanner(true);
-  };
-
-  const cancelAdjustingBanner = () => {
-    setBannerPosition(initialBannerPosRef.current);
-    setIsAdjustingBanner(false);
-  };
 
   useEffect(() => {
     if (isMe && currentUser) {
-      const localPos = localStorage.getItem(`nexo_banner_pos_${currentUser.id}`);
       setProfileUser(currentUser);
-      setBannerPosition(currentUser?.profile?.bannerPosition || localPos || '50% 50%');
       setLoading(false);
       setNotFound(false);
       api.getMyCourses().then(d => {
@@ -267,7 +224,6 @@ export const ProfilePage = () => {
       setNotFound(false);
       api.getUserProfile(username).then(userData => {
         setProfileUser(userData);
-        setBannerPosition(userData?.profile?.bannerPosition || '50% 50%');
         setMyCourses(userData?.courses || []);
         setLoading(false);
         if (userData?.id) {
@@ -286,21 +242,14 @@ export const ProfilePage = () => {
     setEditLocation(u?.location || '');
     setEditHeadline(u?.profile?.headline || '');
     setEditGithub(u?.profile?.github || '');
-    setEditTwitter(u?.profile?.twitter || '');
     setEditLinkedin(u?.profile?.linkedin || '');
-    setEditInstagram(u?.profile?.instagram || '');
     setEditWebsite(u?.profile?.website || '');
-    setEditYoutube(u?.profile?.youtube || '');
-    setEditTiktok(u?.profile?.tiktok || '');
-    setEditDiscord(u?.profile?.discord || '');
-    setEditTwitch(u?.profile?.twitch || '');
     setEditAvatarUrl(u?.avatarUrl || '');
     setEditBannerUrl(u?.profile?.bannerUrl || '');
-    setEditBannerPosition(u?.profile?.bannerPosition || bannerPosition || '50% 50%');
     setAvatarPreview(u?.avatarUrl || '');
     setBannerPreview(u?.profile?.bannerUrl || '');
     setIsEditOpen(true);
-  }, [profileUser, currentUser, isMe, bannerPosition]);
+  }, [profileUser, currentUser, isMe]);
   const handleAvatarFileChange = async e => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -328,33 +277,6 @@ export const ProfilePage = () => {
       if (avatarInputRef.current) avatarInputRef.current.value = '';
     }
   };
-  const handleBannerFileChange = async e => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: 'Ficheiro inválido',
-        message: 'Selecione uma imagem.',
-        type: 'error'
-      });
-      return;
-    }
-    setIsCompressingBanner(true);
-    try {
-      const base64 = await compressImageToBase64(file, 1200, 0.8);
-      setEditBannerUrl(base64);
-      setBannerPreview(base64);
-    } catch {
-      toast({
-        title: 'Erro',
-        message: 'Não foi possível processar a imagem.',
-        type: 'error'
-      });
-    } finally {
-      setIsCompressingBanner(false);
-      if (bannerInputRef.current) bannerInputRef.current.value = '';
-    }
-  };
   const handleSaveProfile = async e => {
     e.preventDefault();
     setIsSaving(true);
@@ -366,23 +288,12 @@ export const ProfilePage = () => {
         avatarUrl: editAvatarUrl,
         headline: editHeadline,
         github: editGithub,
-        twitter: editTwitter,
         linkedin: editLinkedin,
-        instagram: editInstagram,
         website: editWebsite,
-        youtube: editYoutube,
-        tiktok: editTiktok,
-        discord: editDiscord,
-        twitch: editTwitch,
-        bannerUrl: editBannerUrl,
-        bannerPosition: editBannerPosition
+        bannerUrl: editBannerUrl
       });
       if (updateRes?.user) {
         setProfileUser(updateRes.user);
-        setBannerPosition(updateRes.user?.profile?.bannerPosition || editBannerPosition);
-        if (currentUser?.id) {
-          localStorage.setItem(`nexo_banner_pos_${currentUser.id}`, editBannerPosition);
-        }
       }
       await refreshUser();
       setIsEditOpen(false);
@@ -399,36 +310,6 @@ export const ProfilePage = () => {
       });
     } finally {
       setIsSaving(false);
-    }
-  };
-
-  const handleSaveBannerPositionLive = async () => {
-    setIsSavingBannerPos(true);
-    try {
-      const updateRes = await api.updateProfile({ bannerPosition });
-      if (updateRes?.user) {
-        setProfileUser(updateRes.user);
-        setBannerPosition(updateRes.user?.profile?.bannerPosition || bannerPosition);
-      }
-      initialBannerPosRef.current = bannerPosition;
-      if (currentUser?.id) {
-        localStorage.setItem(`nexo_banner_pos_${currentUser.id}`, bannerPosition);
-      }
-      await refreshUser();
-      setIsAdjustingBanner(false);
-      toast({
-        title: 'Posição do Banner Guardada',
-        message: 'O enquadramento da sua capa foi atualizado com sucesso.',
-        type: 'success'
-      });
-    } catch (err) {
-      toast({
-        title: 'Erro',
-        message: err.message || 'Não foi possível guardar a posição.',
-        type: 'error'
-      });
-    } finally {
-      setIsSavingBannerPos(false);
     }
   };
   const handleToggleFollow = async () => {
@@ -506,63 +387,35 @@ export const ProfilePage = () => {
   }
   const u = isMe ? currentUser : profileUser;
   const bannerClass = getBannerClass(u?.profile?.bannerUrl);
-  const bannerStyle = getBannerStyle(u?.profile?.bannerUrl, bannerPosition);
+  const bannerStyle = getBannerStyle(u?.profile?.bannerUrl);
   const isCustomBanner = u?.profile?.bannerUrl && !BANNER_PRESETS.some(p => p.value === u.profile.bannerUrl) && !u.profile.bannerUrl.startsWith('#');
 
   return <div className="max-w-5xl mx-auto flex flex-col gap-8 animate-fade-in pb-16">
       
       <div className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
-        
-        {isAdjustingBanner ? (
-          <div className="h-44 sm:h-56 w-full relative">
-            <DraggableImageCrop
-              imageUrl={u?.profile?.bannerUrl}
-              position={bannerPosition}
-              onPositionChange={setBannerPosition}
-              isEditing={true}
-              onSave={handleSaveBannerPositionLive}
-              onCancel={cancelAdjustingBanner}
-              className="h-44 sm:h-56 w-full"
+        <div className={`h-44 sm:h-56 w-full relative overflow-hidden ${isCustomBanner ? 'bg-slate-900' : bannerClass}`} style={!isCustomBanner ? bannerStyle : {}}>
+          {isCustomBanner && (
+            <img
+              src={u?.profile?.bannerUrl}
               alt="Banner do perfil"
+              className="w-full h-full object-cover"
             />
-          </div>
-        ) : (
-          <div className={`h-44 sm:h-56 w-full relative overflow-hidden ${isCustomBanner ? 'bg-slate-900' : bannerClass}`} style={!isCustomBanner ? bannerStyle : {}}>
-            {isCustomBanner && (
-              <img
-                src={u?.profile?.bannerUrl}
-                alt="Banner do perfil"
-                className="w-full h-full object-cover"
-                style={{ objectPosition: bannerPosition || '50% 50%' }}
-              />
-            )}
-            {isCustomBanner && <div className="absolute inset-0 bg-black/20 pointer-events-none" />}
+          )}
+          {isCustomBanner && <div className="absolute inset-0 bg-black/20 pointer-events-none" />}
 
-            {isMe && (
-              <div className="absolute bottom-3 right-3 z-10 flex items-center gap-2">
-                {isCustomBanner && (
-                  <button
-                    type="button"
-                    onClick={startAdjustingBanner}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/50 backdrop-blur-sm text-white text-xs font-bold hover:bg-black/70 transition-colors cursor-pointer border border-white/20 shadow-md"
-                    title="Ajustar enquadramento do banner"
-                  >
-                    <Move className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Ajustar Posição</span>
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => openEditModal()}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/50 backdrop-blur-sm text-white text-xs font-bold hover:bg-black/70 transition-colors cursor-pointer border border-white/20 shadow-md"
-                >
-                  <ImagePlus className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Alterar Banner</span>
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+          {isMe && (
+            <div className="absolute bottom-3 right-3 z-10 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => openEditModal()}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/50 backdrop-blur-sm text-white text-xs font-bold hover:bg-black/70 transition-colors cursor-pointer border border-white/20 shadow-md"
+              >
+                <ImagePlus className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Alterar Banner</span>
+              </button>
+            </div>
+          )}
+        </div>
 
         <div className="px-5 sm:px-10 pb-8 pt-0">
           
@@ -609,7 +462,7 @@ export const ProfilePage = () => {
               @{u?.username}
             </span>
             <Badge variant="brand" size="sm">
-              {u?.role === 'CREATOR' ? 'Formador' : u?.role === 'ADMIN' ? 'Administrador' : 'Estudante'}
+              {formatRole(u?.role)}
             </Badge>
           </div>
 
@@ -617,53 +470,31 @@ export const ProfilePage = () => {
               {u.profile.headline}
             </p>}
 
-          {u?.bio && <p className="text-sm text-slate-600 dark:text-zinc-400 max-w-3xl leading-relaxed mb-4">
+          {u?.bio && (isMe || u?.profile?.showBio !== false) && <p className="text-sm text-slate-600 dark:text-zinc-400 max-w-3xl leading-relaxed mb-4">
               {u.bio}
             </p>}
 
           
-          {(u?.location || u?.profile?.website || u?.profile?.github || u?.profile?.instagram || u?.profile?.twitter || u?.profile?.linkedin || u?.profile?.youtube || u?.profile?.tiktok || u?.profile?.discord || u?.profile?.twitch) && <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-medium text-slate-500 dark:text-zinc-400 mb-4">
-              {u?.location && <span className="flex items-center gap-1.5">
+          {((u?.location && (isMe || u?.profile?.showLocation !== false)) || ((isMe || u?.profile?.showSocials !== false) && (u?.profile?.website || u?.profile?.github || u?.profile?.linkedin))) && <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-medium text-slate-500 dark:text-zinc-400 mb-4">
+              {u?.location && (isMe || u?.profile?.showLocation !== false) && <span className="flex items-center gap-1.5">
                   <MapPin className="w-3.5 h-3.5 shrink-0" />
                   {u.location}
                 </span>}
-              {u?.profile?.website && <a href={u.profile.website.startsWith('http') ? u.profile.website : `https://${u.profile.website}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  <Globe className="w-3.5 h-3.5 shrink-0" />
-                  {u.profile.website.replace(/^https?:\/\//, '')}
-                  <ExternalLink className="w-3 h-3 opacity-60" />
-                </a>}
-              {u?.profile?.github && <a href={`https://github.com/${u.profile.github.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-slate-900 dark:hover:text-white transition-colors">
-                  <Github className="w-3.5 h-3.5 shrink-0" />
-                  {u.profile.github.replace(/^@/, '')}
-                </a>}
-              {u?.profile?.linkedin && <a href={`https://linkedin.com/in/${u.profile.linkedin.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-blue-700 dark:hover:text-blue-400 transition-colors">
-                  <Linkedin className="w-3.5 h-3.5 shrink-0 text-blue-600" />
-                  {u.profile.linkedin.replace(/^@/, '')}
-                </a>}
-              {u?.profile?.instagram && <a href={`https://instagram.com/${u.profile.instagram.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-pink-500 transition-colors">
-                  <Instagram className="w-3.5 h-3.5 shrink-0 text-pink-500" />
-                  @{u.profile.instagram.replace(/^@/, '')}
-                </a>}
-              {u?.profile?.twitter && <a href={`https://x.com/${u.profile.twitter.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-slate-900 dark:hover:text-white transition-colors">
-                  <XIcon className="w-3.5 h-3.5 shrink-0" />
-                  @{u.profile.twitter.replace(/^@/, '')}
-                </a>}
-              {u?.profile?.youtube && <a href={`https://youtube.com/@${u.profile.youtube.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-red-600 transition-colors">
-                  <Youtube className="w-3.5 h-3.5 shrink-0 text-red-600" />
-                  @{u.profile.youtube.replace(/^@/, '')}
-                </a>}
-              {u?.profile?.tiktok && <a href={`https://tiktok.com/@${u.profile.tiktok.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-slate-900 dark:hover:text-white transition-colors">
-                  <TikTokIcon className="w-3.5 h-3.5 shrink-0" />
-                  @{u.profile.tiktok.replace(/^@/, '')}
-                </a>}
-              {u?.profile?.discord && <span className="flex items-center gap-1.5 text-indigo-500">
-                  <DiscordIcon className="w-3.5 h-3.5 shrink-0" />
-                  {u.profile.discord}
-                </span>}
-              {u?.profile?.twitch && <a href={`https://twitch.tv/${u.profile.twitch.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-purple-600 transition-colors">
-                  <Twitch className="w-3.5 h-3.5 shrink-0 text-purple-600" />
-                  {u.profile.twitch.replace(/^@/, '')}
-                </a>}
+              {(isMe || u?.profile?.showSocials !== false) && <>
+                {u?.profile?.website && <a href={u.profile.website.startsWith('http') ? u.profile.website : `https://${u.profile.website}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    <Globe className="w-3.5 h-3.5 shrink-0" />
+                    {u.profile.website.replace(/^https?:\/\//, '')}
+                    <ExternalLink className="w-3 h-3 opacity-60" />
+                  </a>}
+                {u?.profile?.github && <a href={`https://github.com/${u.profile.github.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-slate-900 dark:hover:text-white transition-colors">
+                    <Github className="w-3.5 h-3.5 shrink-0" />
+                    {u.profile.github.replace(/^@/, '')}
+                  </a>}
+                {u?.profile?.linkedin && <a href={`https://linkedin.com/in/${u.profile.linkedin.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-blue-700 dark:hover:text-blue-400 transition-colors">
+                    <Linkedin className="w-3.5 h-3.5 shrink-0 text-blue-600" />
+                    {u.profile.linkedin.replace(/^@/, '')}
+                  </a>}
+              </>}
             </div>}
 
           
@@ -717,7 +548,7 @@ export const ProfilePage = () => {
           return Boolean(e.isHidden || hiddenCourseIds.includes(courseId));
         };
 
-        const totalCourses = myCourses.length;
+        const totalCourses = (!isMe && u?.profile?.showCourses === false) ? 0 : myCourses.length;
         const hiddenCoursesList = myCourses.filter(isCourseHidden);
         const visibleCoursesList = myCourses.filter(e => !isCourseHidden(e));
         const hiddenCount = hiddenCoursesList.length;
@@ -725,7 +556,7 @@ export const ProfilePage = () => {
 
         let displayCourses = myCourses;
         if (!isMe) {
-          displayCourses = visibleCoursesList;
+          displayCourses = u?.profile?.showCourses === false ? [] : visibleCoursesList;
         } else if (courseFilter === 'visible') {
           displayCourses = visibleCoursesList;
         } else if (courseFilter === 'hidden') {
@@ -737,7 +568,7 @@ export const ProfilePage = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                  Cursos Inscritos ({totalCourses})
+                  Cursos Inscritos ({isMe ? totalCourses : displayCourses.length})
                 </h3>
                 {isMe && (
                   <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
@@ -862,7 +693,7 @@ export const ProfilePage = () => {
                             )}
                             {e.course?.category && (
                               <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-700 text-slate-600 dark:text-zinc-300 text-[10px] font-bold">
-                                {e.course.category}
+                                {formatCategory(e.course.category)}
                               </span>
                             )}
                           </div>
@@ -985,72 +816,33 @@ export const ProfilePage = () => {
 
           
           <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">
-                Banner do Perfil & Chamadas
-              </label>
-              {editBannerUrl && !BANNER_PRESETS.some(p => p.value === editBannerUrl) && !editBannerUrl.startsWith('#') && (
-                <span className="text-[11px] text-blue-500 font-semibold flex items-center gap-1">
-                  <Move className="w-3 h-3" />
-                  Arraste para enquadrar
-                </span>
-              )}
-            </div>
+            <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">
+              Banner do Perfil & Chamadas
+            </label>
 
-            {/* Banner Preview Box with Draggable Framing */}
-            {editBannerUrl && !BANNER_PRESETS.some(p => p.value === editBannerUrl) && !editBannerUrl.startsWith('#') ? (
-              <div className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-zinc-700">
-                <DraggableImageCrop
-                  imageUrl={editBannerUrl}
-                  position={editBannerPosition}
-                  onPositionChange={setEditBannerPosition}
-                  isEditing={true}
-                  className="h-28 w-full"
-                  alt="Pré-visualização do banner"
-                />
+            {/* Banner Preview Box */}
+            {editBannerUrl ? (
+              <div className={`h-20 rounded-xl overflow-hidden border border-slate-200 dark:border-zinc-700 relative ${getBannerClass(editBannerUrl)}`} style={getBannerStyle(editBannerUrl)}>
                 <button
                   type="button"
                   onClick={() => {
                     setEditBannerUrl('');
                     setBannerPreview('');
                   }}
-                  className="absolute top-2 right-2 z-30 w-6 h-6 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center cursor-pointer transition-colors shadow-md"
-                  title="Remover banner"
+                  className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 cursor-pointer transition-colors z-10"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             ) : (
-              <div className={`h-20 rounded-xl overflow-hidden border border-slate-200 dark:border-zinc-700 relative ${getBannerClass(editBannerUrl)}`} style={getBannerStyle(editBannerUrl, editBannerPosition)}>
-                {isCompressingBanner && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
-                    <Loader2 className="w-5 h-5 text-white animate-spin" />
-                  </div>
-                )}
-                {editBannerUrl && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditBannerUrl('');
-                      setBannerPreview('');
-                    }}
-                    className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 cursor-pointer transition-colors z-10"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
+              <div className={`h-20 rounded-xl overflow-hidden border border-slate-200 dark:border-zinc-700 relative ${getBannerClass(editBannerUrl)}`} style={getBannerStyle(editBannerUrl)} />
             )}
 
             <div className="flex flex-wrap gap-2 mt-1">
               {BANNER_PRESETS.map(preset => <button key={preset.value} type="button" onClick={() => {
-              setEditBannerUrl(preset.value);
-              setBannerPreview(preset.value);
-            }} title={preset.label} className={`w-8 h-8 rounded-lg ${preset.style} border-2 transition-all cursor-pointer ${editBannerUrl === preset.value ? 'border-blue-500 scale-110 shadow-md' : 'border-transparent hover:border-slate-400'}`} />)}
-              <button type="button" onClick={() => bannerInputRef.current?.click()} className="w-8 h-8 rounded-lg border-2 border-dashed border-slate-300 dark:border-zinc-600 text-slate-400 flex items-center justify-center hover:border-blue-400 hover:text-blue-500 transition-colors cursor-pointer" title="Carregar imagem personalizada">
-                <ImagePlus className="w-4 h-4" />
-              </button>
-              <input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={handleBannerFileChange} />
+                setEditBannerUrl(preset.value);
+                setBannerPreview(preset.value);
+              }} title={preset.label} className={`w-8 h-8 rounded-lg ${preset.style} border-2 transition-all cursor-pointer ${editBannerUrl === preset.value ? 'border-blue-500 scale-110 shadow-md' : 'border-transparent hover:border-slate-400'}`} />)}
             </div>
 
             <div className="flex items-center gap-2 mt-1">
@@ -1080,7 +872,7 @@ export const ProfilePage = () => {
               />
             </div>
             <p className="text-[11px] text-slate-400 dark:text-zinc-500">
-              Escolha uma cor personalizada, gradiente ou carregue uma imagem para o banner. Pode arrastar a imagem acima para escolher o enquadramento.
+              Escolha uma cor personalizada ou gradiente para o banner do perfil.
             </p>
           </div>
 
@@ -1096,7 +888,7 @@ export const ProfilePage = () => {
               <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">
                 Título / Especialidade
               </label>
-              <input type="text" placeholder="ex: Full Stack Developer" value={editHeadline} onChange={e => setEditHeadline(e.target.value)} className="bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl px-3 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition-all placeholder:text-slate-400" />
+              <input type="text" placeholder="ex: Programador Full Stack" value={editHeadline} onChange={e => setEditHeadline(e.target.value)} className="bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl px-3 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition-all placeholder:text-slate-400" />
             </div>
           </div>
 
@@ -1115,7 +907,7 @@ export const ProfilePage = () => {
               <input type="text" placeholder="Lisboa, Portugal" value={editLocation} onChange={e => setEditLocation(e.target.value)} className="bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl px-3 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition-all placeholder:text-slate-400" />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">Website</label>
+              <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">Sítio Web</label>
               <input type="url" placeholder="https://oseusite.pt" value={editWebsite} onChange={e => setEditWebsite(e.target.value)} className="bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl px-3 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition-all placeholder:text-slate-400" />
             </div>
           </div>
@@ -1128,35 +920,11 @@ export const ProfilePage = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div className="flex items-center gap-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl px-3 py-2.5">
                 <Github className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
-                <input type="text" placeholder="GitHub (username)" value={editGithub} onChange={e => setEditGithub(e.target.value)} className="flex-1 bg-transparent text-sm text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 min-w-0" />
+                <input type="text" placeholder="GitHub (utilizador)" value={editGithub} onChange={e => setEditGithub(e.target.value)} className="flex-1 bg-transparent text-sm text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 min-w-0" />
               </div>
               <div className="flex items-center gap-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl px-3 py-2.5">
                 <Linkedin className="w-4 h-4 text-blue-600 shrink-0" />
-                <input type="text" placeholder="LinkedIn (username)" value={editLinkedin} onChange={e => setEditLinkedin(e.target.value)} className="flex-1 bg-transparent text-sm text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 min-w-0" />
-              </div>
-              <div className="flex items-center gap-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl px-3 py-2.5">
-                <Instagram className="w-4 h-4 text-pink-500 shrink-0" />
-                <input type="text" placeholder="Instagram (username)" value={editInstagram} onChange={e => setEditInstagram(e.target.value)} className="flex-1 bg-transparent text-sm text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 min-w-0" />
-              </div>
-              <div className="flex items-center gap-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl px-3 py-2.5">
-                <XIcon className="w-4 h-4 text-slate-900 dark:text-white shrink-0" />
-                <input type="text" placeholder="X / Twitter (username)" value={editTwitter} onChange={e => setEditTwitter(e.target.value)} className="flex-1 bg-transparent text-sm text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 min-w-0" />
-              </div>
-              <div className="flex items-center gap-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl px-3 py-2.5">
-                <Youtube className="w-4 h-4 text-red-600 shrink-0" />
-                <input type="text" placeholder="YouTube (@username)" value={editYoutube} onChange={e => setEditYoutube(e.target.value)} className="flex-1 bg-transparent text-sm text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 min-w-0" />
-              </div>
-              <div className="flex items-center gap-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl px-3 py-2.5">
-                <TikTokIcon className="w-4 h-4 text-slate-900 dark:text-white shrink-0" />
-                <input type="text" placeholder="TikTok (@username)" value={editTiktok} onChange={e => setEditTiktok(e.target.value)} className="flex-1 bg-transparent text-sm text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 min-w-0" />
-              </div>
-              <div className="flex items-center gap-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl px-3 py-2.5">
-                <DiscordIcon className="w-4 h-4 text-indigo-500 shrink-0" />
-                <input type="text" placeholder="Discord (user#tag ou username)" value={editDiscord} onChange={e => setEditDiscord(e.target.value)} className="flex-1 bg-transparent text-sm text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 min-w-0" />
-              </div>
-              <div className="flex items-center gap-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-600 rounded-xl px-3 py-2.5">
-                <Twitch className="w-4 h-4 text-purple-600 shrink-0" />
-                <input type="text" placeholder="Twitch (username)" value={editTwitch} onChange={e => setEditTwitch(e.target.value)} className="flex-1 bg-transparent text-sm text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 min-w-0" />
+                <input type="text" placeholder="LinkedIn (utilizador)" value={editLinkedin} onChange={e => setEditLinkedin(e.target.value)} className="flex-1 bg-transparent text-sm text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 min-w-0" />
               </div>
             </div>
           </div>

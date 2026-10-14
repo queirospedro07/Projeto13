@@ -13,11 +13,11 @@ import { IncomingCallModal } from './components/call/IncomingCallModal';
 import { CallRoomModal } from './components/call/CallRoomModal';
 import { useLocation } from 'react-router-dom';
 
+import { LandingPage } from './pages/LandingPage';
+
 const lazyPage = (loadPage, exportName) => React.lazy(() =>
   loadPage().then((module) => ({ default: module[exportName] }))
 );
-
-const LandingPage = lazyPage(() => import('./pages/LandingPage'), 'LandingPage');
 const Login = lazyPage(() => import('./pages/auth/Login'), 'Login');
 const Register = lazyPage(() => import('./pages/auth/Register'), 'Register');
 const ForgotPassword = lazyPage(() => import('./pages/auth/ForgotPassword'), 'ForgotPassword');

@@ -1,15 +1,14 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link, useParams, useSearchParams } from 'react-router-dom';
-import { Layers, Hash, Volume2, HelpCircle, Plus, Trash2, ArrowRight, ArrowLeft, Check, X, Sparkles, Eye, BookOpen, CheckCircle2, DollarSign, Code2, ChevronDown, ChevronUp, Award, Trophy, Flame, Star, Shield, Palette, Download, Megaphone, Radio, FileBadge, SlidersHorizontal, Lock, Camera, Loader2, FileEdit, Send, FileText, UploadCloud, Paperclip, Move } from 'lucide-react';
+import { Layers, Hash, Volume2, HelpCircle, Plus, Trash2, ArrowRight, ArrowLeft, Check, X, Sparkles, Eye, BookOpen, CheckCircle2, DollarSign, ChevronDown, ChevronUp, Award, Trophy, Flame, Star, Shield, Palette, Download, Megaphone, Radio, FileBadge, SlidersHorizontal, Lock, Camera, Loader2, FileEdit, Send, FileText, UploadCloud, Paperclip, Move } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
-import { DraggableImageCrop } from '../../../components/ui/DraggableImageCrop';
 import { Select } from '../../../components/ui/Select';
 import { useToast } from '../../../components/ui/Toast';
 import { useAuth } from '../../../context/AuthContext';
 import { soundEffects } from '../../../services/soundEffects';
 import { api } from '../../../services/api';
-import { formatCoursePrice } from '../../../utils/formatters';
+import { formatCoursePrice, formatCategory } from '../../../utils/formatters';
 export const QuizLessonEditor = ({
   quiz,
   onChange
@@ -163,7 +162,7 @@ export const QuizLessonEditor = ({
   };
   return <div className="p-4 rounded-lg bg-slate-50 dark:bg-[#12141c] border border-slate-200 dark:border-[#242838] flex flex-col gap-4 text-xs">
       
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-xl bg-white dark:bg-[#181a24] border border-slate-200 dark:border-[#2b3044]">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-xl bg-white dark:bg-[#181a24] border border-slate-200 dark:border-[#2b3044]">
         <div className="flex flex-col gap-1">
           <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-300">
             Título do Questionário
@@ -176,13 +175,7 @@ export const QuizLessonEditor = ({
           </label>
           <input type="number" min={0} max={100} value={currentQuiz.passingScore} onChange={e => handleUpdateField('passingScore', Number(e.target.value) || 0)} className="px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-[#12141c] border border-slate-200 dark:border-[#2b3044] text-slate-900 dark:text-zinc-100 text-xs focus:outline-none" />
         </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-300">
-            Recompensa (XP)
-          </label>
-          <input type="number" min={0} value={currentQuiz.xpReward} onChange={e => handleUpdateField('xpReward', Number(e.target.value) || 0)} className="px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-[#12141c] border border-slate-200 dark:border-[#2b3044] text-slate-900 dark:text-zinc-100 text-xs focus:outline-none" />
-        </div>
-        <div className="sm:col-span-3 flex flex-col gap-1">
+        <div className="sm:col-span-2 flex flex-col gap-1">
           <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-300">
             Instruções aos Alunos
           </label>
@@ -375,13 +368,13 @@ export const CourseBuilder = () => {
   } = useToast();
   const initialStepParam = Number(searchParams.get('step'));
   const [activeStep, setActiveStep] = useState(
-    initialStepParam >= 1 && initialStepParam <= 4 ? initialStepParam : (isEditMode ? 3 : 1)
+    initialStepParam >= 1 && initialStepParam <= 4 ? initialStepParam : 1
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPublished, setIsPublished] = useState(true);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('programming');
+  const [category, setCategory] = useState('Programação & Software');
   const [difficulty, setDifficulty] = useState('Iniciante');
   const [language, setLanguage] = useState('Português');
   const [isFree, setIsFree] = useState(true);
@@ -391,7 +384,6 @@ export const CourseBuilder = () => {
   const [couponCode, setCouponCode] = useState('');
   const [durationHours, setDurationHours] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
-  const [thumbnailPosition, setThumbnailPosition] = useState('50% 50%');
   const [isCompressingThumb, setIsCompressingThumb] = useState(false);
   const thumbnailInputRef = useRef(null);
 
@@ -434,35 +426,7 @@ export const CourseBuilder = () => {
   }]);
   const [expandedChannelIds, setExpandedChannelIds] = useState(new Set());
   const [collapsedModuleIds, setCollapsedModuleIds] = useState(new Set());
-  const [customRoles, setCustomRoles] = useState([{
-    id: 'role-instructor',
-    name: 'Instrutor',
-    color: 'indigo',
-    canPostAnnouncements: true,
-    canSpeakInStage: true,
-    canShareScreen: true,
-    canModerateChat: true,
-    canManageVoice: true,
-    isSystem: true
-  }, {
-    id: 'role-student',
-    name: 'Estudante',
-    color: 'zinc',
-    canPostAnnouncements: false,
-    canSpeakInStage: false,
-    canShareScreen: true,
-    canModerateChat: false,
-    canManageVoice: false,
-    isSystem: true
-  }]);
-  const [showNewRoleModal, setShowNewRoleModal] = useState(false);
-  const [newRoleName, setNewRoleName] = useState('');
-  const [newRoleColor, setNewRoleColor] = useState('indigo');
-  const [newRoleAnnouncements, setNewRoleAnnouncements] = useState(false);
-  const [newRoleSpeakStage, setNewRoleSpeakStage] = useState(true);
-  const [newRoleShareScreen, setNewRoleShareScreen] = useState(true);
-  const [newRoleModerateChat, setNewRoleModerateChat] = useState(false);
-  const [newRoleManageVoice, setNewRoleManageVoice] = useState(false);
+
   const [modules, setModules] = useState([]);
   const [isLoadingCourse, setIsLoadingCourse] = useState(isEditMode);
 
@@ -567,40 +531,43 @@ export const CourseBuilder = () => {
       .then(course => {
         if (!isMounted || !course) return;
 
-        // Strict Ownership Check: Formador só pode editar os seus cursos
-        if (user && user.role !== 'ADMIN' && course.creatorId && course.creatorId !== user.id) {
-          toast({
-            title: 'Acesso Negado',
-            message: 'Apenas tem autorização para editar os cursos criados por si.',
-            type: 'error'
-          });
-          navigate('/creator');
-          return;
-        }
-
         setTitle(course.title || '');
         setDescription(course.description || '');
-        setCategory(course.category || 'programming');
+        
+        const catMap = {
+          'programming': 'Programação & Software',
+          'programação': 'Programação & Software',
+          'design': 'Design & Criatividade',
+          'business': 'Negócios & Gestão',
+          'marketing': 'Marketing & Vendas',
+          'languages': 'Línguas & Idiomas',
+          'finance': 'Finanças & Economia',
+          'health': 'Saúde & Bem-Estar',
+          'personal-development': 'Desenvolvimento Pessoal'
+        };
+        const rawCat = course.category || '';
+        const mappedCat = catMap[rawCat.toLowerCase()] || rawCat || 'Programação & Software';
+        setCategory(mappedCat);
+
         setDifficulty(course.difficulty || 'Iniciante');
         setLanguage(course.language || 'Português');
         setIsFree(course.isFree !== undefined ? !!course.isFree : true);
-        setPrice(course.price ? String(course.price) : '');
-        setDurationHours(course.durationHours ? String(course.durationHours) : '');
+        setPrice(course.price !== undefined && course.price !== null && Number(course.price) > 0 ? String(course.price) : '');
+        setDurationHours(course.durationHours !== undefined && course.durationHours !== null ? String(course.durationHours) : '');
         setThumbnailUrl(course.thumbnailUrl || '');
-        setThumbnailPosition(course.thumbnailPosition || course.bannerPosition || '50% 50%');
         setBrandColor(course.brandColor || 'indigo');
         setIsPublished(course.isPublished !== undefined ? !!course.isPublished : true);
         setDefaultCallMode(course.defaultCallMode || 'open');
         setAllowStudentScreenShare(course.allowStudentScreenShare !== undefined ? !!course.allowStudentScreenShare : true);
         setAllowStudentCamera(course.allowStudentCamera !== undefined ? !!course.allowStudentCamera : true);
         
-        if (Array.isArray(course.learningOutcomes) && course.learningOutcomes.length > 0) {
-          setLearningOutcomes(course.learningOutcomes);
+        if (Array.isArray(course.learningOutcomes)) {
+          setLearningOutcomes(course.learningOutcomes.length > 0 ? course.learningOutcomes : ['']);
         }
-        if (Array.isArray(course.requirements) && course.requirements.length > 0) {
-          setRequirements(course.requirements);
+        if (Array.isArray(course.requirements)) {
+          setRequirements(course.requirements.length > 0 ? course.requirements : ['']);
         }
-        if (Array.isArray(course.documents) && course.documents.length > 0) {
+        if (Array.isArray(course.documents)) {
           setDocuments(course.documents);
         }
 
@@ -622,8 +589,7 @@ export const CourseBuilder = () => {
             id: m.id,
             title: m.title,
             description: m.description || '',
-            dripMode: m.dripMode || 'instant',
-            dripDays: m.dripDays || 0,
+            dripMode: m.dripMode === 'sequential' ? 'sequential' : 'instant',
             lessons: Array.isArray(m.lessons) ? m.lessons.map(l => ({
               id: l.id,
               title: l.title,
@@ -633,15 +599,12 @@ export const CourseBuilder = () => {
               durationMin: l.durationMin || 15,
               xpReward: l.xpReward || 25,
               quiz: l.quiz || null,
-              richArticle: l.richArticle || null,
-              codeChallenge: l.codeChallenge || null
+              richArticle: l.richArticle || null
             })) : []
           })));
         }
 
-        if (Array.isArray(course.customRoles) && course.customRoles.length > 0) {
-          setCustomRoles(course.customRoles);
-        }
+
       })
       .catch(err => {
         toast({
@@ -711,37 +674,7 @@ export const CourseBuilder = () => {
     }
     setChannels(prev => prev.filter(c => c.id !== id));
   };
-  const handleCreateCustomRole = e => {
-    e.preventDefault();
-    if (!newRoleName.trim()) return;
-    const newRole = {
-      id: `role-${Date.now()}`,
-      name: newRoleName.trim(),
-      color: newRoleColor,
-      canPostAnnouncements: newRoleAnnouncements,
-      canSpeakInStage: newRoleSpeakStage,
-      canShareScreen: newRoleShareScreen,
-      canModerateChat: newRoleModerateChat,
-      canManageVoice: newRoleManageVoice,
-      isSystem: false
-    };
-    setCustomRoles(prev => [...prev, newRole]);
-    setNewRoleName('');
-    setShowNewRoleModal(false);
-    toast({
-      title: 'Cargo Criado',
-      message: `O cargo "${newRole.name}" foi adicionado com sucesso.`,
-      type: 'success'
-    });
-  };
-  const handleRemoveRole = roleId => {
-    setCustomRoles(prev => prev.filter(r => r.id !== roleId));
-    toast({
-      title: 'Cargo Removido',
-      message: 'O cargo foi removido da configuração do curso.',
-      type: 'info'
-    });
-  };
+
   const handleAddModule = () => {
     soundEffects.play('click');
     const newMod = {
@@ -749,7 +682,6 @@ export const CourseBuilder = () => {
       title: `Módulo ${modules.length + 1}`,
       description: '',
       dripMode: 'instant',
-      dripDays: 0,
       lessons: []
     };
     setModules(prev => [...prev, newMod]);
@@ -813,14 +745,6 @@ export const CourseBuilder = () => {
       };
       if (lessonType === 'video') {
         newLes.videoChapters = [];
-      } else if (lessonType === 'code') {
-        newLes.codeChallenge = {
-          language: 'javascript',
-          initialCode: '',
-          solutionCode: '',
-          instructions: '',
-          hints: []
-        };
       } else if (lessonType === 'text') {
         newLes.richArticle = {
           markdown: '',
@@ -955,8 +879,6 @@ export const CourseBuilder = () => {
         couponCode: couponCode.trim(),
         durationHours: Number(durationHours || 0),
         thumbnailUrl: thumbnailUrl.trim(),
-        thumbnailPosition: thumbnailPosition || '50% 50%',
-        bannerPosition: thumbnailPosition || '50% 50%',
         brandColor,
         defaultCallMode,
         allowStudentScreenShare,
@@ -978,7 +900,6 @@ export const CourseBuilder = () => {
           hasQrCode: certificateHasQrCode
         },
         channels,
-        customRoles,
         modules
       };
       let resultId;
@@ -989,21 +910,18 @@ export const CourseBuilder = () => {
         const result = await api.createCourse(payload);
         resultId = result.id || result.slug;
       }
-      const isAdmin = user?.role === 'ADMIN';
       toast({
-        title: isAdmin 
-          ? (isEditMode ? 'Curso Atualizado!' : 'Curso Publicado!') 
-          : 'Curso Submetido para Aprovação!',
-        message: isAdmin 
-          ? (isEditMode ? 'As alterações foram guardadas e publicadas com sucesso.' : 'O curso está agora visível para os estudantes no catálogo.') 
-          : 'O seu curso foi enviado para a moderação da administração NEXO. Assim que for aprovado, ficará imediatamente acessível a todos os utilizadores.',
+        title: isEditMode ? 'Curso Atualizado!' : 'Curso Publicado!',
+        message: isEditMode 
+          ? 'As alterações foram guardadas e publicadas com sucesso.' 
+          : 'O curso foi criado e publicado com sucesso no catálogo.',
         type: 'success'
       });
       navigate('/creator');
     } catch (err) {
       toast({
-        title: 'Erro ao Submeter Curso',
-        message: err.message || 'Não foi possível submeter o curso.',
+        title: isEditMode ? 'Erro ao Guardar Curso' : 'Erro ao Publicar Curso',
+        message: err.message || (isEditMode ? 'Não foi possível guardar as alterações.' : 'Não foi possível publicar o curso.'),
         type: 'error'
       });
     } finally {
@@ -1026,24 +944,7 @@ export const CourseBuilder = () => {
         return <Award className={className} />;
     }
   };
-  const getRoleBadgeClasses = color => {
-    switch (color) {
-      case 'emerald':
-        return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20';
-      case 'amber':
-        return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
-      case 'purple':
-        return 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20';
-      case 'cyan':
-        return 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20';
-      case 'rose':
-        return 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20';
-      case 'zinc':
-        return 'bg-slate-500/10 text-slate-600 dark:text-zinc-400 border-slate-500/20';
-      default:
-        return 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20';
-    }
-  };
+
 
   if (isLoadingCourse) {
     return (
@@ -1079,7 +980,7 @@ export const CourseBuilder = () => {
 
           <div className="flex items-center gap-2 self-stretch sm:self-auto justify-end shrink-0">
             <Button variant="primary" size="sm" leftIcon={<Send className="w-4 h-4" />} isLoading={isSubmitting} onClick={() => handlePublish(true)} className="font-black rounded-xl text-xs bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/25 cursor-pointer px-4 sm:px-5 py-2.5">
-              <span>{user?.role === 'ADMIN' ? (isEditMode ? 'Publicar Alterações' : 'Publicar Curso') : (isEditMode ? 'Guardar & Submeter' : 'Submeter para Aprovação')}</span>
+              <span>{isEditMode ? 'Guardar Alterações' : 'Publicar Curso'}</span>
             </Button>
           </div>
         </div>
@@ -1206,13 +1107,10 @@ export const CourseBuilder = () => {
                           <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
                         </div>
                       ) : (
-                        <DraggableImageCrop
-                          imageUrl={thumbnailUrl}
-                          position={thumbnailPosition}
-                          onPositionChange={setThumbnailPosition}
-                          isEditing={true}
-                          className="w-full h-full"
+                        <img
+                          src={thumbnailUrl}
                           alt="Capa do curso"
+                          className="w-full h-full object-cover"
                         />
                       )}
                       <button
@@ -1338,9 +1236,6 @@ export const CourseBuilder = () => {
                       Medalha de Conclusão
                     </h3>
                   </div>
-                  <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 text-[10px] font-bold border border-amber-500/20">
-                    +{courseCompletionXp} XP
-                  </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -1385,13 +1280,13 @@ export const CourseBuilder = () => {
                     <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-400">
                       Instituição / Academia
                     </label>
-                    <input type="text" value={certificateOrg} onChange={e => setCertificateOrg(e.target.value)} placeholder="LearnSpace Academy" className="w-full bg-white dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none" />
+                    <input type="text" value={certificateOrg} onChange={e => setCertificateOrg(e.target.value)} placeholder="Academia NEXO" className="w-full bg-white dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none" />
                   </div>
                 </div>
               </Card>
             </div>
 
-            {/* ── Competências & O que vai aprender ── */}
+            {/* Competências & O que vai aprender */}
             <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-xl flex flex-col gap-5 shadow-xs transition-colors">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200 dark:border-[#222636]">
                 <div>
@@ -1443,7 +1338,7 @@ export const CourseBuilder = () => {
               </div>
             </Card>
 
-            {/* ── Requisitos e Pré-requisitos ── */}
+            {/* Requisitos e Pré-requisitos */}
             <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-xl flex flex-col gap-5 shadow-xs transition-colors">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200 dark:border-[#222636]">
                 <div>
@@ -1495,7 +1390,7 @@ export const CourseBuilder = () => {
               </div>
             </Card>
 
-            {/* ── Documentos e Ficheiros de Apoio (PDFs, Materiais) ── */}
+            {/* Documentos e Ficheiros de Apoio (PDFs, Materiais) */}
             <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-xl flex flex-col gap-5 shadow-xs transition-colors">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200 dark:border-[#222636]">
                 <div>
@@ -1609,11 +1504,6 @@ export const CourseBuilder = () => {
               <button type="button" onClick={() => setStep2SubTab('calls')} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${step2SubTab === 'calls' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'}`}>
                 <Volume2 className="w-4 h-4" />
                 <span>Regras de Chamadas ao Vivo</span>
-              </button>
-
-              <button type="button" onClick={() => setStep2SubTab('roles')} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${step2SubTab === 'roles' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'}`}>
-                <Shield className="w-4 h-4" />
-                <span>Cargos & Permissões ({customRoles.length})</span>
               </button>
             </div>
 
@@ -1815,68 +1705,7 @@ export const CourseBuilder = () => {
               </Card>}
 
             
-            {step2SubTab === 'roles' && <Card className="p-6 bg-white dark:bg-[#151720] border-slate-200 dark:border-[#222636] rounded-xl flex flex-col gap-6 shadow-xs transition-colors">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-[#222636]">
-                  <div>
-                    <h2 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
-                      <Shield className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                      Cargos & Regras de Permissões da Turma
-                    </h2>
-                    <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
-                      Crie regras personalizadas e atribua cargos específicos aos membros para
-                      controlar quem fala no palco, modera e publica comunicados.
-                    </p>
-                  </div>
 
-                  <Button size="sm" variant="primary" onClick={() => setShowNewRoleModal(true)} leftIcon={<Plus className="w-4 h-4" />} className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs cursor-pointer shadow-sm">
-                    + Criar Cargo Personalizado
-                  </Button>
-                </div>
-
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {customRoles.map(r => <div key={r.id} className="p-4 rounded-lg bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col justify-between gap-3 transition-colors">
-                      <div>
-                        <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-[#252a3b]">
-                          <div className="flex items-center gap-2">
-                            <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${getRoleBadgeClasses(r.color)}`}>
-                              {r.name}
-                            </span>
-                            {r.isSystem && <span className="text-[10px] text-slate-400 font-medium">
-                                (Padrão)
-                              </span>}
-                          </div>
-
-                          {!r.isSystem && <button type="button" onClick={() => handleRemoveRole(r.id)} className="p-1 rounded-md text-red-500 hover:bg-red-500/10 cursor-pointer" title="Remover cargo">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>}
-                        </div>
-
-                        
-                        <div className="flex flex-wrap gap-1.5 mt-3 text-[10px] font-bold">
-                          {r.canPostAnnouncements && <span className="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
-                              Publicar em Informativos
-                            </span>}
-                          {r.canSpeakInStage && <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                              Falar no Palco Livremente
-                            </span>}
-                          {r.canShareScreen && <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                              Partilhar Ecrã
-                            </span>}
-                          {r.canManageVoice && <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                              Gerir Chamadas & Palco
-                            </span>}
-                          {r.canModerateChat && <span className="px-2 py-0.5 rounded bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
-                              Moderar Conversas
-                            </span>}
-                          {!r.canPostAnnouncements && !r.canSpeakInStage && !r.canManageVoice && !r.canModerateChat && <span className="px-2 py-0.5 rounded bg-slate-200 dark:bg-[#252a3b] text-slate-600 dark:text-zinc-400">
-                                Acesso Padrão de Estudante
-                              </span>}
-                        </div>
-                      </div>
-                    </div>)}
-                </div>
-              </Card>}
 
             
             <div className="flex justify-between pt-4">
@@ -1989,14 +1818,13 @@ export const CourseBuilder = () => {
                         <ChevronDown className="w-4 h-4" />
                       </button>
                       <Select
-                        value={mod.dripMode || 'instant'}
+                        value={mod.dripMode === 'sequential' ? 'sequential' : 'instant'}
                         onChange={e => handleUpdateModule(mod.id, 'dripMode', e.target.value)}
                         className="bg-white dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-lg px-2 py-1 text-xs text-slate-700 dark:text-zinc-300 font-bold cursor-pointer"
                         title="Regra de desbloqueio"
                       >
                         <option value="instant">Imediato</option>
                         <option value="sequential">Sequencial</option>
-                        <option value="drip">Drip (Dias)</option>
                       </Select>
                       <button
                         type="button"
@@ -2056,7 +1884,6 @@ export const CourseBuilder = () => {
                             >
                               <option value="video">Vídeo</option>
                               <option value="text">Artigo</option>
-                              <option value="code">Código</option>
                               <option value="quiz">Questionário</option>
                               <option value="resource">Recursos</option>
                             </Select>
@@ -2091,36 +1918,6 @@ export const CourseBuilder = () => {
                               />
                               <span className="text-[11px] text-slate-400">min</span>
                             </div>
-                          </div>
-                        )}
-
-                        {les.type === 'code' && (
-                          <div className="p-3 rounded-xl bg-white dark:bg-[#141620] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-2">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                                <Code2 className="w-3.5 h-3.5" />
-                                Sandbox de Código ({les.codeChallenge?.language || 'javascript'})
-                              </span>
-                            </div>
-                            <textarea
-                              value={les.codeChallenge?.initialCode || ''}
-                              onChange={e => {
-                                const curr = les.codeChallenge || {
-                                  language: 'javascript',
-                                  initialCode: '',
-                                  solutionCode: '',
-                                  instructions: '',
-                                  hints: []
-                                };
-                                handleUpdateLesson(mod.id, les.id, 'codeChallenge', {
-                                  ...curr,
-                                  initialCode: e.target.value
-                                });
-                              }}
-                              rows={3}
-                              className="bg-slate-50 dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-lg p-2.5 font-mono text-xs text-emerald-600 dark:text-emerald-300 focus:outline-none resize-none"
-                              placeholder="// Código inicial para os alunos (opcional)..."
-                            />
                           </div>
                         )}
 
@@ -2194,13 +1991,6 @@ export const CourseBuilder = () => {
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleAddLesson(mod.id, 'code')}
-                        className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-[#181a24] hover:bg-slate-200 dark:hover:bg-[#222638] text-emerald-600 dark:text-emerald-300 border border-slate-200 dark:border-[#262a3b] text-xs font-bold cursor-pointer transition-colors"
-                      >
-                        + Código
-                      </button>
-                      <button
-                        type="button"
                         onClick={() => handleAddLesson(mod.id, 'quiz')}
                         className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-[#181a24] hover:bg-slate-200 dark:hover:bg-[#222638] text-amber-600 dark:text-amber-300 border border-slate-200 dark:border-[#262a3b] text-xs font-bold cursor-pointer transition-colors"
                       >
@@ -2257,7 +2047,7 @@ export const CourseBuilder = () => {
                     Revisão e Lançamento do Curso
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
-                    Verifique os parâmetros configurados antes de submeter para a plataforma.
+                    Verifique os parâmetros configurados antes de publicar na plataforma.
                   </p>
                 </div>
                 <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-xs border border-emerald-500/20">
@@ -2329,13 +2119,13 @@ export const CourseBuilder = () => {
 
                 <div className="p-4 rounded-lg bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-1">
                   <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400">
-                    Cargos Turma
+                    Acesso Turma
                   </span>
                   <p className="text-base font-black text-slate-900 dark:text-white">
-                    {customRoles.length} Cargos
+                    Colaborativo
                   </p>
                   <p className="text-[11px] text-amber-600 dark:text-amber-400 font-bold">
-                    Configurados
+                    Formador & Colaboradores
                   </p>
                 </div>
               </div>
@@ -2354,7 +2144,7 @@ export const CourseBuilder = () => {
                   </p>
                   <div className="flex flex-wrap items-center gap-2 mt-2">
                     <span className="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold border border-indigo-500/20">
-                      {category}
+                      {formatCategory(category)}
                     </span>
                     <span className="px-2 py-0.5 rounded bg-slate-200 dark:bg-[#252a3b] text-slate-700 dark:text-zinc-300 text-[10px] font-bold">
                       {difficulty}
@@ -2386,7 +2176,7 @@ export const CourseBuilder = () => {
                 </Button>
 
                 <Button variant="primary" size="lg" isLoading={isSubmitting} onClick={() => handlePublish(true)} leftIcon={<Check className="w-5 h-5" />} className="bg-indigo-600 hover:bg-indigo-500 text-white font-black px-8 py-3.5 rounded-lg shadow-xl shadow-indigo-600/30 cursor-pointer">
-                  {user?.role === 'ADMIN' ? 'Confirmar & Publicar Curso' : 'Submeter Curso para Validação'}
+                  {isEditMode ? 'Guardar Alterações' : 'Confirmar & Publicar Curso'}
                 </Button>
               </div>
             </Card>
@@ -2396,114 +2186,5 @@ export const CourseBuilder = () => {
       
       
       
-      {/* Modal Criar Cargo Personalizado */}
-      {showNewRoleModal && <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white dark:bg-[#151720] border border-slate-200 dark:border-[#222636] rounded-xl max-w-lg w-full p-6 shadow-2xl flex flex-col gap-5 text-slate-900 dark:text-white transition-colors">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-[#222636]">
-              <div className="flex items-center gap-2 font-black text-base">
-                <Shield className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                <span>Criar Novo Cargo & Regras</span>
-              </div>
-              <button onClick={() => setShowNewRoleModal(false)} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateCustomRole} className="flex flex-col gap-4 text-xs">
-              <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">
-                  Nome do Cargo *
-                </label>
-                <input type="text" required value={newRoleName} onChange={e => setNewRoleName(e.target.value)} placeholder="ex: Co-Instrutor, Monitor Técnico, Líder de Grupo" className="w-full mt-1 bg-slate-50 dark:bg-[#181a24] border border-slate-300 dark:border-[#2b3044] rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none" />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">
-                  Cor do Cargo
-                </label>
-                <div className="flex items-center gap-2 mt-1.5">
-                  {['indigo', 'emerald', 'amber', 'purple', 'cyan', 'rose', 'zinc'].map(color => <button key={color} type="button" onClick={() => setNewRoleColor(color)} className={`w-7 h-7 rounded-full border-2 cursor-pointer transition-all flex items-center justify-center ${newRoleColor === color ? 'border-slate-900 dark:border-white scale-110' : 'border-transparent'} ${color === 'indigo' ? 'bg-indigo-600' : color === 'emerald' ? 'bg-emerald-500' : color === 'amber' ? 'bg-amber-500' : color === 'purple' ? 'bg-purple-600' : color === 'cyan' ? 'bg-cyan-500' : color === 'rose' ? 'bg-rose-500' : 'bg-slate-500'}`}>
-                      {newRoleColor === color && <Check className="w-3.5 h-3.5 text-white" />}
-                    </button>)}
-                </div>
-              </div>
-
-              <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-[#181a24] border border-slate-200 dark:border-[#282d3e] flex flex-col gap-2.5">
-                <span className="font-bold text-slate-900 dark:text-white">
-                  Permissões Especiais:
-                </span>
-
-                <label className="flex items-center gap-2.5 cursor-pointer">
-                  <input type="checkbox" checked={newRoleAnnouncements} onChange={e => setNewRoleAnnouncements(e.target.checked)} className="rounded text-indigo-600" />
-                  <div>
-                    <span className="font-bold text-slate-800 dark:text-zinc-200">
-                      Publicar em Canais Informativos
-                    </span>
-                    <p className="text-[10px] text-slate-500 dark:text-zinc-400">
-                      Pode emitir avisos oficiais em canais de apenas leitura.
-                    </p>
-                  </div>
-                </label>
-
-                <label className="flex items-center gap-2.5 cursor-pointer">
-                  <input type="checkbox" checked={newRoleSpeakStage} onChange={e => setNewRoleSpeakStage(e.target.checked)} className="rounded text-indigo-600" />
-                  <div>
-                    <span className="font-bold text-slate-800 dark:text-zinc-200">
-                      Falar no Palco sem Pedir Palavra
-                    </span>
-                    <p className="text-[10px] text-slate-500 dark:text-zinc-400">
-                      Em salas no Modo Palco, entra com permissão ativa de microfone.
-                    </p>
-                  </div>
-                </label>
-
-                <label className="flex items-center gap-2.5 cursor-pointer">
-                  <input type="checkbox" checked={newRoleShareScreen} onChange={e => setNewRoleShareScreen(e.target.checked)} className="rounded text-indigo-600" />
-                  <div>
-                    <span className="font-bold text-slate-800 dark:text-zinc-200">
-                      Partilhar Ecrã nas Sessões ao Vivo
-                    </span>
-                    <p className="text-[10px] text-slate-500 dark:text-zinc-400">
-                      Pode partilhar janela ou ecrã inteiro com a turma.
-                    </p>
-                  </div>
-                </label>
-
-                <label className="flex items-center gap-2.5 cursor-pointer">
-                  <input type="checkbox" checked={newRoleManageVoice} onChange={e => setNewRoleManageVoice(e.target.checked)} className="rounded text-indigo-600" />
-                  <div>
-                    <span className="font-bold text-slate-800 dark:text-zinc-200">
-                      Gerir Chamadas e Pedidos de Palco
-                    </span>
-                    <p className="text-[10px] text-slate-500 dark:text-zinc-400">
-                      Pode silenciar outros participantes e autorizar oradores.
-                    </p>
-                  </div>
-                </label>
-
-                <label className="flex items-center gap-2.5 cursor-pointer">
-                  <input type="checkbox" checked={newRoleModerateChat} onChange={e => setNewRoleModerateChat(e.target.checked)} className="rounded text-indigo-600" />
-                  <div>
-                    <span className="font-bold text-slate-800 dark:text-zinc-200">
-                      Moderar Mensagens do Chat
-                    </span>
-                    <p className="text-[10px] text-slate-500 dark:text-zinc-400">
-                      Pode fixar anúncios e eliminar mensagens impróprias.
-                    </p>
-                  </div>
-                </label>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-[#222636]">
-                <Button type="button" variant="secondary" onClick={() => setShowNewRoleModal(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit" variant="primary" className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold">
-                  Criar Cargo
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>}
     </div>;
 };

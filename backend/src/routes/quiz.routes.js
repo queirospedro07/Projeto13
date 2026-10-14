@@ -1,4 +1,4 @@
-﻿import { Router } from 'express';
+import { Router } from 'express';
 import { queryAll, queryOne, execute, transaction } from '../database/connection.js';
 import { authenticate } from '../middleware/auth.js';
 const router = Router();
@@ -49,7 +49,8 @@ router.post('/:quizId/submit', authenticate, async (req, res) => {
     } = req.params;
     const {
       answers
-    } = req.body;
+    } = req.body || {};
+    const safeAnswers = answers && typeof answers === 'object' ? answers : {};
     const userId = req.user.id;
     const now = new Date().toISOString();
     const quiz = queryOne('SELECT * FROM quizzes WHERE id = ?', [quizId]);
@@ -62,9 +63,13 @@ router.post('/:quizId/submit', authenticate, async (req, res) => {
     let correctCount = 0;
     const results = [];
     for (const q of questions) {
-      const selectedOptionId = answers[q.id];
+      const selectedOptionId = safeAnswers[q.id];
       const correctOptionId = `opt-${q.correctOptionIndex}`;
-      const isCorrect = selectedOptionId === correctOptionId;
+      const altCorrectOptionId = `opt-${q.id}-${q.correctOptionIndex}`;
+      const isCorrect =
+        selectedOptionId === correctOptionId ||
+        selectedOptionId === altCorrectOptionId ||
+        String(selectedOptionId) === String(q.correctOptionIndex);
       if (isCorrect) correctCount++;
       results.push({
         questionId: q.id,
@@ -78,16 +83,14 @@ router.post('/:quizId/submit', authenticate, async (req, res) => {
     const totalQuestions = questions.length;
     const score = totalQuestions > 0 ? Math.round(correctCount / totalQuestions * 100) : 100;
     const passed = score >= quiz.passingScore;
-    const xpEarned = passed ? quiz.xpReward : 10;
+    const alreadyPassed = Boolean(queryOne('SELECT id FROM quiz_attempts WHERE quizId = ? AND userId = ? AND passed = 1 LIMIT 1', [quiz.id, userId]));
+    const alreadyAttempted = Boolean(queryOne('SELECT id FROM quiz_attempts WHERE quizId = ? AND userId = ? LIMIT 1', [quiz.id, userId]));
     transaction(() => {
       execute(`INSERT INTO quiz_attempts (id, quizId, userId, score, passed, attemptedAt) VALUES (?, ?, ?, ?, ?, ?)`, [`att-${Date.now()}`, quiz.id, userId, score, passed ? 1 : 0, now]);
-      execute('UPDATE users SET xp = xp + ? WHERE id = ?', [xpEarned, userId]);
-      execute(`INSERT INTO xp_transactions (id, userId, amount, action, description, createdAt) VALUES (?, ?, ?, 'quiz_complete', ?, ?)`, [`xp-${Date.now()}`, userId, xpEarned, `Questionário: ${quiz.title} (${score}%)`, now]);
     });
     return res.json({
       score,
       passed,
-      xpEarned,
       results
     });
   } catch (err) {

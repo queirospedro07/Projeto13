@@ -129,17 +129,17 @@ export const LessonVideoPlayer = ({
       </div>
 
       
-      <div className="flex items-center justify-between p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
+      <div className="flex items-center justify-between p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#12141c] border border-slate-200/80 dark:border-[#222636] shadow-xs">
         <div>
-          <h2 className="text-base sm:text-lg font-bold text-slate-950 tracking-tight">{title}</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <h2 className="text-base sm:text-lg font-bold text-slate-950 dark:text-white tracking-tight">{title}</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Duração estimada: {durationMin} minutos
           </p>
         </div>
 
-        {onMarkComplete && <button onClick={onMarkComplete} className={`px-5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${isCompleted ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/80 shadow-2xs' : 'bg-slate-950 text-white hover:bg-slate-800 shadow-xs'}`}>
+        {onMarkComplete && <button onClick={onMarkComplete} className={`px-5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${isCompleted ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800 shadow-2xs' : 'bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200 shadow-xs'}`}>
             {isCompleted ? <>
-                <Check className="w-4 h-4 text-emerald-600" />
+                <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span>Aula Concluída</span>
               </> : <>
                 <Check className="w-4 h-4" />

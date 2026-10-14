@@ -60,7 +60,7 @@ const FALLBACK_FAQ = [
       },
       {
         q: 'A plataforma suporta múltiplos perfis de acesso?',
-        a: 'Sim. O NEXO disponibiliza quatro níveis de acesso bem definidos: Aluno (estudo, questionários e certificações oficiais), Formador (criação e gestão de cursos no estúdio pedagógico), Sub-Administrador (moderação global de comunidades e aprovação de cursos) e Administrador Principal (gestão total de infraestruturas e utilizadores).'
+        a: 'Sim. O NEXO disponibiliza perfis de acesso dedicados: Aluno (estudo, questionários e certificações oficiais), Formador e Colaborador (criação e gestão de cursos no estúdio pedagógico) e Administrador Principal (gestão total de infraestruturas e utilizadores).'
       },
       {
         q: 'Como recupero o acesso se esquecer a minha palavra-passe?',
@@ -113,10 +113,6 @@ const FALLBACK_FAQ = [
       {
         q: 'O que acontece se não atingir a nota mínima num questionário?',
         a: 'Pode rever os conteúdos da aula e repetir o questionário. O sistema registará a sua melhor pontuação para efeitos de cálculo de média e desbloqueio do certificado de conclusão.'
-      },
-      {
-        q: 'Quantos pontos de XP ganho ao superar um questionário?',
-        a: 'Superar com sucesso um questionário atribui entre 50 a 100 pontos de XP adicionais, acelerando a subida de nível do estudante e a sua progressão na tabela de classificação.'
       }
     ]
   },
@@ -130,11 +126,11 @@ const FALLBACK_FAQ = [
       },
       {
         q: 'Como é validada a autenticidade do certificado por entidades externas?',
-        a: 'Cada certificado emitido pela NEXO recebe um código de credencial exclusivo e imutável (ex: LS-CERT-XXXXXX). Qualquer entidade empregadora, universidade ou parceiro pode consultar e validar a autenticidade em tempo real na página de verificação de diplomas (/certificates/verify/:id).'
+        a: 'Cada certificado emitido pela NEXO recebe um código de credencial exclusivo e imutável (ex: NEXO-XXXXXX). Qualquer entidade empregadora, universidade ou parceiro pode consultar e validar a autenticidade em tempo real na página de verificação de diplomas (/certificates/verify/:id).'
       },
       {
         q: 'Como posso descarregar o certificado em PDF ou partilhá-lo no LinkedIn?',
-        a: 'Na secção "Os Meus Certificados" (/certificates), clique em "Ver Certificado". Terá à disposição o botão "Imprimir / Guardar em PDF" para descarregar o diploma em alta resolução vetorial e o botão "Partilhar no LinkedIn", que preenche diretamente o nome da formação, entidade emissora e hash da credencial.'
+        a: 'Na secção "Certificados" da Minha Biblioteca (/library), clique em "Ver Certificado". Terá à disposição o botão "Imprimir / Guardar em PDF" para descarregar o diploma em alta resolução vetorial e o botão "Partilhar no LinkedIn", que preenche diretamente o nome da formação, entidade emissora e hash da credencial.'
       },
       {
         q: 'Os certificados têm prazo de validade?',
@@ -185,24 +181,6 @@ const FALLBACK_FAQ = [
         a: 'No Estúdio do Formador, ao criar ou editar uma aula, pode definir o tipo de aula (Vídeo, Artigo ou Questionário). Na aba de recursos, pode anexar ficheiros de apoio em PDF, ZIP ou links de repositórios externos.'
       }
     ]
-  },
-  {
-    category: 'Gamificação, Níveis, Medalhas & Ranking',
-    description: 'Cálculo de XP, sequências diárias (streaks), insígnias e tabelas de classificação.',
-    items: [
-      {
-        q: 'Como ganho pontos de experiência (XP) no NEXO?',
-        a: 'Ganha XP ao assistir e concluir aulas (30 a 50 XP), ao superar questionários (50 a 100 XP), ao ter respostas aceites como solução no fórum Q&A e ao manter a sua sequência diária de estudos.'
-      },
-      {
-        q: 'O que são as Sequências Diárias (Daily Streaks)?',
-        a: 'A sequência diária contabiliza os dias consecutivos em que estuda na plataforma e atinge a sua meta diária de minutos. Manter sequências longas desbloqueia medalhas exclusivas e multiplicadores de XP.'
-      },
-      {
-        q: 'Onde posso consultar o meu nível e posição na tabela de classificação?',
-        a: 'No seu Perfil (/profile) ou no Dashboard (/dashboard), pode visualizar o seu nível atual, a barra de progresso para o próximo escalão e o ranking geral dos estudantes mais dedicados.'
-      }
-    ]
   }
 ];
 
@@ -212,7 +190,7 @@ export const HelpSupportPage = () => {
   const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState(() => {
-    return searchParams.get('tab') || (searchParams.get('ticketId') ? 'tickets' : 'faq');
+    return searchParams.get('tab') || 'faq';
   });
 
   // FAQ State
@@ -245,23 +223,6 @@ export const HelpSupportPage = () => {
     });
   };
 
-  // Tickets State
-  const [myTickets, setMyTickets] = useState([]);
-  const [loadingTickets, setLoadingTickets] = useState(false);
-  const [selectedTicketId, setSelectedTicketId] = useState(searchParams.get('ticketId') || null);
-  const [selectedTicketData, setSelectedTicketData] = useState(null);
-  const [isTicketModalOpen, setIsTicketModalOpen] = useState(Boolean(searchParams.get('ticketId')));
-  const [ticketReplyContent, setTicketReplyContent] = useState('');
-  const [isSubmittingReply, setIsSubmittingReply] = useState(false);
-
-  // New Ticket Modal State
-  const [showNewTicketModal, setShowNewTicketModal] = useState(false);
-  const [newTicketSubject, setNewTicketSubject] = useState('');
-  const [newTicketCategory, setNewTicketCategory] = useState('Dúvidas Gerais');
-  const [newTicketPriority, setNewTicketPriority] = useState('MÉDIA');
-  const [newTicketMessage, setNewTicketMessage] = useState('');
-  const [isCreatingTicket, setIsCreatingTicket] = useState(false);
-
   // Load FAQ from server
   useEffect(() => {
     const fetchFaq = async () => {
@@ -280,126 +241,12 @@ export const HelpSupportPage = () => {
     fetchFaq();
   }, []);
 
-  // Load My Tickets
-  const fetchTickets = async () => {
-    if (!user) return;
-    try {
-      setLoadingTickets(true);
-      const data = await api.getMySupportTickets();
-      const list = Array.isArray(data) ? data : [];
-      setMyTickets(list);
-      if (!selectedTicketId && list.length > 0) {
-        setSelectedTicketId(list[0].id);
-      }
-    } catch (err) {
-      console.error('Error fetching tickets:', err);
-    } finally {
-      setLoadingTickets(false);
-    }
-  };
-
-  useEffect(() => {
-    if (activeTab === 'tickets') {
-      fetchTickets();
-    }
-  }, [activeTab, user]);
-
-  // Load Selected Ticket Details
-  useEffect(() => {
-    if (!selectedTicketId || !user) return;
-    const fetchTicketDetails = async () => {
-      try {
-        const data = await api.getSupportTicket(selectedTicketId);
-        setSelectedTicketData(data);
-      } catch (err) {
-        console.error('Error fetching ticket details:', err);
-      }
-    };
-    fetchTicketDetails();
-  }, [selectedTicketId, user]);
-
   const toggleFaqItem = (catIdx, qIdx) => {
     const key = `${catIdx}-${qIdx}`;
     setOpenFaqIndices((prev) => ({
       ...prev,
       [key]: !prev[key]
     }));
-  };
-
-  const handleCreateTicket = async (e) => {
-    e.preventDefault();
-    if (!newTicketSubject.trim() || !newTicketMessage.trim()) {
-      toast({
-        title: 'Campos Obrigatórios',
-        message: 'Preencha o assunto e a descrição detalhada da sua questão.',
-        type: 'error'
-      });
-      return;
-    }
-
-    setIsCreatingTicket(true);
-    try {
-      const created = await api.createSupportTicket({
-        subject: newTicketSubject.trim(),
-        category: newTicketCategory,
-        priority: newTicketPriority,
-        message: newTicketMessage.trim()
-      });
-
-      toast({
-        title: 'Ticket Criado com Sucesso',
-        message: 'A nossa equipa de apoio foi notificada e responderá brevemente.',
-        type: 'success'
-      });
-
-      setShowNewTicketModal(false);
-      setNewTicketSubject('');
-      setNewTicketMessage('');
-      setNewTicketCategory('Dúvidas Gerais');
-      setNewTicketPriority('MÉDIA');
-
-      await fetchTickets();
-      const newId = created?.id || created?.ticket?.id;
-      if (newId) {
-        setSelectedTicketId(newId);
-        setIsTicketModalOpen(true);
-        setActiveTab('tickets');
-      }
-    } catch (err) {
-      toast({
-        title: 'Falha ao Criar Ticket',
-        message: err.message || 'Ocorreu um erro ao registar o ticket de suporte.',
-        type: 'error'
-      });
-    } finally {
-      setIsCreatingTicket(false);
-    }
-  };
-
-  const handleSendTicketReply = async (e) => {
-    e.preventDefault();
-    if (!ticketReplyContent.trim() || !selectedTicketId) return;
-
-    setIsSubmittingReply(true);
-    try {
-      const updated = await api.sendTicketMessage(selectedTicketId, ticketReplyContent.trim());
-      setSelectedTicketData(updated);
-      setTicketReplyContent('');
-      toast({
-        title: 'Mensagem Enviada',
-        message: 'A sua resposta foi adicionada ao histórico do ticket.',
-        type: 'success'
-      });
-      fetchTickets();
-    } catch (err) {
-      toast({
-        title: 'Erro ao Enviar',
-        message: err.message || 'Não foi possível enviar a sua mensagem.',
-        type: 'error'
-      });
-    } finally {
-      setIsSubmittingReply(false);
-    }
   };
 
   // Filter FAQ items
@@ -457,14 +304,14 @@ export const HelpSupportPage = () => {
           content: 'Tem alguma dúvida sobre o código ou conceito abordado? Na aba "Dúvidas & Q&A" da aula, publique a sua questão com blocos de código formatados. O formador e os colegas de turma recebem notificações e as melhores respostas podem ser assinaladas como solução oficial.'
         },
         {
-          title: '1.6 Questionários Práticos & Atribuição de XP',
+          title: '1.6 Questionários Práticos & Avaliação',
           icon: CheckSquare,
-          content: 'Nos módulos com quizzes avaliativos, responda às questões de escolha múltipla. Ao submeter, recebe feedback pedagógico imediato e explicações detalhadas para cada opção. Superar o quiz concede entre 50 a 100 pontos de XP e valida o progresso rumo ao certificado.'
+          content: 'Nos módulos com quizzes avaliativos, responda às questões de escolha múltipla. Ao submeter, recebe feedback pedagógico imediato e explicações detalhadas para cada opção. Superar o quiz valida o progresso rumo ao certificado.'
         }
       ],
       proTips: [
         'Ative o Auto-Play na barra do reprodutor para encadear aulas sem interrupções manuais.',
-        'Mantenha uma rotina diária de pelo menos 15 minutos para preservar a sua Sequência (Streak) e multiplicar os seus ganhos de XP.'
+        'Mantenha uma rotina diária de pelo menos 15 minutos para preservar a sua Sequência de Estudo (Streak).'
       ]
     },
     {
@@ -493,7 +340,7 @@ export const HelpSupportPage = () => {
         {
           title: '2.4 Construtor de Quizzes & Bancos de Perguntas',
           icon: CheckSquare,
-          content: 'Adicione questionários interativos às suas aulas. Pode definir a percentagem mínima de aprovação (ex: 70%), a pontuação de XP atribuída e explicações pedagógicas personalizadas para cada resposta certa e errada.'
+          content: 'Adicione questionários interativos às suas aulas. Pode definir a percentagem mínima de aprovação (ex: 70%) e explicações pedagógicas personalizadas para cada resposta certa e errada.'
         },
         {
           title: '2.5 Submissão para Moderação & Publicação Pública',
@@ -571,12 +418,12 @@ export const HelpSupportPage = () => {
         {
           title: '4.3 Validação Criptográfica Pública por Hash',
           icon: Shield,
-          content: 'Cada diploma recebe um identificador alfanumérico exclusivo e imutável (ex: LS-CERT-XXXXXX). Empresas recrutadoras, universidades ou clientes podem verificar a veracidade do diploma em qualquer parte do mundo através da página pública /certificates/verify/:id.'
+          content: 'Cada diploma recebe um identificador alfanumérico exclusivo e imutável (ex: NEXO-XXXXXX). Empresas recrutadoras, universidades ou clientes podem verificar a veracidade do diploma em qualquer parte do mundo através da página pública /certificates/verify/:id.'
         },
         {
           title: '4.4 Download em PDF Vetorial de Alta Fidelidade',
           icon: Download,
-          content: 'No visualizador de certificado (/certificates), clique no botão "Imprimir / Guardar em PDF". O documento é processado em alta resolução gráfica com fontes tipográficas embutidas, pronto para impressão ou envio por correio eletrónico.'
+          content: 'No visualizador de certificado (/library), clique no botão "Imprimir / Guardar em PDF". O documento é processado em alta resolução gráfica com fontes tipográficas embutidas, pronto para impressão ou envio por correio eletrónico.'
         },
         {
           title: '4.5 Partilha Social & Adição ao Perfil LinkedIn',
@@ -693,7 +540,7 @@ export const HelpSupportPage = () => {
         {
           title: '7.5 O curso não surge na biblioteca após inscrição',
           icon: CheckCircle2,
-          content: 'Normalmente a sincronização é imediata. Aceda a /courses ou ao seu /dashboard e recarregue a página. Se o curso não aparecer, aceda à página do curso e clique em "Continuar a Estudar". Se ainda assim não constar, abra um ticket na aba "Os Meus Tickets" indicando o título do curso.'
+          content: 'Normalmente a sincronização é imediata. Aceda a /explore ou ao seu /dashboard e recarregue a página. Se o curso não aparecer, aceda à página do curso e clique em "Continuar a Estudar". Se ainda assim não constar, abra um ticket na aba "Os Meus Tickets" indicando o título do curso.'
         }
       ],
       proTips: [
@@ -754,29 +601,9 @@ export const HelpSupportPage = () => {
               Dúvidas & Suporte Técnico
             </h1>
             <p className="text-sm sm:text-base text-slate-600 dark:text-neutral-400 mt-1 max-w-2xl">
-              Consulte as respostas mais comuns, aprenda a operar todos os recursos com o manual do utilizador completo ou abra um ticket de suporte oficial.
+              Consulte as respostas mais comuns e aprenda a operar todos os recursos com o manual do utilizador completo.
             </p>
           </div>
-
-          <Button
-            variant="primary"
-            size="md"
-            onClick={() => {
-              if (!user) {
-                toast({
-                  title: 'Início de Sessão Necessário',
-                  message: 'Inicie sessão para abrir um ticket de suporte.',
-                  type: 'info'
-                });
-                return;
-              }
-              setShowNewTicketModal(true);
-            }}
-            leftIcon={<Plus className="w-4 h-4" />}
-            className="shrink-0 bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-500/20"
-          >
-            Abrir Novo Ticket
-          </Button>
         </div>
 
         {/* Tab Navigation */}
@@ -804,26 +631,9 @@ export const HelpSupportPage = () => {
             <FileText className="w-4 h-4" />
             <span>Manual do Utilizador</span>
           </button>
-
-          <button
-            onClick={() => setActiveTab('tickets')}
-            className={`flex items-center gap-2 px-4 py-3 text-sm font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'tickets'
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-slate-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            <Ticket className="w-4 h-4" />
-            <span>Os Meus Tickets de Suporte</span>
-            {myTickets.filter((t) => t.status === 'RESPONDIDO').length > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-blue-600 text-white">
-                {myTickets.filter((t) => t.status === 'RESPONDIDO').length}
-              </span>
-            )}
-          </button>
         </div>
 
-        {/* ── TAB 1: PERGUNTAS FREQUENTES (FAQ) ── */}
+        {/* TAB 1: PERGUNTAS FREQUENTES (FAQ) */}
         {activeTab === 'faq' && (
           <div className="flex flex-col gap-8 animate-fade-in">
             {/* Search Bar & Category Filters */}
@@ -881,7 +691,17 @@ export const HelpSupportPage = () => {
                 <Button
                   variant="primary"
                   size="sm"
-                  onClick={() => setShowNewTicketModal(true)}
+                  onClick={() => {
+                    if (!user) {
+                      toast({
+                        title: 'Início de Sessão Necessário',
+                        message: 'Inicie sessão para abrir um ticket de suporte.',
+                        type: 'info'
+                      });
+                      return;
+                    }
+                    setShowNewTicketModal(true);
+                  }}
                   leftIcon={<Ticket className="w-3.5 h-3.5" />}
                   className="text-xs font-bold"
                 >
@@ -973,7 +793,7 @@ export const HelpSupportPage = () => {
           </div>
         )}
 
-        {/* ── TAB 2: MANUAL DO UTILIZADOR ── */}
+        {/* TAB 2: MANUAL DO UTILIZADOR */}
         {activeTab === 'manual' && (
           <div className="flex flex-col gap-8 animate-fade-in">
             {/* Search Bar & Category Filters (Idêntico ao estilo do FAQ) */}
@@ -1062,7 +882,7 @@ export const HelpSupportPage = () => {
                                 Guia Prático
                               </span>
                               <span className="text-xs text-slate-300 dark:text-neutral-700">•</span>
-                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-100 dark:bg-neutral-800 text-slate-500 dark:text-neutral-400">
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-neutral-800 text-slate-500 dark:text-neutral-400">
                                 {module.badge}
                               </span>
                             </div>
@@ -1156,359 +976,6 @@ export const HelpSupportPage = () => {
           </div>
         )}
 
-        {/* ── TAB 3: TICKETS DE SUPORTE ── */}
-        {activeTab === 'tickets' && (
-          <div className="flex flex-col gap-6 animate-fade-in">
-            {!user ? (
-              <Card className="p-12 text-center border border-slate-200 dark:border-neutral-800">
-                <Ticket className="w-12 h-12 text-blue-500 mx-auto mb-3" />
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Início de Sessão Necessário</h3>
-                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 max-w-sm mx-auto mb-6">
-                  Para aceder aos seus tickets de suporte e submeter novos pedidos de apoio, inicie sessão na plataforma.
-                </p>
-                <Link to="/login">
-                  <Button variant="primary" size="md" className="font-bold">
-                    Iniciar Sessão
-                  </Button>
-                </Link>
-              </Card>
-            ) : (
-              <div className="flex flex-col gap-6">
-                {/* Tickets List */}
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between px-1">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500">
-                      Os Meus Tickets ({myTickets.length})
-                    </span>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={fetchTickets}
-                      leftIcon={<RefreshCw className="w-3 h-3" />}
-                      className="text-xs py-1 px-2.5"
-                    >
-                      Atualizar
-                    </Button>
-                  </div>
-
-                  {loadingTickets ? (
-                    <div className="py-12 text-center text-slate-400 text-xs">A carregar os seus tickets...</div>
-                  ) : myTickets.length === 0 ? (
-                    <Card className="p-8 text-center border border-slate-200 dark:border-neutral-800">
-                      <LifeBuoy className="w-10 h-10 text-slate-300 dark:text-neutral-600 mx-auto mb-2" />
-                      <p className="font-bold text-slate-700 dark:text-neutral-300 text-xs">Sem tickets ativos</p>
-                      <p className="text-[11px] text-slate-400 dark:text-neutral-500 mt-0.5 mb-4">
-                        Ainda não abriu nenhum pedido de suporte técnico.
-                      </p>
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => setShowNewTicketModal(true)}
-                        leftIcon={<Plus className="w-3.5 h-3.5" />}
-                        className="text-xs font-bold"
-                      >
-                        Abrir Ticket
-                      </Button>
-                    </Card>
-                  ) : (
-                    myTickets.map((ticket) => {
-                      const isSelected = selectedTicketId === ticket.id;
-                      const statusColors = {
-                        ABERTO: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border-blue-200 dark:border-blue-900',
-                        EM_ANALISE: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-200 dark:border-amber-900',
-                        RESPONDIDO: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 border-indigo-200 dark:border-indigo-900',
-                        RESOLVIDO: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900',
-                        FECHADO: 'bg-slate-100 text-slate-700 dark:bg-neutral-800 dark:text-neutral-400 border-slate-200 dark:border-neutral-700'
-                      };
-
-                      const statusLabels = {
-                        ABERTO: 'Aberto',
-                        EM_ANALISE: 'Em Análise',
-                        RESPONDIDO: 'Respondido pelo Suporte',
-                        RESOLVIDO: 'Resolvido',
-                        FECHADO: 'Fechado'
-                      };
-
-                      return (
-                        <div
-                          key={ticket.id}
-                          onClick={() => {
-                            setSelectedTicketId(ticket.id);
-                            setIsTicketModalOpen(true);
-                          }}
-                          className={`p-4 rounded-2xl border transition-all cursor-pointer text-left bg-white dark:bg-[#0b0c0e] ${
-                            isSelected
-                              ? 'border-blue-600 ring-2 ring-blue-600/20 shadow-md'
-                              : 'border-slate-200 dark:border-neutral-800 hover:border-slate-300 dark:hover:border-neutral-700'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-neutral-900 text-slate-700 dark:text-neutral-300">
-                              {ticket.category}
-                            </span>
-                            <span
-                              className={`px-2 py-0.5 rounded-md text-[10px] font-bold border shrink-0 ${
-                                statusColors[ticket.status] || statusColors.ABERTO
-                              }`}
-                            >
-                              {statusLabels[ticket.status] || ticket.status}
-                            </span>
-                          </div>
-
-                          <h4 className="text-sm font-bold text-slate-900 dark:text-white mt-2 line-clamp-1">
-                            {ticket.subject}
-                          </h4>
-
-                          {ticket.lastMessage && (
-                            <p className="text-xs text-slate-500 dark:text-neutral-400 line-clamp-2 mt-1">
-                              {typeof ticket.lastMessage === 'string' ? ticket.lastMessage : ticket.lastMessage?.content}
-                            </p>
-                          )}
-
-                          <div className="mt-3 pt-3 border-t border-slate-100 dark:border-neutral-800/80 flex items-center justify-between text-[11px] text-slate-400 dark:text-neutral-500">
-                            <span>Prioridade: {ticket.priority}</span>
-                            <span>
-                              {new Date(ticket.createdAt).toLocaleDateString('pt-PT', {
-                                day: '2-digit',
-                                month: 'short',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-
-                <Modal
-                  isOpen={isTicketModalOpen && selectedTicketData?.id === selectedTicketId}
-                  onClose={() => setIsTicketModalOpen(false)}
-                  maxWidth="4xl"
-                  title="Conversa do Ticket"
-                  bodyClassName="p-0 overflow-hidden flex-1 min-h-0"
-                >
-                  {selectedTicketData && (
-                    <div className="flex h-[min(70vh,680px)] min-h-0 flex-col bg-white dark:bg-[#0b0c0e]">
-                      {/* Ticket Header */}
-                      <div className="p-5 border-b border-slate-200 dark:border-neutral-800 bg-slate-50/70 dark:bg-white/[0.02] flex flex-col gap-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
-                            {selectedTicketData.category}
-                          </span>
-                          <span className="text-xs text-slate-400 font-mono">
-                            ID: #{selectedTicketData.id?.slice(0, 8)}
-                          </span>
-                        </div>
-                        <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-                          {selectedTicketData.subject}
-                        </h3>
-                        <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
-                          <span>Prioridade: <strong>{selectedTicketData.priority}</strong></span>
-                          <span>
-                            Aberto a{' '}
-                            {new Date(selectedTicketData.createdAt).toLocaleDateString('pt-PT', {
-                              day: '2-digit',
-                              month: 'long',
-                              year: 'numeric'
-                            })}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Messages History */}
-                      <div className="p-5 flex-1 min-h-0 flex flex-col gap-4 overflow-y-auto custom-scrollbar bg-white dark:bg-[#07080a]">
-                        {selectedTicketData.messages?.map((msg, idx) => {
-                          const isAdmin = msg.isAdminReply || msg.senderRole === 'ADMIN' || msg.senderRole === 'SUBADMIN' || msg.sender?.role === 'ADMIN' || msg.sender?.role === 'SUBADMIN';
-                          const senderName = msg.senderName || msg.sender?.name || (isAdmin ? 'Suporte' : 'Eu');
-                          const senderAvatar = msg.senderAvatar || msg.sender?.avatarUrl;
-
-                          return (
-                            <div
-                              key={msg.id || idx}
-                              className={`flex gap-3 max-w-[85%] ${isAdmin ? 'mr-auto text-left' : 'ml-auto flex-row-reverse text-right'}`}
-                            >
-                              <Avatar
-                                src={senderAvatar}
-                                name={senderName}
-                                size="sm"
-                                className="shrink-0 mt-1"
-                              />
-                              <div className="flex flex-col gap-1">
-                                <div className="flex items-center gap-2 text-[11px] text-slate-400">
-                                  <span className="font-bold text-slate-900 dark:text-white">
-                                    {isAdmin ? 'Equipa de Suporte NEXO' : 'Eu'}
-                                  </span>
-                                  {isAdmin && (
-                                    <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold text-[10px]">
-                                      Oficial
-                                    </span>
-                                  )}
-                                  <span>
-                                    {new Date(msg.createdAt).toLocaleTimeString('pt-PT', {
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })}
-                                  </span>
-                                </div>
-                                <div
-                                  className={`p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed ${
-                                    isAdmin
-                                      ? 'bg-slate-100 dark:bg-neutral-800 text-slate-900 dark:text-white rounded-tl-xs'
-                                      : 'bg-blue-600 text-white rounded-tr-xs'
-                                  }`}
-                                >
-                                  <p className="whitespace-pre-wrap">{msg.content}</p>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      {/* Reply Form */}
-                      {selectedTicketData.status !== 'FECHADO' && (
-                        <div className="p-4 border-t border-slate-200 dark:border-neutral-800 bg-slate-50/50 dark:bg-white/[0.01]">
-                          <form onSubmit={handleSendTicketReply} className="flex flex-col gap-3">
-                            <textarea
-                              rows={3}
-                              value={ticketReplyContent}
-                              onChange={(e) => setTicketReplyContent(e.target.value)}
-                              placeholder="Escreva a sua resposta ou adicione mais detalhes à conversa..."
-                              className="w-full bg-white dark:bg-neutral-900 border border-slate-300 dark:border-neutral-700 rounded-xl p-3 text-xs sm:text-sm focus:outline-none focus:border-blue-500 text-slate-900 dark:text-white placeholder:text-slate-400"
-                            />
-                            <div className="flex items-center justify-between">
-                              <span className="text-[11px] text-slate-400">
-                                A moderação responde em horário útil.
-                              </span>
-                              <Button
-                                type="submit"
-                                variant="primary"
-                                size="sm"
-                                disabled={!ticketReplyContent.trim() || isSubmittingReply}
-                                leftIcon={<Send className="w-3.5 h-3.5" />}
-                                className="bg-blue-600 hover:bg-blue-700 text-white font-bold"
-                              >
-                                {isSubmittingReply ? 'A enviar...' : 'Enviar Mensagem'}
-                              </Button>
-                            </div>
-                          </form>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </Modal>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── MODAL: ABRIR NOVO TICKET ── */}
-        <Modal
-          isOpen={showNewTicketModal}
-          onClose={() => setShowNewTicketModal(false)}
-          title="Abrir Ticket de Suporte"
-          maxWidth="lg"
-        >
-          <div className="space-y-4">
-            <p className="text-xs text-slate-500 dark:text-neutral-400">
-              Envie o seu pedido diretamente para a equipa técnica e pedagógica.
-            </p>
-            <form onSubmit={handleCreateTicket} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-neutral-300 uppercase tracking-wider mb-1.5">
-                      Assunto do Pedido *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Ex.: Dúvida sobre emissão de certificado ou acesso a aula"
-                      value={newTicketSubject}
-                      onChange={(e) => setNewTicketSubject(e.target.value)}
-                      className="w-full bg-slate-50 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-neutral-300 uppercase tracking-wider mb-1.5">
-                        Categoria
-                      </label>
-                      <div className="relative">
-                        <Select
-                          value={newTicketCategory}
-                          onChange={(e) => setNewTicketCategory(e.target.value)}
-                          className="w-full appearance-none bg-slate-50 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-700 rounded-xl px-3.5 py-2.5 pr-8 text-xs sm:text-sm text-slate-900 dark:text-white font-semibold focus:outline-none focus:border-blue-500 cursor-pointer"
-                        >
-                          <option value="Dúvidas Gerais" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Dúvidas Gerais</option>
-                          <option value="Cursos & Aulas" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Cursos & Aulas</option>
-                          <option value="Certificados" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Certificados & Validação</option>
-                          <option value="Mentoria WebRTC" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Salas de Mentoria WebRTC</option>
-                          <option value="Formadores & Estúdio" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Formadores & Estúdio</option>
-                          <option value="Conta & Segurança" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Conta & Segurança</option>
-                          <option value="Problema Técnico" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Problema Técnico / Bug</option>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-neutral-300 uppercase tracking-wider mb-1.5">
-                        Prioridade
-                      </label>
-                      <div className="relative">
-                        <Select
-                          value={newTicketPriority}
-                          onChange={(e) => setNewTicketPriority(e.target.value)}
-                          className="w-full appearance-none bg-slate-50 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-700 rounded-xl px-3.5 py-2.5 pr-8 text-xs sm:text-sm text-slate-900 dark:text-white font-semibold focus:outline-none focus:border-blue-500 cursor-pointer"
-                        >
-                          <option value="BAIXA" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Baixa</option>
-                          <option value="MÉDIA" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Média</option>
-                          <option value="ALTA" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Alta</option>
-                          <option value="URGENTE" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white">Urgente</option>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-neutral-300 uppercase tracking-wider mb-1.5">
-                      Descrição Detalhada *
-                    </label>
-                    <textarea
-                      required
-                      rows={5}
-                      placeholder="Descreva detalhadamente a sua dúvida ou dificuldade técnica..."
-                      value={newTicketMessage}
-                      onChange={(e) => setNewTicketMessage(e.target.value)}
-                      className="w-full bg-slate-50 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-700 rounded-xl p-3.5 text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 dark:border-neutral-800">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setShowNewTicketModal(false)}
-                      className="text-xs"
-                    >
-                      Cancelar
-                    </Button>
-                    <Button
-                      type="submit"
-                      variant="primary"
-                      size="sm"
-                      disabled={isCreatingTicket}
-                      leftIcon={<Send className="w-3.5 h-3.5" />}
-                      className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs"
-                    >
-                      {isCreatingTicket ? 'A submeter...' : 'Submeter Ticket'}
-                    </Button>
-                  </div>
-            </form>
-          </div>
-        </Modal>
       </div>
     </>
   );

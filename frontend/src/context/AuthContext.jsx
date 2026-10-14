@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import confetti from 'canvas-confetti';
 import { api, setAuthToken, removeAuthToken, getAuthToken } from '../services/api';
 const AuthContext = createContext(undefined);
 export const AuthProvider = ({
@@ -18,7 +17,7 @@ export const AuthProvider = ({
         setUser(null);
       }
     } catch (err) {
-      console.error('Failed to load user session:', err);
+      console.error('Falha ao carregar a sessão do utilizador:', err);
       removeAuthToken();
       setToken(null);
       setUser(null);
@@ -63,26 +62,10 @@ export const AuthProvider = ({
     if (token) {
       try {
         const userData = await api.getMe();
-        setUser(userData);
+        setUser(userData?.user || userData);
       } catch (err) {
-        console.error('Error refreshing user:', err);
+        console.error('Erro ao atualizar os dados do utilizador:', err);
       }
-    }
-  };
-  const triggerXpCelebration = (amount, message) => {
-    confetti({
-      particleCount: 80,
-      spread: 60,
-      origin: {
-        y: 0.8
-      },
-      colors: ['#6366f1', '#06b6d4', '#10b981', '#f59e0b']
-    });
-    if (user) {
-      setUser(prev => prev ? {
-        ...prev,
-        xp: prev.xp + amount
-      } : null);
     }
   };
   return <AuthContext.Provider value={{
@@ -93,8 +76,7 @@ export const AuthProvider = ({
     register,
     demoLogin,
     logout,
-    refreshUser,
-    triggerXpCelebration
+    refreshUser
   }}>
       {children}
     </AuthContext.Provider>;

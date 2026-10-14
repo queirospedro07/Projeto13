@@ -173,7 +173,7 @@ export const GlobalSearch = ({ onClose } = {}) => {
                     className="w-full p-2 rounded-xl flex items-center justify-between gap-3 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer group"
                   >
                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                      <Avatar src={u.avatarUrl} alt={u.name} size="sm" fallbackText={u.name} />
+                      <Avatar src={u.avatarUrl} name={u.name} role={u.role} size="sm" />
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
                           {u.name}
@@ -190,6 +190,7 @@ export const GlobalSearch = ({ onClose } = {}) => {
                           e.stopPropagation();
                           setIsOpen(false);
                           setQuery('');
+                          onClose?.();
                           navigate(`/messages?userId=${u.id}`, { state: { peer: u } });
                         }}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors"

@@ -1,4 +1,4 @@
-﻿import { Router } from 'express';
+import { Router } from 'express';
 import { queryAll, queryOne, execute } from '../database/connection.js';
 import { authenticate } from '../middleware/auth.js';
 const router = Router();
@@ -28,6 +28,12 @@ router.post('/:lessonId', authenticate, async (req, res) => {
     } = req.body;
     const userId = req.user.id;
     const now = new Date().toISOString();
+    const lesson = queryOne('SELECT id FROM lessons WHERE id = ?', [lessonId]);
+    if (!lesson) {
+      return res.status(404).json({
+        error: 'Aula não encontrada'
+      });
+    }
     const existing = queryOne('SELECT id FROM notes WHERE userId = ? AND lessonId = ?', [userId, lessonId]);
     if (existing) {
       execute('UPDATE notes SET content = ?, updatedAt = ? WHERE id = ?', [content || '', now, existing.id]);

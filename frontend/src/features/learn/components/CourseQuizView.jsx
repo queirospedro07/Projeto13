@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Check, X, RotateCcw, CheckCircle2, XCircle, AlertCircle, Info, Sparkles, ChevronRight, CheckSquare, Square, Clock } from 'lucide-react';
 import { soundEffects } from '../../../services/soundEffects';
+import { useToast } from '../../../components/ui/Toast';
 export const normalizeTextForGrading = text => {
   return (text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
 };
@@ -144,6 +145,7 @@ export const CourseQuizView = ({
       };
     }) : []
   }));
+  const { toast } = useToast();
   const [singleAnswers, setSingleAnswers] = useState({});
   const [multipleAnswers, setMultipleAnswers] = useState({});
   const [openEndedAnswers, setOpenEndedAnswers] = useState({});
@@ -236,7 +238,11 @@ export const CourseQuizView = ({
   const handleSubmitQuiz = () => {
     const unanswered = effectiveQuestions.filter(q => !isQuestionAnswered(q));
     if (unanswered.length > 0) {
-      alert(`Por favor, responda a todas as perguntas antes de submeter. Faltam ${unanswered.length} questão(ões).`);
+      toast({
+        title: 'Questões em falta',
+        message: `Por favor, responda a todas as perguntas antes de submeter. Faltam ${unanswered.length} questão(ões).`,
+        type: 'warning'
+      });
       return;
     }
     let correctCount = 0;
@@ -365,7 +371,7 @@ export const CourseQuizView = ({
         
         <div className="space-y-8">
           {effectiveQuestions.map((q, qIdx) => {
-          const badge = getQuestionTypeBadge(q.type);
+          const badge = getQuestionTypeBadge(q.type, q.gradingMode);
           const isMultiple = q.type === 'multiple';
           const userSelections = isMultiple ? multipleAnswers[q.id] || [] : [singleAnswers[q.id]].filter(Boolean);
           return <div key={q.id} className="p-6 rounded-xl bg-slate-50/50 dark:bg-[#171a24] border border-slate-200/80 dark:border-[#222636] space-y-4">

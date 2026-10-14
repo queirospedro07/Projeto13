@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   DollarSign,
@@ -11,7 +11,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { api } from '../../../services/api';
-import { formatCoursePrice } from '../../../utils/formatters';
+import { formatCoursePrice, formatCategory } from '../../../utils/formatters';
 
 export const CreatorDashboard = () => {
   const [stats, setStats] = useState(null);
@@ -184,22 +184,16 @@ export const CreatorDashboard = () => {
                       </h4>
                       <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-slate-500 dark:text-zinc-400">
                         <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold text-[10px]">
-                          {course.category || 'Geral'}
+                          {formatCategory(course.category)}
                         </span>
                         <span
                           className={`px-2 py-0.5 rounded-md font-bold text-[10px] ${
-                            course.approvalStatus === 'APPROVED'
+                            course.isPublished
                               ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
-                              : course.approvalStatus === 'REJECTED'
-                              ? 'bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300'
-                              : 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300'
+                              : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
                           }`}
                         >
-                          {course.approvalStatus === 'APPROVED'
-                            ? 'Aprovado pelo Administrador'
-                            : course.approvalStatus === 'REJECTED'
-                            ? 'Requer Revisão'
-                            : 'Pendente de Aprovação'}
+                          {course.isPublished ? 'Publicado' : 'Rascunho'}
                         </span>
                         <span>•</span>
                         <span>{course._count?.enrollments || 0} alunos inscritos</span>
@@ -212,32 +206,16 @@ export const CreatorDashboard = () => {
                   </div>
 
                   <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:shrink-0 sm:self-center">
-                    {course.approvalStatus !== 'APPROVED' && (
-                      <button
-                        onClick={async () => {
-                          try {
-                            await api.submitCourseForReview(course.id);
-                            alert('Curso submetido para aprovação do Administrador!');
-                            window.location.reload();
-                          } catch (e) {
-                            alert('Erro ao submeter: ' + e.message);
-                          }
-                        }}
-                        className="px-3 py-2 rounded-lg text-xs font-bold bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 transition-colors cursor-pointer"
-                      >
-                        Submeter p/ Moderação
-                      </button>
-                    )}
                     <Link to={`/learn/${course.id}`}>
                       <button className="px-3 py-2 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 transition-colors flex items-center gap-1.5 cursor-pointer">
                         <Eye className="w-3.5 h-3.5" />
                         <span>Ver</span>
                       </button>
                     </Link>
-                    <Link to={`/creator/courses/${course.id}/edit?step=3`}>
+                    <Link to={`/creator/courses/${course.id}/edit`}>
                       <button className="px-4 py-2 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer">
                         <BookOpen className="w-3.5 h-3.5" />
-                        <span>Editar Aulas</span>
+                        <span>Editar Curso</span>
                       </button>
                     </Link>
                     <button

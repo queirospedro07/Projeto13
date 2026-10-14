@@ -191,8 +191,8 @@ export const FriendsManager = ({
               Adicionar Amigo por Nome de Utilizador
             </h3>
             <p className="text-xs text-slate-500 dark:text-zinc-400">
-              Escreva o username do utilizador (ex:{' '}
-              <span className="font-mono text-blue-600 dark:text-blue-400 font-semibold">@sarah_dev</span>) para lhe enviar um pedido de amizade.
+              Escreva o nome de utilizador (ex:{' '}
+              <span className="font-mono text-blue-600 dark:text-blue-400 font-semibold">@mariana_costa</span>) para lhe enviar um pedido de amizade.
             </p>
           </div>
 

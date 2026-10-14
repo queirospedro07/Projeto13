@@ -1,10 +1,11 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { BookOpen, Play, CheckCircle2, ArrowRight, Eye, EyeOff, RotateCcw, Pin, PinOff } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { useToast } from '../../components/ui/Toast';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
+import { formatCategory } from '../../utils/formatters';
 
 export const LibraryPage = () => {
   const { user } = useAuth();
@@ -258,7 +259,7 @@ export const LibraryPage = () => {
 
                   <div className="absolute top-3.5 left-3.5 flex items-center gap-2 pointer-events-none">
                     <span className="px-2.5 py-1 rounded-md bg-black/75 text-white backdrop-blur-md text-[11px] font-bold border border-white/10 shadow-xs">
-                      {course.category || 'Tecnologia'}
+                      {formatCategory(course.category)}
                     </span>
                     {enrollment.isCreator && (
                       <span className="px-2.5 py-1 rounded-md bg-blue-600/90 text-white backdrop-blur-md text-[11px] font-black border border-blue-400/30 shadow-xs uppercase tracking-wider">

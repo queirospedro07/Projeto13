@@ -213,16 +213,6 @@ export const SpaceChat = () => {
     }
   };
   const isOwnerOrAdmin = user?.role === 'ADMIN' || user?.role === 'CREATOR' || space?.ownerId === user?.id;
-  const handleToggleReaction = async (messageId, emoji) => {
-    try {
-      await api.toggleReaction(messageId, emoji);
-      socket?.emit('reaction-updated', {
-        channelId: currentChannel?.id
-      });
-      const updated = await api.getChannelMessages(currentChannel.id);
-      setMessages(updated);
-    } catch (err) {}
-  };
   const handleTogglePin = async messageId => {
     try {
       const res = await api.togglePin(messageId);
@@ -237,10 +227,10 @@ export const SpaceChat = () => {
   };
   const filteredMessages = messages.filter(m => {
     if (pinnedOnly && !m.isPinned) return false;
-    if (searchQuery && !m.content.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    if (searchQuery && !(m.content || '').toLowerCase().includes(searchQuery.toLowerCase())) return false;
     return true;
   });
-  return <div className="flex h-[calc(100dvh-8rem)] md:h-[calc(100vh-5rem)] overflow-hidden bg-white border border-slate-200 rounded-2xl md:rounded-xl shadow-sm relative">
+  return <div className="flex h-[calc(100dvh-8rem)] md:h-[calc(100vh-5rem)] overflow-hidden bg-white dark:bg-[#0c0d12] border border-slate-200 dark:border-neutral-800 rounded-2xl md:rounded-xl shadow-sm relative">
       
       {showMobileSidebar && <div className="fixed inset-0 z-20 bg-black/40 md:hidden" onClick={() => setShowMobileSidebar(false)} />}
 
@@ -275,10 +265,10 @@ export const SpaceChat = () => {
         endCall();
       }} /> : <>
           
-          <button onClick={() => setShowMobileSidebar(true)} className="md:hidden absolute top-3 left-3 z-10 p-2 rounded-xl bg-white border border-slate-200 shadow-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors cursor-pointer" title="Canais" aria-label="Abrir lista de canais">
+          <button onClick={() => setShowMobileSidebar(true)} className="md:hidden absolute top-3 left-3 z-10 p-2 rounded-xl bg-white dark:bg-[#151720] border border-slate-200 dark:border-neutral-800 shadow-sm text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors cursor-pointer" title="Canais" aria-label="Abrir lista de canais">
             <Menu className="w-5 h-5" />
           </button>
-          <SpaceMessageStream currentChannel={currentChannel} messages={filteredMessages} inputContent={inputContent} onInputChange={handleInputChange} onSendMessage={handleSendMessage} replyingTo={replyingTo} onSetReplyingTo={setReplyingTo} typingUsers={typingUsers} searchQuery={searchQuery} onSearchChange={setSearchQuery} pinnedOnly={pinnedOnly} onTogglePinnedOnly={() => setPinnedOnly(!pinnedOnly)} showMembers={showMembers} onToggleMembers={() => setShowMembers(!showMembers)} isOwnerOrAdmin={isOwnerOrAdmin} onToggleReaction={handleToggleReaction} onTogglePin={handleTogglePin} />
+          <SpaceMessageStream currentChannel={currentChannel} messages={filteredMessages} inputContent={inputContent} onInputChange={handleInputChange} onSendMessage={handleSendMessage} replyingTo={replyingTo} onSetReplyingTo={setReplyingTo} typingUsers={typingUsers} searchQuery={searchQuery} onSearchChange={setSearchQuery} pinnedOnly={pinnedOnly} onTogglePinnedOnly={() => setPinnedOnly(!pinnedOnly)} showMembers={showMembers} onToggleMembers={() => setShowMembers(!showMembers)} isOwnerOrAdmin={isOwnerOrAdmin} onTogglePin={handleTogglePin} />
 
           {showMembers && <SpaceMembersSidebar space={space} />}
         </>}
@@ -288,7 +278,7 @@ export const SpaceChat = () => {
           <form onSubmit={handleCreateChannel} className="flex flex-col gap-4">
             
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-2">
                 Sugestões Rápidas (1-Clique)
               </label>
               <div className="flex flex-wrap gap-2">
@@ -321,45 +311,45 @@ export const SpaceChat = () => {
               setNewChName(tmpl.name);
               setNewChType(tmpl.type);
               setNewChTopic(tmpl.topic);
-            }} className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs font-medium text-slate-700 transition-all cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900">
+            }} className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#151720] hover:bg-slate-100 dark:hover:bg-neutral-800 text-xs font-medium text-slate-700 dark:text-slate-300 transition-all cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900">
                     {tmpl.label}
                   </button>)}
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-900 mb-2">
+              <label className="block text-xs font-semibold text-slate-900 dark:text-white mb-2">
                 Tipo e Regras do Canal
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <button type="button" onClick={() => setNewChType('text')} className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${newChType === 'text' ? 'border-slate-900 bg-slate-900 text-white font-medium shadow-xs' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}>
+                <button type="button" onClick={() => setNewChType('text')} className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${newChType === 'text' ? 'border-slate-900 dark:border-blue-500 bg-slate-900 dark:bg-blue-600 text-white font-medium shadow-xs' : 'border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#151720] text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-800'}`}>
                   <p className="font-semibold text-xs">Canal de Texto</p>
-                  <p className={`text-[11px] mt-0.5 ${newChType === 'text' ? 'text-slate-300' : 'text-slate-500'}`}>
+                  <p className={`text-[11px] mt-0.5 ${newChType === 'text' ? 'text-slate-300 dark:text-blue-100' : 'text-slate-500 dark:text-zinc-400'}`}>
                     Mensagens e fórum
                   </p>
                 </button>
 
-                <button type="button" onClick={() => setNewChType('voice')} className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${newChType === 'voice' ? 'border-slate-900 bg-slate-900 text-white font-medium shadow-xs' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}>
+                <button type="button" onClick={() => setNewChType('voice')} className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${newChType === 'voice' ? 'border-slate-900 dark:border-blue-500 bg-slate-900 dark:bg-blue-600 text-white font-medium shadow-xs' : 'border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#151720] text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-800'}`}>
                   <p className="font-semibold text-xs">Conversação Livre</p>
-                  <p className={`text-[11px] mt-0.5 ${newChType === 'voice' ? 'text-slate-300' : 'text-slate-500'}`}>
+                  <p className={`text-[11px] mt-0.5 ${newChType === 'voice' ? 'text-slate-300 dark:text-blue-100' : 'text-slate-500 dark:text-zinc-400'}`}>
                     Todos podem falar e partilhar
                   </p>
                 </button>
 
-                <button type="button" onClick={() => setNewChType('stage')} className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${newChType === 'stage' ? 'border-purple-600 bg-purple-950 text-white font-medium shadow-xs' : 'border-slate-200 bg-white text-slate-700 hover:border-purple-300 hover:bg-purple-50/50'}`}>
+                <button type="button" onClick={() => setNewChType('stage')} className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${newChType === 'stage' ? 'border-purple-600 bg-purple-950 text-white font-medium shadow-xs' : 'border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#151720] text-slate-700 dark:text-slate-300 hover:border-purple-300 hover:bg-purple-50/50 dark:hover:bg-purple-950/30'}`}>
                   <p className="font-semibold text-xs text-purple-600 dark:text-purple-400">
                     Palco (Apenas Adm Fala)
                   </p>
-                  <p className={`text-[11px] mt-0.5 ${newChType === 'stage' ? 'text-purple-200' : 'text-slate-500'}`}>
+                  <p className={`text-[11px] mt-0.5 ${newChType === 'stage' ? 'text-purple-200' : 'text-slate-500 dark:text-zinc-400'}`}>
                     Alunos proibidos sem autorização
                   </p>
                 </button>
 
-                <button type="button" onClick={() => setNewChType('qa')} className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${newChType === 'qa' ? 'border-amber-600 bg-amber-950 text-white font-medium shadow-xs' : 'border-slate-200 bg-white text-slate-700 hover:border-amber-300 hover:bg-amber-50/50'}`}>
+                <button type="button" onClick={() => setNewChType('qa')} className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${newChType === 'qa' ? 'border-amber-600 bg-amber-950 text-white font-medium shadow-xs' : 'border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#151720] text-slate-700 dark:text-slate-300 hover:border-amber-300 hover:bg-amber-50/50 dark:hover:bg-amber-950/30'}`}>
                   <p className="font-semibold text-xs text-amber-600 dark:text-amber-400">
                     Sala de Dúvidas (Q&A)
                   </p>
-                  <p className={`text-[11px] mt-0.5 ${newChType === 'qa' ? 'text-amber-200' : 'text-slate-500'}`}>
+                  <p className={`text-[11px] mt-0.5 ${newChType === 'qa' ? 'text-amber-200' : 'text-slate-500 dark:text-zinc-400'}`}>
                     Fila moderada de oradores
                   </p>
                 </button>
@@ -367,24 +357,24 @@ export const SpaceChat = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-800 mb-1">Nome do Canal</label>
+              <label className="block text-sm font-bold text-slate-800 dark:text-white mb-1">Nome do Canal</label>
               <div className="relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">
                   #
                 </span>
-                <input type="text" required placeholder="ex: palco-masterclass" value={newChName} onChange={e => setNewChName(e.target.value)} className="w-full bg-slate-50 border border-slate-300 focus:border-blue-600 focus:bg-white rounded-xl pl-8 pr-4 py-2.5 text-sm text-slate-900 focus:outline-none transition-all font-mono" />
+                <input type="text" required placeholder="ex: palco-masterclass" value={newChName} onChange={e => setNewChName(e.target.value)} className="w-full bg-slate-50 dark:bg-[#151720] border border-slate-300 dark:border-neutral-700 focus:border-blue-600 focus:bg-white dark:focus:bg-[#151720] rounded-xl pl-8 pr-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none transition-all font-mono" />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-800 mb-1">
+              <label className="block text-sm font-bold text-slate-800 dark:text-white mb-1">
                 Tópico ou Descrição (Opcional)
               </label>
-              <input type="text" placeholder="ex: Partilha de recursos e links recomendados" value={newChTopic} onChange={e => setNewChTopic(e.target.value)} className="w-full bg-slate-50 border border-slate-300 focus:border-blue-600 focus:bg-white rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none transition-all" />
+              <input type="text" placeholder="ex: Partilha de recursos e links recomendados" value={newChTopic} onChange={e => setNewChTopic(e.target.value)} className="w-full bg-slate-50 dark:bg-[#151720] border border-slate-300 dark:border-neutral-700 focus:border-blue-600 focus:bg-white dark:focus:bg-[#151720] rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none transition-all" />
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
-              <button type="button" onClick={() => setShowChannelModal(false)} className="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 cursor-pointer">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-neutral-800">
+              <button type="button" onClick={() => setShowChannelModal(false)} className="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-neutral-800 cursor-pointer">
                 Cancelar
               </button>
               <button type="submit" disabled={isSavingChannel} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 cursor-pointer disabled:opacity-50">

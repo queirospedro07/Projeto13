@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Hash, HelpCircle, Sparkles, Users, Send, Reply, X, Check, CheckCircle2, Pin, Lock } from 'lucide-react';
 import { Avatar } from '../../../components/ui/Avatar';
+import { formatRole } from '../../../utils/formatters';
 export const CourseChannelChat = ({
   channel,
   messages,
@@ -206,7 +207,7 @@ export const CourseChannelChat = ({
                         {m.name}
                       </p>
                       <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                        {m.role === 'admin' ? 'Administrador' : m.role === 'instructor' ? 'Instrutor' : 'Aluno'}
+                        {formatRole(m.role)}
                       </p>
                     </div>
                   </Link>

@@ -1,8 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Github, Shield } from 'lucide-react';
+import { Github } from 'lucide-react';
 import { Logo } from '../ui/Logo';
-import { SubAdminApplicationModal } from '../ui/SubAdminApplicationModal';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -10,7 +9,6 @@ export default function Footer() {
   const canvasRef = useRef(null);
   const trailRef = useRef([]);
   const animFrameRef = useRef(null);
-  const [isSubAdminModalOpen, setIsSubAdminModalOpen] = useState(false);
 
   // Exact Pace (paceapp.space) interactive radial expanding puff ripple trail
   useEffect(() => {
@@ -244,15 +242,6 @@ export default function Footer() {
                     </Link>
                   </li>
                   <li>
-                    <button
-                      onClick={() => setIsSubAdminModalOpen(true)}
-                      className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-left font-semibold text-blue-600 dark:text-blue-400 cursor-pointer inline-flex items-center gap-1.5"
-                    >
-                      <Shield className="w-3.5 h-3.5" />
-                      <span>Junte-se à equipa</span>
-                    </button>
-                  </li>
-                  <li>
                     <Link to="/login" className="hover:text-blue-600 dark:hover:text-white transition-colors">
                       Iniciar Sessão
                     </Link>
@@ -304,12 +293,6 @@ export default function Footer() {
           </div>
         </div>
       </footer>
-
-      {/* Sub-Admin Application Inquiry Modal */}
-      <SubAdminApplicationModal
-        isOpen={isSubAdminModalOpen}
-        onClose={() => setIsSubAdminModalOpen(false)}
-      />
     </>
   );
 }

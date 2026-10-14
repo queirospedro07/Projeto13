@@ -45,13 +45,9 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      const msg = error.response?.data?.message || error.response?.data?.error || '';
-      if (
-        msg.includes('expirado') ||
-        msg.includes('inválido') ||
-        msg.includes('Token') ||
-        msg.includes('Não autorizado')
-      ) {
+      const url = error.config?.url || '';
+      const isAuthEndpoint = url.includes('/auth/login') || url.includes('/auth/register');
+      if (!isAuthEndpoint) {
         removeAuthToken();
         if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
           window.location.href = '/login';
@@ -187,11 +183,6 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
-  toggleReaction: (messageId, emoji) =>
-    request(`/messages/${messageId}/reactions`, {
-      method: 'POST',
-      body: JSON.stringify({ emoji }),
-    }),
   togglePin: (messageId) =>
     request(`/messages/${messageId}/pin`, {
       method: 'POST',
@@ -233,142 +224,6 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ receiverId, content }),
     }),
-  getLeaderboard: (params = {}) => {
-    const query = new URLSearchParams(params).toString();
-    return request(`/gamification/leaderboard${query ? '?' + query : ''}`);
-  },
-  getAchievements: () => request('/gamification/achievements'),
-  getUserStats: () => request('/gamification/stats'),
-  getCreatorStats: () => request('/creator/stats'),
-  getCreatorCourses: () => request('/creator/courses'),
-  getCreatorCourse: (id) => request(`/creator/courses/${id}`),
-  createCourse: (data) =>
-    request('/creator/courses', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  updateCourse: (id, data) =>
-    request(`/creator/courses/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    }),
-  deleteCourse: (id) =>
-    request(`/creator/courses/${id}`, {
-      method: 'DELETE',
-    }),
-  getCreatorMembers: () => request('/creator/members'),
-  getCourseRoles: (courseId) => request(`/creator/courses/${courseId}/roles`),
-  createCourseRole: (courseId, data) =>
-    request(`/creator/courses/${courseId}/roles`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  assignCourseMemberRole: (courseId, userId, roleId) =>
-    request(`/creator/courses/${courseId}/members/${userId}/role`, {
-      method: 'PUT',
-      body: JSON.stringify({ roleId }),
-    }),
-  removeCourseMember: (courseId, userId) =>
-    request(`/creator/courses/${courseId}/members/${userId}`, {
-      method: 'DELETE',
-    }),
-  getAdminStats: () => request('/admin/stats'),
-  getAdminUsers: () => request('/admin/users'),
-  toggleSuspendUser: (id) =>
-    request(`/admin/users/${id}/suspend`, {
-      method: 'PUT',
-    }),
-  getAdminReports: () => request('/admin/reports'),
-  updateReportStatus: (id, status) =>
-    request(`/admin/reports/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify({ status }),
-    }),
-  submitReport: (data) =>
-    request('/admin/report', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  // Candidaturas a Criador
-  applyCreator: (data) =>
-    request('/creator/apply', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  getCreatorApplicationStatus: () => request('/creator/application-status'),
-  submitCourseForReview: (courseId) =>
-    request(`/creator/courses/${courseId}/submit-review`, {
-      method: 'POST',
-    }),
-  getAdminCreatorApplications: () => request('/admin/creator-applications'),
-  approveCreatorApplication: (id) =>
-    request(`/admin/creator-applications/${id}/approve`, {
-      method: 'PUT',
-    }),
-  rejectCreatorApplication: (id, feedback) =>
-    request(`/admin/creator-applications/${id}/reject`, {
-      method: 'PUT',
-      body: JSON.stringify({ feedback }),
-    }),
-  // Candidaturas a Sub-Administrador / Moderador Global
-  applySubAdmin: (data) =>
-    request('/admin/subadmin-apply', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  getSubAdminApplications: () => request('/admin/subadmin-applications'),
-  approveSubAdminApplication: (id) =>
-    request(`/admin/subadmin-applications/${id}/approve`, {
-      method: 'PUT',
-    }),
-  rejectSubAdminApplication: (id, feedback) =>
-    request(`/admin/subadmin-applications/${id}/reject`, {
-      method: 'PUT',
-      body: JSON.stringify({ feedback }),
-    }),
-  // Moderação de Cursos
-  getAdminCourses: (status) => request('/admin/courses', { params: { status } }),
-  approveCourse: (id) =>
-    request(`/admin/courses/${id}/approve`, {
-      method: 'PUT',
-    }),
-  rejectCourse: (id, notes) =>
-    request(`/admin/courses/${id}/reject`, {
-      method: 'PUT',
-      body: JSON.stringify({ notes }),
-    }),
-  getLessonNote: (lessonId) => request(`/notes/${lessonId}`),
-  saveLessonNote: (lessonId, content) =>
-    request(`/notes/${lessonId}`, {
-      method: 'POST',
-      body: JSON.stringify({ content }),
-    }),
-  getAllNotes: () => request('/notes'),
-  getCourseQA: (courseId) => request(`/qa/course/${courseId}`),
-  askCourseQuestion: (courseId, data) =>
-    request(`/qa/course/${courseId}`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  answerQuestion: (questionId, content) =>
-    request(`/qa/questions/${questionId}/answers`, {
-      method: 'POST',
-      body: JSON.stringify({ content }),
-    }),
-  acceptSolution: (answerId) =>
-    request(`/qa/answers/${answerId}/accept`, {
-      method: 'POST',
-    }),
-  upvoteQuestion: (questionId) =>
-    request(`/qa/questions/${questionId}/upvote`, {
-      method: 'POST',
-    }),
-  verifyCertificate: (id) => request(`/certificates/verify/${id}`),
-  getMyCertificates: () => request('/certificates/my'),
-  generateCertificate: (courseId) =>
-    request(`/certificates/generate/${courseId}`, {
-      method: 'POST',
-    }),
   getNotifications: () => request('/notifications'),
   markAllNotificationsRead: () =>
     request('/notifications/read-all', {
@@ -378,28 +233,99 @@ export const api = {
     request(`/notifications/${id}/read`, {
       method: 'PUT',
     }),
-  // Sistema de Suporte & Dúvidas (FAQ, Tickets, Live Support)
+  // Suporte (FAQ)
   getSupportFaq: () => request('/support/faq'),
-  createSupportTicket: (data) =>
-    request('/support/tickets', {
+
+  // Certificados
+  verifyCertificate: (id) => request(`/certificates/verify/${encodeURIComponent(id)}`),
+  getMyCertificates: () => request('/certificates/my'),
+  generateCertificate: (courseId) =>
+    request(`/certificates/generate/${courseId}`, {
       method: 'POST',
-      body: JSON.stringify(data),
     }),
-  getMySupportTickets: () => request('/support/tickets/my'),
-  getSupportTicket: (id) => request(`/support/tickets/${id}`),
-  sendTicketMessage: (id, content) =>
-    request(`/support/tickets/${id}/messages`, {
+
+  // Apontamentos / Notas
+  saveLessonNote: (lessonId, content) =>
+    request(`/notes/${lessonId}`, {
       method: 'POST',
       body: JSON.stringify({ content }),
     }),
-  updateTicketStatus: (id, status) =>
-    request(`/support/tickets/${id}/status`, {
+  getLessonNote: (lessonId) => request(`/notes/${lessonId}`),
+  getMyNotes: () => request('/notes'),
+
+  // Painel de Administração e Moderação
+  getAdminStats: () => request('/admin/stats'),
+  getAdminUsers: () => request('/admin/users'),
+  getAdminReports: () => request('/admin/reports'),
+  getAdminCreatorApplications: () => request('/admin/creator-applications'),
+  getAdminCourses: (status = 'all') =>
+    request(`/admin/courses${status ? `?status=${encodeURIComponent(status)}` : ''}`),
+  toggleSuspendUser: (userId) =>
+    request(`/admin/users/${userId}/suspend`, {
       method: 'PUT',
-      body: JSON.stringify({ status }),
     }),
-  getAdminSupportTickets: () => request('/support/admin/tickets'),
-  getLiveSupportMessages: (userId) =>
-    request(`/support/live/messages${userId ? `?userId=${userId}` : ''}`),
+  approveCreatorApplication: (appId) =>
+    request(`/admin/creator-applications/${appId}/approve`, {
+      method: 'PUT',
+    }),
+  rejectCreatorApplication: (appId, feedback) =>
+    request(`/admin/creator-applications/${appId}/reject`, {
+      method: 'PUT',
+      body: JSON.stringify({ feedback }),
+    }),
+  approveCourse: (courseId) =>
+    request(`/admin/courses/${courseId}/approve`, {
+      method: 'PUT',
+    }),
+  rejectCourse: (courseId, notes) =>
+    request(`/admin/courses/${courseId}/reject`, {
+      method: 'PUT',
+      body: JSON.stringify({ notes }),
+    }),
+
+  // Estúdio do Criador / Formador
+  getCreatorApplicationStatus: () => request('/creator/application-status'),
+  applyCreator: (data) =>
+    request('/creator/apply', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  getCreatorStats: () => request('/creator/stats'),
+  getCreatorCourses: () => request('/creator/courses'),
+  getCreatorCourse: (courseId) => request(`/creator/courses/${courseId}`),
+  createCourse: (data) =>
+    request('/creator/courses', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  updateCourse: (courseId, data) =>
+    request(`/creator/courses/${courseId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  deleteCourse: (courseId) =>
+    request(`/creator/courses/${courseId}`, {
+      method: 'DELETE',
+    }),
+  submitCourseForReview: (courseId) =>
+    request(`/creator/courses/${courseId}/submit-review`, {
+      method: 'POST',
+    }),
+  getCreatorMembers: () => request('/creator/members'),
+  getCourseCollaborators: (courseId) => request(`/creator/courses/${courseId}/collaborators`),
+  addCourseCollaborator: (courseId, identifier) =>
+    request(`/creator/courses/${courseId}/collaborators`, {
+      method: 'POST',
+      body: JSON.stringify({ identifier }),
+    }),
+  removeCourseCollaborator: (courseId, userId) =>
+    request(`/creator/courses/${courseId}/collaborators/${userId}`, {
+      method: 'DELETE',
+    }),
+  removeCourseMember: (courseId, userId) =>
+    request(`/creator/courses/${courseId}/members/${userId}`, {
+      method: 'DELETE',
+    }),
 };
 
 export default api;

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Sparkles,
@@ -212,7 +212,7 @@ export const ApplyCreator = () => {
             A sua conta tem permissões completas de publicação de módulos, criação de salas de mentoria WebRTC e emissão de certificados oficiais.
           </p>
           <Link to="/creator">
-            <Button variant="primary" size="lg" className="font-bold bg-white text-black hover:bg-neutral-200 dark:bg-white dark:text-black">
+            <Button variant="primary" size="lg" className="font-bold bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200">
               Aceder ao Painel do Criador
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
@@ -487,7 +487,7 @@ export const ApplyCreator = () => {
                   variant="primary"
                   size="md"
                   onClick={nextStep}
-                  className="font-bold px-6 bg-white text-black hover:bg-neutral-200 dark:bg-white dark:text-black"
+                  className="font-bold px-6 bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
                 >
                   Seguinte: Especialidade Técnica
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -573,7 +573,7 @@ export const ApplyCreator = () => {
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Anterior
                 </Button>
-                <Button type="button" variant="primary" size="md" onClick={nextStep} className="font-bold px-6 bg-white text-black hover:bg-neutral-200 dark:bg-white dark:text-black">
+                <Button type="button" variant="primary" size="md" onClick={nextStep} className="font-bold px-6 bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200">
                   Seguinte: Proposta Curricular
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
@@ -643,7 +643,7 @@ export const ApplyCreator = () => {
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Anterior
                 </Button>
-                <Button type="button" variant="primary" size="md" onClick={nextStep} className="font-bold px-6 bg-white text-black hover:bg-neutral-200 dark:bg-white dark:text-black">
+                <Button type="button" variant="primary" size="md" onClick={nextStep} className="font-bold px-6 bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200">
                   Seguinte: Materiais & Revisão
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
@@ -754,7 +754,7 @@ export const ApplyCreator = () => {
                   variant="primary"
                   size="md"
                   disabled={submitting}
-                  className="font-extrabold px-8 bg-white text-black hover:bg-neutral-200 dark:bg-white dark:text-black shadow-xl cursor-pointer"
+                  className="font-extrabold px-8 bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200 shadow-xl cursor-pointer"
                 >
                   {submitting ? 'A Submeter Inquérito...' : 'Submeter Inquérito Oficial'}
                   <Send className="w-4 h-4 ml-2" />

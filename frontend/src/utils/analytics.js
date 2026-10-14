@@ -5,10 +5,25 @@
 
 const STORAGE_KEY = 'nexo_analytics_events';
 
+const hasAnalyticsConsent = () => {
+  try {
+    const raw = localStorage.getItem('nexo_cookie_consent');
+    if (!raw || raw === 'rejected') return false;
+    if (raw === 'accepted') return true;
+    const parsed = JSON.parse(raw);
+    return parsed?.analytics === true;
+  } catch {
+    return false;
+  }
+};
+
+export const initGA = () => {
+  if (!hasAnalyticsConsent()) return;
+};
+
 export const trackPageView = (path = window.location.pathname) => {
   try {
-    const isConsentGiven = localStorage.getItem('nexo_cookie_consent');
-    if (isConsentGiven === 'rejected') return;
+    if (!hasAnalyticsConsent()) return;
 
     const payload = {
       type: 'pageview',
@@ -34,8 +49,7 @@ export const trackPageView = (path = window.location.pathname) => {
 
 export const trackEvent = (eventName, properties = {}) => {
   try {
-    const isConsentGiven = localStorage.getItem('nexo_cookie_consent');
-    if (isConsentGiven === 'rejected') return;
+    if (!hasAnalyticsConsent()) return;
 
     const payload = {
       type: 'event',

@@ -2,8 +2,8 @@ import { Router } from 'express';
 import { queryAll, queryOne, execute, transaction } from '../database/connection.js';
 import { authenticate, optionalAuth } from '../middleware/auth.js';
 
-export const resolveCourseAccessState = ({ user, course, enrollmentRow }) => {
-  const isCreator = Boolean(user && course && (user.role === 'ADMIN' || user.id === course.creatorId || user.id === course.creator_id));
+export const resolveCourseAccessState = ({ user, course, enrollmentRow, isCollaborator = false }) => {
+  const isCreator = Boolean(user && course && (user.role === 'ADMIN' || user.id === course.creatorId || user.id === course.creator_id || isCollaborator));
   const userEnrollment = enrollmentRow || null;
   return {
     isCreator,
@@ -122,6 +122,7 @@ router.get('/', optionalAuth, async (req, res) => {
              (SELECT COUNT(*) FROM enrollments WHERE courseId = c.id) as studentsCount,
              (SELECT COUNT(*) FROM course_modules WHERE courseId = c.id) as modulesCount,
              (SELECT COUNT(*) FROM channels WHERE spaceId = c.spaceId) as channelsCount,
+             (SELECT COUNT(*) FROM reviews WHERE courseId = c.id) as reviewsCount,
              COALESCE((SELECT ROUND(AVG(rating), 1) FROM reviews WHERE courseId = c.id), 0.0) as averageRating
       FROM courses c
       JOIN users u ON c.creatorId = u.id
@@ -134,13 +135,13 @@ router.get('/', optionalAuth, async (req, res) => {
     }
     if (category && category !== 'all') {
       const catLower = category.toLowerCase();
-      if (catLower === 'programming') {
-        sql += ` AND LOWER(c.category) = 'programming'`;
-      } else if (catLower === 'design') {
-        sql += ` AND LOWER(c.category) = 'design'`;
-      } else if (catLower === 'ai & data' || catLower === 'ai' || catLower === 'data') {
-        sql += ` AND (LOWER(c.category) LIKE '%ai%' OR LOWER(c.category) LIKE '%data%' OR LOWER(c.category) LIKE '%dados%')`;
-      } else if (catLower === 'cybersecurity') {
+      if (catLower === 'programming' || catLower.includes('programa')) {
+        sql += ` AND (LOWER(c.category) = 'programming' OR LOWER(c.category) LIKE '%programa%')`;
+      } else if (catLower === 'design' || catLower.includes('design')) {
+        sql += ` AND LOWER(c.category) LIKE '%design%'`;
+      } else if (catLower === 'ai & data' || catLower === 'ai' || catLower === 'data' || catLower.includes('dados') || catLower.includes('ia')) {
+        sql += ` AND (LOWER(c.category) LIKE '%ai%' OR LOWER(c.category) LIKE '%data%' OR LOWER(c.category) LIKE '%dados%' OR LOWER(c.category) LIKE '%ia%')`;
+      } else if (catLower === 'cybersecurity' || catLower.includes('ciber')) {
         sql += ` AND (LOWER(c.category) LIKE '%cyber%' OR LOWER(c.category) LIKE '%ciber%')`;
       } else if (catLower === 'cloud & devops' || catLower === 'cloud' || catLower === 'devops') {
         sql += ` AND (LOWER(c.category) LIKE '%cloud%' OR LOWER(c.category) LIKE '%devops%')`;
@@ -165,6 +166,12 @@ router.get('/', optionalAuth, async (req, res) => {
       let isCreator = false;
       if (req.user) {
         userEnrollment = queryOne(`SELECT progressPercent, completedAt FROM enrollments WHERE userId = ? AND courseId = ?`, [req.user.id, course.id]);
+        if (!userEnrollment && course.spaceId) {
+          const spaceMem = queryOne(`SELECT id FROM memberships WHERE userId = ? AND spaceId = ?`, [req.user.id, course.spaceId]);
+          if (spaceMem) {
+            userEnrollment = { progressPercent: 0, completedAt: null };
+          }
+        }
         isCreator = course.creatorId === req.user.id;
       }
       const isEnrolled = !!userEnrollment || isCreator;
@@ -200,7 +207,7 @@ router.get('/', optionalAuth, async (req, res) => {
         },
         studentsCount: course.studentsCount,
         membersCount: course.studentsCount,
-        reviewsCount: 12,
+        reviewsCount: course.reviewsCount || 0,
         modulesCount: course.modulesCount,
         channelsCount: course.channelsCount || 0,
         hasCommunity: Boolean(course.spaceId),
@@ -279,11 +286,12 @@ router.get('/:id', optionalAuth, async (req, res) => {
       });
     }
 
-    // Apenas o Formador dono e a equipa de moderação podem pré-visualizar cursos pendentes.
+    const isCollab = Boolean(req.user && queryOne('SELECT id FROM course_collaborators WHERE courseId = ? AND userId = ?', [course.id, req.user.id]));
     const canReviewPendingCourse = req.user && (
-      ['ADMIN', 'SUBADMIN'].includes(req.user.role) ||
+      req.user.role === 'ADMIN' ||
       req.user.id === course.creatorId ||
-      req.user.id === course.creator_id
+      req.user.id === course.creator_id ||
+      isCollab
     );
     if (course.approvalStatus && course.approvalStatus !== 'APPROVED' && !canReviewPendingCourse) {
       return res.status(403).json({
@@ -301,7 +309,6 @@ router.get('/:id', optionalAuth, async (req, res) => {
         let quizObj = null;
         let cleanContent = l.content || '';
         let richArticleObj = null;
-        let codeChallengeObj = null;
         if (l.type === 'quiz') {
           if (l.content) {
             try {
@@ -344,23 +351,13 @@ router.get('/:id', optionalAuth, async (req, res) => {
               cleanContent = 'Responda às questões práticas para testar os seus conhecimentos desta aula.';
             }
           }
-        } else if (l.type === 'text') {
+        } else if (l.type === 'text' || l.type === 'article') {
           if (l.content && l.content.trim().startsWith('{')) {
             try {
               const parsed = JSON.parse(l.content);
               if (parsed && (parsed.markdown || parsed.checklist || parsed.calloutText)) {
                 richArticleObj = parsed;
                 cleanContent = parsed.markdown || '';
-              }
-            } catch (_) {}
-          }
-        } else if (l.type === 'code') {
-          if (l.content && l.content.trim().startsWith('{')) {
-            try {
-              const parsed = JSON.parse(l.content);
-              if (parsed && (parsed.initialCode || parsed.instructions)) {
-                codeChallengeObj = parsed;
-                cleanContent = parsed.instructions || '';
               }
             } catch (_) {}
           }
@@ -375,8 +372,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
           videoUrl: l.videoUrl,
           content: cleanContent,
           quiz: quizObj,
-          richArticle: richArticleObj,
-          codeChallenge: codeChallengeObj
+          richArticle: richArticleObj
         };
       });
       return {
@@ -446,7 +442,15 @@ router.get('/:id', optionalAuth, async (req, res) => {
     }
     let userEnrollment = null;
     if (req.user) {
-      const enrollmentRow = queryOne('SELECT * FROM enrollments WHERE userId = ? AND courseId = ?', [req.user.id, course.id]);
+      let enrollmentRow = queryOne('SELECT * FROM enrollments WHERE userId = ? AND courseId = ?', [req.user.id, course.id]);
+      if (!enrollmentRow && course.spaceId) {
+        const spaceMem = queryOne('SELECT id, joinedAt FROM memberships WHERE userId = ? AND spaceId = ?', [req.user.id, course.spaceId]);
+        if (spaceMem) {
+          const autoEnrId = `enr-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+          execute(`INSERT OR IGNORE INTO enrollments (id, userId, courseId, enrolledAt, progressPercent) VALUES (?, ?, ?, ?, 0)`, [autoEnrId, req.user.id, course.id, spaceMem.joinedAt || new Date().toISOString()]);
+          enrollmentRow = queryOne('SELECT * FROM enrollments WHERE userId = ? AND courseId = ?', [req.user.id, course.id]);
+        }
+      }
       if (enrollmentRow) {
         const progresses = queryAll('SELECT * FROM lesson_progress WHERE enrollmentId = ?', [enrollmentRow.id]).map(lp => ({
           ...lp,
@@ -459,10 +463,12 @@ router.get('/:id', optionalAuth, async (req, res) => {
       }
     }
 
+    const isCollaborator = Boolean(req.user && queryOne('SELECT id FROM course_collaborators WHERE courseId = ? AND userId = ?', [course.id, req.user.id]));
     const accessState = resolveCourseAccessState({
       user: req.user,
       course,
       enrollmentRow: userEnrollment,
+      isCollaborator,
     });
     const classmates = queryAll(`SELECT DISTINCT u.id, u.name, u.username, u.avatarUrl, u.role, u.xp, u.level
        FROM (
@@ -597,10 +603,15 @@ router.post('/:id/enroll', authenticate, async (req, res) => {
     } = req.params;
     const userId = req.user.id;
     const now = new Date().toISOString();
-    const course = queryOne('SELECT id, title, spaceId FROM courses WHERE id = ? OR slug = ?', [id, id]);
+    const course = queryOne('SELECT id, title, spaceId, isPublished, approvalStatus, creatorId FROM courses WHERE id = ? OR slug = ? OR spaceId = ? OR LOWER(id) = LOWER(?) OR LOWER(slug) = LOWER(?)', [id, id, id, id, id]);
     if (!course) {
       return res.status(404).json({
         error: 'Curso não encontrado'
+      });
+    }
+    if ((course.isPublished !== 1 || (course.approvalStatus && course.approvalStatus !== 'APPROVED')) && req.user.role !== 'ADMIN' && req.user.id !== course.creatorId) {
+      return res.status(403).json({
+        error: 'Este curso não se encontra disponível para inscrição de momento.'
       });
     }
     const existing = queryOne('SELECT * FROM enrollments WHERE userId = ? AND courseId = ?', [userId, course.id]);
@@ -641,23 +652,32 @@ router.post('/:id/lessons/:lessonId/complete', authenticate, async (req, res) =>
     } = req.params;
     const userId = req.user.id;
     const now = new Date().toISOString();
-    const course = queryOne('SELECT id, title FROM courses WHERE id = ? OR slug = ?', [courseIdOrSlug, courseIdOrSlug]);
+    const course = queryOne('SELECT id, title, creatorId, isFree, isPublished, approvalStatus FROM courses WHERE id = ? OR slug = ?', [courseIdOrSlug, courseIdOrSlug]);
     if (!course) {
       return res.status(404).json({
         error: 'Curso não encontrado'
       });
     }
+    const lesson = queryOne(
+      'SELECT l.* FROM lessons l JOIN course_modules m ON l.moduleId = m.id WHERE l.id = ? AND m.courseId = ?',
+      [lessonId, course.id]
+    );
+    if (!lesson) {
+      return res.status(404).json({
+        error: 'Aula não encontrada neste curso'
+      });
+    }
     let enrollment = queryOne('SELECT * FROM enrollments WHERE userId = ? AND courseId = ?', [userId, course.id]);
     if (!enrollment) {
+      const canAutoEnroll = req.user.role === 'ADMIN' || req.user.id === course.creatorId || (course.isFree === 1 && course.isPublished === 1 && (!course.approvalStatus || course.approvalStatus === 'APPROVED'));
+      if (!canAutoEnroll) {
+        return res.status(403).json({
+          error: 'Deve inscrever-se no curso antes de concluir aulas.'
+        });
+      }
       const enrId = `enr-${Date.now()}`;
       execute(`INSERT INTO enrollments (id, userId, courseId, enrolledAt, progressPercent) VALUES (?, ?, ?, ?, 0)`, [enrId, userId, course.id, now]);
       enrollment = queryOne('SELECT * FROM enrollments WHERE id = ?', [enrId]);
-    }
-    const lesson = queryOne('SELECT * FROM lessons WHERE id = ?', [lessonId]);
-    if (!lesson) {
-      return res.status(404).json({
-        error: 'Aula não encontrada'
-      });
     }
     const existingProgress = queryOne('SELECT * FROM lesson_progress WHERE enrollmentId = ? AND lessonId = ?', [enrollment.id, lessonId]);
     let xpGained = 0;
@@ -669,8 +689,7 @@ router.post('/:id/lessons/:lessonId/complete', authenticate, async (req, res) =>
           execute(`INSERT INTO lesson_progress (id, enrollmentId, lessonId, completed, completedAt) VALUES (?, ?, ?, 1, ?)`, [`lp-${Date.now()}`, enrollment.id, lessonId, now]);
         }
         xpGained = lesson.xpReward || 25;
-        execute(`UPDATE users SET xp = xp + ?, totalMinutes = totalMinutes + ?, minutesToday = minutesToday + ? WHERE id = ?`, [xpGained, lesson.durationMin || 15, lesson.durationMin || 15, userId]);
-        execute(`INSERT INTO xp_transactions (id, userId, amount, action, description, createdAt) VALUES (?, ?, ?, 'lesson_complete', ?, ?)`, [`xp-${Date.now()}`, userId, xpGained, `Conclusão da aula: ${lesson.title}`, now]);
+        execute(`UPDATE users SET totalMinutes = totalMinutes + ?, minutesToday = minutesToday + ? WHERE id = ?`, [lesson.durationMin || 15, lesson.durationMin || 15, userId]);
       });
     }
     const totalLessons = (queryOne(`SELECT COUNT(*) as count FROM lessons l JOIN course_modules m ON l.moduleId = m.id WHERE m.courseId = ?`, [course.id]) || {}).count || 1;
@@ -679,10 +698,13 @@ router.post('/:id/lessons/:lessonId/complete', authenticate, async (req, res) =>
     const isCompleted = newPercent >= 100;
     execute(`UPDATE enrollments SET progressPercent = ?, completedAt = ?, lastLessonId = ? WHERE id = ?`, [newPercent, isCompleted ? now : null, lessonId, enrollment.id]);
     if (isCompleted && !enrollment.completedAt) {
-      const user = queryOne('SELECT name FROM users WHERE id = ?', [userId]);
-      const credId = `LS-CERT-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-      execute(`INSERT INTO certificates (id, userId, courseId, recipientName, courseTitle, credentialId, issuedAt, score)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 100)`, [`cert-${Date.now()}`, userId, course.id, user?.name || 'Estudante', course.title, credId, now]);
+      const existingCert = queryOne('SELECT id FROM certificates WHERE userId = ? AND courseId = ?', [userId, course.id]);
+      if (!existingCert) {
+        const user = queryOne('SELECT name FROM users WHERE id = ?', [userId]);
+        const credId = `LS-CERT-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+        execute(`INSERT INTO certificates (id, userId, courseId, recipientName, courseTitle, credentialId, issuedAt, score)
+           VALUES (?, ?, ?, ?, ?, ?, ?, 100)`, [`cert-${Date.now()}`, userId, course.id, user?.name || 'Estudante', course.title, credId, now]);
+      }
     }
     const updatedEnrollment = queryOne('SELECT * FROM enrollments WHERE id = ?', [enrollment.id]);
     const lessonProgresses = queryAll('SELECT * FROM lesson_progress WHERE enrollmentId = ?', [enrollment.id]).map(lp => ({
@@ -719,25 +741,32 @@ router.post('/:courseId/reviews', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'O comentário da avaliação é obrigatório' });
     }
 
-    const course = queryOne('SELECT id FROM courses WHERE id = ? OR slug = ?', [courseId, courseId]);
+    const course = queryOne('SELECT id, creatorId FROM courses WHERE id = ? OR slug = ?', [courseId, courseId]);
     if (!course) {
       return res.status(404).json({ error: 'Curso não encontrado' });
     }
 
-    try {
-      execute(`CREATE TABLE IF NOT EXISTS reviews (
-        id TEXT PRIMARY KEY,
-        courseId TEXT NOT NULL,
-        userId TEXT NOT NULL,
-        rating INTEGER NOT NULL,
-        comment TEXT NOT NULL,
-        createdAt TEXT NOT NULL
-      )`);
-    } catch (_) {}
+    const isEnrolledOrOwner = req.user.role === 'ADMIN' || req.user.id === course.creatorId || Boolean(queryOne('SELECT id FROM enrollments WHERE userId = ? AND courseId = ?', [userId, course.id]));
+    if (!isEnrolledOrOwner) {
+      return res.status(403).json({ error: 'Apenas estudantes inscritos podem avaliar este curso' });
+    }
+
+    const now = new Date().toISOString();
+    const existingReview = queryOne('SELECT id FROM reviews WHERE courseId = ? AND userId = ?', [course.id, userId]);
+    if (existingReview) {
+      execute('UPDATE reviews SET rating = ?, comment = ? WHERE id = ?', [Number(rating), comment.trim(), existingReview.id]);
+      return res.json({
+        message: 'Avaliação atualizada com sucesso',
+        review: {
+          id: existingReview.id,
+          rating: Number(rating),
+          comment: comment.trim(),
+          createdAt: now
+        }
+      });
+    }
 
     const revId = `rev-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-    const now = new Date().toISOString();
-
     execute(`INSERT INTO reviews (id, courseId, userId, rating, comment, createdAt)
        VALUES (?, ?, ?, ?, ?, ?)`, [revId, course.id, userId, Number(rating), comment.trim(), now]);
 

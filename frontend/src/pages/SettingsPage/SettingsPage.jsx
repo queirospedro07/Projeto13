@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Sun,
@@ -31,9 +31,15 @@ export const SettingsPage = () => {
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
 
-  const [emailNotifs, setEmailNotifs] = useState(true);
-  const [courseUpdates, setCourseUpdates] = useState(true);
-  const [chatMentions, setChatMentions] = useState(true);
+  const [emailNotifs, setEmailNotifs] = useState(() => {
+    return localStorage.getItem(`nexo_notif_email_${user?.id}`) !== 'false';
+  });
+  const [courseUpdates, setCourseUpdates] = useState(() => {
+    return localStorage.getItem(`nexo_notif_course_${user?.id}`) !== 'false';
+  });
+  const [chatMentions, setChatMentions] = useState(() => {
+    return localStorage.getItem(`nexo_notif_mentions_${user?.id}`) !== 'false';
+  });
 
   // Profile Privacy & Visibility settings
   const [isPublic, setIsPublic] = useState(user?.profile?.isPublic !== false);
@@ -41,10 +47,7 @@ export const SettingsPage = () => {
   const [showLocation, setShowLocation] = useState(user?.profile?.showLocation !== false);
   const [showSocials, setShowSocials] = useState(user?.profile?.showSocials !== false);
   const [showStats, setShowStats] = useState(user?.profile?.showStats !== false);
-  const [showStreak, setShowStreak] = useState(user?.profile?.showStreak !== false);
   const [showCourses, setShowCourses] = useState(user?.profile?.showCourses !== false);
-  const [showBadges, setShowBadges] = useState(user?.profile?.showBadges !== false);
-  const [showLeaderboard, setShowLeaderboard] = useState(user?.profile?.showLeaderboard !== false);
 
   // Direct Messages & Permissions settings
   const [dmPermission, setDmPermission] = useState(() => {
@@ -67,16 +70,23 @@ export const SettingsPage = () => {
   const [isSavingMessaging, setIsSavingMessaging] = useState(false);
 
   useEffect(() => {
+    if (user?.id) {
+      setDmPermission(localStorage.getItem(`nexo_dm_permission_${user.id}`) || 'FRIENDS_ONLY');
+      setRequireMessageRequest(localStorage.getItem(`nexo_msg_request_${user.id}`) !== 'false');
+      setFriendsListVisibility(localStorage.getItem(`nexo_friends_visibility_${user.id}`) || 'FRIENDS');
+      setOnlineStatusVisibility(localStorage.getItem(`nexo_online_visibility_${user.id}`) || 'PUBLIC');
+      setShowReadReceipts(localStorage.getItem(`nexo_read_receipts_${user.id}`) !== 'false');
+      setEmailNotifs(localStorage.getItem(`nexo_notif_email_${user.id}`) !== 'false');
+      setCourseUpdates(localStorage.getItem(`nexo_notif_course_${user.id}`) !== 'false');
+      setChatMentions(localStorage.getItem(`nexo_notif_mentions_${user.id}`) !== 'false');
+    }
     if (user?.profile) {
       setIsPublic(user.profile.isPublic !== false);
       setShowBio(user.profile.showBio !== false);
       setShowLocation(user.profile.showLocation !== false);
       setShowSocials(user.profile.showSocials !== false);
       setShowStats(user.profile.showStats !== false);
-      setShowStreak(user.profile.showStreak !== false);
       setShowCourses(user.profile.showCourses !== false);
-      setShowBadges(user.profile.showBadges !== false);
-      setShowLeaderboard(user.profile.showLeaderboard !== false);
     }
   }, [user]);
 
@@ -89,10 +99,7 @@ export const SettingsPage = () => {
         showLocation,
         showSocials,
         showStats,
-        showStreak,
-        showCourses,
-        showBadges,
-        showLeaderboard
+        showCourses
       });
       await refreshUser();
       toast({
@@ -138,6 +145,11 @@ export const SettingsPage = () => {
   };
 
   const handleSavePreferences = () => {
+    if (user?.id) {
+      localStorage.setItem(`nexo_notif_email_${user.id}`, String(emailNotifs));
+      localStorage.setItem(`nexo_notif_course_${user.id}`, String(courseUpdates));
+      localStorage.setItem(`nexo_notif_mentions_${user.id}`, String(chatMentions));
+    }
     toast({
       title: 'Notificações Atualizadas',
       message: 'As suas preferências de notificações foram atualizadas com sucesso.',
@@ -162,7 +174,7 @@ export const SettingsPage = () => {
         </p>
       </div>
 
-      {/* ── 1. Aparência & Tema ── */}
+      {/* 1. Aparência & Tema */}
       <Card className="p-5 sm:p-8 border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#0b0c0e] shadow-xs">
         <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Aparência & Tema</h3>
         <p className="text-sm text-slate-500 dark:text-neutral-400 mb-6">
@@ -238,7 +250,7 @@ export const SettingsPage = () => {
         </div>
       </Card>
 
-      {/* ── 2. Permissões de Contacto & Mensagens Diretas (DMs) ── */}
+      {/* 2. Permissões de Contacto & Mensagens Diretas (DMs) */}
       <Card className="p-5 sm:p-8 flex flex-col gap-6 border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#0b0c0e] shadow-xs">
         <div className="pb-4 border-b border-slate-100 dark:border-neutral-800">
           <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -397,7 +409,7 @@ export const SettingsPage = () => {
         </Button>
       </Card>
 
-      {/* ── 3. Privacidade e Visibilidade do Perfil ── */}
+      {/* 3. Privacidade e Visibilidade do Perfil */}
       <Card className="p-5 sm:p-8 flex flex-col gap-6 border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#0b0c0e] shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100 dark:border-neutral-800">
           <div>
@@ -491,42 +503,6 @@ export const SettingsPage = () => {
             />
           </div>
 
-          {/* Estatísticas de XP e Nível */}
-          <div className="flex items-center justify-between pt-4">
-            <div className="pr-4">
-              <p className="text-sm font-bold text-slate-900 dark:text-white">
-                Mostrar Estatísticas & Nível XP
-              </p>
-              <p className="text-xs text-slate-500 dark:text-neutral-400">
-                Exibir o seu nível geral, total de pontos XP e progresso na plataforma.
-              </p>
-            </div>
-            <input
-              type="checkbox"
-              checked={showStats}
-              onChange={e => setShowStats(e.target.checked)}
-              className="w-5 h-5 accent-blue-600 rounded cursor-pointer shrink-0"
-            />
-          </div>
-
-          {/* Sequência Diária (Streak) */}
-          <div className="flex items-center justify-between pt-4">
-            <div className="pr-4">
-              <p className="text-sm font-bold text-slate-900 dark:text-white">
-                Mostrar Sequência de Estudo Diário (Streak)
-              </p>
-              <p className="text-xs text-slate-500 dark:text-neutral-400">
-                Exibir a contagem de dias consecutivos com sessões de aprendizagem concluídas.
-              </p>
-            </div>
-            <input
-              type="checkbox"
-              checked={showStreak}
-              onChange={e => setShowStreak(e.target.checked)}
-              className="w-5 h-5 accent-blue-600 rounded cursor-pointer shrink-0"
-            />
-          </div>
-
           {/* Cursos Matriculados */}
           <div className="flex items-center justify-between pt-4">
             <div className="pr-4">
@@ -545,42 +521,6 @@ export const SettingsPage = () => {
             />
           </div>
 
-          {/* Medalhas e Conquistas */}
-          <div className="flex items-center justify-between pt-4">
-            <div className="pr-4">
-              <p className="text-sm font-bold text-slate-900 dark:text-white">
-                Mostrar Medalhas & Badges Desbloqueados
-              </p>
-              <p className="text-xs text-slate-500 dark:text-neutral-400">
-                Exibir a galeria de troféus e conquistas conquistadas nas aulas e desafios.
-              </p>
-            </div>
-            <input
-              type="checkbox"
-              checked={showBadges}
-              onChange={e => setShowBadges(e.target.checked)}
-              className="w-5 h-5 accent-blue-600 rounded cursor-pointer shrink-0"
-            />
-          </div>
-
-          {/* Leaderboard */}
-          <div className="flex items-center justify-between pt-4">
-            <div className="pr-4">
-              <p className="text-sm font-bold text-slate-900 dark:text-white">
-                Participar na Tabela de Classificação Pública (Leaderboard)
-              </p>
-              <p className="text-xs text-slate-500 dark:text-neutral-400">
-                Exibir a sua conta no ranking competitivo semanal e global de estudantes.
-              </p>
-            </div>
-            <input
-              type="checkbox"
-              checked={showLeaderboard}
-              onChange={e => setShowLeaderboard(e.target.checked)}
-              className="w-5 h-5 accent-blue-600 rounded cursor-pointer shrink-0"
-            />
-          </div>
-
         </div>
 
         <Button
@@ -594,7 +534,7 @@ export const SettingsPage = () => {
         </Button>
       </Card>
 
-      {/* ── 4. Notificações ── */}
+      {/* 4. Notificações */}
       <Card className="p-5 sm:p-8 flex flex-col gap-6 border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#0b0c0e] shadow-xs">
         <div>
           <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
@@ -644,10 +584,10 @@ export const SettingsPage = () => {
           <div className="flex items-center justify-between pt-4">
             <div>
               <p className="text-sm font-bold text-slate-900 dark:text-white">
-                Resumo Semanal de Progresso & Conquistas
+                Resumo Semanal de Progresso
               </p>
               <p className="text-xs text-slate-500 dark:text-neutral-400">
-                Resumo semanal do XP acumulado, aulas concluídas e estado das sequências de estudo.
+                Resumo semanal das aulas concluídas e estado das sequências de estudo.
               </p>
             </div>
             <input
@@ -669,7 +609,7 @@ export const SettingsPage = () => {
         </Button>
       </Card>
 
-      {/* ── 5. Candidatura a Formador ── */}
+      {/* 5. Candidatura a Formador */}
       {user?.role !== 'CREATOR' && user?.role !== 'ADMIN' && (
         <Card className="p-5 sm:p-8 flex flex-col gap-6 border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#0b0c0e] shadow-xs">
           <div>
@@ -704,7 +644,7 @@ export const SettingsPage = () => {
         </Card>
       )}
 
-      {/* ── 6. Gestão de Sessão ── */}
+      {/* 6. Gestão de Sessão */}
       <Card className="p-5 sm:p-7 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#0b0c0e] shadow-xs">
         <div>
           <h4 className="text-base font-bold text-slate-900 dark:text-white">Gestão de Sessão</h4>

@@ -12,6 +12,7 @@ import { useSocket } from '../../context/SocketContext';
 import { useActiveCall } from '../../context/ActiveCallContext';
 import { useToast } from '../ui/Toast';
 import { soundEffects } from '../../services/soundEffects';
+import { formatRole } from '../../utils/formatters';
 
 const RTC_CONFIG = {
   iceServers: [
@@ -252,7 +253,7 @@ export const CallStage = ({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
         video: false
       });
-      if (initialMuted) {
+      if (startMutedCalc) {
         stream.getAudioTracks().forEach(t => {
           t.enabled = false;
         });
@@ -1001,7 +1002,7 @@ export const CallStage = ({
 
   // Sync initial audio state to ActiveCallContext
   useEffect(() => {
-    updateCallAudioState({ isMuted: isMicMuted, isDeafened: false });
+    updateCallAudioState({ isMuted: isMicMuted, isDeafened });
   }, [updateCallAudioState]);
 
   // Listen to remote toggle & leave events from Sidebar / Global controls
@@ -1679,7 +1680,7 @@ export const CallStage = ({
                       <Avatar src={p.avatarUrl} name={p.name} size="sm" />
                       <div>
                         <p className="text-xs font-semibold text-slate-900 dark:text-white">{p.name}</p>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400 capitalize">{p.role?.toLowerCase() || 'membro'}</p>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 capitalize">{formatRole(p.role)}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 text-slate-400">

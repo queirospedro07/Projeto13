@@ -145,7 +145,7 @@ export const JoinCallModal = ({
             };
             checkVoice();
           } catch (e) {
-            console.warn('Audio metering unavailable:', e);
+            console.warn('Medição de áudio indisponível:', e);
           }
         } else {
           setIsSpeaking(false);
@@ -314,9 +314,9 @@ export const JoinCallModal = ({
               <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-start gap-2.5 text-xs text-amber-700 dark:text-amber-400">
                 <PhoneOff className="w-4 h-4 shrink-0 text-amber-500 mt-0.5" />
                 <div className="flex flex-col">
-                  <span className="font-bold">Já te encontras numa chamada ativa:</span>
+                  <span className="font-bold">Já se encontra ligado a: {activeCall.contextTitle} • {activeCall.roomName}</span>
                   <span className="text-[11px] text-amber-600 dark:text-amber-300 mt-0.5">
-                    {activeCall.contextTitle} • {activeCall.roomName}. Ao confirmares a entrada, serás transferido e a chamada anterior será desligada automaticamente.
+                    Ao confirmar a entrada nesta sala, será transferido automaticamente da chamada anterior.
                   </span>
                 </div>
               </div>

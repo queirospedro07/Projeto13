@@ -15,7 +15,6 @@ import {
   Award,
   ShieldCheck,
   HelpCircle,
-  FileCode2,
   ArrowLeft,
   Check,
   Calendar,
@@ -33,7 +32,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/ui/Toast';
 import { useActiveCall } from '../../context/ActiveCallContext';
 import { api } from '../../services/api';
-import { formatCoursePrice } from '../../utils/formatters';
+import { formatCoursePrice, formatCategory } from '../../utils/formatters';
 
 export const CourseDetails = () => {
   const { id } = useParams();
@@ -48,7 +47,8 @@ export const CourseDetails = () => {
   const [showEnrollModal, setShowEnrollModal] = useState(false);
   const [activeTab, setActiveTab] = useState(() => {
     try {
-      return localStorage.getItem('nexo_course_details_tab') || 'overview';
+      const saved = localStorage.getItem('nexo_course_details_tab');
+      return saved && saved !== 'resources' ? saved : 'overview';
     } catch {
       return 'overview';
     }
@@ -68,7 +68,7 @@ export const CourseDetails = () => {
     : [
         'Construção de projetos práticos e arquiteturas de alta fiabilidade.',
         'Domínio de ferramentas, padrões modernos e fluxos de trabalho da indústria.',
-        'Resolução de quizzes técnicos, desafios práticos e depuração de código real.',
+        'Resolução de questionários técnicos, desafios práticos e depuração de código real.',
         'Metodologias recomendadas pelo formador e boas práticas aplicadas.'
       ];
 
@@ -80,9 +80,6 @@ export const CourseDetails = () => {
         'Nenhum conhecimento prévio avançado exigido além das noções básicas da categoria.'
       ];
 
-  const courseDocs = Array.isArray(course?.documents) && course.documents.length > 0
-    ? course.documents
-    : (course?.resources || []);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
@@ -130,10 +127,12 @@ export const CourseDetails = () => {
 
   useEffect(() => {
     fetchCourse();
-  }, [id]);
+  }, [id, user?.id]);
 
   const handleEnrollSuccess = () => {
     setShowEnrollModal(false);
+    setCourse((prev) => (prev ? { ...prev, isEnrolled: true, isMember: true } : prev));
+    window.dispatchEvent(new Event('nexo_courses_visibility_changed'));
     fetchCourse();
   };
 
@@ -218,7 +217,7 @@ export const CourseDetails = () => {
 
       <div className="max-w-7xl mx-auto flex flex-col gap-8 animate-fade-in pb-20">
         
-        {/* ── Breadcrumb & Voltar ── */}
+        {/* Breadcrumb & Voltar */}
         <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-zinc-400">
           <div className="flex items-center gap-2">
             <Link
@@ -235,7 +234,7 @@ export const CourseDetails = () => {
           </div>
         </div>
 
-      {/* ── Hero / Card Principal de Apresentação ── */}
+      {/* Hero / Card Principal de Apresentação */}
       <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-neutral-800 bg-white dark:bg-black p-6 sm:p-10 shadow-xs">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
           
@@ -243,7 +242,7 @@ export const CourseDetails = () => {
           <div className="lg:col-span-7 flex flex-col gap-5">
             <div className="flex flex-wrap items-center gap-2">
               <span className="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-bold">
-                {course.category || 'Tecnologia'}
+                {formatCategory(course.category)}
               </span>
               <span className="px-3 py-1 rounded-full bg-slate-100 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 text-slate-700 dark:text-zinc-300 text-xs font-semibold">
                 Nível {difficultyMap[course.difficulty] || course.difficulty || 'Geral'}
@@ -346,7 +345,7 @@ export const CourseDetails = () => {
                     <div className="flex flex-col gap-1">
                       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-black uppercase tracking-wider">
                         <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                        Inscrição Ativa
+                        Já estou neste curso
                       </span>
                       <span className="text-xs text-slate-500 dark:text-zinc-400 font-medium">
                         Progresso: {userProgress}% concluído
@@ -387,9 +386,9 @@ export const CourseDetails = () => {
                 ) : isEnrolled ? (
                   <div className="flex flex-col gap-2.5">
                     <Link to={`/learn/${course.id}`} className="w-full">
-                      <button className="w-full py-3.5 px-4 rounded-xl font-black text-sm bg-blue-600 hover:bg-blue-500 text-white shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer">
-                        <Play className="w-4 h-4 fill-current" />
-                        <span>Continuar Aulas ({userProgress}%)</span>
+                      <button className="w-full py-3.5 px-4 rounded-xl font-black text-sm bg-emerald-600 hover:bg-emerald-500 text-white shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer">
+                        <CheckCircle2 className="w-4 h-4 shrink-0" />
+                        <span>Já estou no curso • Continuar Aulas ({userProgress}%)</span>
                         <ArrowRight className="w-4 h-4 ml-1" />
                       </button>
                     </Link>
@@ -398,7 +397,7 @@ export const CourseDetails = () => {
                       <Link to={`/creator/courses/${course.id}/edit`} className="w-full">
                         <button className="w-full py-2.5 px-4 rounded-xl font-bold text-xs bg-slate-100 hover:bg-slate-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-slate-900 dark:text-white transition-all cursor-pointer flex items-center justify-center gap-2 border border-slate-200 dark:border-neutral-700">
                           <Sparkles className="w-4 h-4 text-blue-500" />
-                          <span>Editar este Curso no Studio</span>
+                          <span>Editar este Curso no Estúdio</span>
                         </button>
                       </Link>
                     )}
@@ -417,7 +416,7 @@ export const CourseDetails = () => {
                       <Link to={`/creator/courses/${course.id}/edit`} className="w-full">
                         <button className="w-full py-2 px-3 rounded-xl font-bold text-xs bg-slate-100 hover:bg-slate-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-slate-900 dark:text-white transition-all cursor-pointer flex items-center justify-center gap-2 border border-slate-200 dark:border-neutral-700">
                           <Sparkles className="w-3.5 h-3.5 text-blue-500" />
-                          <span>Editar este Curso no Studio</span>
+                          <span>Editar este Curso no Estúdio</span>
                         </button>
                       </Link>
                     )}
@@ -432,11 +431,7 @@ export const CourseDetails = () => {
                   </div>
                   <div className="flex items-center gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Recursos e materiais de apoio incluídos</span>
-                  </div>
-                  <div className="flex items-center gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Quizzes práticos e desafios de código integrados</span>
+                    <span>Questionários práticos e desafios de código integrados</span>
                   </div>
                   <div className="flex items-center gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -449,12 +444,11 @@ export const CourseDetails = () => {
         </div>
       </div>
 
-      {/* ── Navegação de Separadores / Tabs ── */}
+      {/* Navegação de Separadores / Tabs */}
       <div className="flex items-center gap-2 border-b border-slate-200 dark:border-neutral-800 pb-2 overflow-x-auto no-scrollbar">
         {[
           { id: 'overview', label: 'Visão Geral & Programa', icon: BookOpen },
           { id: 'curriculum', label: `Currículo (${course.modules?.length || 0} módulos)`, icon: Layers },
-          { id: 'resources', label: `Recursos & Ficheiros (${courseDocs.length})`, icon: FileCode2 },
           { id: 'reviews', label: `Avaliações (${course.reviews?.length || 0})`, icon: Star }
         ].map((tab) => {
           const Icon = tab.icon;
@@ -476,7 +470,7 @@ export const CourseDetails = () => {
         })}
       </div>
 
-      {/* ── Conteúdo dos Separadores ── */}
+      {/* Conteúdo dos Separadores */}
       <div>
         
         {/* 1. VISÃO GERAL */}
@@ -774,32 +768,7 @@ export const CourseDetails = () => {
           </div>
         )}
 
-        {/* 4. RECURSOS E FICHEIROS (Apenas o nome) */}
-        {activeTab === 'resources' && (
-          <div className="max-w-3xl flex flex-col gap-3">
-            {(!courseDocs || courseDocs.length === 0) ? (
-              <div className="py-12 text-center rounded-2xl bg-white dark:bg-black border border-slate-200 dark:border-neutral-800 text-slate-500 dark:text-zinc-400 font-medium text-sm">
-                Sem ficheiros adicionais associados a este curso neste momento.
-              </div>
-            ) : (
-              courseDocs.map((doc, dIdx) => {
-                const docTitle = doc.title || doc.name || `Documento ${dIdx + 1}`;
 
-                return (
-                  <div
-                    key={doc.id || dIdx}
-                    className="flex items-center gap-3 p-4 rounded-xl bg-white dark:bg-black border border-slate-200 dark:border-neutral-800 shadow-xs"
-                  >
-                    <FileCode2 className="w-4 h-4 text-blue-500 shrink-0" />
-                    <span className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-                      {docTitle}
-                    </span>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        )}
       </div>
 
       {/* Modal de Confirmação de Matrícula / Compra */}

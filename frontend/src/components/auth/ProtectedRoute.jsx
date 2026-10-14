@@ -11,7 +11,7 @@ export const ProtectedRoute = ({
   } = useAuth();
   const location = useLocation();
   if (isLoading) {
-    return <div className="min-h-['60vh'] flex flex-col items-center justify-center bg-slate-50 text-slate-600 gap-3">
+    return <div className="min-h-[60vh] flex flex-col items-center justify-center bg-slate-50 dark:bg-black text-slate-600 dark:text-slate-300 gap-3">
         <div className="w-8 h-8 rounded-full border-2 border-blue-600 border-t-transparent animate-spin"></div>
         <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-mono">
           A verificar credenciais de segurança...
@@ -24,11 +24,12 @@ export const ProtectedRoute = ({
     }} replace />;
   }
   if (requiredRole) {
-    if (requiredRole === 'ADMIN' && user.role !== 'ADMIN') {
+    const isAuthorized = user.role === requiredRole || user.role === 'ADMIN';
+    if (!isAuthorized) {
+      if (requiredRole === 'CREATOR') {
+        return <Navigate to="/creator/apply" replace />;
+      }
       return <Navigate to="/dashboard" replace />;
-    }
-    if (requiredRole === 'CREATOR' && user.role !== 'CREATOR' && user.role !== 'ADMIN') {
-      return <Navigate to="/creator/apply" replace />;
     }
   }
   return children;

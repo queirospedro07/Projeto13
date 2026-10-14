@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText } from 'lucide-react';
+import { FileText, Download } from 'lucide-react';
 
 export const CourseDocumentsView = ({ documents = [] }) => {
   const docsToRender = Array.isArray(documents) && documents.length > 0
@@ -29,16 +29,31 @@ export const CourseDocumentsView = ({ documents = [] }) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {docsToRender.map((doc, idx) => {
             const docTitle = doc.title || doc.name || `Documento ${idx + 1}`;
+            const fileHref = doc.url || doc.data;
 
             return (
               <div
                 key={doc.id || doc.title || idx}
-                className="p-4 bg-white dark:bg-black border border-slate-200 dark:border-neutral-800 rounded-xl shadow-xs flex items-center gap-3"
+                className="p-4 bg-white dark:bg-black border border-slate-200 dark:border-neutral-800 rounded-xl shadow-xs flex items-center justify-between gap-3"
               >
-                <FileText className="w-4 h-4 text-blue-500 shrink-0" />
-                <span className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-                  {docTitle}
-                </span>
+                <div className="flex items-center gap-3 min-w-0">
+                  <FileText className="w-4 h-4 text-blue-500 shrink-0" />
+                  <span className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                    {docTitle}
+                  </span>
+                </div>
+                {fileHref && (
+                  <a
+                    href={fileHref}
+                    download={doc.fileName || docTitle}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 text-xs font-bold flex items-center gap-1.5 shrink-0 transition-colors"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Transferir</span>
+                  </a>
+                )}
               </div>
             );
           })}

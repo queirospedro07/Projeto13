@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams, useLocation, useNavigate, Link } from 'react-router-dom';
 import {
@@ -29,7 +29,7 @@ import { FriendsManager } from '../../../features/messages/components/FriendsMan
 
 export const MessagesPage = () => {
   const { user } = useAuth();
-  const { socket } = useSocket();
+  const { socket, onlineUsers } = useSocket();
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
@@ -71,15 +71,37 @@ export const MessagesPage = () => {
   });
 
   // Read receipts preference
-  const showReadReceipts = typeof window !== 'undefined'
-    ? localStorage.getItem(`nexo_read_receipts_${user?.id}`) !== 'false'
-    : true;
+  const [showReadReceipts, setShowReadReceipts] = useState(() => {
+    return typeof window !== 'undefined'
+      ? localStorage.getItem(`nexo_read_receipts_${user?.id}`) !== 'false'
+      : true;
+  });
+
+  useEffect(() => {
+    if (!user?.id) return;
+    try {
+      setPinnedPeerIds(JSON.parse(localStorage.getItem(`nexo_pinned_peers_${user.id}`) || '[]'));
+    } catch {
+      setPinnedPeerIds([]);
+    }
+    setOnlyShowPinned(localStorage.getItem(`nexo_only_pinned_${user.id}`) === 'true');
+    setShowReadReceipts(localStorage.getItem(`nexo_read_receipts_${user.id}`) !== 'false');
+  }, [user?.id]);
 
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  const isUserOnline = (id) =>
+    Boolean(
+      id &&
+        (typeof onlineUsers?.has === 'function'
+          ? onlineUsers.has(id)
+          : Array.isArray(onlineUsers) &&
+            onlineUsers.some((u) => String(typeof u === 'string' ? u : u?.userId || u?.id) === String(id)))
+    );
 
   const togglePinPeer = (peerId, e) => {
     if (e) e.stopPropagation();
@@ -126,9 +148,11 @@ export const MessagesPage = () => {
         } else if (location.state?.peer && location.state.peer.id === targetUserId) {
           setActivePeer(location.state.peer);
         } else {
-          api.searchSocialUsers('').then((allUsers) => {
-            const match = (allUsers || []).find((u) => u.id === targetUserId);
-            if (match) setActivePeer(match);
+          api.getDirectMessages(targetUserId).then((res) => {
+            if (res?.peer) {
+              setActivePeer(res.peer);
+              if (res.messages) setMessages(res.messages);
+            }
           }).catch(() => {});
         }
       } else if (!activePeer && list.length > 0 && mainTab === 'chat') {
@@ -308,9 +332,14 @@ export const MessagesPage = () => {
     setMainTab('chat');
     setIsNewChatModalOpen(false);
     setSearchQuery('');
-    setConversations((prev) =>
-      prev.map((c) => (c.peer?.id === peer.id ? { ...c, unreadCount: 0 } : c))
-    );
+    setSearchParams({ userId: peer.id });
+    setConversations((prev) => {
+      const exists = prev.some((c) => c.peer?.id === peer.id);
+      if (!exists) {
+        return [{ peer, lastMessage: null, unreadCount: 0 }, ...prev];
+      }
+      return prev.map((c) => (c.peer?.id === peer.id ? { ...c, unreadCount: 0 } : c));
+    });
   };
 
   const handleSearchAndAddFriend = async (e) => {
@@ -430,7 +459,7 @@ export const MessagesPage = () => {
 
   return (
     <div className="max-w-7xl mx-auto h-[calc(100vh-5.5rem)] md:h-[calc(100vh-6rem)] flex flex-col md:flex-row rounded-2xl md:rounded-xl overflow-hidden border border-slate-200/90 dark:border-neutral-800 bg-white dark:bg-[#0b0c0e] shadow-sm animate-fade-in mb-2 md:mb-6">
-      {/* ── SIDEBAR (CONVERSATIONS / FRIENDS) ── */}
+      {/* SIDEBAR (CONVERSATIONS / FRIENDS) */}
       <aside
         className={`w-full md:w-80 border-r border-slate-200/90 dark:border-neutral-800 bg-slate-50/60 dark:bg-[#0e0f12] flex flex-col shrink-0 ${
           mainTab === 'friends' || (mainTab === 'chat' && activePeer) ? 'hidden md:flex' : 'flex'
@@ -616,7 +645,7 @@ export const MessagesPage = () => {
                 >
                   <div className="relative shrink-0">
                     <Avatar src={c.peer.avatarUrl} name={c.peer.name} size="md" className="rounded-xl" />
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white dark:border-black absolute -bottom-0.5 -right-0.5" />
+                    <span className={`w-2.5 h-2.5 rounded-full ${isUserOnline(c.peer?.id) ? 'bg-emerald-500' : 'bg-slate-400 dark:bg-zinc-600'} border border-white dark:border-black absolute -bottom-0.5 -right-0.5`} />
                     {isPinned && (
                       <span className="w-3.5 h-3.5 rounded-full bg-blue-600 text-white flex items-center justify-center absolute -top-1 -left-1 shadow-xs ring-1 ring-white dark:ring-black">
                         <Pin className="w-2 h-2 fill-white" />
@@ -678,7 +707,7 @@ export const MessagesPage = () => {
         </div>
       </aside>
 
-      {/* ── MAIN CONTENT (CHAT / FRIENDS / CALL) ── */}
+      {/* MAIN CONTENT (CHAT / FRIENDS / CALL) */}
       <main
         className={`flex-1 flex flex-col bg-white dark:bg-[#0b0c0e] overflow-hidden ${
           mainTab === 'chat' && !activePeer ? 'hidden md:flex' : 'flex'
@@ -749,7 +778,7 @@ export const MessagesPage = () => {
                   </button>
                   <div className="relative shrink-0">
                     <Avatar src={activePeer.avatarUrl} name={activePeer.name} size="sm" className="rounded-xl" />
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white dark:border-black absolute -bottom-0.5 -right-0.5" />
+                    <span className={`w-2.5 h-2.5 rounded-full ${isUserOnline(activePeer.id) ? 'bg-emerald-500' : 'bg-slate-400 dark:bg-zinc-600'} border border-white dark:border-black absolute -bottom-0.5 -right-0.5`} />
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
@@ -760,9 +789,9 @@ export const MessagesPage = () => {
                         @{activePeer.username}
                       </span>
                     </div>
-                    <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse" />
-                      Disponível
+                    <p className={`text-[10px] ${isUserOnline(activePeer.id) ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-zinc-500'} font-semibold flex items-center gap-1`}>
+                      <span className={`w-1.5 h-1.5 rounded-full inline-block ${isUserOnline(activePeer.id) ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400 dark:bg-zinc-600'}`} />
+                      {isUserOnline(activePeer.id) ? 'Disponível' : 'Offline'}
                     </p>
                   </div>
                 </div>
@@ -807,7 +836,7 @@ export const MessagesPage = () => {
                     <span className="hidden sm:inline">Chamada</span>
                   </button>
 
-                  <Link to={`/profile/${activePeer.username}`}>
+                  <Link to={`/profile/${activePeer.username || activePeer.id}`}>
                     <Button variant="secondary" size="sm" className="font-bold text-xs py-1.5 px-3">
                       Perfil
                     </Button>
@@ -955,7 +984,7 @@ export const MessagesPage = () => {
         )}
       </main>
 
-      {/* ── MODAL: NOVA CONVERSA ── */}
+      {/* MODAL: NOVA CONVERSA */}
       {isNewChatModalOpen &&
         createPortal(
           <div className="fixed inset-0 z-[9999] overflow-y-auto" style={{ isolation: 'isolate' }}>

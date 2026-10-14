@@ -2,6 +2,49 @@ import bcrypt from 'bcryptjs';
 import { seedDemoShowcaseData } from './demoSeed.js';
 
 export function initializeSchemaAndSeed(db) {
+  try {
+    const legacyQuizzesTable = db.prepare("SELECT type FROM sqlite_master WHERE name = 'quizzes'").get();
+    if (legacyQuizzesTable && legacyQuizzesTable.type === 'table') {
+      db.exec(`
+        PRAGMA foreign_keys = OFF;
+        CREATE TABLE IF NOT EXISTS questionarios (
+          id TEXT PRIMARY KEY,
+          id_aula TEXT UNIQUE NOT NULL,
+          titulo TEXT NOT NULL,
+          descricao TEXT,
+          pontuacao_aprovacao INTEGER NOT NULL DEFAULT 70,
+          recompensa_xp INTEGER NOT NULL DEFAULT 50,
+          FOREIGN KEY(id_aula) REFERENCES aulas(id) ON DELETE CASCADE
+        );
+        INSERT OR IGNORE INTO questionarios SELECT * FROM quizzes;
+        DROP TABLE quizzes;
+        PRAGMA foreign_keys = ON;
+      `);
+    }
+
+    db.exec(`
+      PRAGMA foreign_keys = OFF;
+      DROP VIEW IF EXISTS reactions;
+      DROP VIEW IF EXISTS course_roles;
+      DROP VIEW IF EXISTS course_member_roles;
+      DROP VIEW IF EXISTS admin_applications;
+      DROP VIEW IF EXISTS support_tickets;
+      DROP VIEW IF EXISTS ticket_messages;
+      DROP VIEW IF EXISTS qa_questions;
+      DROP VIEW IF EXISTS qa_answers;
+
+      DROP TABLE IF EXISTS reacoes;
+      DROP TABLE IF EXISTS cargos_membros_curso;
+      DROP TABLE IF EXISTS cargos_curso;
+      DROP TABLE IF EXISTS candidaturas_admin;
+      DROP TABLE IF EXISTS perguntas_qa;
+      DROP TABLE IF EXISTS respostas_qa;
+
+      UPDATE utilizadores SET esta_suspenso = 0 WHERE esta_suspenso != 1 OR papel = 'ADMIN';
+      PRAGMA foreign_keys = ON;
+    `);
+  } catch (_) {}
+
   // 1. CRIAÇÃO DAS TABELAS EM PORTUGUÊS DE PORTUGAL (PT-PT)
   db.exec(`
     CREATE TABLE IF NOT EXISTS utilizadores (
@@ -14,13 +57,9 @@ export function initializeSchemaAndSeed(db) {
       url_avatar TEXT,
       biografia TEXT,
       localizacao TEXT,
-      dias_sequencia INTEGER NOT NULL DEFAULT 0,
-      data_ultima_atividade TEXT,
       meta_diaria_minutos INTEGER NOT NULL DEFAULT 45,
       minutos_hoje INTEGER NOT NULL DEFAULT 0,
       minutos_totais INTEGER NOT NULL DEFAULT 0,
-      xp INTEGER NOT NULL DEFAULT 0,
-      nivel INTEGER NOT NULL DEFAULT 1,
       esta_suspenso INTEGER NOT NULL DEFAULT 0,
       criado_em TEXT NOT NULL,
       atualizado_em TEXT NOT NULL
@@ -41,13 +80,7 @@ export function initializeSchemaAndSeed(db) {
       titulo_perfil TEXT,
       website TEXT,
       github TEXT,
-      twitter TEXT,
       linkedin TEXT,
-      instagram TEXT,
-      youtube TEXT,
-      tiktok TEXT,
-      discord TEXT,
-      twitch TEXT,
       url_banner TEXT,
       posicao_banner TEXT DEFAULT '50% 50%',
       e_publico INTEGER NOT NULL DEFAULT 1,
@@ -111,6 +144,7 @@ export function initializeSchemaAndSeed(db) {
       titulo TEXT NOT NULL,
       descricao TEXT,
       indice_ordem INTEGER NOT NULL DEFAULT 0,
+      modo_desbloqueio TEXT NOT NULL DEFAULT 'instant',
       FOREIGN KEY(id_curso) REFERENCES cursos(id) ON DELETE CASCADE
     );
 
@@ -210,16 +244,6 @@ export function initializeSchemaAndSeed(db) {
       FOREIGN KEY(id_utilizador) REFERENCES utilizadores(id) ON DELETE CASCADE
     );
 
-    CREATE TABLE IF NOT EXISTS reacoes (
-      id TEXT PRIMARY KEY,
-      id_mensagem TEXT NOT NULL,
-      id_utilizador TEXT NOT NULL,
-      emoji TEXT NOT NULL,
-      FOREIGN KEY(id_mensagem) REFERENCES mensagens(id) ON DELETE CASCADE,
-      FOREIGN KEY(id_utilizador) REFERENCES utilizadores(id) ON DELETE CASCADE,
-      UNIQUE(id_mensagem, id_utilizador, emoji)
-    );
-
     CREATE TABLE IF NOT EXISTS avaliacoes (
       id TEXT PRIMARY KEY,
       id_curso TEXT NOT NULL,
@@ -231,7 +255,7 @@ export function initializeSchemaAndSeed(db) {
       FOREIGN KEY(id_utilizador) REFERENCES utilizadores(id) ON DELETE CASCADE
     );
 
-    CREATE TABLE IF NOT EXISTS quizzes (
+    CREATE TABLE IF NOT EXISTS questionarios (
       id TEXT PRIMARY KEY,
       id_aula TEXT UNIQUE NOT NULL,
       titulo TEXT NOT NULL,
@@ -249,7 +273,7 @@ export function initializeSchemaAndSeed(db) {
       indice_opcao_correta INTEGER NOT NULL,
       explicacao TEXT,
       indice_ordem INTEGER NOT NULL DEFAULT 0,
-      FOREIGN KEY(id_quiz) REFERENCES quizzes(id) ON DELETE CASCADE
+      FOREIGN KEY(id_quiz) REFERENCES questionarios(id) ON DELETE CASCADE
     );
 
     CREATE TABLE IF NOT EXISTS tentativas_quiz (
@@ -259,38 +283,7 @@ export function initializeSchemaAndSeed(db) {
       pontuacao INTEGER NOT NULL,
       passou INTEGER NOT NULL,
       tentado_em TEXT NOT NULL,
-      FOREIGN KEY(id_quiz) REFERENCES quizzes(id) ON DELETE CASCADE,
-      FOREIGN KEY(id_utilizador) REFERENCES utilizadores(id) ON DELETE CASCADE
-    );
-
-    CREATE TABLE IF NOT EXISTS conquistas (
-      id TEXT PRIMARY KEY,
-      slug TEXT UNIQUE NOT NULL,
-      titulo TEXT NOT NULL,
-      descricao TEXT NOT NULL,
-      icone TEXT NOT NULL,
-      categoria TEXT NOT NULL,
-      raridade TEXT NOT NULL,
-      recompensa_xp INTEGER NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS conquistas_utilizadores (
-      id TEXT PRIMARY KEY,
-      id_utilizador TEXT NOT NULL,
-      id_conquista TEXT NOT NULL,
-      desbloqueado_em TEXT NOT NULL,
-      FOREIGN KEY(id_utilizador) REFERENCES utilizadores(id) ON DELETE CASCADE,
-      FOREIGN KEY(id_conquista) REFERENCES conquistas(id) ON DELETE CASCADE,
-      UNIQUE(id_utilizador, id_conquista)
-    );
-
-    CREATE TABLE IF NOT EXISTS transacoes_xp (
-      id TEXT PRIMARY KEY,
-      id_utilizador TEXT NOT NULL,
-      quantidade INTEGER NOT NULL,
-      acao TEXT NOT NULL,
-      descricao TEXT NOT NULL,
-      criado_em TEXT NOT NULL,
+      FOREIGN KEY(id_quiz) REFERENCES questionarios(id) ON DELETE CASCADE,
       FOREIGN KEY(id_utilizador) REFERENCES utilizadores(id) ON DELETE CASCADE
     );
 
@@ -316,29 +309,6 @@ export function initializeSchemaAndSeed(db) {
       atualizado_em TEXT NOT NULL,
       FOREIGN KEY(id_utilizador) REFERENCES utilizadores(id) ON DELETE CASCADE,
       FOREIGN KEY(id_aula) REFERENCES aulas(id) ON DELETE CASCADE
-    );
-
-    CREATE TABLE IF NOT EXISTS perguntas_qa (
-      id TEXT PRIMARY KEY,
-      id_curso TEXT NOT NULL,
-      id_utilizador TEXT NOT NULL,
-      titulo TEXT NOT NULL,
-      corpo TEXT NOT NULL,
-      esta_respondida INTEGER NOT NULL DEFAULT 0,
-      criado_em TEXT NOT NULL,
-      FOREIGN KEY(id_curso) REFERENCES cursos(id) ON DELETE CASCADE,
-      FOREIGN KEY(id_utilizador) REFERENCES utilizadores(id) ON DELETE CASCADE
-    );
-
-    CREATE TABLE IF NOT EXISTS respostas_qa (
-      id TEXT PRIMARY KEY,
-      id_pergunta TEXT NOT NULL,
-      id_utilizador TEXT NOT NULL,
-      corpo TEXT NOT NULL,
-      esta_aceite INTEGER NOT NULL DEFAULT 0,
-      criado_em TEXT NOT NULL,
-      FOREIGN KEY(id_pergunta) REFERENCES perguntas_qa(id) ON DELETE CASCADE,
-      FOREIGN KEY(id_utilizador) REFERENCES utilizadores(id) ON DELETE CASCADE
     );
 
     CREATE TABLE IF NOT EXISTS notificacoes (
@@ -386,31 +356,14 @@ export function initializeSchemaAndSeed(db) {
       FOREIGN KEY(id_destinatario) REFERENCES utilizadores(id) ON DELETE CASCADE
     );
 
-    CREATE TABLE IF NOT EXISTS cargos_curso (
-      id TEXT PRIMARY KEY,
-      id_curso TEXT NOT NULL,
-      nome TEXT NOT NULL,
-      cor TEXT NOT NULL DEFAULT 'indigo',
-      pode_publicar_anuncios INTEGER NOT NULL DEFAULT 0,
-      pode_falar_palco INTEGER NOT NULL DEFAULT 0,
-      pode_partilhar_ecra INTEGER NOT NULL DEFAULT 0,
-      pode_moderar_chat INTEGER NOT NULL DEFAULT 0,
-      pode_gerir_voz INTEGER NOT NULL DEFAULT 0,
-      indice_ordem INTEGER NOT NULL DEFAULT 0,
-      criado_em TEXT NOT NULL,
-      FOREIGN KEY(id_curso) REFERENCES cursos(id) ON DELETE CASCADE
-    );
-
-    CREATE TABLE IF NOT EXISTS cargos_membros_curso (
+    CREATE TABLE IF NOT EXISTS colaboradores_curso (
       id TEXT PRIMARY KEY,
       id_curso TEXT NOT NULL,
       id_utilizador TEXT NOT NULL,
-      id_cargo TEXT NOT NULL,
-      atribuido_em TEXT NOT NULL,
+      criado_em TEXT NOT NULL,
       FOREIGN KEY(id_curso) REFERENCES cursos(id) ON DELETE CASCADE,
       FOREIGN KEY(id_utilizador) REFERENCES utilizadores(id) ON DELETE CASCADE,
-      FOREIGN KEY(id_cargo) REFERENCES cargos_curso(id) ON DELETE CASCADE,
-      UNIQUE(id_curso, id_utilizador, id_cargo)
+      UNIQUE(id_curso, id_utilizador)
     );
 
     CREATE TABLE IF NOT EXISTS candidaturas_criador (
@@ -433,51 +386,6 @@ export function initializeSchemaAndSeed(db) {
       FOREIGN KEY(id_utilizador) REFERENCES utilizadores(id) ON DELETE CASCADE
     );
 
-    CREATE TABLE IF NOT EXISTS candidaturas_admin (
-      id TEXT PRIMARY KEY,
-      id_utilizador TEXT NOT NULL,
-      nome_completo TEXT NOT NULL,
-      email TEXT NOT NULL,
-      motivacao TEXT NOT NULL,
-      experiencia TEXT NOT NULL,
-      horas_disponibilidade_semanal INTEGER NOT NULL DEFAULT 10,
-      areas_interesse TEXT NOT NULL,
-      cenario_situacao TEXT NOT NULL,
-      estado TEXT NOT NULL DEFAULT 'PENDING',
-      parecer_admin TEXT,
-      revisto_por TEXT,
-      revisto_em TEXT,
-      criado_em TEXT NOT NULL,
-      atualizado_em TEXT NOT NULL,
-      FOREIGN KEY(id_utilizador) REFERENCES utilizadores(id) ON DELETE CASCADE
-    );
-
-    CREATE TABLE IF NOT EXISTS pedidos_suporte (
-      id TEXT PRIMARY KEY,
-      id_utilizador TEXT NOT NULL,
-      assunto TEXT NOT NULL,
-      categoria TEXT NOT NULL DEFAULT 'Dúvidas Gerais',
-      prioridade TEXT NOT NULL DEFAULT 'MÉDIA',
-      estado TEXT NOT NULL DEFAULT 'ABERTO',
-      criado_em TEXT NOT NULL,
-      atualizado_em TEXT NOT NULL,
-      resolvido_em TEXT,
-      id_admin_atribuido TEXT,
-      FOREIGN KEY(id_utilizador) REFERENCES utilizadores(id) ON DELETE CASCADE,
-      FOREIGN KEY(id_admin_atribuido) REFERENCES utilizadores(id) ON DELETE SET NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS mensagens_suporte (
-      id TEXT PRIMARY KEY,
-      id_pedido TEXT NOT NULL,
-      id_remetente TEXT NOT NULL,
-      conteudo TEXT NOT NULL,
-      e_resposta_admin INTEGER NOT NULL DEFAULT 0,
-      criado_em TEXT NOT NULL,
-      FOREIGN KEY(id_pedido) REFERENCES pedidos_suporte(id) ON DELETE CASCADE,
-      FOREIGN KEY(id_remetente) REFERENCES utilizadores(id) ON DELETE CASCADE
-    );
-
     -- ÍNDICES DE ALTA PERFORMANCE
     CREATE INDEX IF NOT EXISTS idx_utilizadores_email ON utilizadores(email);
     CREATE INDEX IF NOT EXISTS idx_utilizadores_nome_utilizador ON utilizadores(nome_utilizador);
@@ -492,32 +400,31 @@ export function initializeSchemaAndSeed(db) {
     CREATE INDEX IF NOT EXISTS idx_notificacoes_utilizador ON notificacoes(id_utilizador);
     CREATE INDEX IF NOT EXISTS idx_candidaturas_criador_utilizador ON candidaturas_criador(id_utilizador);
     CREATE INDEX IF NOT EXISTS idx_candidaturas_criador_estado ON candidaturas_criador(estado);
-    CREATE INDEX IF NOT EXISTS idx_candidaturas_admin_utilizador ON candidaturas_admin(id_utilizador);
-    CREATE INDEX IF NOT EXISTS idx_candidaturas_admin_estado ON candidaturas_admin(estado);
-    CREATE INDEX IF NOT EXISTS idx_pedidos_suporte_utilizador ON pedidos_suporte(id_utilizador);
-    CREATE INDEX IF NOT EXISTS idx_pedidos_suporte_estado ON pedidos_suporte(estado);
-    CREATE INDEX IF NOT EXISTS idx_mensagens_suporte_pedido ON mensagens_suporte(id_pedido);
+    CREATE INDEX IF NOT EXISTS idx_colaboradores_curso_curso ON colaboradores_curso(id_curso);
+    CREATE INDEX IF NOT EXISTS idx_colaboradores_curso_utilizador ON colaboradores_curso(id_utilizador);
   `);
 
   // 2. VISTAS E GATILHOS (VIEWS & INSTEAD OF TRIGGERS) PARA TOTAL COMPATIBILIDADE BIDIRECIONAL
   db.exec(`
-    CREATE VIEW IF NOT EXISTS users AS
+    DROP TRIGGER IF EXISTS trg_users_insert;
+    DROP TRIGGER IF EXISTS trg_users_update;
+    DROP VIEW IF EXISTS users;
+    CREATE VIEW users AS
     SELECT
       id, email, nome_utilizador AS username, hash_palavra_passe AS passwordHash, nome AS name,
       papel AS role, url_avatar AS avatarUrl, biografia AS bio, localizacao AS location,
-      dias_sequencia AS streakDays, data_ultima_atividade AS lastActiveDate,
       meta_diaria_minutos AS dailyGoalMinutes, minutos_hoje AS minutesToday,
-      minutos_totais AS totalMinutes, xp, nivel AS level, esta_suspenso AS isSuspended,
+      minutos_totais AS totalMinutes, 0 AS xp, 1 AS level, esta_suspenso AS isSuspended,
       criado_em AS createdAt, atualizado_em AS updatedAt
     FROM utilizadores;
 
-    CREATE TRIGGER IF NOT EXISTS trg_users_insert INSTEAD OF INSERT ON users
+    CREATE TRIGGER trg_users_insert INSTEAD OF INSERT ON users
     FOR EACH ROW BEGIN
-      INSERT INTO utilizadores (id, email, nome_utilizador, hash_palavra_passe, nome, papel, url_avatar, biografia, localizacao, dias_sequencia, data_ultima_atividade, meta_diaria_minutos, minutos_hoje, minutos_totais, xp, nivel, esta_suspenso, criado_em, atualizado_em)
-      VALUES (NEW.id, NEW.email, NEW.username, NEW.passwordHash, NEW.name, COALESCE(NEW.role, 'STUDENT'), NEW.avatarUrl, NEW.bio, NEW.location, COALESCE(NEW.streakDays, 0), NEW.lastActiveDate, COALESCE(NEW.dailyGoalMinutes, 45), COALESCE(NEW.minutesToday, 0), COALESCE(NEW.totalMinutes, 0), COALESCE(NEW.xp, 0), COALESCE(NEW.level, 1), COALESCE(NEW.isSuspended, 0), NEW.createdAt, NEW.updatedAt);
+      INSERT INTO utilizadores (id, email, nome_utilizador, hash_palavra_passe, nome, papel, url_avatar, biografia, localizacao, meta_diaria_minutos, minutos_hoje, minutos_totais, esta_suspenso, criado_em, atualizado_em)
+      VALUES (NEW.id, NEW.email, NEW.username, NEW.passwordHash, NEW.name, COALESCE(NEW.role, 'STUDENT'), NEW.avatarUrl, NEW.bio, NEW.location, COALESCE(NEW.dailyGoalMinutes, 45), COALESCE(NEW.minutesToday, 0), COALESCE(NEW.totalMinutes, 0), COALESCE(NEW.isSuspended, 0), NEW.createdAt, NEW.updatedAt);
     END;
 
-    CREATE TRIGGER IF NOT EXISTS trg_users_update INSTEAD OF UPDATE ON users
+    CREATE TRIGGER trg_users_update INSTEAD OF UPDATE ON users
     FOR EACH ROW BEGIN
       UPDATE utilizadores SET
         email = COALESCE(NEW.email, email),
@@ -525,16 +432,12 @@ export function initializeSchemaAndSeed(db) {
         hash_palavra_passe = COALESCE(NEW.passwordHash, hash_palavra_passe),
         nome = COALESCE(NEW.name, nome),
         papel = COALESCE(NEW.role, papel),
-        url_avatar = COALESCE(NEW.avatarUrl, url_avatar),
-        biografia = COALESCE(NEW.bio, biografia),
-        localizacao = COALESCE(NEW.location, localizacao),
-        dias_sequencia = COALESCE(NEW.streakDays, dias_sequencia),
-        data_ultima_atividade = COALESCE(NEW.lastActiveDate, data_ultima_atividade),
+        url_avatar = NEW.avatarUrl,
+        biografia = NEW.bio,
+        localizacao = NEW.location,
         meta_diaria_minutos = COALESCE(NEW.dailyGoalMinutes, meta_diaria_minutos),
         minutos_hoje = COALESCE(NEW.minutesToday, minutos_hoje),
         minutos_totais = COALESCE(NEW.totalMinutes, minutos_totais),
-        xp = COALESCE(NEW.xp, xp),
-        nivel = COALESCE(NEW.level, nivel),
         esta_suspenso = COALESCE(NEW.isSuspended, esta_suspenso),
         criado_em = COALESCE(NEW.createdAt, criado_em),
         atualizado_em = COALESCE(NEW.updatedAt, atualizado_em)
@@ -563,8 +466,8 @@ export function initializeSchemaAndSeed(db) {
 
     CREATE VIEW IF NOT EXISTS profiles AS
     SELECT
-      id, id_utilizador AS userId, titulo_perfil AS headline, website, github, twitter, linkedin, instagram,
-      youtube, tiktok, discord, twitch, url_banner AS bannerUrl, posicao_banner AS bannerPosition,
+      id, id_utilizador AS userId, titulo_perfil AS headline, website, github, linkedin,
+      url_banner AS bannerUrl, posicao_banner AS bannerPosition,
       e_publico AS isPublic, mostrar_sequencia AS showStreak, mostrar_classificacao AS showLeaderboard,
       mostrar_biografia AS showBio, mostrar_localizacao AS showLocation, mostrar_redes_sociais AS showSocials,
       mostrar_estatisticas AS showStats, mostrar_cursos AS showCourses, mostrar_insignias AS showBadges,
@@ -573,24 +476,19 @@ export function initializeSchemaAndSeed(db) {
 
     CREATE TRIGGER IF NOT EXISTS trg_profiles_insert INSTEAD OF INSERT ON profiles
     FOR EACH ROW BEGIN
-      INSERT INTO perfis (id, id_utilizador, titulo_perfil, website, github, twitter, linkedin, instagram, youtube, tiktok, discord, twitch, url_banner, posicao_banner, e_publico, mostrar_sequencia, mostrar_classificacao, mostrar_biografia, mostrar_localizacao, mostrar_redes_sociais, mostrar_estatisticas, mostrar_cursos, mostrar_insignias, preferencia_tema)
-      VALUES (NEW.id, NEW.userId, NEW.headline, NEW.website, NEW.github, NEW.twitter, NEW.linkedin, NEW.instagram, NEW.youtube, NEW.tiktok, NEW.discord, NEW.twitch, NEW.bannerUrl, COALESCE(NEW.bannerPosition, '50% 50%'), COALESCE(NEW.isPublic, 1), COALESCE(NEW.showStreak, 1), COALESCE(NEW.showLeaderboard, 1), COALESCE(NEW.showBio, 1), COALESCE(NEW.showLocation, 1), COALESCE(NEW.showSocials, 1), COALESCE(NEW.showStats, 1), COALESCE(NEW.showCourses, 1), COALESCE(NEW.showBadges, 1), COALESCE(NEW.themePreference, 'light'));
+      INSERT INTO perfis (id, id_utilizador, titulo_perfil, website, github, linkedin, url_banner, posicao_banner, e_publico, mostrar_sequencia, mostrar_classificacao, mostrar_biografia, mostrar_localizacao, mostrar_redes_sociais, mostrar_estatisticas, mostrar_cursos, mostrar_insignias, preferencia_tema)
+      VALUES (NEW.id, NEW.userId, NEW.headline, NEW.website, NEW.github, NEW.linkedin, NEW.bannerUrl, COALESCE(NEW.bannerPosition, '50% 50%'), COALESCE(NEW.isPublic, 1), COALESCE(NEW.showStreak, 1), COALESCE(NEW.showLeaderboard, 1), COALESCE(NEW.showBio, 1), COALESCE(NEW.showLocation, 1), COALESCE(NEW.showSocials, 1), COALESCE(NEW.showStats, 1), COALESCE(NEW.showCourses, 1), COALESCE(NEW.showBadges, 1), COALESCE(NEW.themePreference, 'light'));
     END;
 
+    DROP TRIGGER IF EXISTS trg_profiles_update;
     CREATE TRIGGER IF NOT EXISTS trg_profiles_update INSTEAD OF UPDATE ON profiles
     FOR EACH ROW BEGIN
       UPDATE perfis SET
-        titulo_perfil = COALESCE(NEW.headline, titulo_perfil),
-        website = COALESCE(NEW.website, website),
-        github = COALESCE(NEW.github, github),
-        twitter = COALESCE(NEW.twitter, twitter),
-        linkedin = COALESCE(NEW.linkedin, linkedin),
-        instagram = COALESCE(NEW.instagram, instagram),
-        youtube = COALESCE(NEW.youtube, youtube),
-        tiktok = COALESCE(NEW.tiktok, tiktok),
-        discord = COALESCE(NEW.discord, discord),
-        twitch = COALESCE(NEW.twitch, twitch),
-        url_banner = COALESCE(NEW.bannerUrl, url_banner),
+        titulo_perfil = NEW.headline,
+        website = NEW.website,
+        github = NEW.github,
+        linkedin = NEW.linkedin,
+        url_banner = NEW.bannerUrl,
         posicao_banner = COALESCE(NEW.bannerPosition, posicao_banner),
         e_publico = COALESCE(NEW.isPublic, e_publico),
         mostrar_sequencia = COALESCE(NEW.showStreak, mostrar_sequencia),
@@ -680,14 +578,17 @@ export function initializeSchemaAndSeed(db) {
       DELETE FROM cursos WHERE id = OLD.id;
     END;
 
-    CREATE VIEW IF NOT EXISTS course_modules AS
-    SELECT id, id_curso AS courseId, titulo AS title, descricao AS description, indice_ordem AS orderIndex
+    DROP TRIGGER IF EXISTS trg_course_modules_insert;
+    DROP TRIGGER IF EXISTS trg_course_modules_update;
+    DROP VIEW IF EXISTS course_modules;
+    CREATE VIEW course_modules AS
+    SELECT id, id_curso AS courseId, titulo AS title, descricao AS description, indice_ordem AS orderIndex, COALESCE(modo_desbloqueio, 'instant') AS dripMode
     FROM modulos_curso;
 
     CREATE TRIGGER IF NOT EXISTS trg_course_modules_insert INSTEAD OF INSERT ON course_modules
     FOR EACH ROW BEGIN
-      INSERT INTO modulos_curso (id, id_curso, titulo, descricao, indice_ordem)
-      VALUES (NEW.id, NEW.courseId, NEW.title, NEW.description, COALESCE(NEW.orderIndex, 0));
+      INSERT INTO modulos_curso (id, id_curso, titulo, descricao, indice_ordem, modo_desbloqueio)
+      VALUES (NEW.id, NEW.courseId, NEW.title, NEW.description, COALESCE(NEW.orderIndex, 0), COALESCE(NEW.dripMode, 'instant'));
     END;
 
     CREATE TRIGGER IF NOT EXISTS trg_course_modules_update INSTEAD OF UPDATE ON course_modules
@@ -696,7 +597,8 @@ export function initializeSchemaAndSeed(db) {
         id_curso = COALESCE(NEW.courseId, id_curso),
         titulo = COALESCE(NEW.title, titulo),
         descricao = COALESCE(NEW.description, descricao),
-        indice_ordem = COALESCE(NEW.orderIndex, indice_ordem)
+        indice_ordem = COALESCE(NEW.orderIndex, indice_ordem),
+        modo_desbloqueio = COALESCE(NEW.dripMode, modo_desbloqueio)
       WHERE id = OLD.id;
     END;
 
@@ -916,21 +818,6 @@ export function initializeSchemaAndSeed(db) {
       DELETE FROM mensagens WHERE id = OLD.id;
     END;
 
-    CREATE VIEW IF NOT EXISTS reactions AS
-    SELECT id, id_mensagem AS messageId, id_utilizador AS userId, emoji
-    FROM reacoes;
-
-    CREATE TRIGGER IF NOT EXISTS trg_reactions_insert INSTEAD OF INSERT ON reactions
-    FOR EACH ROW BEGIN
-      INSERT INTO reacoes (id, id_mensagem, id_utilizador, emoji)
-      VALUES (NEW.id, NEW.messageId, NEW.userId, NEW.emoji);
-    END;
-
-    CREATE TRIGGER IF NOT EXISTS trg_reactions_delete INSTEAD OF DELETE ON reactions
-    FOR EACH ROW BEGIN
-      DELETE FROM reacoes WHERE id = OLD.id;
-    END;
-
     CREATE VIEW IF NOT EXISTS reviews AS
     SELECT id, id_curso AS courseId, id_utilizador AS userId, classificacao AS rating, comentario AS comment, criado_em AS createdAt
     FROM avaliacoes;
@@ -944,6 +831,32 @@ export function initializeSchemaAndSeed(db) {
     CREATE TRIGGER IF NOT EXISTS trg_reviews_delete INSTEAD OF DELETE ON reviews
     FOR EACH ROW BEGIN
       DELETE FROM avaliacoes WHERE id = OLD.id;
+    END;
+
+    CREATE VIEW IF NOT EXISTS quizzes AS
+    SELECT id, id_aula AS lessonId, titulo AS title, descricao AS description, pontuacao_aprovacao AS passingScore, recompensa_xp AS xpReward
+    FROM questionarios;
+
+    CREATE TRIGGER IF NOT EXISTS trg_quizzes_insert INSTEAD OF INSERT ON quizzes
+    FOR EACH ROW BEGIN
+      INSERT INTO questionarios (id, id_aula, titulo, descricao, pontuacao_aprovacao, recompensa_xp)
+      VALUES (NEW.id, NEW.lessonId, NEW.title, NEW.description, COALESCE(NEW.passingScore, 70), COALESCE(NEW.xpReward, 50));
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS trg_quizzes_update INSTEAD OF UPDATE ON quizzes
+    FOR EACH ROW BEGIN
+      UPDATE questionarios SET
+        id_aula = COALESCE(NEW.lessonId, id_aula),
+        titulo = COALESCE(NEW.title, titulo),
+        descricao = NEW.description,
+        pontuacao_aprovacao = COALESCE(NEW.passingScore, pontuacao_aprovacao),
+        recompensa_xp = COALESCE(NEW.xpReward, recompensa_xp)
+      WHERE id = OLD.id;
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS trg_quizzes_delete INSTEAD OF DELETE ON quizzes
+    FOR EACH ROW BEGIN
+      DELETE FROM questionarios WHERE id = OLD.id;
     END;
 
     CREATE VIEW IF NOT EXISTS quiz_questions AS
@@ -969,36 +882,6 @@ export function initializeSchemaAndSeed(db) {
     FOR EACH ROW BEGIN
       INSERT INTO tentativas_quiz (id, id_quiz, id_utilizador, pontuacao, passou, tentado_em)
       VALUES (NEW.id, NEW.quizId, NEW.userId, NEW.score, NEW.passed, NEW.attemptedAt);
-    END;
-
-    CREATE VIEW IF NOT EXISTS achievements AS
-    SELECT id, slug, titulo AS title, descricao AS description, icone AS icon, categoria AS category, raridade AS rarity, recompensa_xp AS xpReward
-    FROM conquistas;
-
-    CREATE TRIGGER IF NOT EXISTS trg_achievements_insert INSTEAD OF INSERT ON achievements
-    FOR EACH ROW BEGIN
-      INSERT INTO conquistas (id, slug, titulo, descricao, icone, categoria, raridade, recompensa_xp)
-      VALUES (NEW.id, NEW.slug, NEW.title, NEW.description, NEW.icon, NEW.category, NEW.rarity, NEW.xpReward);
-    END;
-
-    CREATE VIEW IF NOT EXISTS user_achievements AS
-    SELECT id, id_utilizador AS userId, id_conquista AS achievementId, desbloqueado_em AS unlockedAt
-    FROM conquistas_utilizadores;
-
-    CREATE TRIGGER IF NOT EXISTS trg_user_achievements_insert INSTEAD OF INSERT ON user_achievements
-    FOR EACH ROW BEGIN
-      INSERT INTO conquistas_utilizadores (id, id_utilizador, id_conquista, desbloqueado_em)
-      VALUES (NEW.id, NEW.userId, NEW.achievementId, NEW.unlockedAt);
-    END;
-
-    CREATE VIEW IF NOT EXISTS xp_transactions AS
-    SELECT id, id_utilizador AS userId, quantidade AS amount, acao AS action, descricao AS description, criado_em AS createdAt
-    FROM transacoes_xp;
-
-    CREATE TRIGGER IF NOT EXISTS trg_xp_transactions_insert INSTEAD OF INSERT ON xp_transactions
-    FOR EACH ROW BEGIN
-      INSERT INTO transacoes_xp (id, id_utilizador, quantidade, acao, descricao, criado_em)
-      VALUES (NEW.id, NEW.userId, NEW.amount, NEW.action, NEW.description, NEW.createdAt);
     END;
 
     CREATE VIEW IF NOT EXISTS certificates AS
@@ -1035,59 +918,6 @@ export function initializeSchemaAndSeed(db) {
     CREATE TRIGGER IF NOT EXISTS trg_notes_delete INSTEAD OF DELETE ON notes
     FOR EACH ROW BEGIN
       DELETE FROM notas WHERE id = OLD.id;
-    END;
-
-    CREATE VIEW IF NOT EXISTS qa_questions AS
-    SELECT id, id_curso AS courseId, id_utilizador AS userId, titulo AS title, corpo AS body, esta_respondida AS isAnswered, criado_em AS createdAt
-    FROM perguntas_qa;
-
-    CREATE TRIGGER IF NOT EXISTS trg_qa_questions_insert INSTEAD OF INSERT ON qa_questions
-    FOR EACH ROW BEGIN
-      INSERT INTO perguntas_qa (id, id_curso, id_utilizador, titulo, corpo, esta_respondida, criado_em)
-      VALUES (NEW.id, NEW.courseId, NEW.userId, NEW.title, NEW.body, COALESCE(NEW.isAnswered, 0), NEW.createdAt);
-    END;
-
-    CREATE TRIGGER IF NOT EXISTS trg_qa_questions_update INSTEAD OF UPDATE ON qa_questions
-    FOR EACH ROW BEGIN
-      UPDATE perguntas_qa SET
-        id_curso = COALESCE(NEW.courseId, id_curso),
-        id_utilizador = COALESCE(NEW.userId, id_utilizador),
-        titulo = COALESCE(NEW.title, titulo),
-        corpo = COALESCE(NEW.body, corpo),
-        esta_respondida = COALESCE(NEW.isAnswered, esta_respondida),
-        criado_em = COALESCE(NEW.createdAt, criado_em)
-      WHERE id = OLD.id;
-    END;
-
-    CREATE TRIGGER IF NOT EXISTS trg_qa_questions_delete INSTEAD OF DELETE ON qa_questions
-    FOR EACH ROW BEGIN
-      DELETE FROM perguntas_qa WHERE id = OLD.id;
-    END;
-
-    CREATE VIEW IF NOT EXISTS qa_answers AS
-    SELECT id, id_pergunta AS questionId, id_utilizador AS userId, corpo AS body, esta_aceite AS isAccepted, criado_em AS createdAt
-    FROM respostas_qa;
-
-    CREATE TRIGGER IF NOT EXISTS trg_qa_answers_insert INSTEAD OF INSERT ON qa_answers
-    FOR EACH ROW BEGIN
-      INSERT INTO respostas_qa (id, id_pergunta, id_utilizador, corpo, esta_aceite, criado_em)
-      VALUES (NEW.id, NEW.questionId, NEW.userId, NEW.body, COALESCE(NEW.isAccepted, 0), NEW.createdAt);
-    END;
-
-    CREATE TRIGGER IF NOT EXISTS trg_qa_answers_update INSTEAD OF UPDATE ON qa_answers
-    FOR EACH ROW BEGIN
-      UPDATE respostas_qa SET
-        id_pergunta = COALESCE(NEW.questionId, id_pergunta),
-        id_utilizador = COALESCE(NEW.userId, id_utilizador),
-        corpo = COALESCE(NEW.body, corpo),
-        esta_aceite = COALESCE(NEW.isAccepted, esta_aceite),
-        criado_em = COALESCE(NEW.createdAt, criado_em)
-      WHERE id = OLD.id;
-    END;
-
-    CREATE TRIGGER IF NOT EXISTS trg_qa_answers_delete INSTEAD OF DELETE ON qa_answers
-    FOR EACH ROW BEGIN
-      DELETE FROM respostas_qa WHERE id = OLD.id;
     END;
 
     CREATE VIEW IF NOT EXISTS notifications AS
@@ -1185,34 +1015,29 @@ export function initializeSchemaAndSeed(db) {
       DELETE FROM mensagens_diretas WHERE id = OLD.id;
     END;
 
-    CREATE VIEW IF NOT EXISTS course_roles AS
-    SELECT id, id_curso AS courseId, nome AS name, cor AS color, pode_publicar_anuncios AS canPostAnnouncements, pode_falar_palco AS canSpeakInStage, pode_partilhar_ecra AS canShareScreen, pode_moderar_chat AS canModerateChat, pode_gerir_voz AS canManageVoice, indice_ordem AS orderIndex, criado_em AS createdAt
-    FROM cargos_curso;
+    CREATE VIEW IF NOT EXISTS course_collaborators AS
+    SELECT 
+      cc.id,
+      cc.id_curso AS courseId,
+      cc.id_utilizador AS userId,
+      cc.criado_em AS createdAt,
+      u.nome AS name,
+      u.email AS email,
+      u.nome_utilizador AS username,
+      u.url_avatar AS avatarUrl,
+      u.papel AS role
+    FROM colaboradores_curso cc
+    JOIN utilizadores u ON cc.id_utilizador = u.id;
 
-    CREATE TRIGGER IF NOT EXISTS trg_course_roles_insert INSTEAD OF INSERT ON course_roles
+    CREATE TRIGGER IF NOT EXISTS trg_course_collaborators_insert INSTEAD OF INSERT ON course_collaborators
     FOR EACH ROW BEGIN
-      INSERT INTO cargos_curso (id, id_curso, nome, cor, pode_publicar_anuncios, pode_falar_palco, pode_partilhar_ecra, pode_moderar_chat, pode_gerir_voz, indice_ordem, criado_em)
-      VALUES (NEW.id, NEW.courseId, NEW.name, COALESCE(NEW.color, 'indigo'), COALESCE(NEW.canPostAnnouncements, 0), COALESCE(NEW.canSpeakInStage, 0), COALESCE(NEW.canShareScreen, 0), COALESCE(NEW.canModerateChat, 0), COALESCE(NEW.canManageVoice, 0), COALESCE(NEW.orderIndex, 0), NEW.createdAt);
+      INSERT INTO colaboradores_curso (id, id_curso, id_utilizador, criado_em)
+      VALUES (NEW.id, NEW.courseId, NEW.userId, NEW.createdAt);
     END;
 
-    CREATE TRIGGER IF NOT EXISTS trg_course_roles_delete INSTEAD OF DELETE ON course_roles
+    CREATE TRIGGER IF NOT EXISTS trg_course_collaborators_delete INSTEAD OF DELETE ON course_collaborators
     FOR EACH ROW BEGIN
-      DELETE FROM cargos_curso WHERE id = OLD.id;
-    END;
-
-    CREATE VIEW IF NOT EXISTS course_member_roles AS
-    SELECT id, id_curso AS courseId, id_utilizador AS userId, id_cargo AS roleId, atribuido_em AS assignedAt
-    FROM cargos_membros_curso;
-
-    CREATE TRIGGER IF NOT EXISTS trg_course_member_roles_insert INSTEAD OF INSERT ON course_member_roles
-    FOR EACH ROW BEGIN
-      INSERT INTO cargos_membros_curso (id, id_curso, id_utilizador, id_cargo, atribuido_em)
-      VALUES (NEW.id, NEW.courseId, NEW.userId, NEW.roleId, NEW.assignedAt);
-    END;
-
-    CREATE TRIGGER IF NOT EXISTS trg_course_member_roles_delete INSTEAD OF DELETE ON course_member_roles
-    FOR EACH ROW BEGIN
-      DELETE FROM cargos_membros_curso WHERE id = OLD.id;
+      DELETE FROM colaboradores_curso WHERE id = OLD.id;
     END;
 
     CREATE VIEW IF NOT EXISTS creator_applications AS
@@ -1250,86 +1075,6 @@ export function initializeSchemaAndSeed(db) {
     FOR EACH ROW BEGIN
       DELETE FROM candidaturas_criador WHERE id = OLD.id;
     END;
-
-    CREATE VIEW IF NOT EXISTS admin_applications AS
-    SELECT id, id_utilizador AS userId, nome_completo AS fullName, email, motivacao AS motivation, experiencia AS experience, horas_disponibilidade_semanal AS weeklyAvailabilityHours, areas_interesse AS areasOfInterest, cenario_situacao AS situationScenario, estado AS status, parecer_admin AS adminFeedback, revisto_por AS reviewedBy, revisto_em AS reviewedAt, criado_em AS createdAt, atualizado_em AS updatedAt
-    FROM candidaturas_admin;
-
-    CREATE TRIGGER IF NOT EXISTS trg_admin_applications_insert INSTEAD OF INSERT ON admin_applications
-    FOR EACH ROW BEGIN
-      INSERT INTO candidaturas_admin (id, id_utilizador, nome_completo, email, motivacao, experiencia, horas_disponibilidade_semanal, areas_interesse, cenario_situacao, estado, parecer_admin, revisto_por, revisto_em, criado_em, atualizado_em)
-      VALUES (NEW.id, NEW.userId, NEW.fullName, NEW.email, NEW.motivation, NEW.experience, COALESCE(NEW.weeklyAvailabilityHours, 10), NEW.areasOfInterest, NEW.situationScenario, COALESCE(NEW.status, 'PENDING'), NEW.adminFeedback, NEW.reviewedBy, NEW.reviewedAt, NEW.createdAt, NEW.updatedAt);
-    END;
-
-    CREATE TRIGGER IF NOT EXISTS trg_admin_applications_update INSTEAD OF UPDATE ON admin_applications
-    FOR EACH ROW BEGIN
-      UPDATE candidaturas_admin SET
-        id_utilizador = COALESCE(NEW.userId, id_utilizador),
-        nome_completo = COALESCE(NEW.fullName, nome_completo),
-        email = COALESCE(NEW.email, email),
-        motivacao = COALESCE(NEW.motivation, motivacao),
-        experiencia = COALESCE(NEW.experience, experiencia),
-        horas_disponibilidade_semanal = COALESCE(NEW.weeklyAvailabilityHours, horas_disponibilidade_semanal),
-        areas_interesse = COALESCE(NEW.areasOfInterest, areas_interesse),
-        cenario_situacao = COALESCE(NEW.situationScenario, cenario_situacao),
-        estado = COALESCE(NEW.status, estado),
-        parecer_admin = COALESCE(NEW.adminFeedback, parecer_admin),
-        revisto_por = COALESCE(NEW.reviewedBy, revisto_por),
-        revisto_em = COALESCE(NEW.reviewedAt, revisto_em),
-        criado_em = COALESCE(NEW.createdAt, criado_em),
-        atualizado_em = COALESCE(NEW.updatedAt, atualizado_em)
-      WHERE id = OLD.id;
-    END;
-
-    CREATE TRIGGER IF NOT EXISTS trg_admin_applications_delete INSTEAD OF DELETE ON admin_applications
-    FOR EACH ROW BEGIN
-      DELETE FROM candidaturas_admin WHERE id = OLD.id;
-    END;
-
-    CREATE VIEW IF NOT EXISTS support_tickets AS
-    SELECT id, id_utilizador AS userId, assunto AS subject, categoria AS category, prioridade AS priority, estado AS status, criado_em AS createdAt, atualizado_em AS updatedAt, resolvido_em AS resolvedAt, id_admin_atribuido AS assignedAdminId
-    FROM pedidos_suporte;
-
-    CREATE TRIGGER IF NOT EXISTS trg_support_tickets_insert INSTEAD OF INSERT ON support_tickets
-    FOR EACH ROW BEGIN
-      INSERT INTO pedidos_suporte (id, id_utilizador, assunto, categoria, prioridade, estado, criado_em, atualizado_em, resolvido_em, id_admin_atribuido)
-      VALUES (NEW.id, NEW.userId, NEW.subject, COALESCE(NEW.category, 'Dúvidas Gerais'), COALESCE(NEW.priority, 'MÉDIA'), COALESCE(NEW.status, 'ABERTO'), NEW.createdAt, NEW.updatedAt, NEW.resolvedAt, NEW.assignedAdminId);
-    END;
-
-    CREATE TRIGGER IF NOT EXISTS trg_support_tickets_update INSTEAD OF UPDATE ON support_tickets
-    FOR EACH ROW BEGIN
-      UPDATE pedidos_suporte SET
-        id_utilizador = COALESCE(NEW.userId, id_utilizador),
-        assunto = COALESCE(NEW.subject, assunto),
-        categoria = COALESCE(NEW.category, categoria),
-        prioridade = COALESCE(NEW.priority, prioridade),
-        estado = COALESCE(NEW.status, estado),
-        criado_em = COALESCE(NEW.createdAt, criado_em),
-        atualizado_em = COALESCE(NEW.updatedAt, atualizado_em),
-        resolvido_em = COALESCE(NEW.resolvedAt, resolvido_em),
-        id_admin_atribuido = COALESCE(NEW.assignedAdminId, id_admin_atribuido)
-      WHERE id = OLD.id;
-    END;
-
-    CREATE TRIGGER IF NOT EXISTS trg_support_tickets_delete INSTEAD OF DELETE ON support_tickets
-    FOR EACH ROW BEGIN
-      DELETE FROM pedidos_suporte WHERE id = OLD.id;
-    END;
-
-    CREATE VIEW IF NOT EXISTS ticket_messages AS
-    SELECT id, id_pedido AS ticketId, id_remetente AS senderId, conteudo AS content, e_resposta_admin AS isAdminReply, criado_em AS createdAt
-    FROM mensagens_suporte;
-
-    CREATE TRIGGER IF NOT EXISTS trg_ticket_messages_insert INSTEAD OF INSERT ON ticket_messages
-    FOR EACH ROW BEGIN
-      INSERT INTO mensagens_suporte (id, id_pedido, id_remetente, conteudo, e_resposta_admin, criado_em)
-      VALUES (NEW.id, NEW.ticketId, NEW.senderId, NEW.content, COALESCE(NEW.isAdminReply, 0), NEW.createdAt);
-    END;
-
-    CREATE TRIGGER IF NOT EXISTS trg_ticket_messages_delete INSTEAD OF DELETE ON ticket_messages
-    FOR EACH ROW BEGIN
-      DELETE FROM mensagens_suporte WHERE id = OLD.id;
-    END;
   `);
 
   const userCount = db.prepare('SELECT COUNT(*) as count FROM utilizadores').get().count;
@@ -1346,13 +1091,13 @@ function seedData(db) {
   const now = new Date().toISOString();
 
   const insertUser = db.prepare(`
-    INSERT INTO utilizadores (id, email, nome_utilizador, hash_palavra_passe, nome, papel, url_avatar, biografia, localizacao, dias_sequencia, meta_diaria_minutos, minutos_hoje, minutos_totais, xp, nivel, esta_suspenso, criado_em, atualizado_em)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+    INSERT INTO utilizadores (id, email, nome_utilizador, hash_palavra_passe, nome, papel, url_avatar, biografia, localizacao, meta_diaria_minutos, minutos_hoje, minutos_totais, esta_suspenso, criado_em, atualizado_em)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const insertProfile = db.prepare(`
-    INSERT INTO perfis (id, id_utilizador, titulo_perfil, website, github, twitter, linkedin, e_publico, mostrar_sequencia, mostrar_classificacao, preferencia_tema)
-    VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1, 1, 'light')
+    INSERT INTO perfis (id, id_utilizador, titulo_perfil, website, github, twitter, linkedin, e_publico, mostrar_classificacao, preferencia_tema)
+    VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1, 'light')
   `);
 
   const insertCategory = db.prepare(`
@@ -1395,18 +1140,13 @@ function seedData(db) {
     VALUES (?, ?, ?, ?, ?, ?)
   `);
 
-  const insertAchievement = db.prepare(`
-    INSERT INTO conquistas (id, slug, titulo, descricao, icone, categoria, raridade, recompensa_xp)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
   const insertNotification = db.prepare(`
     INSERT INTO notificacoes (id, id_utilizador, tipo, titulo, conteudo, ligacao, esta_lida, criado_em)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const insertQuiz = db.prepare(`
-    INSERT INTO quizzes (id, id_aula, titulo, descricao, pontuacao_aprovacao, recompensa_xp)
+    INSERT INTO questionarios (id, id_aula, titulo, descricao, pontuacao_aprovacao, recompensa_xp)
     VALUES (?, ?, ?, ?, ?, ?)
   `);
 
@@ -1431,60 +1171,54 @@ function seedData(db) {
       'Pedro Silva',
       'STUDENT',
       'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
-      'Estudante focado em desenvolvimento web moderno, TypeScript e interfaces cinemáticas.',
-      'Lisboa, Portugal',
-      12,
+      'Estudante de programação web interessado em React, TypeScript e desenvolvimento full-stack.',
+      'Viana do Castelo, Portugal',
       45,
       35,
       1450,
-      1450,
-      4,
+      0,
       now,
       now
     );
-    insertProfile.run('prof-student', 'user-student', 'Estudante Full Stack @ NEXO', 'https://nexo.pt', 'https://github.com/pedrosilva', '', '');
+    insertProfile.run('prof-student', 'user-student', 'Estudante de Programação Web', 'https://nexo.pt', 'https://github.com/pedrosilva', '', '');
 
     insertUser.run(
       'user-sarah',
-      'sarah@nexo.pt',
-      'sarah_dev',
+      'mariana@nexo.pt',
+      'mariana_costa',
       passwordHash,
-      'Sarah Jenkins',
+      'Mariana Costa',
       'CREATOR',
       'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80',
-      'Arquiteta de Software e Formadora Especialista em React 19, TypeScript e Design Systems.',
+      'Programadora e formadora na área de desenvolvimento frontend com React, TypeScript e UI/UX.',
       'Porto, Portugal',
-      45,
       90,
       85,
       8900,
-      8900,
-      15,
+      0,
       now,
       now
     );
-    insertProfile.run('prof-sarah', 'user-sarah', 'Arquiteta de Software & Criadora NEXO', 'https://sarahjenkins.dev', 'https://github.com/sarahjenkins', '', '');
+    insertProfile.run('prof-sarah', 'user-sarah', 'Formadora de Desenvolvimento Web', '', 'https://github.com/marianacosta', '', '');
 
     insertUser.run(
       'user-alex',
-      'alex@nexo.pt',
-      'alex_admin',
+      'admin@nexo.pt',
+      'rui_admin',
       passwordHash,
-      'Alex Vance',
+      'Rui Oliveira',
       'ADMIN',
       'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
-      'Administrador de infraestruturas e moderador-chefe da plataforma NEXO.',
+      'Responsável pela administração e moderação da plataforma NEXO.',
       'Braga, Portugal',
       120,
       120,
-      120,
       25400,
-      25400,
-      32,
+      0,
       now,
       now
     );
-    insertProfile.run('prof-alex', 'user-alex', 'Administrador Global NEXO', '', 'https://github.com/alexvance', '', '');
+    insertProfile.run('prof-alex', 'user-alex', 'Administrador da Plataforma', '', 'https://github.com/ruioliveira', '', '');
 
     insertUser.run(
       'user-tiago',
@@ -1494,30 +1228,28 @@ function seedData(db) {
       'Tiago Ramos',
       'STUDENT',
       'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80',
-      'Engenheiro de Redes e Especialista em Segurança Ofensiva.',
+      'Técnico de redes e entusiasta de cibersegurança e administração de sistemas.',
       'Coimbra, Portugal',
-      5,
       60,
       20,
       820,
-      820,
-      3,
+      0,
       now,
       now
     );
-    insertProfile.run('prof-tiago', 'user-tiago', 'Engenheiro de Redes & Aspirante a Formador', '', 'https://github.com/tiagoramos', '', '');
+    insertProfile.run('prof-tiago', 'user-tiago', 'Técnico de Redes e Segurança', '', 'https://github.com/tiagoramos', '', '');
 
     // 2. CANDIDATURA A CRIADOR
     insertApplication.run(
       'app-tiago-1',
       'user-tiago',
       'Tiago Ramos',
-      'Consultor de Cibersegurança Sénior com certificação OSCP e 6 anos de experiência em auditorias de segurança aplicacional.',
-      'Cibersegurança & Redes',
+      'Técnico de redes e cibersegurança com 6 anos de experiência na área de administração de sistemas Linux e auditoria web.',
+      'Cibersegurança e Redes',
       6,
       'https://github.com/tiagoramos-sec',
-      'Desejo partilhar conhecimento prático e preparar os alunos do NEXO para os desafios reais de segurança ofensiva em ambiente de produção.',
-      '1. Fundamentos de Cibersegurança & Ethical Hacking\n2. Defesa Ativa e Auditoria de Aplicações Web',
+      'Gostava de publicar cursos práticos sobre redes e segurança informática para ajudar outros estudantes da plataforma.',
+      '1. Introdução à Cibersegurança e Redes\n2. Segurança em Aplicações Web',
       'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
       'PENDING',
       null,
@@ -1525,19 +1257,19 @@ function seedData(db) {
       now
     );
 
-    // 3. CATEGORIAS (PT-PT)
-    insertCategory.run('cat-prog', 'Programação & Engenharia de Software', 'programming', 'Desenvolvimento Web, APIs escaláveis, TypeScript e arquitetura de código.', 'Code');
-    insertCategory.run('cat-design', 'Design & Experiência de Utilizador (UX/UI)', 'design', 'Design Systems no Figma, prototipagem avançada e micro-interações.', 'Palette');
-    insertCategory.run('cat-ai', 'Inteligência Artificial & Ciência de Dados', 'ai', 'Modelos de Linguagem, Machine Learning e automação prática com Python.', 'Cpu');
-    insertCategory.run('cat-sec', 'Cibersegurança & Redes Defensivas', 'cybersecurity', 'Segurança ofensiva, análise de vulnerabilidades e proteção de redes.', 'ShieldCheck');
-    insertCategory.run('cat-cloud', 'Cloud, DevOps & Infraestruturas', 'cloud', 'Docker, Kubernetes, fluxos de integração contínua (CI/CD) e servidores Linux.', 'Server');
+    // 3. CATEGORIAS
+    insertCategory.run('cat-prog', 'Programação e Engenharia de Software', 'programming', 'Desenvolvimento web, APIs REST, JavaScript, TypeScript e bases de dados.', 'Code');
+    insertCategory.run('cat-design', 'Design e Interfaces (UI/UX)', 'design', 'Prototipagem no Figma, criação de interfaces e usabilidade.', 'Palette');
+    insertCategory.run('cat-ai', 'Inteligência Artificial e Dados', 'ai', 'Introdução a Machine Learning, Python e análise de dados.', 'Cpu');
+    insertCategory.run('cat-sec', 'Cibersegurança e Redes', 'cybersecurity', 'Segurança de redes, Linux e boas práticas em aplicações web.', 'ShieldCheck');
+    insertCategory.run('cat-cloud', 'Cloud, DevOps e Servidores', 'cloud', 'Docker, servidores Linux e publicação de aplicações.', 'Server');
 
-    // 4. ESPAÇOS COMUNITÁRIOS E CANAIS DEDICADOS
+    // 4. ESPAÇOS DA COMUNIDADE E CANAIS
     insertSpace.run(
       'space-react',
-      'Comunidade React & Engenharia Web',
+      'Comunidade React e Programação Web',
       'comunidade-react-portugal',
-      'Espaço oficial de mentoria, partilha de código, esclarecimento de dúvidas e salas de estudo coletivo com áudio e partilha de ecrã.',
+      'Espaço para tirar dúvidas sobre as aulas, partilhar código e estudar em grupo nos canais de voz.',
       'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=100&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200&auto=format&fit=crop&q=80',
       0,
@@ -1547,16 +1279,16 @@ function seedData(db) {
       now
     );
 
-    insertChannel.run('ch-general', 'space-react', 'geral', 'text', 'Discussões gerais sobre programação e a comunidade NEXO', 0, 0, 0, 'Qual é o seu objetivo de estudo para esta semana?', 'Mantenha uma comunicação cordial e apoie os colegas.');
-    insertChannel.run('ch-qa', 'space-react', 'duvidas-exercicios', 'text', 'Canal para colocar dúvidas de aulas e desafios técnicos', 1, 0, 0, 'Qual foi a mensagem de erro específica ou comportamento verificado?', 'Partilhe excertos de código formatados com blocos markdown.');
-    insertChannel.run('ch-showcase', 'space-react', 'projetos-showcase', 'text', 'Apresente os seus projetos concluídos e receba feedback', 2, 0, 0, 'Que desafio técnico superou na construção deste projeto?', 'Adicione links de repositório e pré-visualização.');
-    insertChannel.run('ch-voice-1', 'space-react', 'Sala de Estudo 01 (Voz / Vídeo)', 'voice', 'Sala ao vivo com partilha de ecrã e microfone aberto', 3, 1, 0, 'Que aula ou projeto está a rever em grupo?', 'Silencie o microfone quando não estiver a intervir.');
+    insertChannel.run('ch-general', 'space-react', 'geral', 'text', 'Conversa geral sobre programação e os cursos da plataforma', 0, 0, 0, 'O que estás a estudar esta semana?', 'Mantém o respeito pelos colegas.');
+    insertChannel.run('ch-qa', 'space-react', 'duvidas-exercicios', 'text', 'Canal para colocar dúvidas sobre as aulas e exercícios', 1, 0, 0, 'Qual é o erro ou dúvida que tens?', 'Partilha o código ou print do erro para ser mais fácil ajudar.');
+    insertChannel.run('ch-showcase', 'space-react', 'projetos-alunos', 'text', 'Mostra os teus trabalhos e projetos aos outros colegas', 2, 0, 0, 'Que tecnologias usaste neste projeto?', 'Podes deixar o link do GitHub.');
+    insertChannel.run('ch-voice-1', 'space-react', 'Sala de Estudo 01 (Voz / Vídeo)', 'voice', 'Sala de voz para estudar em grupo e partilhar ecrã', 3, 1, 0, 'Que matéria estão a rever?', 'Desliga o microfone quando não estiveres a falar.');
 
     insertSpace.run(
       'space-ui-ux',
-      'Comunidade Design Systems & UI/UX',
+      'Comunidade Design e UI/UX',
       'comunidade-design-systems',
-      'Comunidade para designers de interfaces, partilha de ficheiros Figma, critiques de design e sessões de co-design ao vivo.',
+      'Espaço para partilha de protótipos no Figma, dicas de CSS e revisão de interfaces.',
       'https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?w=100&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=1200&auto=format&fit=crop&q=80',
       0,
@@ -1566,16 +1298,16 @@ function seedData(db) {
       now
     );
 
-    insertChannel.run('ch-uiux-general', 'space-ui-ux', 'geral-design', 'text', 'Discussões sobre UI/UX, tendências e sistemas visuais', 0, 0, 0, 'Que novidade do Figma descobriu recentemente?', 'Respeite a diversidade de abordagens visuais.');
-    insertChannel.run('ch-uiux-feedback', 'space-ui-ux', 'design-critique', 'text', 'Peça feedback e análises de heurística das suas interfaces', 1, 0, 0, 'Qual o objetivo do utilizador neste fluxo de ecrãs?', 'Forneça contexto do público-alvo da interface.');
-    insertChannel.run('ch-uiux-showcase', 'space-ui-ux', 'prototipos-showcase', 'text', 'Partilhe protótipos interativos e design tokens criados', 2, 0, 0, 'Que animações ou micro-interações implementou?', 'Disponibilize o link de visualização do protótipo.');
-    insertChannel.run('ch-uiux-voice', 'space-ui-ux', 'Atelier de Design (Voz / Vídeo)', 'voice', 'Sessões de crítica ao vivo e partilha de ecrã no Figma', 3, 1, 0, 'Que componente do sistema de design está a arquitetar?', 'Partilhe o ecrã em alta resolução.');
+    insertChannel.run('ch-uiux-general', 'space-ui-ux', 'geral-design', 'text', 'Conversas sobre UI/UX, Figma e CSS', 0, 0, 0, 'Que ferramentas de design costumas usar?', 'Respeita o trabalho dos colegas.');
+    insertChannel.run('ch-uiux-feedback', 'space-ui-ux', 'feedback-interfaces', 'text', 'Pede opiniões e sugestões sobre os teus layouts', 1, 0, 0, 'Para que tipo de aplicação é este ecrã?', 'Deixa feedback construtivo.');
+    insertChannel.run('ch-uiux-showcase', 'space-ui-ux', 'prototipos', 'text', 'Partilha de protótipos e componentes', 2, 0, 0, 'Que funcionalidade desenhaste?', 'Podes incluir o link do Figma.');
+    insertChannel.run('ch-uiux-voice', 'space-ui-ux', 'Sala de Design (Voz / Vídeo)', 'voice', 'Sessões de estudo em grupo com partilha de ecrã', 3, 1, 0, 'Em que projeto estão a trabalhar?', '');
 
     insertSpace.run(
       'space-cloud-devops',
-      'Comunidade DevOps & Cloud Architecture',
+      'Comunidade DevOps e Servidores',
       'comunidade-cloud-devops',
-      'Espaço focado em infraestruturas, contentorização, orquestração Kubernetes, pipelines CI/CD e auditorias de produção.',
+      'Grupo dedicado a Linux, Docker, bases de dados e publicação de projetos web.',
       'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=100&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200&auto=format&fit=crop&q=80',
       0,
@@ -1585,16 +1317,16 @@ function seedData(db) {
       now
     );
 
-    insertChannel.run('ch-cloud-general', 'space-cloud-devops', 'geral-cloud', 'text', 'Discussões de arquiteturas cloud, Docker e Linux', 0, 0, 0, 'Qual provedor de cloud costuma utilizar nos seus projetos?', 'Evite partilhar chaves de API ou segredos.');
-    insertChannel.run('ch-cloud-qa', 'space-cloud-devops', 'debug-containers', 'text', 'Resolução de problemas de Dockerfile, redes e pods', 1, 0, 0, 'Cole aqui os logs do contentor ou docker-compose.', 'Utilize blocos de código com formatação yaml/bash.');
-    insertChannel.run('ch-cloud-labs', 'space-cloud-devops', 'laboratorios-praticos', 'text', 'Partilhe as suas configurações de CI/CD e testes de carga', 2, 0, 0, 'Quantos passos tem o seu pipeline automatizado?', 'Descreva a stack técnica utilizada.');
-    insertChannel.run('ch-cloud-voice', 'space-cloud-devops', 'War Room DevOps (Voz / Vídeo)', 'voice', 'Debug colaborativo ao vivo e orquestração de servidores', 3, 1, 0, 'Que ambiente de cluster está a analisar?', 'Mantenha o áudio nítido.');
+    insertChannel.run('ch-cloud-general', 'space-cloud-devops', 'geral-cloud', 'text', 'Dúvidas e conversa sobre Docker, Linux e servidores', 0, 0, 0, 'Onde costumas alojar os teus projetos?', 'Nunca partilhes ficheiros .env ou chaves privadas.');
+    insertChannel.run('ch-cloud-qa', 'space-cloud-devops', 'ajuda-docker', 'text', 'Ajuda com configuração de contentores e bases de dados', 1, 0, 0, 'Qual é a mensagem de erro no terminal?', 'Usa blocos de código para os logs.');
+    insertChannel.run('ch-cloud-labs', 'space-cloud-devops', 'tutoriais-e-dicas', 'text', 'Partilha de comandos úteis e configurações', 2, 0, 0, '', '');
+    insertChannel.run('ch-cloud-voice', 'space-cloud-devops', 'Sala DevOps (Voz / Vídeo)', 'voice', 'Sala de voz para resolver problemas em conjunto', 3, 1, 0, '', '');
 
     insertSpace.run(
       'space-ai-applied',
-      'Comunidade IA Aplicada & Engenharia de Prompts',
+      'Comunidade Python e Dados',
       'comunidade-ia-aplicada',
-      'Laboratório de experimentação com LLMs, agentes autónomos, frameworks de RAG e integração de IA em produtos digitais.',
+      'Espaço para estudantes interessados em Python, análise de dados e inteligência artificial.',
       'https://images.unsplash.com/photo-1677442136019-21780efad99a?w=100&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=1200&auto=format&fit=crop&q=80',
       0,
@@ -1604,10 +1336,10 @@ function seedData(db) {
       now
     );
 
-    insertChannel.run('ch-ai-general', 'space-ai-applied', 'geral-ia', 'text', 'Conversas sobre os avanços de modelos de inteligência artificial', 0, 0, 0, 'Que modelo generativo testou esta semana?', 'Debates fundamentados e partilha de artigos científicos.');
-    insertChannel.run('ch-ai-prompts', 'space-ai-applied', 'engenharia-prompts', 'text', 'Técnicas de few-shot, chain-of-thought e estruturação de system prompts', 1, 0, 0, 'Qual prompt gerou os melhores resultados consistentes?', 'Partilhe o prompt completo e a saída gerada.');
-    insertChannel.run('ch-ai-projects', 'space-ai-applied', 'agentes-projetos', 'text', 'Apresentação de agentes e arquiteturas RAG desenvolvidas pelos alunos', 2, 0, 0, 'Que base de vetores utilizou para o RAG?', 'Inclua instruções sobre como reproduzir localmente.');
-    insertChannel.run('ch-ai-voice', 'space-ai-applied', 'Lab IA & Pair Prompting (Voz / Vídeo)', 'voice', 'Sessões de teste e desenvolvimento de agentes ao vivo', 3, 1, 0, 'Que workflow com IA está a implementar?', 'Silencie quando em escuta ativa.');
+    insertChannel.run('ch-ai-general', 'space-ai-applied', 'geral-python', 'text', 'Conversas sobre Python, bibliotecas e projetos de dados', 0, 0, 0, '', '');
+    insertChannel.run('ch-ai-prompts', 'space-ai-applied', 'duvidas-python', 'text', 'Ajuda com exercícios e scripts em Python', 1, 0, 0, '', '');
+    insertChannel.run('ch-ai-projects', 'space-ai-applied', 'projetos-dados', 'text', 'Partilha de notebooks e pequenos projetos', 2, 0, 0, '', '');
+    insertChannel.run('ch-ai-voice', 'space-ai-applied', 'Sala de Estudo Python (Voz)', 'voice', 'Estudo em grupo e resolução de exercícios', 3, 1, 0, '', '');
 
     // Relações de Membros
     ['space-react', 'space-ui-ux', 'space-cloud-devops', 'space-ai-applied'].forEach((spId, idx) => {
@@ -1617,12 +1349,12 @@ function seedData(db) {
       insertMembership.run(`mem-tiago-${idx}`, 'user-tiago', spId, 'MEMBER', now);
     });
 
-    // 5. CURSOS APROVADOS (PT-PT)
+    // 5. CURSOS INICIAIS
     insertCourse.run(
       'course-react-ts',
-      'React 19 & TypeScript de Alta Performance',
+      'Desenvolvimento Web com React e TypeScript',
       'react-19-typescript-alta-performance',
-      'Domine os novos padrões do React 19, Server Components, Gestão de Estado Eficiente, Hooks Modernos e TypeScript Avançado com projetos práticos prontos para produção.',
+      'Curso prático sobre criação de aplicações web com React e TypeScript: componentes, estado, hooks, chamadas a APIs e organização de projetos.',
       'programming',
       'Intermédio',
       'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=600&auto=format&fit=crop&q=80',
@@ -1631,7 +1363,7 @@ function seedData(db) {
       1,
       1,
       'APPROVED',
-      'Curso validado pela equipa pedagógica do NEXO. Conteúdo de excelência.',
+      'Curso aprovado pela administração.',
       1,
       14.5,
       'Português',
@@ -1641,22 +1373,22 @@ function seedData(db) {
       now
     );
 
-    insertModule.run('mod-1', 'course-react-ts', 'Módulo 1: Fundamentos do React 19 & Tipagem Estrita', 'Conceitos essenciais, padrões de Server Components e TypeScript moderno.', 0);
-    insertLesson.run('les-1', 'mod-1', '1.1 Introdução e Configuração do Ambiente Moderno', 'video', 'Nesta aula configuramos o TypeScript com definições estritas, Vite e ESLint para máxima estabilidade.', 'https://www.w3schools.com/html/mov_bbb.mp4', 12, 0, 30);
-    insertLesson.run('les-2', 'mod-1', '1.2 Tipagem Avançada de Hooks & Props no React 19', 'video', 'Aprenda a tipar useState, useReducer, useRef e handlers de eventos com rigor e elegância.', 'https://www.w3schools.com/html/mov_bbb.mp4', 18, 1, 35);
-    insertLesson.run('les-3', 'mod-1', '1.3 Questionário de Avaliação: Fundamentos', 'quiz', 'Avalie a sua compreensão sobre tipagem de componentes funcionais.', '', 10, 2, 50);
+    insertModule.run('mod-1', 'course-react-ts', 'Módulo 1: Introdução ao React com TypeScript', 'Configuração do projeto com Vite e criação dos primeiros componentes tipados.', 0);
+    insertLesson.run('les-1', 'mod-1', '1.1 Configuração do Projeto com Vite e TypeScript', 'video', 'Nesta aula criamos o projeto base com Vite e revemos a estrutura de pastas.', 'https://www.w3schools.com/html/mov_bbb.mp4', 12, 0, 30);
+    insertLesson.run('les-2', 'mod-1', '1.2 Tipagem de Props e Hooks (useState e useEffect)', 'video', 'Como definir tipos para as propriedades dos componentes e estados mais comuns.', 'https://www.w3schools.com/html/mov_bbb.mp4', 18, 1, 35);
+    insertLesson.run('les-3', 'mod-1', '1.3 Questionário de Revisão', 'quiz', 'Pequeno teste para rever a matéria deste módulo.', '', 10, 2, 50);
 
-    insertQuiz.run('quiz-1', 'les-3', 'Questionário: Fundamentos do React com TypeScript', 'Teste prático de 2 perguntas essenciais de arquitetura.', 70, 50);
-    insertQuizQuestion.run('qq-1', 'quiz-1', 'Qual é a forma recomendada de tipar as propriedades de um componente React funcional?', JSON.stringify(['Utilizar interface ou type dedicado com tipagem estrita', 'Utilizar o tipo "any"', 'Não definir tipos e deixar implícito', 'Utilizar a função genérica Object']), 0, 'Interfaces e types dedicados garantem verificação estrita em tempo de compilação.', 0);
-    insertQuizQuestion.run('qq-2', 'quiz-1', 'Qual o benefício principal do modo estrito do TypeScript no React?', JSON.stringify(['Prevenir bugs e detetar referências nulas antes da execução', 'Aumentar a velocidade da rede Wi-Fi', 'Adicionar efeitos visuais CSS automaticamente', 'Permitir ignorar erros de sintaxe']), 0, 'O modo estrito previne erros comuns como acesso a propriedades indefinidas.', 1);
+    insertQuiz.run('quiz-1', 'les-3', 'Questionário: Fundamentos de React com TypeScript', 'Responde às duas questões sobre tipagem de componentes.', 70, 50);
+    insertQuizQuestion.run('qq-1', 'quiz-1', 'Qual é a forma recomendada de tipar as props de um componente funcional em React?', JSON.stringify(['Criar uma interface ou type para as props', 'Usar sempre o tipo "any"', 'Não definir tipos', 'Usar apenas variáveis globais']), 0, 'Definir uma interface ou type ajuda a detetar erros nas propriedades passadas ao componente.', 0);
+    insertQuizQuestion.run('qq-2', 'quiz-1', 'Para que serve o modo strict do TypeScript num projeto React?', JSON.stringify(['Detetar erros de tipos e valores nulos antes de correr o código', 'Aumentar a velocidade da internet', 'Aplicar estilos CSS automaticamente', 'Ignorar erros de compilação']), 0, 'O modo estrito avisa durante o desenvolvimento quando tentamos aceder a propriedades que podem ser undefined.', 1);
 
     insertCourse.run(
       'course-ui-ux',
-      'Design Systems & Interfaces Cinemáticas no Figma',
+      'Introdução ao Figma e Design de Interfaces',
       'design-systems-interfaces-cinematicas-figma',
-      'Crie sistemas de design industriais, tokens de cores, tipografia responsiva, componentes reutilizáveis e protótipos de alta fidelidade prontos para implementação em código.',
+      'Aprende a desenhar interfaces web e mobile no Figma, organizar componentes reutilizáveis, paletas de cores e protótipos navegáveis.',
       'design',
-      'Avançado',
+      'Intermédio',
       'https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?w=600&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=1200&auto=format&fit=crop&q=80',
       29.0,
@@ -1673,14 +1405,14 @@ function seedData(db) {
       now
     );
 
-    insertModule.run('mod-design-1', 'course-ui-ux', 'Módulo 1: Fundações de Design & Tokens', 'Paletas semânticas, tipografia, espaçamento e acessibilidade WCAG.', 0);
-    insertLesson.run('les-design-1', 'mod-design-1', '1.1 Definição de Variáveis e Design Tokens no Figma', 'video', 'Como estruturar tokens primitivos e semânticos para alimentar tanto o Figma como variáveis CSS.', 'https://www.w3schools.com/html/mov_bbb.mp4', 15, 0, 30);
+    insertModule.run('mod-design-1', 'course-ui-ux', 'Módulo 1: Componentes e Estilos no Figma', 'Organização de cores, tipografia, grelhas e auto-layout.', 0);
+    insertLesson.run('les-design-1', 'mod-design-1', '1.1 Criação de Estilos e Componentes Base', 'video', 'Como configurar estilos de texto e cor no Figma para reutilizar nas páginas do projeto.', 'https://www.w3schools.com/html/mov_bbb.mp4', 15, 0, 30);
 
     insertCourse.run(
       'course-cloud-devops',
-      'DevOps Moderno, Docker & Arquitetura Cloud',
+      'Introdução ao Docker e Publicação de Aplicações',
       'devops-moderno-docker-arquitetura-cloud',
-      'Implemente pipelines automatizados de CI/CD, orquestre contentores com Docker e publique aplicações escaláveis na nuvem com segurança máxima.',
+      'Como criar contentores com Docker, usar o docker-compose para ligar backend e base de dados, e publicar projetos web.',
       'cloud',
       'Intermédio',
       'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&auto=format&fit=crop&q=80',
@@ -1701,11 +1433,11 @@ function seedData(db) {
 
     insertCourse.run(
       'course-ai-pending',
-      'Inteligência Artificial Aplicada & Engenharia de Prompts',
+      'Introdução a Python e Análise de Dados',
       'inteligencia-artificial-aplicada-engenharia-prompts',
-      'Formação avançada sobre integração de modelos generativos, embeddings, recuperação aumentada (RAG) e fluxos de trabalho inteligentes em aplicações reais.',
+      'Curso em fase de revisão sobre fundamentos de Python, manipulação de ficheiros e introdução à análise de dados.',
       'ai',
-      'Intermédio',
+      'Iniciante',
       'https://images.unsplash.com/photo-1677442136019-21780efad99a?w=600&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=1200&auto=format&fit=crop&q=80',
       45.0,
@@ -1722,21 +1454,15 @@ function seedData(db) {
       now
     );
 
-    insertModule.run('mod-ai-1', 'course-ai-pending', 'Módulo 1: Fundamentos de IA & LLMs', 'Conceitos de redes neurais e arquitetura Transformer.', 0);
-    insertLesson.run('les-ai-1', 'mod-ai-1', '1.1 Visão Geral dos Grandes Modelos de Linguagem', 'video', 'Entenda como funcionam os modelos de linguagem modernos e tokenização.', 'https://www.w3schools.com/html/mov_bbb.mp4', 16, 0, 30);
+    insertModule.run('mod-ai-1', 'course-ai-pending', 'Módulo 1: Primeiros Passos com Python', 'Instalação do Python e estruturas de dados básicas.', 0);
+    insertLesson.run('les-ai-1', 'mod-ai-1', '1.1 Ambiente de Trabalho e Primeiros Scripts', 'video', 'Como instalar o Python e correr os primeiros programas no terminal.', 'https://www.w3schools.com/html/mov_bbb.mp4', 16, 0, 30);
 
-    // 6. INSCRIÇÃO DEMO
+    // 6. INSCRIÇÃO INICIAL
     insertEnrollment.run('enr-1', 'user-student', 'course-react-ts', now, 68.0, 'les-2');
 
-    // 7. CONQUISTAS (PT-PT)
-    insertAchievement.run('ach-first-step', 'primeiro-passo', 'Primeiro Passo', 'Concluiu a sua primeira aula na plataforma NEXO.', 'CheckCircle2', 'learning', 'Comum', 100);
-    insertAchievement.run('ach-quiz-master', 'mestre-quizzes', 'Mestre dos Questionários', 'Alcançou pontuação máxima de 100% num questionário de avaliação técnica.', 'Award', 'quiz', 'Raro', 250);
-    insertAchievement.run('ach-streak-7', 'consistencia-7', 'Foco de Aço (7 Dias)', 'Manteve uma sequência ativa de estudo durante 7 dias consecutivos.', 'Flame', 'streak', 'Épico', 500);
-    insertAchievement.run('ach-creator', 'criador-destaque', 'Formador Verificado', 'Teve a sua candidatura a criador aprovada e publicou o primeiro curso no NEXO.', 'Sparkles', 'creator', 'Lendário', 1000);
-
-    // 8. NOTIFICAÇÕES (PT-PT)
-    insertNotification.run('notif-1', 'user-student', 'achievement', 'Bem-vindo ao NEXO!', 'Explore o catálogo de cursos e junte-se às salas de estudo ao vivo.', '/explore', 0, now);
-    insertNotification.run('notif-admin', 'user-alex', 'admin', 'Nova Candidatura a Criador', 'O utilizador Tiago Ramos submeteu um inquérito para se tornar Formador.', '/admin', 0, now);
+    // 7. NOTIFICAÇÕES
+    insertNotification.run('notif-1', 'user-student', 'welcome', 'Bem-vindo ao NEXO!', 'Explora o catálogo de cursos e experimenta os canais da comunidade.', '/explore', 0, now);
+    insertNotification.run('notif-admin', 'user-alex', 'admin', 'Nova Candidatura a Formador', 'O utilizador Tiago Ramos submeteu uma candidatura para ser Formador.', '/admin', 0, now);
 
     db.exec('COMMIT');
   } catch (err) {

@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, Lock, Eye, FileText, ArrowLeft, Mail } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
@@ -63,7 +63,7 @@ export const PrivacyPolicyPage = () => {
               </h2>
               <ul className="list-disc list-inside space-y-2 text-slate-600 dark:text-neutral-300">
                 <li><strong>Dados de Identificação e Registo:</strong> Nome, endereço de correio eletrónico, nome de utilizador, fotografia de perfil e palavra-passe encriptada (via bcrypt com salt rounds reforçado).</li>
-                <li><strong>Dados de Formação e Desempenho:</strong> Cursos em que se inscreve, aulas concluídas, progresso percentual, notas de questionários, pontos de experiência (XP), medalhas conquistadas e certificados emitidos com código de autenticação único.</li>
+                <li><strong>Dados de Formação e Desempenho:</strong> Cursos em que se inscreve, aulas concluídas, progresso percentual, notas de questionários, medalhas conquistadas e certificados emitidos com código de autenticação único.</li>
                 <li><strong>Comunicações e Suporte:</strong> Mensagens diretas entre pares, mensagens nas salas de mentoria, histórico de chamadas e mensagens enviadas nos tickets de suporte.</li>
                 <li><strong>Dados de Candidatura a Formador:</strong> Biografia, experiência formativa, amostras curriculares e dados submetidos no inquérito de candidatura.</li>
                 <li><strong>Dados Técnicos de Navegação:</strong> Endereço IP (anonimizado), registos de acesso, tipo de navegador, sistema operativo e preferências de tema (claro/escuro).</li>

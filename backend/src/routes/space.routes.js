@@ -1,4 +1,4 @@
-﻿import { Router } from 'express';
+import { Router } from 'express';
 import { queryAll, queryOne, execute } from '../database/connection.js';
 import { authenticate, optionalAuth } from '../middleware/auth.js';
 const router = Router();
@@ -224,11 +224,14 @@ router.post('/:id/join', authenticate, async (req, res) => {
     } = req.params;
     const userId = req.user.id;
     const now = new Date().toISOString();
-    const space = queryOne('SELECT id, name FROM spaces WHERE id = ? OR slug = ?', [id, id]);
+    const space = queryOne('SELECT id, name, isPrivate, ownerId FROM spaces WHERE id = ? OR slug = ?', [id, id]);
     if (!space) {
       return res.status(404).json({
         error: 'Comunidade não encontrada'
       });
+    }
+    if (space.isPrivate === 1 && req.user.role !== 'ADMIN' && req.user.id !== space.ownerId) {
+      return res.status(403).json({ error: 'Esta comunidade é privada.' });
     }
     const pendingCourse = queryOne(`
       SELECT id FROM courses
@@ -243,7 +246,10 @@ router.post('/:id/join', authenticate, async (req, res) => {
     if (!existing) {
       execute(`INSERT INTO memberships (id, userId, spaceId, role, joinedAt) VALUES (?, ?, ?, 'MEMBER', ?)`, [`mem-${Date.now()}`, userId, space.id, now]);
     }
-    const linkedCourses = queryAll('SELECT id FROM courses WHERE spaceId = ? OR id = ?', [space.id, space.id]);
+    const linkedCourses = queryAll(
+      `SELECT id FROM courses WHERE (spaceId = ? OR id = ?) AND isFree = 1 AND isPublished = 1 AND (approvalStatus = 'APPROVED' OR approvalStatus IS NULL)`,
+      [space.id, space.id]
+    );
     linkedCourses.forEach(c => {
       execute(`INSERT OR IGNORE INTO enrollments (id, userId, courseId, enrolledAt, progressPercent) VALUES (?, ?, ?, ?, 0)`, [`enr-${Date.now()}-${c.id}`, userId, c.id, now]);
     });

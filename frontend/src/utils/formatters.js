@@ -42,6 +42,83 @@ export const formatCoursePrice = value => {
   if (Number.isNaN(rawPrice) || rawPrice <= 0) return 'Grátis';
   return `€${rawPrice.toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1')}`;
 };
+export const formatCategory = category => {
+  if (!category) return 'Geral';
+  const raw = String(category).trim();
+  switch (raw.toLowerCase()) {
+    case 'programming':
+    case 'programação':
+    case 'programacao':
+    case 'programação & software':
+      return 'Programação';
+    case 'design':
+    case 'design & criatividade':
+    case 'ui/ux':
+      return 'Design & Criatividade';
+    case 'ai':
+    case 'ai & data':
+    case 'ia':
+    case 'ia & dados':
+      return 'IA & Dados';
+    case 'data':
+    case 'dados':
+      return 'Dados & Bases de Dados';
+    case 'cloud':
+    case 'cloud & devops':
+    case 'devops':
+      return 'Cloud & DevOps';
+    case 'cybersecurity':
+    case 'security':
+    case 'cibersegurança':
+    case 'ciberseguranca':
+      return 'Cibersegurança';
+    case 'business':
+    case 'negócios & gestão':
+      return 'Negócios & Gestão';
+    case 'marketing':
+    case 'marketing & vendas':
+      return 'Marketing & Vendas';
+    default:
+      return raw;
+  }
+};
+export const formatRole = role => {
+  switch (String(role || '').toUpperCase()) {
+    case 'ADMIN':
+      return 'Administrador';
+    case 'CREATOR':
+    case 'INSTRUCTOR':
+    case 'OWNER':
+      return 'Formador';
+    case 'COLABORADOR':
+    case 'COLLABORATOR':
+      return 'Colaborador';
+    case 'MODERATOR':
+      return 'Moderador';
+    case 'MEMBER':
+      return 'Membro';
+    case 'STUDENT':
+    default:
+      return 'Aluno';
+  }
+};
+export const formatLessonType = type => {
+  switch (String(type || '').toLowerCase()) {
+    case 'video':
+      return 'Vídeo';
+    case 'text':
+    case 'article':
+      return 'Artigo';
+    case 'code':
+      return 'Código';
+    case 'quiz':
+      return 'Questionário';
+    case 'resource':
+      return 'Recursos';
+    default:
+      return 'Vídeo';
+  }
+};
 export const formatRelativeTime = isoString => {
   if (!isoString) return '';
   const date = new Date(isoString);

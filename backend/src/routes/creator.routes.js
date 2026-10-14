@@ -1,4 +1,4 @@
-﻿import { Router } from 'express';
+import { Router } from 'express';
 import { queryAll, queryOne, execute, transaction } from '../database/connection.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
 const router = Router();
@@ -91,9 +91,9 @@ router.get('/stats', authenticate, requireRole('CREATOR', 'ADMIN'), async (req, 
   try {
     const creatorId = req.user.id;
     const courses = queryAll(`SELECT c.*,
-              (SELECT COUNT(*) FROM enrollments WHERE courseId = c.id AND userId != ? AND userId != COALESCE(c.creatorId, c.instructorId, '')) as studentsCount
+              (SELECT COUNT(*) FROM enrollments WHERE courseId = c.id AND userId != ? AND userId != COALESCE(c.creatorId, '')) as studentsCount
        FROM courses c
-      WHERE c.creatorId = ?`, [creatorId]);
+      WHERE c.creatorId = ?`, [creatorId, creatorId]);
     const totalStudents = courses.reduce((acc, c) => acc + (c.studentsCount || 0), 0);
     const totalRevenue = courses.reduce((acc, c) => acc + (c.studentsCount || 0) * (c.price || 0), 0);
     const recentEnrollments = queryAll(`SELECT e.*, u.id as user_id, u.name, u.username, u.avatarUrl, u.email, c.title as course_title
@@ -152,7 +152,7 @@ router.get('/courses/:courseId', authenticate, requireRole('CREATOR', 'ADMIN'), 
               (SELECT COUNT(*) FROM enrollments WHERE courseId = c.id) as studentsCount,
               (SELECT COUNT(*) FROM course_modules WHERE courseId = c.id) as modulesCount
        FROM courses c
-       WHERE c.id = ? AND (c.creatorId = ? OR ? = 'ADMIN')`, [courseId, creatorId, req.user.role]);
+       WHERE c.id = ? AND (c.creatorId = ? OR ? = 'ADMIN' OR EXISTS (SELECT 1 FROM colaboradores_curso WHERE id_curso = c.id AND id_utilizador = ?))`, [courseId, creatorId, req.user.role, creatorId]);
     if (!course) return res.status(404).json({
       error: 'Curso não encontrado ou sem permissão'
     });
@@ -164,8 +164,7 @@ router.get('/courses/:courseId', authenticate, requireRole('CREATOR', 'ADMIN'), 
           try {
             const parsed = JSON.parse(les.content);
             if (les.type === 'quiz') les.quiz = parsed;
-            else if (les.type === 'article') les.richArticle = parsed;
-            else if (les.type === 'code') les.codeChallenge = parsed;
+            else if (les.type === 'article' || les.type === 'text') les.richArticle = parsed;
             else les.customData = parsed;
           } catch {}
         }
@@ -184,7 +183,6 @@ router.get('/courses/:courseId', authenticate, requireRole('CREATOR', 'ADMIN'), 
     }
     const spaceId = course.spaceId;
     const channels = spaceId ? queryAll(`SELECT * FROM channels WHERE spaceId = ? ORDER BY orderIndex ASC`, [spaceId]) : [];
-    const customRoles = queryAll(`SELECT * FROM course_roles WHERE courseId = ? ORDER BY orderIndex ASC`, [courseId]);
     let parsedOutcomes = [];
     try {
       parsedOutcomes = course.learningOutcomes ? (typeof course.learningOutcomes === 'string' ? JSON.parse(course.learningOutcomes) : course.learningOutcomes) : [];
@@ -217,14 +215,7 @@ router.get('/courses/:courseId', authenticate, requireRole('CREATOR', 'ADMIN'), 
       allowStudentCamera: course.allowStudentCamera === 1,
       modules,
       channels,
-      customRoles: customRoles.map(r => ({
-        ...r,
-        canPostAnnouncements: r.canPostAnnouncements === 1,
-        canSpeakInStage: r.canSpeakInStage === 1,
-        canShareScreen: r.canShareScreen === 1,
-        canModerateChat: r.canModerateChat === 1,
-        canManageVoice: r.canManageVoice === 1,
-      }))
+      customRoles: []
     });
   } catch (err) {
     return res.status(500).json({
@@ -240,12 +231,15 @@ router.put('/courses/:courseId', authenticate, requireRole('CREATOR', 'ADMIN'), 
     const creatorId = req.user.id;
     let owned = null;
     if (req.user.role !== 'ADMIN') {
-      owned = queryOne('SELECT id, spaceId FROM courses WHERE id = ? AND creatorId = ?', [courseId, creatorId]);
+      owned = queryOne(`SELECT id, spaceId, approvalStatus FROM courses WHERE id = ? AND (creatorId = ? OR EXISTS (SELECT 1 FROM colaboradores_curso WHERE id_curso = ? AND id_utilizador = ?))`, [courseId, creatorId, courseId, creatorId]);
       if (!owned) return res.status(403).json({
         error: 'Sem permissão para editar este curso'
       });
     } else {
-      owned = queryOne('SELECT id, spaceId FROM courses WHERE id = ?', [courseId]);
+      owned = queryOne('SELECT id, spaceId, approvalStatus FROM courses WHERE id = ?', [courseId]);
+      if (!owned) return res.status(404).json({
+        error: 'Curso não encontrado'
+      });
     }
     const {
       title,
@@ -272,9 +266,12 @@ router.put('/courses/:courseId', authenticate, requireRole('CREATOR', 'ADMIN'), 
     } = req.body;
     const now = new Date().toISOString();
 
-    const outcomesStr = learningOutcomes ? (typeof learningOutcomes === 'string' ? learningOutcomes : JSON.stringify(learningOutcomes)) : null;
-    const requirementsStr = requirements ? (typeof requirements === 'string' ? requirements : JSON.stringify(requirements)) : null;
-    const documentsStr = documents ? (typeof documents === 'string' ? documents : JSON.stringify(documents)) : null;
+    const outcomesStr = learningOutcomes !== undefined ? (typeof learningOutcomes === 'string' ? learningOutcomes : JSON.stringify(learningOutcomes)) : null;
+    const requirementsStr = requirements !== undefined ? (typeof requirements === 'string' ? requirements : JSON.stringify(requirements)) : null;
+    const documentsStr = documents !== undefined ? (typeof documents === 'string' ? documents : JSON.stringify(documents)) : null;
+    const safeIsPublished = isPublished !== undefined
+      ? (isPublished ? 1 : 0)
+      : null;
 
     transaction(() => {
       execute(`UPDATE courses SET
@@ -283,44 +280,49 @@ router.put('/courses/:courseId', authenticate, requireRole('CREATOR', 'ADMIN'), 
           category = COALESCE(?, category),
           difficulty = COALESCE(?, difficulty),
           language = COALESCE(?, language),
-          price = COALESCE(?, price),
-          isFree = COALESCE(?, isFree),
+          price = ?,
+          isFree = ?,
           isPublished = COALESCE(?, isPublished),
+          approvalStatus = 'APPROVED',
           thumbnailUrl = COALESCE(?, thumbnailUrl),
           thumbnailPosition = COALESCE(?, thumbnailPosition),
           bannerUrl = COALESCE(?, bannerUrl),
           bannerPosition = COALESCE(?, bannerPosition),
-          durationHours = COALESCE(?, durationHours),
+          durationHours = ?,
           defaultCallMode = COALESCE(?, defaultCallMode),
-          allowStudentScreenShare = COALESCE(?, allowStudentScreenShare),
-          allowStudentCamera = COALESCE(?, allowStudentCamera),
-          learningOutcomes = COALESCE(?, learningOutcomes),
-          requirements = COALESCE(?, requirements),
-          documents = COALESCE(?, documents),
+          allowStudentScreenShare = ?,
+          allowStudentCamera = ?,
+          learningOutcomes = ?,
+          requirements = ?,
+          documents = ?,
           updatedAt = ?
          WHERE id = ?`, [
-        title || null,
-        description || null,
-        category || null,
-        difficulty || null,
-        language || null,
-        price !== undefined ? price : null,
-        isFree !== undefined ? isFree ? 1 : 0 : null,
-        isPublished !== undefined ? isPublished ? 1 : 0 : null,
-        thumbnailUrl || null,
+        (title && title.trim()) ? title.trim() : null,
+        description !== undefined ? description.trim() : null,
+        (category && category.trim()) ? category.trim() : null,
+        (difficulty && difficulty.trim()) ? difficulty.trim() : null,
+        (language && language.trim()) ? language.trim() : null,
+        isFree ? 0 : Number(price || 0),
+        isFree ? 1 : 0,
+        safeIsPublished,
+        thumbnailUrl !== undefined ? thumbnailUrl : null,
         thumbnailPosition || null,
-        bannerUrl || null,
+        bannerUrl !== undefined ? bannerUrl : null,
         bannerPosition || null,
-        durationHours !== undefined ? Number(durationHours) : null,
-        defaultCallMode || null,
-        allowStudentScreenShare !== undefined ? allowStudentScreenShare ? 1 : 0 : null,
-        allowStudentCamera !== undefined ? allowStudentCamera ? 1 : 0 : null,
+        durationHours !== undefined ? Number(durationHours) : 0,
+        defaultCallMode || 'open',
+        allowStudentScreenShare !== undefined ? (allowStudentScreenShare ? 1 : 0) : 1,
+        allowStudentCamera !== undefined ? (allowStudentCamera ? 1 : 0) : 1,
         outcomesStr,
         requirementsStr,
         documentsStr,
         now,
         courseId
       ]);
+
+      if (owned?.spaceId && title) {
+        execute('UPDATE spaces SET name = ?, description = ? WHERE id = ?', [title.trim(), description || '', owned.spaceId]);
+      }
 
       if (Array.isArray(modules)) {
         const existingModules = queryAll('SELECT id FROM course_modules WHERE courseId = ?', [courseId]);
@@ -342,12 +344,13 @@ router.put('/courses/:courseId', authenticate, requireRole('CREATOR', 'ADMIN'), 
 
         modules.forEach((mod, mIdx) => {
           let modId = mod.id;
-          const exists = modId ? queryOne('SELECT id FROM course_modules WHERE id = ?', [modId]) : null;
+          const drip = mod.dripMode === 'sequential' ? 'sequential' : 'instant';
+          const exists = modId ? queryOne('SELECT id FROM course_modules WHERE id = ? AND courseId = ?', [modId, courseId]) : null;
           if (exists) {
-            execute('UPDATE course_modules SET title = ?, description = ?, orderIndex = ? WHERE id = ?', [mod.title || `Módulo ${mIdx + 1}`, mod.description || '', mIdx, modId]);
+            execute('UPDATE course_modules SET title = ?, description = ?, orderIndex = ?, dripMode = ? WHERE id = ? AND courseId = ?', [mod.title || `Módulo ${mIdx + 1}`, mod.description || '', mIdx, drip, modId, courseId]);
           } else {
-            modId = modId || `mod-${Date.now()}-${mIdx}`;
-            execute('INSERT INTO course_modules (id, courseId, title, description, orderIndex) VALUES (?, ?, ?, ?, ?)', [modId, courseId, mod.title || `Módulo ${mIdx + 1}`, mod.description || '', mIdx]);
+            modId = (modId && !queryOne('SELECT id FROM course_modules WHERE id = ?', [modId])) ? modId : `mod-${Date.now()}-${mIdx}`;
+            execute('INSERT INTO course_modules (id, courseId, title, description, orderIndex, dripMode) VALUES (?, ?, ?, ?, ?, ?)', [modId, courseId, mod.title || `Módulo ${mIdx + 1}`, mod.description || '', mIdx, drip]);
           }
 
           if (Array.isArray(mod.lessons)) {
@@ -366,13 +369,13 @@ router.put('/courses/:courseId', authenticate, requireRole('CREATOR', 'ADMIN'), 
 
             mod.lessons.forEach((les, lIdx) => {
               let lesId = les.id;
-              const contentToStore = les.quiz ? JSON.stringify(les.quiz) : les.richArticle ? JSON.stringify(les.richArticle) : les.codeChallenge ? JSON.stringify(les.codeChallenge) : typeof les.content === 'object' ? JSON.stringify(les.content) : les.customData ? JSON.stringify(les.customData) : les.content || '';
-              const lesExists = lesId ? queryOne('SELECT id FROM lessons WHERE id = ?', [lesId]) : null;
+              const contentToStore = les.quiz ? JSON.stringify(les.quiz) : les.richArticle ? JSON.stringify(les.richArticle) : typeof les.content === 'object' ? JSON.stringify(les.content) : les.customData ? JSON.stringify(les.customData) : les.content || '';
+              const lesExists = lesId ? queryOne('SELECT id FROM lessons WHERE id = ? AND moduleId = ?', [lesId, modId]) : null;
 
               if (lesExists) {
-                execute('UPDATE lessons SET title = ?, type = ?, content = ?, videoUrl = ?, durationMin = ?, orderIndex = ?, xpReward = ? WHERE id = ?', [les.title || `Aula ${lIdx + 1}`, les.type || 'video', contentToStore, les.videoUrl || '', Number(les.durationMin || 15), lIdx, Number(les.xpReward || 25), lesId]);
+                execute('UPDATE lessons SET title = ?, type = ?, content = ?, videoUrl = ?, durationMin = ?, orderIndex = ?, xpReward = ? WHERE id = ? AND moduleId = ?', [les.title || `Aula ${lIdx + 1}`, les.type || 'video', contentToStore, les.videoUrl || '', Number(les.durationMin || 15), lIdx, Number(les.xpReward || 25), lesId, modId]);
               } else {
-                lesId = lesId || `les-${Date.now()}-${mIdx}-${lIdx}`;
+                lesId = (lesId && !queryOne('SELECT id FROM lessons WHERE id = ?', [lesId])) ? lesId : `les-${Date.now()}-${mIdx}-${lIdx}`;
                 execute('INSERT INTO lessons (id, moduleId, title, type, content, videoUrl, durationMin, orderIndex, xpReward) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [lesId, modId, les.title || `Aula ${lIdx + 1}`, les.type || 'video', contentToStore, les.videoUrl || '', Number(les.durationMin || 15), lIdx, Number(les.xpReward || 25)]);
               }
 
@@ -439,13 +442,16 @@ router.get('/courses', authenticate, requireRole('CREATOR', 'ADMIN'), async (req
     const courses = queryAll(`SELECT c.*,
               (SELECT COUNT(*) FROM enrollments WHERE courseId = c.id) as studentsCount,
               (SELECT COUNT(*) FROM course_modules WHERE courseId = c.id) as modulesCount,
-              (SELECT COUNT(*) FROM reviews WHERE courseId = c.id) as reviewsCount
+              (SELECT COUNT(*) FROM reviews WHERE courseId = c.id) as reviewsCount,
+              CASE WHEN c.creatorId = ? THEN 1 ELSE 0 END as isOwner
        FROM courses c
        WHERE c.creatorId = ?
-       ORDER BY c.createdAt DESC`, [creatorId]);
+          OR EXISTS (SELECT 1 FROM colaboradores_curso WHERE id_curso = c.id AND id_utilizador = ?)
+       ORDER BY c.createdAt DESC`, [creatorId, creatorId, creatorId]);
     return res.json(courses.map(c => ({
       ...c,
       isFree: c.isFree === 1,
+      isOwner: c.isOwner === 1,
       _count: {
         enrollments: c.studentsCount || 0,
         modules: c.modulesCount || 0,
@@ -561,8 +567,8 @@ router.post('/courses', authenticate, requireRole('CREATOR', 'ADMIN'), async (re
       const defCallMode = defaultCallMode || 'open';
       const allowScreen = allowStudentScreenShare !== false ? 1 : 0;
       const allowCam = allowStudentCamera !== false ? 1 : 0;
-      const approvalStatus = req.user.role === 'ADMIN' ? 'APPROVED' : 'PENDING';
-      const isPub = req.user.role === 'ADMIN' ? 1 : 0;
+      const approvalStatus = 'APPROVED';
+      const isPub = isPublished !== undefined ? (isPublished ? 1 : 0) : 1;
       execute(`INSERT INTO courses (id, title, slug, description, category, difficulty, thumbnailUrl, thumbnailPosition, bannerUrl, bannerPosition, price, isFree, isPublished, approvalStatus, adminNotes, submittedForReviewAt, featured, durationHours, language, creatorId, spaceId, defaultCallMode, allowStudentScreenShare, allowStudentCamera, learningOutcomes, requirements, documents, createdAt, updatedAt)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
         courseId,
@@ -593,55 +599,16 @@ router.post('/courses', authenticate, requireRole('CREATOR', 'ADMIN'), async (re
         now,
         now
       ]);
-      const rolesToInsert = Array.isArray(customRoles) && customRoles.length > 0 ? customRoles : [{
-        name: 'Instrutor',
-        color: 'indigo',
-        canPostAnnouncements: 1,
-        canSpeakInStage: 1,
-        canShareScreen: 1,
-        canModerateChat: 1,
-        canManageVoice: 1
-      }, {
-        name: 'Tutor / Moderador',
-        color: 'emerald',
-        canPostAnnouncements: 1,
-        canSpeakInStage: 1,
-        canShareScreen: 1,
-        canModerateChat: 1,
-        canManageVoice: 1
-      }, {
-        name: 'Monitor de Dúvidas',
-        color: 'amber',
-        canPostAnnouncements: 0,
-        canSpeakInStage: 1,
-        canShareScreen: 0,
-        canModerateChat: 0,
-        canManageVoice: 0
-      }, {
-        name: 'Estudante',
-        color: 'zinc',
-        canPostAnnouncements: 0,
-        canSpeakInStage: 0,
-        canShareScreen: allowScreen,
-        canModerateChat: 0,
-        canManageVoice: 0
-      }];
-      rolesToInsert.forEach((role, rIdx) => {
-        const roleId = role.id || `role-${Date.now()}-${rIdx}`;
-        execute(`INSERT INTO course_roles (id, courseId, name, color, canPostAnnouncements, canSpeakInStage, canShareScreen, canModerateChat, canManageVoice, orderIndex, createdAt)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [roleId, courseId, role.name, role.color || 'indigo', role.canPostAnnouncements ? 1 : 0, role.canSpeakInStage ? 1 : 0, role.canShareScreen !== undefined ? role.canShareScreen ? 1 : 0 : allowScreen, role.canModerateChat ? 1 : 0, role.canManageVoice ? 1 : 0, rIdx, now]);
-        if (rIdx === 0) {
-          execute(`INSERT OR IGNORE INTO course_member_roles (id, courseId, userId, roleId, assignedAt) VALUES (?, ?, ?, ?, ?)`, [`cmr-${Date.now()}`, courseId, creatorId, roleId, now]);
-        }
-      });
+
       if (Array.isArray(modules)) {
         modules.forEach((mod, mIdx) => {
           const modId = `mod-${Date.now()}-${mIdx}`;
-          execute(`INSERT INTO course_modules (id, courseId, title, description, orderIndex) VALUES (?, ?, ?, ?, ?)`, [modId, courseId, mod.title || `Módulo ${mIdx + 1}`, mod.description || '', mIdx]);
+          const drip = mod.dripMode === 'sequential' ? 'sequential' : 'instant';
+          execute(`INSERT INTO course_modules (id, courseId, title, description, orderIndex, dripMode) VALUES (?, ?, ?, ?, ?, ?)`, [modId, courseId, mod.title || `Módulo ${mIdx + 1}`, mod.description || '', mIdx, drip]);
           if (Array.isArray(mod.lessons)) {
             mod.lessons.forEach((les, lIdx) => {
               const lesId = `les-${Date.now()}-${mIdx}-${lIdx}`;
-              const contentToStore = les.quiz ? JSON.stringify(les.quiz) : les.richArticle ? JSON.stringify(les.richArticle) : les.codeChallenge ? JSON.stringify(les.codeChallenge) : typeof les.content === 'object' ? JSON.stringify(les.content) : les.customData ? JSON.stringify(les.customData) : les.content || '';
+              const contentToStore = les.quiz ? JSON.stringify(les.quiz) : les.richArticle ? JSON.stringify(les.richArticle) : typeof les.content === 'object' ? JSON.stringify(les.content) : les.customData ? JSON.stringify(les.customData) : les.content || '';
               execute(`INSERT INTO lessons (id, moduleId, title, type, content, videoUrl, durationMin, orderIndex, xpReward)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, [lesId, modId, les.title || `Aula ${lIdx + 1}`, les.type || 'video', contentToStore, les.videoUrl || '', Number(les.durationMin || 15), lIdx, Number(les.xpReward || 25)]);
               if (les.quiz) {
@@ -686,20 +653,17 @@ router.get('/members', authenticate, requireRole('CREATOR', 'ADMIN'), async (req
               u.id as user_id, u.name, u.username, u.avatarUrl, u.email, u.level, u.xp,
               c.id as course_id, c.title as course_title,
               s.name as space_name,
-              cr.name as role_name, cr.color as role_color, cr.id as role_id
+              CASE WHEN col.userId IS NOT NULL THEN 'COLABORADOR' ELSE 'ALUNO' END as member_type
        FROM enrollments e
        JOIN courses c ON e.courseId = c.id
        JOIN users u ON e.userId = u.id
        LEFT JOIN spaces s ON c.spaceId = s.id
-       LEFT JOIN course_member_roles cmr ON cmr.courseId = c.id AND cmr.userId = u.id
-       LEFT JOIN course_roles cr ON cmr.roleId = cr.id
-       WHERE (c.creatorId = ? OR c.instructorId = ?) AND e.userId != ?
+       LEFT JOIN course_collaborators col ON col.courseId = c.id AND col.userId = u.id
+       WHERE (c.creatorId = ? OR c.id IN (SELECT courseId FROM course_collaborators WHERE userId = ?)) AND e.userId != ?
        ORDER BY e.enrolledAt DESC`, [creatorId, creatorId, creatorId]);
     const formatted = members.map(m => ({
       id: m.id,
-      role: m.role_name || (m.userId === creatorId ? 'INSTRUTOR' : 'STUDENT'),
-      roleId: m.role_id,
-      roleColor: m.role_color || 'zinc',
+      role: m.member_type,
       progressPercent: m.progressPercent,
       enrolledAt: m.enrolledAt,
       course: {
@@ -727,93 +691,126 @@ router.get('/members', authenticate, requireRole('CREATOR', 'ADMIN'), async (req
     });
   }
 });
-router.get('/courses/:courseId/roles', authenticate, requireRole('CREATOR', 'ADMIN'), async (req, res) => {
+
+router.get('/courses/:courseId/collaborators', authenticate, requireRole('CREATOR', 'ADMIN'), async (req, res) => {
   try {
-    const {
-      courseId
-    } = req.params;
-    const creatorId = req.user.id;
+    const { courseId } = req.params;
+    const userId = req.user.id;
     if (req.user.role !== 'ADMIN') {
-      const owned = queryOne('SELECT id FROM courses WHERE id = ? AND creatorId = ?', [courseId, creatorId]);
-      if (!owned) return res.status(403).json({
-        error: 'Acesso negado a este curso'
-      });
+      const access = queryOne(`
+        SELECT id FROM courses WHERE id = ? AND (creatorId = ? OR id IN (SELECT courseId FROM course_collaborators WHERE userId = ?))
+      `, [courseId, userId, userId]);
+      if (!access) return res.status(403).json({ error: 'Acesso negado a este curso' });
     }
-    const roles = queryAll(`SELECT * FROM course_roles WHERE courseId = ? ORDER BY orderIndex ASC`, [courseId]);
-    return res.json(roles);
+    const collaborators = queryAll(`
+      SELECT cc.id, cc.courseId, cc.userId, cc.createdAt,
+             u.name, u.username, u.email, u.avatarUrl, u.level
+      FROM course_collaborators cc
+      JOIN users u ON cc.userId = u.id
+      WHERE cc.courseId = ?
+      ORDER BY cc.createdAt ASC
+    `, [courseId]);
+    return res.json(collaborators);
   } catch (err) {
-    return res.status(500).json({
-      error: 'Falha ao carregar cargos do curso'
-    });
+    console.error('Get collaborators error:', err);
+    return res.status(500).json({ error: 'Falha ao carregar colaboradores do curso' });
   }
 });
-router.post('/courses/:courseId/roles', authenticate, requireRole('CREATOR', 'ADMIN'), async (req, res) => {
+
+router.post('/courses/:courseId/collaborators', authenticate, requireRole('CREATOR', 'ADMIN'), async (req, res) => {
   try {
-    const {
-      courseId
-    } = req.params;
-    const creatorId = req.user.id;
-    if (req.user.role !== 'ADMIN') {
-      const owned = queryOne('SELECT id FROM courses WHERE id = ? AND creatorId = ?', [courseId, creatorId]);
-      if (!owned) return res.status(403).json({
-        error: 'Acesso negado a este curso'
-      });
+    const { courseId } = req.params;
+    const userId = req.user.id;
+    const course = queryOne('SELECT id, title, creatorId FROM courses WHERE id = ?', [courseId]);
+    if (!course) return res.status(404).json({ error: 'Curso não encontrado' });
+
+    if (req.user.role !== 'ADMIN' && course.creatorId !== userId) {
+      return res.status(403).json({ error: 'Apenas o proprietário do curso pode adicionar colaboradores' });
     }
-    const {
-      name,
-      color,
-      canPostAnnouncements,
-      canSpeakInStage,
-      canShareScreen,
-      canModerateChat,
-      canManageVoice
-    } = req.body;
-    if (!name) {
-      return res.status(400).json({
-        error: 'Nome do cargo é obrigatório'
-      });
+
+    const { identifier } = req.body;
+    if (!identifier || typeof identifier !== 'string' || !identifier.trim()) {
+      return res.status(400).json({ error: 'Indique o nome de utilizador ou email do colaborador' });
     }
-    const roleId = `role-${Date.now()}`;
+
+    const cleanIdent = identifier.trim().toLowerCase();
+    const targetUser = queryOne(`
+      SELECT id, name, username, email, avatarUrl, level, role 
+      FROM users 
+      WHERE LOWER(email) = ? OR LOWER(username) = ?
+    `, [cleanIdent, cleanIdent]);
+
+    if (!targetUser) {
+      return res.status(404).json({ error: 'Utilizador não encontrado com este email/username' });
+    }
+
+    if (targetUser.id === course.creatorId) {
+      return res.status(400).json({ error: 'O criador já é o proprietário do curso' });
+    }
+
+    const existing = queryOne('SELECT id FROM course_collaborators WHERE courseId = ? AND userId = ?', [courseId, targetUser.id]);
+    if (existing) {
+      return res.status(400).json({ error: 'Este utilizador já é colaborador deste curso' });
+    }
+
+    const collabId = `collab-${Date.now()}`;
     const now = new Date().toISOString();
-    execute(`INSERT INTO course_roles (id, courseId, name, color, canPostAnnouncements, canSpeakInStage, canShareScreen, canModerateChat, canManageVoice, orderIndex, createdAt)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 99, ?)`, [roleId, courseId, name, color || 'indigo', canPostAnnouncements ? 1 : 0, canSpeakInStage ? 1 : 0, canShareScreen ? 1 : 0, canModerateChat ? 1 : 0, canManageVoice ? 1 : 0, now]);
-    const created = queryOne('SELECT * FROM course_roles WHERE id = ?', [roleId]);
-    return res.status(201).json(created);
-  } catch (err) {
-    return res.status(500).json({
-      error: 'Falha ao criar cargo'
-    });
-  }
-});
-router.put('/courses/:courseId/members/:userId/role', authenticate, requireRole('CREATOR', 'ADMIN'), async (req, res) => {
-  try {
-    const {
+    execute(`INSERT INTO course_collaborators (id, courseId, userId, createdAt) VALUES (?, ?, ?, ?)`, [
+      collabId, courseId, targetUser.id, now
+    ]);
+
+    const enrolled = queryOne('SELECT id FROM enrollments WHERE courseId = ? AND userId = ?', [courseId, targetUser.id]);
+    if (!enrolled) {
+      execute(`INSERT INTO enrollments (id, userId, courseId, progressPercent, enrolledAt) VALUES (?, ?, ?, 100, ?)`, [
+        `enr-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`, targetUser.id, courseId, now
+      ]);
+    }
+
+    execute(`
+      INSERT INTO notifications (id, userId, type, title, content, link, isRead, createdAt)
+      VALUES (?, ?, 'course', 'Adicionado como Colaborador', ?, ?, 0, ?)
+    `, [
+      `notif-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      targetUser.id,
+      `Foi adicionado como colaborador do curso "${course.title}". Agora pode ajudar a gerir os conteúdos.`,
+      `/creator/courses/${courseId}/edit`,
+      now
+    ]);
+
+    return res.status(201).json({
+      id: collabId,
       courseId,
-      userId
-    } = req.params;
-    const creatorId = req.user.id;
-    if (req.user.role !== 'ADMIN') {
-      const owned = queryOne('SELECT id FROM courses WHERE id = ? AND creatorId = ?', [courseId, creatorId]);
-      if (!owned) return res.status(403).json({
-        error: 'Acesso negado a este curso'
-      });
-    }
-    const {
-      roleId
-    } = req.body;
-    const now = new Date().toISOString();
-    execute(`DELETE FROM course_member_roles WHERE courseId = ? AND userId = ?`, [courseId, userId]);
-    if (roleId) {
-      execute(`INSERT INTO course_member_roles (id, courseId, userId, roleId, assignedAt) VALUES (?, ?, ?, ?, ?)`, [`cmr-${Date.now()}`, courseId, userId, roleId, now]);
-    }
-    return res.json({
-      success: true,
-      message: 'Cargo atualizado com sucesso'
+      userId: targetUser.id,
+      createdAt: now,
+      name: targetUser.name,
+      username: targetUser.username,
+      email: targetUser.email,
+      avatarUrl: targetUser.avatarUrl,
+      level: targetUser.level
     });
   } catch (err) {
-    return res.status(500).json({
-      error: 'Falha ao atribuir cargo'
-    });
+    console.error('Add collaborator error:', err);
+    return res.status(500).json({ error: 'Falha ao adicionar colaborador' });
+  }
+});
+
+router.delete('/courses/:courseId/collaborators/:targetUserId', authenticate, requireRole('CREATOR', 'ADMIN'), async (req, res) => {
+  try {
+    const { courseId, targetUserId } = req.params;
+    const userId = req.user.id;
+
+    const course = queryOne('SELECT id, creatorId FROM courses WHERE id = ?', [courseId]);
+    if (!course) return res.status(404).json({ error: 'Curso não encontrado' });
+
+    if (req.user.role !== 'ADMIN' && course.creatorId !== userId && targetUserId !== userId) {
+      return res.status(403).json({ error: 'Sem permissão para remover este colaborador' });
+    }
+
+    execute('DELETE FROM course_collaborators WHERE courseId = ? AND userId = ?', [courseId, targetUserId]);
+    return res.json({ success: true, message: 'Colaborador removido com sucesso' });
+  } catch (err) {
+    console.error('Delete collaborator error:', err);
+    return res.status(500).json({ error: 'Falha ao remover colaborador' });
   }
 });
 
@@ -822,11 +819,10 @@ router.delete('/courses/:courseId/members/:userId', authenticate, requireRole('C
     const { courseId, userId } = req.params;
     const creatorId = req.user.id;
     if (req.user.role !== 'ADMIN') {
-      const owned = queryOne('SELECT id FROM courses WHERE id = ? AND creatorId = ?', [courseId, creatorId]);
+      const owned = queryOne('SELECT id FROM courses WHERE id = ? AND (creatorId = ? OR id IN (SELECT courseId FROM course_collaborators WHERE userId = ?))', [courseId, creatorId, creatorId]);
       if (!owned) return res.status(403).json({ error: 'Acesso negado a este curso' });
     }
     execute('DELETE FROM enrollments WHERE courseId = ? AND userId = ?', [courseId, userId]);
-    execute('DELETE FROM course_member_roles WHERE courseId = ? AND userId = ?', [courseId, userId]);
     return res.json({ success: true, message: 'Membro removido do curso com sucesso' });
   } catch (err) {
     return res.status(500).json({ error: 'Falha ao remover membro' });
@@ -837,7 +833,7 @@ router.post('/courses/:courseId/submit-review', authenticate, requireRole('CREAT
   try {
     const { courseId } = req.params;
     const creatorId = req.user.id;
-    const course = queryOne('SELECT * FROM courses WHERE id = ? AND (creatorId = ? OR ? = "ADMIN")', [courseId, creatorId, req.user.role]);
+    const course = queryOne("SELECT * FROM courses WHERE id = ? AND (creatorId = ? OR ? = 'ADMIN')", [courseId, creatorId, req.user.role]);
     if (!course) {
       return res.status(404).json({ error: 'Curso não encontrado ou sem permissão' });
     }
@@ -845,25 +841,16 @@ router.post('/courses/:courseId/submit-review', authenticate, requireRole('CREAT
     const now = new Date().toISOString();
     execute(`
       UPDATE courses 
-      SET approvalStatus = 'PENDING', isPublished = 0, submittedForReviewAt = ?, updatedAt = ?
+      SET approvalStatus = 'APPROVED', isPublished = 1, updatedAt = ?
       WHERE id = ?
-    `, [now, now, courseId]);
-
-    // Notificar administradores
-    const admins = queryAll("SELECT id FROM users WHERE role = 'ADMIN'");
-    for (const admin of admins) {
-      execute(`
-        INSERT INTO notifications (id, userId, type, title, content, link, isRead, createdAt)
-        VALUES (?, ?, 'admin', 'Curso Submetido para Moderação', ?, '/admin', 0, ?)
-      `, [`notif-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`, admin.id, `O curso "${course.title}" foi submetido para moderação e aprovação.`, now]);
-    }
+    `, [now, courseId]);
 
     return res.json({
-      message: 'Curso submetido para aprovação do Administrador.',
-      approvalStatus: 'PENDING'
+      message: 'Curso publicado com sucesso.',
+      approvalStatus: 'APPROVED'
     });
   } catch (err) {
-    return res.status(500).json({ error: 'Falha ao submeter curso para aprovação' });
+    return res.status(500).json({ error: 'Falha ao publicar curso' });
   }
 });
 

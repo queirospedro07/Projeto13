@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Clock,
@@ -17,7 +17,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { ProgressBar } from '../../components/ui/ProgressBar';
 import { api } from '../../services/api';
-import { formatCoursePrice } from '../../utils/formatters';
+import { formatCoursePrice, formatCategory } from '../../utils/formatters';
 
 export const Dashboard = () => {
   const { user } = useAuth();
@@ -92,16 +92,9 @@ export const Dashboard = () => {
     });
   }, [user?.id]);
 
-  // Fetch creator application status for the account status indicator
-  useEffect(() => {
-    if (!user) return;
-    if (user.role === 'ADMIN' || user.role === 'CREATOR') return;
-    api.getCreatorApplicationStatus().catch(() => null).then(res => {
-      if (res?.application?.status === 'PENDING' || res?.application?.status === 'APPROVED') {
-        setApplyStatus('creator-applied');
-      }
-    });
-  }, [user?.id]);
+  const completedCoursesCount = myCourses.filter(
+    (e) => (e.progressPercent || 0) >= 100 || e.isCompleted
+  ).length;
 
   const getTimeGreeting = () => {
     const hour = new Date().getHours();
@@ -109,10 +102,6 @@ export const Dashboard = () => {
     if (hour < 18) return 'Boa tarde';
     return 'Boa noite';
   };
-
-  const completedCoursesCount = myCourses.filter(
-    (e) => (e.progressPercent || 0) >= 100 || e.isCompleted
-  ).length;
 
   const visibleCourses = myCourses
     .filter((e) => {
@@ -139,7 +128,7 @@ export const Dashboard = () => {
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-6 sm:gap-8 animate-fade-in pb-12">
 
-      {/* ── Header ── */}
+      {/* Cabeçalho */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
@@ -168,7 +157,7 @@ export const Dashboard = () => {
         </div>
       </div>
 
-      {/* ── Primary course + summary ── */}
+      {/* Curso principal e resumo */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
 
         <div className="lg:col-span-2 p-5 sm:p-7 rounded-xl bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 shadow-xs flex flex-col justify-between">
@@ -288,7 +277,7 @@ export const Dashboard = () => {
         </div>
       </div>
 
-      {/* ── In-progress courses grid ── */}
+      {/* Cursos em andamento */}
       {myCourses.length > 0 && (
         <div className="space-y-4 pt-2">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -344,7 +333,7 @@ export const Dashboard = () => {
                         )}
                         <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10">
                           <span className="px-2.5 py-1 rounded-md bg-black/70 backdrop-blur-md text-[11px] font-bold text-white pointer-events-none">
-                            {course.category || 'Geral'}
+                            {formatCategory(course.category)}
                           </span>
                           {pinnedCourseIds.includes(course.id) && (
                             <span className="px-2 py-0.5 rounded-md bg-blue-600 text-white text-[10px] font-extrabold flex items-center gap-1 shadow-xs">
@@ -420,7 +409,7 @@ export const Dashboard = () => {
         </div>
       )}
 
-      {/* ── Recommended courses ── */}
+      {/* Cursos recomendados */}
       {recommendedCourses.length > 0 && (
         <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-zinc-800">
           <div className="flex items-center justify-between">
@@ -449,7 +438,7 @@ export const Dashboard = () => {
                       className="w-full h-full object-cover group-hover/thumb:scale-105 transition-transform duration-300"
                     />
                     <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-md bg-black/70 backdrop-blur-md text-[11px] font-bold text-white pointer-events-none">
-                      {c.category || 'Geral'}
+                      {formatCategory(c.category)}
                     </span>
                   </Link>
 

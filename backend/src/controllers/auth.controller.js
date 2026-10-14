@@ -66,14 +66,13 @@ export const login = async (req, res) => {
     const loginIdentifier = (req.body.login || req.body.email || '').trim().toLowerCase();
     const { password } = req.body;
 
-    const user = queryOne(
+const user = queryOne(
       `SELECT id, email, nome_utilizador AS username, hash_palavra_passe AS passwordHash,
-              nome AS name, papel AS role, url_avatar AS avatarUrl, biografia AS bio,
-              localizacao AS location, dias_sequencia AS streakDays, data_ultima_atividade AS lastActiveDate,
-              meta_diaria_minutos AS dailyGoalMinutes, minutos_hoje AS minutesToday,
-              minutos_totais AS totalMinutes, xp, nivel AS level, esta_suspenso AS isSuspended
-       FROM utilizadores
-       WHERE LOWER(email) = ? OR LOWER(nome_utilizador) = ?`,
+               nome AS name, papel AS role, url_avatar AS avatarUrl, biografia AS bio,
+               localizacao AS location, meta_diaria_minutos AS dailyGoalMinutes, minutos_hoje AS minutesToday,
+               minutos_totais AS totalMinutes, esta_suspenso AS isSuspended
+        FROM utilizadores
+        WHERE LOWER(email) = ? OR LOWER(nome_utilizador) = ?`,
       [loginIdentifier, loginIdentifier]
     );
 
@@ -84,7 +83,7 @@ export const login = async (req, res) => {
       });
     }
 
-    if (user.isSuspended) {
+    if (user.role !== 'ADMIN' && Number(user.isSuspended) === 1) {
       return res.status(403).json({
         message: 'Esta conta encontra-se suspensa pela administração.',
         error: 'Esta conta encontra-se suspensa pela administração.'
@@ -99,18 +98,6 @@ export const login = async (req, res) => {
       });
     }
 
-    // Update streak and last active date
-    const today = new Date().toISOString().split('T')[0];
-    if (user.lastActiveDate !== today) {
-      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-      const newStreak = user.lastActiveDate === yesterday ? user.streakDays + 1 : 1;
-      execute(
-        'UPDATE utilizadores SET dias_sequencia = ?, data_ultima_atividade = ?, minutos_hoje = 0, atualizado_em = ? WHERE id = ?',
-        [newStreak, today, new Date().toISOString(), user.id]
-      );
-      user.streakDays = newStreak;
-    }
-
     const tokenUser = {
       id: user.id,
       name: user.name,
@@ -119,9 +106,6 @@ export const login = async (req, res) => {
       role: user.role,
       isAdmin: user.role === 'ADMIN',
       avatarUrl: user.avatarUrl,
-      xp: user.xp,
-      level: user.level,
-      streakDays: user.streakDays
     };
 
     const token = generateToken(tokenUser);
@@ -145,9 +129,9 @@ export const getMe = async (req, res) => {
     const user = queryOne(
       `SELECT id, email, nome_utilizador AS username, nome AS name, papel AS role,
               url_avatar AS avatarUrl, biografia AS bio, localizacao AS location,
-              dias_sequencia AS streakDays, meta_diaria_minutos AS dailyGoalMinutes,
+              meta_diaria_minutos AS dailyGoalMinutes,
               minutos_hoje AS minutesToday, minutos_totais AS totalMinutes,
-              xp, nivel AS level, esta_suspenso AS isSuspended
+              esta_suspenso AS isSuspended
        FROM utilizadores
        WHERE id = ?`,
       [req.user.id]
@@ -157,8 +141,9 @@ export const getMe = async (req, res) => {
     }
 
     const profile = queryOne(
-      `SELECT titulo_perfil AS headline, website, github, twitter, linkedin, instagram,
-              url_banner AS bannerUrl, e_publico AS isPublic, preferencia_tema AS themePreference
+      `SELECT titulo_perfil AS headline, website, github, linkedin, url_banner AS bannerUrl,
+              e_publico AS isPublic, mostrar_biografia AS showBio, mostrar_localizacao AS showLocation, mostrar_redes_sociais AS showSocials,
+              mostrar_estatisticas AS showStats, mostrar_cursos AS showCourses, preferencia_tema AS themePreference
        FROM perfis
        WHERE id_utilizador = ?`,
       [user.id]
@@ -174,21 +159,21 @@ export const getMe = async (req, res) => {
       avatarUrl: user.avatarUrl,
       bio: user.bio,
       location: user.location,
-      streakDays: user.streakDays,
       dailyGoalMinutes: user.dailyGoalMinutes,
       minutesToday: user.minutesToday,
       totalMinutes: user.totalMinutes,
-      xp: user.xp,
-      level: user.level,
       profile: {
         headline: profile.headline || '',
         website: profile.website || '',
         github: profile.github || '',
-        twitter: profile.twitter || '',
         linkedin: profile.linkedin || '',
-        instagram: profile.instagram || '',
         bannerUrl: profile.bannerUrl || '',
         isPublic: Boolean(profile.isPublic !== 0),
+        showBio: profile.showBio !== 0 ? 1 : 0,
+        showLocation: profile.showLocation !== 0 ? 1 : 0,
+        showSocials: profile.showSocials !== 0 ? 1 : 0,
+        showStats: profile.showStats !== 0 ? 1 : 0,
+        showCourses: profile.showCourses !== 0 ? 1 : 0,
         themePreference: profile.themePreference || 'light'
       }
     };
@@ -201,25 +186,27 @@ export const getMe = async (req, res) => {
 };
 
 export const demoLogin = async (req, res) => {
+  if (process.env.NODE_ENV === 'production' || process.env.ENABLE_DEMO_LOGIN === 'false') {
+    return res.status(403).json({ message: 'Modo de demonstração desativado.', error: 'Modo de demonstração desativado.' });
+  }
+
   const { role = 'student' } = req.params;
-  const targetRole = role.toUpperCase();
+  const targetRole = String(role).toUpperCase();
+  if (!['STUDENT', 'CREATOR', 'ADMIN'].includes(targetRole)) {
+    return res.status(400).json({ message: 'Perfil de demonstração inválido.', error: 'Perfil de demonstração inválido.' });
+  }
 
   const user = queryOne(
     `SELECT id, email, nome_utilizador AS username, nome AS name, papel AS role,
-            url_avatar AS avatarUrl, xp, nivel AS level, dias_sequencia AS streakDays
+            url_avatar AS avatarUrl
      FROM utilizadores
-     WHERE papel = ?
+     WHERE papel = ? AND esta_suspenso = 0
      LIMIT 1`,
     [targetRole]
-  ) || queryOne(
-    `SELECT id, email, nome_utilizador AS username, nome AS name, papel AS role,
-            url_avatar AS avatarUrl, xp, nivel AS level, dias_sequencia AS streakDays
-     FROM utilizadores
-     LIMIT 1`
   );
 
   if (!user) {
-    return res.status(404).json({ message: 'Conta demo não encontrada.', error: 'Conta demo não encontrada.' });
+    return res.status(404).json({ message: 'Conta de demonstração não encontrada.', error: 'Conta de demonstração não encontrada.' });
   }
 
   const tokenUser = {
@@ -230,9 +217,6 @@ export const demoLogin = async (req, res) => {
     role: user.role,
     isAdmin: user.role === 'ADMIN',
     avatarUrl: user.avatarUrl,
-    xp: user.xp,
-    level: user.level,
-    streakDays: user.streakDays
   };
 
   const token = generateToken(tokenUser);

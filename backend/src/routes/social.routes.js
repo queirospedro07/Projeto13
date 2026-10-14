@@ -1,4 +1,4 @@
-﻿import { Router } from 'express';
+import { Router } from 'express';
 import { queryAll, queryOne, execute, transaction } from '../database/connection.js';
 import { authenticate, optionalAuth } from '../middleware/auth.js';
 const router = Router();
@@ -7,21 +7,21 @@ router.get('/friends', authenticate, async (req, res) => {
     const userId = req.user.id;
     const acceptedFriendships = queryAll(`SELECT f.id as friendshipId, f.createdAt as friendsSince,
               CASE WHEN f.requesterId = ? THEN f.addresseeId ELSE f.requesterId END as friendId
-       FROM friendships f
-       WHERE (f.requesterId = ? OR f.addresseeId = ?) AND f.status = 'ACCEPTED'`, [userId, userId, userId]);
+         FROM friendships f
+         WHERE (f.requesterId = ? OR f.addresseeId = ?) AND f.status = 'ACCEPTED'`, [userId, userId, userId]);
     const friends = acceptedFriendships.map(f => {
-      const u = queryOne('SELECT id, name, username, avatarUrl, role, xp, level, bio FROM users WHERE id = ?', [f.friendId]);
+      const u = queryOne('SELECT id, name, username, avatarUrl, role, bio FROM users WHERE id = ?', [f.friendId]);
       return {
         friendshipId: f.friendshipId,
         friendsSince: f.friendsSince,
         user: u
       };
     }).filter(f => f.user);
-    const incoming = queryAll(`SELECT f.id as friendshipId, f.createdAt, u.id as user_id, u.name, u.username, u.avatarUrl, u.role, u.xp, u.level
+    const incoming = queryAll(`SELECT f.id as friendshipId, f.createdAt, u.id as user_id, u.name, u.username, u.avatarUrl, u.role
        FROM friendships f
        JOIN users u ON f.requesterId = u.id
        WHERE f.addresseeId = ? AND f.status = 'PENDING'`, [userId]);
-    const outgoing = queryAll(`SELECT f.id as friendshipId, f.createdAt, u.id as user_id, u.name, u.username, u.avatarUrl, u.role, u.xp, u.level
+    const outgoing = queryAll(`SELECT f.id as friendshipId, f.createdAt, u.id as user_id, u.name, u.username, u.avatarUrl, u.role
        FROM friendships f
        JOIN users u ON f.addresseeId = u.id
        WHERE f.requesterId = ? AND f.status = 'PENDING'`, [userId]);
@@ -35,9 +35,7 @@ router.get('/friends', authenticate, async (req, res) => {
           name: r.name,
           username: r.username,
           avatarUrl: r.avatarUrl,
-          role: r.role,
-          xp: r.xp,
-          level: r.level
+          role: r.role
         }
       })),
       outgoing: outgoing.map(r => ({
@@ -48,9 +46,7 @@ router.get('/friends', authenticate, async (req, res) => {
           name: r.name,
           username: r.username,
           avatarUrl: r.avatarUrl,
-          role: r.role,
-          xp: r.xp,
-          level: r.level
+          role: r.role
         }
       }))
     });
@@ -131,7 +127,7 @@ router.post('/friends/accept/:friendshipId', authenticate, async (req, res) => {
         error: 'Pedido de amizade não encontrado'
       });
     }
-    if (friendship.addresseeId !== userId && friendship.requesterId !== userId) {
+    if (friendship.addresseeId !== userId) {
       return res.status(403).json({
         error: 'Não tem permissão para responder a este pedido'
       });
@@ -204,6 +200,12 @@ router.post('/follow/:targetUserId', authenticate, async (req, res) => {
         error: 'Não pode seguir o seu próprio perfil'
       });
     }
+    const targetUser = queryOne('SELECT id FROM users WHERE id = ?', [targetUserId]);
+    if (!targetUser) {
+      return res.status(404).json({
+        error: 'Utilizador não encontrado'
+      });
+    }
     const existing = queryOne('SELECT id FROM follows WHERE followerId = ? AND followingId = ?', [followerId, targetUserId]);
     if (existing) {
       return res.json({
@@ -248,7 +250,7 @@ router.get('/followers/:userId', optionalAuth, async (req, res) => {
     const {
       userId
     } = req.params;
-    const followers = queryAll(`SELECT u.id, u.name, u.username, u.avatarUrl, u.role, u.xp, u.level, u.bio, f.createdAt as followedAt
+    const followers = queryAll(`SELECT u.id, u.name, u.username, u.avatarUrl, u.role, u.bio, f.createdAt as followedAt
        FROM follows f
        JOIN users u ON f.followerId = u.id
        WHERE f.followingId = ?
@@ -268,7 +270,7 @@ router.get('/following/:userId', optionalAuth, async (req, res) => {
     const {
       userId
     } = req.params;
-    const following = queryAll(`SELECT u.id, u.name, u.username, u.avatarUrl, u.role, u.xp, u.level, u.bio, f.createdAt as followedAt
+    const following = queryAll(`SELECT u.id, u.name, u.username, u.avatarUrl, u.role, u.bio, f.createdAt as followedAt
        FROM follows f
        JOIN users u ON f.followingId = u.id
        WHERE f.followerId = ?
@@ -317,17 +319,17 @@ router.get('/users/search', optionalAuth, async (req, res) => {
     const userId = req.user?.id || null;
     if (!query || String(query).trim().length < 1) {
       const users = userId
-        ? queryAll('SELECT id, name, username, avatarUrl, role, xp, level, bio FROM users WHERE id != ? AND isSuspended = 0 LIMIT 15', [userId])
-        : queryAll('SELECT id, name, username, avatarUrl, role, xp, level, bio FROM users WHERE isSuspended = 0 LIMIT 15');
+        ? queryAll('SELECT id, name, username, avatarUrl, role, bio FROM users WHERE id != ? AND isSuspended = 0 LIMIT 15', [userId])
+        : queryAll('SELECT id, name, username, avatarUrl, role, bio FROM users WHERE isSuspended = 0 LIMIT 15');
       return res.json(users);
     }
     const searchTerm = `%${String(query).trim()}%`;
     const users = userId
-      ? queryAll(`SELECT id, name, username, avatarUrl, role, xp, level, bio
+      ? queryAll(`SELECT id, name, username, avatarUrl, role, bio
          FROM users
          WHERE id != ? AND isSuspended = 0 AND (name LIKE ? OR username LIKE ?)
          LIMIT 20`, [userId, searchTerm, searchTerm])
-      : queryAll(`SELECT id, name, username, avatarUrl, role, xp, level, bio
+      : queryAll(`SELECT id, name, username, avatarUrl, role, bio
          FROM users
          WHERE isSuspended = 0 AND (name LIKE ? OR username LIKE ?)
          LIMIT 20`, [searchTerm, searchTerm]);
@@ -345,7 +347,7 @@ router.get('/dm/conversations', authenticate, async (req, res) => {
        FROM direct_messages
        WHERE senderId = ? OR receiverId = ?`, [userId, userId, userId]);
     const conversations = peers.map(p => {
-      const peer = queryOne('SELECT id, name, username, avatarUrl, role, xp, level, bio FROM users WHERE id = ?', [p.peerId]);
+      const peer = queryOne('SELECT id, name, username, avatarUrl, role, bio FROM users WHERE id = ?', [p.peerId]);
       const lastMessage = queryOne(`SELECT * FROM direct_messages 
          WHERE (senderId = ? AND receiverId = ?) OR (senderId = ? AND receiverId = ?)
          ORDER BY createdAt DESC LIMIT 1`, [userId, p.peerId, p.peerId, userId]);
@@ -378,12 +380,12 @@ router.get('/dm/messages/:targetUserId', authenticate, async (req, res) => {
     execute(`UPDATE direct_messages SET isRead = 1 WHERE senderId = ? AND receiverId = ? AND isRead = 0`, [targetUserId, userId]);
     const messages = queryAll(`SELECT m.*,
               u.id as user_id, u.name as user_name, u.username as user_username, u.avatarUrl as user_avatarUrl, u.role as user_role
-       FROM direct_messages m
-       JOIN users u ON m.senderId = u.id
-       WHERE (m.senderId = ? AND m.receiverId = ?) OR (m.senderId = ? AND m.receiverId = ?)
-       ORDER BY m.createdAt ASC
-       LIMIT 150`, [userId, targetUserId, targetUserId, userId]);
-    const peer = queryOne('SELECT id, name, username, avatarUrl, role, xp, level, bio FROM users WHERE id = ?', [targetUserId]);
+         FROM direct_messages m
+         JOIN users u ON m.senderId = u.id
+         WHERE (m.senderId = ? AND m.receiverId = ?) OR (m.senderId = ? AND m.receiverId = ?)
+         ORDER BY m.createdAt ASC
+         LIMIT 150`, [userId, targetUserId, targetUserId, userId]);
+    const peer = queryOne('SELECT id, name, username, avatarUrl, role, bio FROM users WHERE id = ?', [targetUserId]);
     const formatted = messages.map(m => ({
       id: m.id,
       senderId: m.senderId,
@@ -421,6 +423,17 @@ router.post('/dm/send', authenticate, async (req, res) => {
     if (!receiverId || !content || !content.trim()) {
       return res.status(400).json({
         error: 'Destinatário e conteúdo são obrigatórios'
+      });
+    }
+    if (senderId === receiverId) {
+      return res.status(400).json({
+        error: 'Não pode enviar mensagens diretas para si próprio'
+      });
+    }
+    const receiver = queryOne('SELECT id FROM users WHERE id = ?', [receiverId]);
+    if (!receiver) {
+      return res.status(404).json({
+        error: 'Destinatário não encontrado'
       });
     }
     const dmId = `dm-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;

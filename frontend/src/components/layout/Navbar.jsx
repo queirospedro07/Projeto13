@@ -45,30 +45,30 @@ export const Navbar = () => {
 
   const isCreator = user?.role === 'CREATOR';
   const isAdmin = user?.role === 'ADMIN';
-  const homeTarget = user ? (isCreator ? '/creator' : '/dashboard') : '/';
+  const homeTarget = user ? (isCreator ? '/creator' : isAdmin ? '/admin' : '/dashboard') : '/';
 
   return (
     <>
       <header className="sticky top-0 z-40 w-full bg-white/90 dark:bg-black/95 backdrop-blur-md text-slate-900 dark:text-white border-b border-slate-200/90 dark:border-neutral-900 transition-colors shadow-xs">
         <div className="w-full px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
 
-          {/* ── Left ── */}
+          {/* Logótipo */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            <Link to="/" className="flex items-center gap-2 group select-none mr-1 sm:mr-2">
+            <Link to={homeTarget} className="flex items-center gap-2 group select-none mr-1 sm:mr-2">
               <Logo size="md" showText={true} />
             </Link>
 
           </div>
 
-          {/* ── Center search — visible sm+ for all, hidden on mobile ── */}
+          {/* Barra de pesquisa central */}
           <div className="mx-2 hidden max-w-md flex-1 justify-center sm:mx-4 sm:flex">
             <GlobalSearch />
           </div>
 
-          {/* ── Right ── */}
+          {/* Ações à direita */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
 
-            {/* Mobile search toggle — only for authenticated users on small screens */}
+            {/* Botão de pesquisa para mobile */}
             {user && (
               <button
                 onClick={() => setShowMobileSearch(v => !v)}
@@ -116,7 +116,7 @@ export const Navbar = () => {
                 {isCreator && (
                   <Link
                     to="/creator/courses/new"
-                    className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-black dark:bg-white dark:text-slate-950 text-white text-xs font-semibold shadow-xs transition-all border border-slate-900 dark:border-white"
+                    className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-black dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200 text-white text-xs font-semibold shadow-xs transition-all border border-slate-900 dark:border-white"
                   >
                     <Plus className="w-4 h-4" />
                     <span>Novo Curso</span>
@@ -222,14 +222,6 @@ export const Navbar = () => {
                           </>
                         )}
 
-                        <Link
-                          to="/help"
-                          onClick={() => setShowProfileMenu(false)}
-                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-[#141414] text-slate-700 dark:text-zinc-300 font-semibold text-xs"
-                        >
-                          <HelpCircle className="w-4 h-4 text-blue-500" />
-                          <span>Ajuda & Suporte</span>
-                        </Link>
 
                         <Link
                           to="/settings"
@@ -258,7 +250,7 @@ export const Navbar = () => {
           </div>
         </div>
 
-        {/* ── Mobile search drawer (slides in below header) ── */}
+        {/* Pesquisa em mobile */}
         {showMobileSearch && (
           <div className="sm:hidden border-t border-slate-200 dark:border-neutral-800 px-4 py-3 bg-white/98 dark:bg-[#06070a]/98 animate-fade-in">
             <GlobalSearch onClose={() => setShowMobileSearch(false)} />

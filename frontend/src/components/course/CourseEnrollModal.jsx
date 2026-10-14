@@ -17,7 +17,7 @@ import { Button } from '../ui/Button';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../ui/Toast';
 import { api } from '../../services/api';
-import { formatCoursePrice } from '../../utils/formatters';
+import { formatCoursePrice, formatCategory } from '../../utils/formatters';
 
 export const CourseEnrollModal = ({
   isOpen,
@@ -58,6 +58,7 @@ export const CourseEnrollModal = ({
   if (!isOpen || !mounted || !course) return null;
 
   const isFree = course.isFree || Number(course.price || 0) <= 0;
+  const isAlreadyEnrolled = Boolean(course.isEnrolled || course.isMember);
   const courseTitle = course.title || course.name || 'Curso';
   const bannerImage = course.bannerUrl || course.thumbnailUrl || 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200&auto=format&fit=crop&q=80';
   const creator = course.creator || course.owner;
@@ -69,6 +70,12 @@ export const CourseEnrollModal = ({
   };
 
   const handleConfirmEnroll = async () => {
+    if (isAlreadyEnrolled) {
+      onClose();
+      navigate(`/learn/${courseIdentifier}`);
+      return;
+    }
+
     if (!user) {
       toast({
         title: 'Sessão Necessária',
@@ -96,14 +103,15 @@ export const CourseEnrollModal = ({
       } else {
         await api.enrollCourse(course.id);
       }
+      window.dispatchEvent(new Event('nexo_courses_visibility_changed'));
       toast({
         title: 'Matrícula Confirmada!',
-        message: `Inscrição concluída com sucesso em "${courseTitle}". Bons estudos!`,
+        message: `Já faz parte do curso "${courseTitle}". Bons estudos!`,
         type: 'success'
       });
       onClose();
       if (onEnrollSuccess) {
-        onEnrollSuccess();
+        onEnrollSuccess(course.id);
       } else {
         navigate(`/learn/${courseIdentifier}`);
       }
@@ -158,11 +166,11 @@ export const CourseEnrollModal = ({
               {course.category && (
                 <span className="px-3 py-1 rounded-lg bg-black/70 border border-white/10 text-xs font-bold text-white flex items-center gap-1.5">
                   <GraduationCap className="w-3.5 h-3.5 text-blue-400" />
-                  {course.category}
+                  {formatCategory(course.category)}
                 </span>
               )}
               <span className="px-3 py-1 rounded-lg bg-emerald-600 text-white text-xs font-extrabold uppercase tracking-wider">
-                {isFree ? '100% Gratuito' : 'Compra Segura'}
+                {isAlreadyEnrolled ? 'Já estou no curso' : isFree ? '100% Gratuito' : 'Compra Segura'}
               </span>
             </div>
 
@@ -225,7 +233,7 @@ export const CourseEnrollModal = ({
               </div>
             </div>
 
-            {!isFree && (
+            {!isFree && !isAlreadyEnrolled && (
               <div className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/20 p-3.5">
                 <div className="flex items-start gap-3">
                   <div className="mt-0.5 rounded-lg bg-amber-100 dark:bg-amber-900/50 p-1.5 text-amber-700 dark:text-amber-300">
@@ -294,11 +302,19 @@ export const CourseEnrollModal = ({
                 variant="primary"
                 size="md"
                 isLoading={isSubmitting}
-                disabled={!isFree && !isPaidConfirmation}
+                disabled={!isAlreadyEnrolled && !isFree && !isPaidConfirmation}
                 onClick={handleConfirmEnroll}
-                className="w-full sm:w-auto flex-1 font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-600/25 justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`w-full sm:w-auto flex-1 font-bold text-white shadow-lg justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                  isAlreadyEnrolled
+                    ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/25'
+                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-600/25'
+                }`}
               >
-                {isFree ? 'Confirmar Entrada Gratuita' : `Confirmar compra • ${formatCoursePrice(course)}`}
+                {isAlreadyEnrolled
+                  ? 'Já estou no curso • Ir para as Aulas'
+                  : isFree
+                  ? 'Confirmar Entrada Gratuita'
+                  : `Confirmar compra • ${formatCoursePrice(course)}`}
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </div>

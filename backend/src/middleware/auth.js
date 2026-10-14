@@ -57,7 +57,7 @@ export const protect = async (req, res, next) => {
       });
     }
 
-    if (user.isSuspended) {
+    if (user.role !== 'ADMIN' && Number(user.isSuspended) === 1) {
       return res.status(403).json({
         message: 'Conta suspensa. Contacte a administração.',
         error: 'Conta suspensa. Contacte a administração.'
@@ -93,7 +93,17 @@ export const optionalAuth = (req, res, next) => {
   const token = authHeader.split(' ')[1];
   try {
     const payload = verifyJwtToken(token);
-    req.user = payload;
+    const user = queryOne('SELECT id, email, nome_utilizador AS username, nome AS name, papel AS role, esta_suspenso AS isSuspended FROM utilizadores WHERE id = ?', [payload.id]);
+    if (user && (user.role === 'ADMIN' || Number(user.isSuspended) !== 1)) {
+      req.user = {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        name: user.name,
+        role: user.role,
+        isAdmin: user.role === 'ADMIN'
+      };
+    }
   } catch (_) {}
   next();
 };

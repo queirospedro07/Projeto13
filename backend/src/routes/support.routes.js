@@ -1,6 +1,4 @@
-﻿import { Router } from 'express';
-import { queryAll, queryOne, execute, transaction } from '../database/connection.js';
-import { authenticate, requireRole } from '../middleware/auth.js';
+import { Router } from 'express';
 
 const router = Router();
 
@@ -13,11 +11,11 @@ router.get('/faq', async (_req, res) => {
       items: [
         {
           q: 'Como posso alterar a visibilidade do meu perfil e o enquadramento da foto de capa?',
-          a: 'Aceda à página de Definições (/settings) ou ao seu Perfil (/profile). No perfil, utilize a ferramenta de ajuste de capa para arrastar e enquadrar a imagem milimetricamente com pré-visualização em tempo real. Nas definições de privacidade, pode ativar ou desativar a visibilidade do seu email, medalhas de XP e cursos em que está matriculado.'
+          a: 'Aceda à página de Definições (/settings) ou ao seu Perfil (/profile). No perfil, utilize o seletor de cores ou gradientes predefinidos para personalizar o seu banner. Nas definições de privacidade, pode ativar ou desativar a visibilidade do seu email, medalhas de XP e cursos em que está matriculado.'
         },
         {
           q: 'A plataforma suporta múltiplos perfis de acesso?',
-          a: 'Sim. O NEXO disponibiliza quatro níveis de acesso bem definidos: Aluno (estudo, questionários e certificações oficiais), Formador (criação e gestão de cursos no estúdio pedagógico), Sub-Administrador (moderação global de comunidades e aprovação de cursos) e Administrador Principal (gestão total de infraestruturas e utilizadores).'
+          a: 'Sim. O NEXO disponibiliza perfis de acesso bem definidos: Aluno (estudo, questionários e certificações oficiais), Formador e Colaborador (criação e gestão de cursos no estúdio pedagógico) e Administrador Principal (gestão total de infraestruturas e utilizadores).'
         },
         {
           q: 'Como recupero o acesso se esquecer a minha palavra-passe?',
@@ -47,7 +45,7 @@ router.get('/faq', async (_req, res) => {
         },
         {
           q: 'Posso tirar dúvidas diretamente sobre uma aula específica?',
-          a: 'Sim! Na aba "Dúvidas & Q&A" da aula ou nos canais de texto temáticos da comunidade associada, pode colocar perguntas ao formador e aos restantes colegas de turma com suporte a blocos de código formatados com syntax highlighting.'
+          a: 'Sim! Nos canais de texto e chat temático da turma e comunidade do curso, pode colocar perguntas ao formador, colaboradores e aos restantes colegas com suporte a blocos de código formatados com syntax highlighting.'
         },
         {
           q: 'O reprodutor de vídeo possui atalhos de teclado e controlo de velocidade?',
@@ -131,7 +129,7 @@ router.get('/faq', async (_req, res) => {
         },
         {
           q: 'Porque é que o meu curso criado ainda não aparece no catálogo público?',
-          a: 'Para assegurar o mais alto padrão de qualidade de ensino, todos os novos cursos submetidos ficam inicialmente com o estado "PENDENTE". Assim que um Administrador ou Sub-Administrador rever o plano pedagógico e aprovar o curso, este fica imediatamente visível para todos os alunos.'
+          a: 'Para assegurar o mais alto padrão de qualidade de ensino, todos os novos cursos submetidos ficam inicialmente com o estado "PENDENTE". Assim que um Administrador rever o plano pedagógico e aprovar o curso, este fica imediatamente visível para todos os alunos.'
         },
         {
           q: 'O formador é contabilizado como aluno pago no seu próprio curso?',
@@ -149,7 +147,7 @@ router.get('/faq', async (_req, res) => {
       items: [
         {
           q: 'Como ganho pontos de experiência (XP) no NEXO?',
-          a: 'Ganha XP ao assistir e concluir aulas (30 a 50 XP), ao superar questionários (50 a 100 XP), ao ter respostas aceites como solução no fórum Q&A e ao manter a sua sequência diária de estudos.'
+          a: 'Ganha XP ao assistir e concluir aulas (30 a 50 XP), ao superar questionários (50 a 100 XP) e ao manter a sua sequência diária de estudos.'
         },
         {
           q: 'O que são as Sequências Diárias (Daily Streaks)?',
@@ -164,316 +162,6 @@ router.get('/faq', async (_req, res) => {
   ];
 
   return res.json(faqData);
-});
-
-// 2. Criar novo Ticket de Suporte
-router.post('/tickets', authenticate, async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const { subject, category, priority, message } = req.body;
-
-    if (!subject?.trim() || !message?.trim()) {
-      return res.status(400).json({ error: 'Assunto e descrição da mensagem são obrigatórios.' });
-    }
-
-    const ticketId = `ticket-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-    const msgId = `tmsg-${Date.now()}-0`;
-    const now = new Date().toISOString();
-
-    transaction(() => {
-      execute(`
-        INSERT INTO support_tickets (id, userId, subject, category, priority, status, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, ?, 'ABERTO', ?, ?)
-      `, [
-        ticketId,
-        userId,
-        subject.trim(),
-        category?.trim() || 'Dúvidas Gerais',
-        priority?.trim() || 'MÉDIA',
-        now,
-        now
-      ]);
-
-      execute(`
-        INSERT INTO ticket_messages (id, ticketId, senderId, content, isAdminReply, createdAt)
-        VALUES (?, ?, ?, ?, 0, ?)
-      `, [
-        msgId,
-        ticketId,
-        userId,
-        message.trim(),
-        now
-      ]);
-
-      // Notificar administradores
-      const admins = queryAll("SELECT id FROM users WHERE role IN ('ADMIN', 'SUBADMIN')");
-      for (const admin of admins) {
-        execute(`
-          INSERT INTO notifications (id, userId, type, title, content, link, isRead, createdAt)
-          VALUES (?, ?, 'support', 'Novo Ticket de Suporte', ?, '/admin', 0, ?)
-        `, [
-          `notif-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-          admin.id,
-          `O utilizador ${req.user.name || req.user.username} abriu o ticket: "${subject.trim()}".`,
-          now
-        ]);
-      }
-    });
-
-    const createdTicket = queryOne('SELECT * FROM support_tickets WHERE id = ?', [ticketId]);
-    return res.status(201).json({
-      message: 'Ticket de suporte criado com sucesso!',
-      ...createdTicket,
-      id: ticketId,
-      ticket: createdTicket
-    });
-  } catch (err) {
-    console.error('Create support ticket error:', err);
-    return res.status(500).json({ error: 'Falha ao criar ticket de suporte' });
-  }
-});
-
-// 3. Obter Tickets do Utilizador Autenticado
-router.get('/tickets/my', authenticate, async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const tickets = queryAll(`
-      SELECT t.*,
-             (SELECT COUNT(*) FROM ticket_messages WHERE ticketId = t.id) as messageCount,
-             (SELECT content FROM ticket_messages WHERE ticketId = t.id ORDER BY createdAt DESC LIMIT 1) as lastMessage,
-             (SELECT createdAt FROM ticket_messages WHERE ticketId = t.id ORDER BY createdAt DESC LIMIT 1) as lastMessageAt
-      FROM support_tickets t
-      WHERE t.userId = ?
-      ORDER BY t.updatedAt DESC
-    `, [userId]);
-
-    return res.json(tickets);
-  } catch (err) {
-    console.error('Get my tickets error:', err);
-    return res.status(500).json({ error: 'Falha ao carregar os seus tickets de suporte' });
-  }
-});
-
-// 4. Obter Detalhes de um Ticket com Histórico de Mensagens
-router.get('/tickets/:id', authenticate, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const userId = req.user.id;
-    const isAdmin = req.user.role === 'ADMIN' || req.user.role === 'SUBADMIN';
-
-    const ticket = queryOne(`
-      SELECT t.*, u.name as userName, u.email as userEmail, u.avatarUrl as userAvatar
-      FROM support_tickets t
-      JOIN users u ON t.userId = u.id
-      WHERE t.id = ? AND (? = 1 OR t.userId = ?)
-    `, [id, isAdmin ? 1 : 0, userId]);
-
-    if (!ticket) {
-      return res.status(404).json({ error: 'Ticket de suporte não encontrado ou sem permissão.' });
-    }
-
-    const messages = queryAll(`
-      SELECT tm.*, u.name as senderName, u.username as senderUsername, u.avatarUrl as senderAvatar, u.role as senderRole
-      FROM ticket_messages tm
-      JOIN users u ON tm.senderId = u.id
-      WHERE tm.ticketId = ?
-      ORDER BY tm.createdAt ASC
-    `, [id]);
-
-    return res.json({
-      ...ticket,
-      ticket,
-      messages
-    });
-  } catch (err) {
-    console.error('Get ticket details error:', err);
-    return res.status(500).json({ error: 'Falha ao carregar detalhes do ticket' });
-  }
-});
-
-// 5. Responder a um Ticket de Suporte
-router.post('/tickets/:id/messages', authenticate, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const userId = req.user.id;
-    const { content } = req.body;
-    const isAdmin = req.user.role === 'ADMIN' || req.user.role === 'SUBADMIN';
-
-    if (!content?.trim()) {
-      return res.status(400).json({ error: 'A mensagem não pode estar vazia.' });
-    }
-
-    const ticket = queryOne('SELECT * FROM support_tickets WHERE id = ?', [id]);
-    if (!ticket) {
-      return res.status(404).json({ error: 'Ticket não encontrado.' });
-    }
-
-    if (!isAdmin && ticket.userId !== userId) {
-      return res.status(403).json({ error: 'Sem permissão para responder a este ticket.' });
-    }
-
-    const msgId = `tmsg-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
-    const now = new Date().toISOString();
-    const newStatus = isAdmin ? 'RESPONDIDO' : 'EM_ANALISE';
-
-    transaction(() => {
-      execute(`
-        INSERT INTO ticket_messages (id, ticketId, senderId, content, isAdminReply, createdAt)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `, [
-        msgId,
-        id,
-        userId,
-        content.trim(),
-        isAdmin ? 1 : 0,
-        now
-      ]);
-
-      execute(`
-        UPDATE support_tickets
-        SET status = ?, updatedAt = ?
-        WHERE id = ?
-      `, [newStatus, now, id]);
-
-      // Notificar o destinatário
-      if (isAdmin && ticket.userId !== userId) {
-        execute(`
-          INSERT INTO notifications (id, userId, type, title, content, link, isRead, createdAt)
-          VALUES (?, ?, 'support', 'Resposta ao seu Ticket de Suporte', ?, ?, 0, ?)
-        `, [
-          `notif-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-          ticket.userId,
-          `A equipa de suporte respondeu ao ticket: "${ticket.subject}".`,
-          `/help?ticketId=${ticket.id}`,
-          now
-        ]);
-      }
-    });
-
-    const createdMsg = queryOne(`
-      SELECT tm.*, u.name as senderName, u.username as senderUsername, u.avatarUrl as senderAvatar, u.role as senderRole
-      FROM ticket_messages tm
-      JOIN users u ON tm.senderId = u.id
-      WHERE tm.id = ?
-    `, [msgId]);
-
-    const allMessages = queryAll(`
-      SELECT tm.*, u.name as senderName, u.username as senderUsername, u.avatarUrl as senderAvatar, u.role as senderRole
-      FROM ticket_messages tm
-      JOIN users u ON tm.senderId = u.id
-      WHERE tm.ticketId = ?
-      ORDER BY tm.createdAt ASC
-    `, [id]);
-
-    return res.status(201).json({
-      message: 'Resposta enviada com sucesso!',
-      ticketMessage: createdMsg,
-      ...ticket,
-      ticket,
-      status: newStatus,
-      messages: allMessages
-    });
-  } catch (err) {
-    console.error('Send ticket message error:', err);
-    return res.status(500).json({ error: 'Falha ao enviar resposta ao ticket' });
-  }
-});
-
-// 6. Atualizar Estado do Ticket (Fechar / Resolver)
-router.put('/tickets/:id/status', authenticate, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const userId = req.user.id;
-    const { status } = req.body;
-    const isAdmin = req.user.role === 'ADMIN' || req.user.role === 'SUBADMIN';
-
-    const ticket = queryOne('SELECT * FROM support_tickets WHERE id = ?', [id]);
-    if (!ticket) {
-      return res.status(404).json({ error: 'Ticket não encontrado.' });
-    }
-
-    if (!isAdmin && ticket.userId !== userId) {
-      return res.status(403).json({ error: 'Sem permissão para alterar este ticket.' });
-    }
-
-    const validStatuses = ['ABERTO', 'EM_ANALISE', 'RESPONDIDO', 'RESOLVIDO', 'FECHADO'];
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({ error: 'Estado de ticket inválido.' });
-    }
-
-    const now = new Date().toISOString();
-    const resolvedAt = (status === 'RESOLVIDO' || status === 'FECHADO') ? now : null;
-
-    execute(`
-      UPDATE support_tickets
-      SET status = ?, updatedAt = ?, resolvedAt = ?
-      WHERE id = ?
-    `, [status, now, resolvedAt, id]);
-
-    return res.json({
-      message: `Ticket marcado como ${status}.`,
-      status
-    });
-  } catch (err) {
-    console.error('Update ticket status error:', err);
-    return res.status(500).json({ error: 'Falha ao atualizar estado do ticket' });
-  }
-});
-
-// 7. (Admin/SubAdmin) Listagem Global de Tickets de Suporte
-router.get('/admin/tickets', authenticate, requireRole('ADMIN', 'SUBADMIN'), async (_req, res) => {
-  try {
-    const tickets = queryAll(`
-      SELECT t.*,
-             u.name as userName, u.email as userEmail, u.avatarUrl as userAvatar, u.username as userUsername,
-             (SELECT COUNT(*) FROM ticket_messages WHERE ticketId = t.id) as messageCount,
-             (SELECT content FROM ticket_messages WHERE ticketId = t.id ORDER BY createdAt DESC LIMIT 1) as lastMessage,
-             (SELECT createdAt FROM ticket_messages WHERE ticketId = t.id ORDER BY createdAt DESC LIMIT 1) as lastMessageAt
-      FROM support_tickets t
-      JOIN users u ON t.userId = u.id
-      ORDER BY 
-        CASE 
-          WHEN t.status = 'ABERTO' THEN 1
-          WHEN t.status = 'EM_ANALISE' THEN 2
-          WHEN t.status = 'RESPONDIDO' THEN 3
-          ELSE 4
-        END,
-        t.updatedAt DESC
-    `);
-
-    return res.json(tickets);
-  } catch (err) {
-    console.error('Admin get tickets error:', err);
-    return res.status(500).json({ error: 'Falha ao carregar tickets de administração' });
-  }
-});
-
-// 8. Mensagens de Suporte ao Vivo (Live Support Chat)
-router.get('/live/messages', authenticate, async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const isAdmin = req.user.role === 'ADMIN' || req.user.role === 'SUBADMIN';
-    const targetUserId = (isAdmin && req.query.userId) ? req.query.userId : userId;
-
-    // Obter mensagens trocadas entre o utilizador e os administradores
-    const messages = queryAll(`
-      SELECT dm.*, 
-             s.name as senderName, s.avatarUrl as senderAvatar, s.role as senderRole,
-             r.name as receiverName, r.avatarUrl as receiverAvatar
-      FROM direct_messages dm
-      JOIN users s ON dm.senderId = s.id
-      JOIN users r ON dm.receiverId = r.id
-      WHERE (dm.senderId = ? AND r.role IN ('ADMIN', 'SUBADMIN'))
-         OR (dm.receiverId = ? AND s.role IN ('ADMIN', 'SUBADMIN'))
-      ORDER BY dm.createdAt ASC
-      LIMIT 100
-    `, [targetUserId, targetUserId]);
-
-    return res.json(messages);
-  } catch (err) {
-    console.error('Get live support messages error:', err);
-    return res.status(500).json({ error: 'Falha ao carregar histórico de chat ao vivo' });
-  }
 });
 
 export default router;

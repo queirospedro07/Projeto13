@@ -70,36 +70,32 @@ export const LandingPage = () => {
     }
   };
 
-  if (isLoading) {
-    return null;
-  }
-
   const dashboardPath = user?.role === 'ADMIN' ? '/admin' : user?.role === 'CREATOR' ? '/creator' : '/dashboard';
 
   const faqs = [
     {
       q: 'O que é a plataforma NEXO?',
-      a: 'O NEXO é uma plataforma de formação de excelência em múltiplas áreas do conhecimento. Combina cursos práticos estruturados com salas de mentoria em direto via WebRTC, apoio comunitário contínuo e certificação digital verificada.'
+      a: 'O NEXO é uma plataforma de aprendizagem e comunidade onde podes acompanhar cursos práticos em vídeo, tirar dúvidas em canais de estudo com áudio e partilha de ecrã (WebRTC) e obter certificados ao concluir as formações.'
     },
     {
       q: 'O registo como aluno é gratuito?',
-      a: 'Sim, o registo inicial é 100% gratuito e confere acesso imediato a cursos abertos, às salas de conferência da comunidade e ao repositório de recursos.'
+      a: 'Sim, criar conta é gratuito e dá acesso imediato aos cursos abertos, aos espaços da comunidade e aos recursos das aulas.'
     },
     {
       q: 'Como posso tornar-me formador no NEXO?',
-      a: 'Qualquer aluno pode submeter um inquérito de candidatura a formador através do painel. A equipa de administração do NEXO avalia o perfil, a experiência e a proposta curricular antes de validar e aprovar o acesso ao Estúdio de Criação.'
+      a: 'Qualquer utilizador registado pode submeter uma candidatura a formador através do seu painel. Depois de analisada e aprovada pela administração, a conta passa a ter acesso ao Estúdio do Criador.'
     },
     {
-      q: 'Como funciona a certificação digital?',
-      a: 'Ao concluir 100% das aulas e testes práticos de um curso, é emitido um certificado digital oficial com código de autenticação único que pode ser partilhado diretamente no LinkedIn e no currículo profissional.'
+      q: 'Como funcionam os certificados?',
+      a: 'Quando concluíres 100% das aulas e questionários de um curso, é gerado automaticamente um certificado digital com um código único de verificação.'
     }
   ];
 
   return (
     <>
       <SEO
-        title="NEXO — Plataforma de Formação & Conhecimento de Excelência"
-        description="NEXO é a plataforma de aprendizagem de alta performance com cursos práticos, mentoria WebRTC em tempo real, certificados verificados e estúdio de criadores."
+        title="NEXO — Plataforma de Aprendizagem e Comunidade"
+        description="Plataforma de cursos online, salas de estudo WebRTC em tempo real, certificados digitais e comunidade de estudantes."
         canonical="https://nexo.pt/"
         ogImage="/hero-showcase.jpg"
         structuredData={{
@@ -108,7 +104,7 @@ export const LandingPage = () => {
           "name": "NEXO",
           "url": "https://nexo.pt",
           "logo": "https://nexo.pt/favicon.svg",
-          "description": "Plataforma de formação prática, mentoria WebRTC e certificação verificada.",
+          "description": "Plataforma de cursos práticos, salas de estudo WebRTC e comunidade.",
           "sameAs": [
             "https://github.com/queirospedro7"
           ]
@@ -116,7 +112,7 @@ export const LandingPage = () => {
       />
       <div className="min-h-screen bg-white dark:bg-[#06070a] text-slate-900 dark:text-white font-sans transition-colors selection:bg-blue-600 selection:text-white">
       
-      {/* 1. HERO SECTION */}
+      {/* Secção Principal (Hero) */}
       <section
         ref={heroRef}
         onMouseMove={handleHeroMouseMove}
@@ -138,7 +134,7 @@ export const LandingPage = () => {
         <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-20 flex-1 flex flex-col justify-center">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 lg:gap-14 items-center">
             
-            {/* 1. Coluna de Vídeo (Acima do título no telemóvel: order-1; à direita no desktop: lg:order-2, maior com lg:col-span-7) */}
+            {/* Vídeo de apresentação */}
             <div className="order-1 lg:order-2 lg:col-span-7 w-full flex flex-col items-center justify-center">
               <div className="relative w-full aspect-[16/9] sm:aspect-[16/10] overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-neutral-800 bg-slate-950 shadow-[0_30px_90px_rgba(15,23,42,0.28)] ring-1 ring-slate-200/70 dark:ring-neutral-700/60">
                 <div className="absolute inset-0 bg-gradient-to-br from-slate-900/40 via-transparent to-blue-900/20 pointer-events-none" />
@@ -182,13 +178,13 @@ export const LandingPage = () => {
               </div>
             </div>
 
-            {/* 2. Coluna de Texto (Abaixo do vídeo no telemóvel: order-2; à esquerda no desktop: lg:order-1) */}
+            {/* Texto e botões */}
             <div className="order-2 lg:order-1 lg:col-span-5 space-y-5 sm:space-y-8">
               <h1 className="text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-sans font-bold tracking-tight text-slate-950 dark:text-white leading-[1.08] sm:leading-[1.04] text-balance">
                 Aprenda, construa e evolua.
               </h1>
               <p className="text-sm sm:text-lg lg:text-xl text-slate-600 dark:text-slate-300 font-normal leading-relaxed max-w-xl">
-                Aceda à plataforma de excelência desenhada para impulsionar as suas competências: cursos práticos estruturados, salas de mentoria WebRTC em direto e certificação verificada.
+                Uma plataforma pensada para estudar ao seu ritmo: cursos práticos em vídeo, salas de estudo WebRTC em tempo real e certificados no final de cada curso.
               </p>
 
               <div className="pt-1 sm:pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
@@ -236,23 +232,23 @@ export const LandingPage = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 text-slate-600 dark:text-slate-300 text-xs sm:text-sm">
               <div>
                 <span className="text-slate-500 dark:text-slate-400 block text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold">Disponibilidade</span>
-                <strong className="text-slate-950 dark:text-white text-sm sm:text-base lg:text-lg font-bold block mt-0.5">Operação 24/7</strong>
+                <strong className="text-slate-950 dark:text-white text-sm sm:text-base lg:text-lg font-bold block mt-0.5">Acesso Online 24/7</strong>
               </div>
               <div>
                 <span className="text-slate-500 dark:text-slate-400 block text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold">Salas de Estudo</span>
-                <strong className="text-slate-950 dark:text-white text-sm sm:text-base lg:text-lg font-bold block mt-0.5 truncate">Mentoria &amp; Voz WebRTC</strong>
+                <strong className="text-slate-950 dark:text-white text-sm sm:text-base lg:text-lg font-bold block mt-0.5 truncate">Voz e Vídeo WebRTC</strong>
               </div>
               <div>
-                <span className="text-slate-500 dark:text-slate-400 block text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold">Credenciais</span>
-                <strong className="text-slate-950 dark:text-white text-sm sm:text-base lg:text-lg font-bold block mt-0.5">100% Certificadas</strong>
+                <span className="text-slate-500 dark:text-slate-400 block text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold">Certificados</span>
+                <strong className="text-slate-950 dark:text-white text-sm sm:text-base lg:text-lg font-bold block mt-0.5">Código de Verificação</strong>
               </div>
               <div>
-                <span className="text-slate-500 dark:text-slate-400 block text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold">Avaliação Média</span>
+                <span className="text-slate-500 dark:text-slate-400 block text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold">Avaliação dos Alunos</span>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <div className="flex items-center gap-0.5 text-amber-500">
                     {[1, 2, 3, 4, 5].map((star) => <Star key={star} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />)}
                   </div>
-                  <strong className="text-slate-950 dark:text-white text-sm sm:text-base lg:text-lg font-bold">4.9 / 5</strong>
+                  <strong className="text-slate-950 dark:text-white text-sm sm:text-base lg:text-lg font-bold">4.8 / 5</strong>
                 </div>
               </div>
             </div>
@@ -260,18 +256,17 @@ export const LandingPage = () => {
         </div>
       </section>
 
-      {/* 2. THE 3 USP VISUAL CARDS (Cards arquiteturais sem imagens, com ícones e botão de ação) */}
+      {/* Secção de Funcionalidades Principais */}
       <section id="vantagens" className="scroll-mt-20 py-12 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="mb-8 sm:mb-14 max-w-3xl">
           <h2 className="text-2xl sm:text-4xl lg:text-5xl font-sans font-bold tracking-tight text-slate-950 dark:text-white leading-tight">
-            Construa o seu conhecimento a partir de uma única plataforma, desenhada para o futuro.
+            Tudo o que precisa para estudar e colaborar num único sítio.
           </h2>
           <p className="text-sm sm:text-base lg:text-lg text-slate-600 dark:text-neutral-400 mt-2 sm:mt-4 leading-relaxed">
-            Todas as ferramentas necessárias para aprender de forma prática, tirar dúvidas com especialistas e comprovar as suas competências no mercado.
+            Acompanhe as aulas em vídeo, tire dúvidas nos canais da comunidade e acompanhe o seu progresso ao longo dos cursos.
           </p>
         </div>
 
-        {/* 3 Columns Grid - Clean, Image-Free Architecture */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-8">
           
           {/* Card 1: Aulas Práticas & Código Real */}
@@ -367,19 +362,19 @@ export const LandingPage = () => {
         </div>
       </section>
 
-      {/* 3. BANNER VISUAL CONTAINED (Multi-Screen Responsive Learning) */}
+      {/* Secção Responsiva */}
       <section className="py-6 sm:py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="rounded-2xl border border-slate-200 dark:border-neutral-800 bg-slate-50 dark:bg-[#0c0d12] overflow-hidden grid grid-cols-1 lg:grid-cols-12 items-center shadow-xs">
           
           <div className="lg:col-span-6 p-6 sm:p-12 lg:p-16 space-y-4 sm:space-y-6">
             <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-              Acesso Universal & Flexível
+              Acesso em Qualquer Dispositivo
             </span>
             <h2 className="text-xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-950 dark:text-white leading-tight">
-              Aprenda em qualquer ecrã, ao seu próprio ritmo.
+              Estude em qualquer ecrã, ao seu próprio ritmo.
             </h2>
             <p className="text-xs sm:text-base text-slate-600 dark:text-neutral-400 leading-relaxed">
-              Transite facilmente entre o computador e os dispositivos móveis. Continue as suas aulas exatamente de onde parou, consulte as suas anotações técnicas e participe em discussões de turma sem interrupções.
+              Alterne facilmente entre o computador e o telemóvel. Continue as aulas de onde parou, consulte os seus apontamentos e participe nos canais de estudo da turma.
             </p>
 
             <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -408,19 +403,18 @@ export const LandingPage = () => {
         </div>
       </section>
 
-
-      {/* 5. CREATOR CANDIDATURE BANNER */}
+      {/* Candidatura a Formador */}
       <section className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="rounded-2xl border border-slate-200 dark:border-neutral-800 bg-slate-50 dark:bg-[#0c0d12] p-8 sm:p-12 flex flex-col md:flex-row items-center justify-between gap-8 shadow-xs">
           <div className="max-w-2xl space-y-3">
             <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-              Junte-se aos Formadores NEXO
+              Formadores NEXO
             </span>
             <h3 className="text-2xl sm:text-3xl font-bold text-slate-950 dark:text-white">
-              Tem conhecimento especializado para partilhar?
+              Quer publicar os seus próprios cursos?
             </h3>
             <p className="text-sm text-slate-600 dark:text-neutral-400 leading-relaxed">
-              Submeta a sua candidatura a formador. Após aprovação da equipa pedagógica, terá acesso completo ao Estúdio de Criação para publicar cursos e construir a sua audiência.
+              Submeta uma candidatura a formador. Depois de aprovada pela administração, terá acesso ao Estúdio do Criador para criar módulos, aulas em vídeo e questionários.
             </p>
           </div>
 
@@ -433,7 +427,7 @@ export const LandingPage = () => {
         </div>
       </section>
 
-      {/* 6. FREQUENTLY ASKED QUESTIONS */}
+      {/* Perguntas Frequentes (FAQ) */}
       <section id="faq" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto border-t border-slate-200 dark:border-neutral-800">
         <div className="text-center mb-12">
           <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
@@ -488,15 +482,15 @@ export const LandingPage = () => {
         </div>
       </section>
 
-      {/* 7. FINAL CALL TO ACTION BANNER */}
+      {/* Banner Final */}
       <section className="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="rounded-2xl bg-slate-950 dark:bg-black border border-slate-800 p-8 sm:p-16 text-white text-center relative overflow-hidden shadow-2xl">
           <div className="relative z-10 max-w-2xl mx-auto space-y-4">
             <h2 className="text-3xl sm:text-5xl font-bold tracking-tight text-white leading-tight">
-              Pronto para transformar a sua carreira com o NEXO?
+              Comece a explorar os cursos na plataforma NEXO
             </h2>
             <p className="text-sm sm:text-base text-slate-400 leading-relaxed max-w-lg mx-auto">
-              Crie a sua conta gratuita hoje mesmo e junte-se a milhares de alunos em cursos práticos e salas de estudo ativas.
+              Crie uma conta gratuita para assistir às aulas, resolver questionários e participar nas salas de estudo da comunidade.
             </p>
             <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link to="/register" className="w-full sm:w-auto">
@@ -515,7 +509,6 @@ export const LandingPage = () => {
         </div>
       </section>
 
-      {/* 8. FOOTER */}
       <Footer />
     </div>
     </>

@@ -1,20 +1,68 @@
+import { queryOne } from '../database/connection.js';
+import { canAccessChannel } from '../middleware/channelAccess.js';
+
 const onlineUsers = new Map();
 const voiceRooms = new Map();
+
+function canModerateVoiceRoom(user, roomId) {
+  if (!user?.id || !roomId) return false;
+  if (user.role === 'ADMIN') return true;
+
+  const channel = queryOne(
+    `SELECT c.id_espaco AS spaceId, s.id_proprietario AS ownerId
+     FROM canais c
+     JOIN espacos s ON s.id = c.id_espaco
+     WHERE c.id = ?`,
+    [roomId]
+  );
+  const spaceId = channel?.spaceId || roomId;
+  if (channel?.ownerId === user.id) return true;
+
+  const spaceOwner = queryOne('SELECT id FROM espacos WHERE id = ? AND id_proprietario = ?', [spaceId, user.id]);
+  if (spaceOwner) return true;
+
+  const courseOwnerOrCollab = queryOne(
+    `SELECT c.id FROM cursos c
+     LEFT JOIN colaboradores_curso cc ON cc.id_curso = c.id
+     WHERE (c.id_espaco = ? OR c.id = ?) AND (c.id_criador = ? OR cc.id_utilizador = ?)
+     LIMIT 1`,
+    [spaceId, roomId, user.id, user.id]
+  );
+  return Boolean(courseOwnerOrCollab);
+}
+
 export function setupSocketIO(io) {
   io.on('connection', socket => {
+    const authUser = socket.data?.user || null;
+    if (authUser?.id) {
+      onlineUsers.set(authUser.id, {
+        userId: authUser.id,
+        username: authUser.username,
+        status: 'online',
+        socketId: socket.id
+      });
+      socket.join(`user_${authUser.id}`);
+      io.emit('presence-update', Array.from(onlineUsers.values()));
+    }
+
     socket.on('user-connected', userData => {
-      if (userData?.userId) {
-        onlineUsers.set(userData.userId, {
-          userId: userData.userId,
-          username: userData.username,
+      const effectiveUserId = socket.data?.user?.id || userData?.userId;
+      const effectiveUsername = socket.data?.user?.username || userData?.username;
+      if (effectiveUserId) {
+        onlineUsers.set(effectiveUserId, {
+          userId: effectiveUserId,
+          username: effectiveUsername,
           status: 'online',
           socketId: socket.id
         });
-        socket.join(`user_${userData.userId}`);
+        socket.join(`user_${effectiveUserId}`);
         io.emit('presence-update', Array.from(onlineUsers.values()));
       }
     });
     socket.on('join-channel', channelId => {
+      if (socket.data?.user && !canAccessChannel(socket.data.user, channelId)) {
+        return;
+      }
       socket.join(`channel_${channelId}`);
     });
     socket.on('leave-channel', channelId => {
@@ -26,7 +74,7 @@ export function setupSocketIO(io) {
     }) => {
       socket.to(`channel_${channelId}`).emit('user-typing', {
         channelId,
-        username
+        username: socket.data?.user?.username || username
       });
     });
     socket.on('stop-typing', ({
@@ -35,33 +83,38 @@ export function setupSocketIO(io) {
     }) => {
       socket.to(`channel_${channelId}`).emit('user-stop-typing', {
         channelId,
-        username
+        username: socket.data?.user?.username || username
       });
     });
     socket.on('send-message', messageData => {
       if (messageData.channelId) {
+        if (socket.data?.user && !canAccessChannel(socket.data.user, messageData.channelId)) {
+          return;
+        }
         io.to(`channel_${messageData.channelId}`).emit('new-message', messageData);
       } else {
         const targetId = messageData.recipientId || messageData.receiverId;
+        const senderId = socket.data?.user?.id || messageData.senderId;
         if (targetId) {
           io.to(`user_${targetId}`).emit('direct-message', messageData);
           io.to(`user_${targetId}`).emit('new-direct-message', messageData);
         }
-        if (messageData.senderId) {
-          io.to(`user_${messageData.senderId}`).emit('direct-message', messageData);
-          io.to(`user_${messageData.senderId}`).emit('new-direct-message', messageData);
+        if (senderId) {
+          io.to(`user_${senderId}`).emit('direct-message', messageData);
+          io.to(`user_${senderId}`).emit('new-direct-message', messageData);
         }
       }
     });
     socket.on('direct-message', messageData => {
       const targetId = messageData.recipientId || messageData.receiverId;
+      const senderId = socket.data?.user?.id || messageData.senderId;
       if (targetId) {
         io.to(`user_${targetId}`).emit('direct-message', messageData);
         io.to(`user_${targetId}`).emit('new-direct-message', messageData);
       }
-      if (messageData.senderId) {
-        io.to(`user_${messageData.senderId}`).emit('direct-message', messageData);
-        io.to(`user_${messageData.senderId}`).emit('new-direct-message', messageData);
+      if (senderId) {
+        io.to(`user_${senderId}`).emit('direct-message', messageData);
+        io.to(`user_${senderId}`).emit('new-direct-message', messageData);
       }
     });
     socket.on('reaction-updated', ({
@@ -230,6 +283,7 @@ export function setupSocketIO(io) {
       roomId,
       mode
     }) => {
+      if (socket.data?.user && !canModerateVoiceRoom(socket.data.user, roomId)) return;
       io.to(`voice_${roomId}`).emit('voice-room-mode-changed', {
         roomId,
         mode
@@ -241,6 +295,7 @@ export function setupSocketIO(io) {
       canSpeak,
       canShareScreen
     }) => {
+      if (socket.data?.user && !canModerateVoiceRoom(socket.data.user, roomId)) return;
       io.to(`voice_${roomId}`).emit('voice-permissions-updated', {
         targetUserId,
         canSpeak,
@@ -260,6 +315,7 @@ export function setupSocketIO(io) {
       targetUserId,
       approved
     }) => {
+      if (socket.data?.user && !canModerateVoiceRoom(socket.data.user, roomId)) return;
       io.to(`voice_${roomId}`).emit('voice-speaker-decision', {
         targetUserId,
         approved
@@ -269,6 +325,7 @@ export function setupSocketIO(io) {
       roomId,
       targetUserId
     }) => {
+      if (socket.data?.user && !canModerateVoiceRoom(socket.data.user, roomId)) return;
       io.to(`voice_${roomId}`).emit('voice-user-kicked', {
         targetUserId
       });

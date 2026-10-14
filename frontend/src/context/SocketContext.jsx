@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 const SocketContext = createContext(undefined);
@@ -10,9 +10,18 @@ export const SocketProvider = ({
     token
   } = useAuth();
   const [socket, setSocket] = useState(null);
-  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [onlineUsersList, setOnlineUsersList] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
   const serverUrlRef = useRef('');
+
+  const onlineUsers = useMemo(() => {
+    const arr = Array.isArray(onlineUsersList) ? [...onlineUsersList] : [];
+    const idSet = new Set(
+      arr.map((u) => (typeof u === 'string' ? u : u?.userId || u?.id)).filter(Boolean)
+    );
+    arr.has = (id) => idSet.has(id);
+    return arr;
+  }, [onlineUsersList]);
   useEffect(() => {
     if (!user?.id || !token) {
       setSocket(null);
@@ -47,7 +56,7 @@ export const SocketProvider = ({
       setIsConnected(false);
     });
     newSocket.on('presence-update', users => {
-      setOnlineUsers(users);
+      setOnlineUsersList(users);
     });
     setSocket(newSocket);
     return () => {

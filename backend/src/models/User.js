@@ -4,11 +4,10 @@ import { queryOne, queryAll, execute, transaction } from '../database/connection
 export const User = {
   findByEmail(email) {
     return queryOne(`
-      SELECT id, email, nome_utilizador AS username, hash_palavra_passe AS passwordHash,
+      SELECT id, email, nome_utilizador AS username,
              nome AS name, papel AS role, url_avatar AS avatarUrl, biografia AS bio,
-             localizacao AS location, dias_sequencia AS streakDays, data_ultima_atividade AS lastActiveDate,
-             meta_diaria_minutos AS dailyGoalMinutes, minutos_hoje AS minutesToday,
-             minutos_totais AS totalMinutes, xp, nivel AS level, esta_suspenso AS isSuspended,
+             localizacao AS location, meta_diaria_minutos AS dailyGoalMinutes, minutos_hoje AS minutesToday,
+             minutos_totais AS totalMinutes, esta_suspenso AS isSuspended,
              criado_em AS createdAt, atualizado_em AS updatedAt
       FROM utilizadores
       WHERE LOWER(email) = ?
@@ -17,11 +16,10 @@ export const User = {
 
   findByUsername(username) {
     return queryOne(`
-      SELECT id, email, nome_utilizador AS username, hash_palavra_passe AS passwordHash,
+      SELECT id, email, nome_utilizador AS username,
              nome AS name, papel AS role, url_avatar AS avatarUrl, biografia AS bio,
-             localizacao AS location, dias_sequencia AS streakDays, data_ultima_atividade AS lastActiveDate,
-             meta_diaria_minutos AS dailyGoalMinutes, minutos_hoje AS minutesToday,
-             minutos_totais AS totalMinutes, xp, nivel AS level, esta_suspenso AS isSuspended,
+             localizacao AS location, meta_diaria_minutos AS dailyGoalMinutes, minutos_hoje AS minutesToday,
+             minutos_totais AS totalMinutes, esta_suspenso AS isSuspended,
              criado_em AS createdAt, atualizado_em AS updatedAt
       FROM utilizadores
       WHERE LOWER(nome_utilizador) = ?
@@ -32,7 +30,7 @@ export const User = {
     return queryOne(`
       SELECT id, nome AS name, nome_utilizador AS username, email, papel AS role,
              url_avatar AS avatarUrl, biografia AS bio, localizacao AS location,
-             dias_sequencia AS streakDays, xp, nivel AS level, esta_suspenso AS isSuspended,
+             esta_suspenso AS isSuspended,
              criado_em AS createdAt
       FROM utilizadores
       WHERE id = ?
@@ -50,18 +48,18 @@ export const User = {
 
     transaction(() => {
       execute(
-        `INSERT INTO utilizadores (id, email, nome_utilizador, hash_palavra_passe, nome, papel, url_avatar, biografia, localizacao, dias_sequencia, meta_diaria_minutos, minutos_hoje, minutos_totais, xp, nivel, esta_suspenso, criado_em, atualizado_em)
-         VALUES (?, ?, ?, ?, ?, ?, ?, '', '', 0, 45, 0, 0, 0, 1, 0, ?, ?)`,
+        `INSERT INTO utilizadores (id, email, nome_utilizador, hash_palavra_passe, nome, papel, url_avatar, biografia, localizacao, meta_diaria_minutos, minutos_hoje, minutos_totais, esta_suspenso, criado_em, atualizado_em)
+         VALUES (?, ?, ?, ?, ?, ?, ?, '', '', 45, 0, 0, 0, ?, ?)`,
         [userId, cleanEmail, cleanUsername, passwordHash, name.trim(), targetRole, selectedAvatarUrl, now, now]
       );
       execute(
-        `INSERT INTO perfis (id, id_utilizador, titulo_perfil, e_publico, mostrar_sequencia, mostrar_classificacao, preferencia_tema)
-         VALUES (?, ?, '', 1, 1, 1, 'light')`,
+        `INSERT INTO perfis (id, id_utilizador, titulo_perfil, e_publico, mostrar_classificacao, preferencia_tema)
+         VALUES (?, ?, '', 1, 1, 'light')`,
         [`prof-${userId}`, userId]
       );
       execute(
         `INSERT INTO notificacoes (id, id_utilizador, tipo, titulo, conteudo, ligacao, esta_lida, criado_em)
-         VALUES (?, ?, 'achievement', 'Bem-vindo ao NEXO!', 'Explore o catálogo de cursos e conecte-se com a comunidade.', '/explore', 0, ?)`,
+         VALUES (?, ?, 'welcome', 'Bem-vindo ao NEXO!', 'Explore o catálogo de cursos e conecte-se com a comunidade.', '/explore', 0, ?)`,
         [`notif-${Date.now()}`, userId, now]
       );
     });
@@ -72,10 +70,7 @@ export const User = {
       username: cleanUsername,
       email: cleanEmail,
       role: targetRole,
-      avatarUrl: selectedAvatarUrl,
-      xp: 0,
-      level: 1,
-      streakDays: 0
+      avatarUrl: selectedAvatarUrl
     };
   },
 
@@ -90,13 +85,9 @@ export const User = {
       location: 'localizacao',
       avatarUrl: 'url_avatar',
       role: 'papel',
-      streakDays: 'dias_sequencia',
-      lastActiveDate: 'data_ultima_atividade',
       dailyGoalMinutes: 'meta_diaria_minutos',
       minutesToday: 'minutos_hoje',
       totalMinutes: 'minutos_totais',
-      xp: 'xp',
-      level: 'nivel',
       isSuspended: 'esta_suspenso'
     };
     const safeKeys = Object.keys(fields).filter(k => COLUMN_MAP[k]);
@@ -110,7 +101,7 @@ export const User = {
   listAll(limit = 100, offset = 0) {
     return queryAll(`
       SELECT id, nome AS name, nome_utilizador AS username, email, papel AS role,
-             xp, nivel AS level, esta_suspenso AS isSuspended, criado_em AS createdAt
+             esta_suspenso AS isSuspended, criado_em AS createdAt
       FROM utilizadores
       ORDER BY criado_em DESC
       LIMIT ? OFFSET ?

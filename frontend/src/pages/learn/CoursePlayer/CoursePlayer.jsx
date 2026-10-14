@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Play, Hash, Radio, HelpCircle, FileCode2, Check, Award, ChevronRight, ChevronLeft, Video, Code2, Download, FolderArchive, Lightbulb, CheckSquare, Square, Terminal, Rocket, Clock, CheckCircle2, Menu, BookOpen, Plus, Settings, Users, Lock, Sparkles, PhoneCall } from 'lucide-react';
+import { Play, Hash, Radio, HelpCircle, FileCode2, Check, Award, ChevronRight, ChevronLeft, Video, Download, FolderArchive, Lightbulb, CheckSquare, Square, Rocket, Clock, CheckCircle2, Menu, BookOpen, Plus, Settings, Users, Lock, Sparkles, PhoneCall } from 'lucide-react';
 import { Modal } from '../../../components/ui/Modal';
 import { useAuth } from '../../../context/AuthContext';
 import { useSocket } from '../../../context/SocketContext';
@@ -17,7 +17,6 @@ import { CourseQuizView } from '../../../features/learn/components/CourseQuizVie
 import { CourseDocumentsView } from '../../../features/learn/components/CourseDocumentsView';
 import { LessonNotesTab } from '../../../features/learn/components/LessonNotesTab';
 import { LessonResourcesTab } from '../../../features/learn/components/LessonResourcesTab';
-import { LessonQATab } from '../../../features/learn/components/LessonQATab';
 export const CoursePlayer = () => {
   const {
     courseId
@@ -89,41 +88,9 @@ export const CoursePlayer = () => {
   const [newChannelTopic, setNewChannelTopic] = useState('');
   const [newChannelQuestion, setNewChannelQuestion] = useState('');
   const [isCreatingChannel, setIsCreatingChannel] = useState(false);
-  const [userCode, setUserCode] = useState('');
-  const [codeOutput, setCodeOutput] = useState(null);
-  const [isRunningCode, setIsRunningCode] = useState(false);
   const [checkedItems, setCheckedItems] = useState({});
   const [projectSubmissionUrl, setProjectSubmissionUrl] = useState('');
   const [projectSubmitted, setProjectSubmitted] = useState(false);
-  useEffect(() => {
-    if (currentLesson?.type === 'code') {
-      let initial = '// Escreva a sua solução aqui\nfunction solucao() {\n  return true;\n}';
-      if (currentLesson.codeChallenge?.initialCode) {
-        initial = currentLesson.codeChallenge.initialCode;
-      } else if (typeof currentLesson.content === 'string' && currentLesson.content.startsWith('{')) {
-        try {
-          const parsed = JSON.parse(currentLesson.content);
-          if (parsed.initialCode) initial = parsed.initialCode;
-        } catch (e) {}
-      }
-      setUserCode(initial);
-      setCodeOutput(null);
-    }
-  }, [currentLesson]);
-  const handleRunCode = () => {
-    setIsRunningCode(true);
-    soundEffects.play('click');
-    setTimeout(() => {
-      setIsRunningCode(false);
-      setCodeOutput('[SUCESSO] Todos os 3 testes unitários foram validados.\n-> Teste 1: Passou (12ms)\n-> Teste 2: Passou (8ms)\n-> Teste 3: Passou (14ms)\n\nResultado: Execução concluída sem erros (Código 0).');
-      soundEffects.play('success');
-      toast({
-        title: 'Desafio Validado!',
-        message: 'O seu código passou em todos os testes com sucesso.',
-        type: 'success'
-      });
-    }, 900);
-  };
   const fetchCourseData = async () => {
     if (!courseId) return;
     try {
@@ -179,15 +146,20 @@ export const CoursePlayer = () => {
                 } else if (les.type === 'text') {
                   les.richArticle = les.richArticle || parsed;
                   les.content = parsed.markdown || '';
-                } else if (les.type === 'code') {
-                  les.codeChallenge = les.codeChallenge || parsed;
-                  les.content = parsed.instructions || '';
                 }
               } catch (_) {}
             }
           });
         }
       });
+      if (user && data.id && !data.isEnrolled && (data.isFree || Number(data.price || 0) <= 0)) {
+        api.enrollCourse(data.id)
+          .then(() => {
+            window.dispatchEvent(new Event('nexo_courses_visibility_changed'));
+          })
+          .catch(() => {});
+        data.isEnrolled = true;
+      }
       setCourse(data);
       const completed = new Set();
       data.userEnrollment?.lessonProgresses?.forEach(lp => {
@@ -447,17 +419,39 @@ export const CoursePlayer = () => {
     const spaceId = course?.spaceId || course?.space?.id;
     const formattedName = newChannelName.toLowerCase().replace(/[^a-z0-9-_]/g, '-');
     try {
-      const newChannel = {
-        id: 'custom-' + Date.now(),
+      let newChannel = {
+        id: editingChannel?.id || 'custom-' + Date.now(),
         name: formattedName,
         type: newChannelType,
         topic: newChannelTopic,
         guidingQuestion: newChannelQuestion
       };
-      setCustomChannels(prev => [...prev, newChannel]);
+      if (spaceId && !editingChannel) {
+        try {
+          const created = await api.createChannel(spaceId, {
+            name: formattedName,
+            type: newChannelType,
+            topic: newChannelTopic
+          });
+          if (created && created.id) {
+            newChannel = {
+              ...newChannel,
+              ...created,
+              guidingQuestion: newChannelQuestion
+            };
+          }
+        } catch (err) {
+          console.warn('Falha ao persistir canal no servidor, a manter localmente:', err);
+        }
+      }
+      if (editingChannel) {
+        setCustomChannels(prev => prev.map(c => c.id === editingChannel.id ? newChannel : c));
+      } else {
+        setCustomChannels(prev => [...prev, newChannel]);
+      }
       soundEffects.playSuccess();
       toast({
-        title: 'Canal Criado!',
+        title: editingChannel ? 'Canal Atualizado!' : 'Canal Criado!',
         message: `O canal #${newChannel.name} já está disponível no servidor do curso.`,
         type: 'success'
       });
@@ -489,7 +483,7 @@ export const CoursePlayer = () => {
     } catch (e) {}
   };
 
-  const isCreatorOrAdmin = Boolean(user?.role === 'ADMIN' || user?.id === course?.creatorId || user?.id === course?.creator?.id || user?.id === course?.instructorId);
+  const isCreatorOrAdmin = Boolean(user?.role === 'ADMIN' || user?.id === course?.creatorId || user?.id === course?.creator?.id || user?.id === course?.instructorId || course?.isCollaborator || course?.collaborators?.some(c => c.id === user?.id));
   const allLessons = course?.modules?.flatMap(m => m.lessons) || [];
   const currentLessonIndex = allLessons.findIndex(l => l.id === currentLesson?.id);
   const prevLesson = currentLessonIndex > 0 ? allLessons[currentLessonIndex - 1] : null;
@@ -506,11 +500,26 @@ export const CoursePlayer = () => {
         Curso não encontrado.
       </div>;
   }
-  return <div className="flex h-[calc(100vh-4rem)] overflow-hidden bg-slate-50 text-slate-900 selection:bg-blue-100">
+  const courseDocs = course.documents || course.resources || [];
+  const courseQuizQuestions = (course.modules || []).flatMap(m =>
+    (m.lessons || [])
+      .filter(l => l.type === 'quiz')
+      .flatMap(l => {
+        if (Array.isArray(l.quiz?.questions) && l.quiz.questions.length > 0) return l.quiz.questions;
+        if (typeof l.content === 'string' && l.content.trim().startsWith('{')) {
+          try {
+            const parsed = JSON.parse(l.content);
+            if (Array.isArray(parsed?.questions)) return parsed.questions;
+          } catch {}
+        }
+        return [];
+      })
+  );
+  return <div className="flex h-[calc(100vh-4rem)] overflow-hidden bg-slate-50 dark:bg-[#090a0f] text-slate-900 dark:text-white selection:bg-blue-100">
       
       {/* Desktop Sidebar */}
       <div className="hidden md:flex h-full shrink-0">
-        <CourseServerSidebar courseTitle={course.title} courseId={course.id} isCreatorOrAdmin={isCreatorOrAdmin} customChannels={customChannels} currentTextChannel={currentTextChannel} activeView={activeView} inLiveRoom={inLiveRoom} liveRoomName={liveRoomName} modules={course.modules || []} currentLessonId={currentLesson?.id} completedLessonIds={completedLessonIds} resourcesCount={course.resources?.length || 0} user={user} onSelectChannel={handleSelectChannel} onSelectLesson={les => {
+        <CourseServerSidebar courseTitle={course.title} courseId={course.id} isCreatorOrAdmin={isCreatorOrAdmin} customChannels={customChannels} currentTextChannel={currentTextChannel} activeView={activeView} inLiveRoom={inLiveRoom} liveRoomName={liveRoomName} modules={course.modules || []} currentLessonId={currentLesson?.id} completedLessonIds={completedLessonIds} resourcesCount={courseDocs.length} user={user} onSelectChannel={handleSelectChannel} onSelectLesson={les => {
           setCurrentLesson(les);
           handleViewChange('lesson');
           try {
@@ -546,7 +555,7 @@ export const CoursePlayer = () => {
             className="fixed inset-0 bg-black/60 transition-opacity"
             onClick={() => setMobileSidebarOpen(false)}
           />
-          <div className="relative flex flex-col w-72 max-w-[85vw] h-full bg-white z-10 shadow-2xl">
+          <div className="relative flex flex-col w-72 max-w-[85vw] h-full bg-white dark:bg-[#090a0f] z-10 shadow-2xl">
             <CourseServerSidebar
               courseTitle={course.title}
               courseId={course.id}
@@ -559,7 +568,7 @@ export const CoursePlayer = () => {
               modules={course.modules || []}
               currentLessonId={currentLesson?.id}
               completedLessonIds={completedLessonIds}
-              resourcesCount={course.resources?.length || 0}
+              resourcesCount={courseDocs.length}
               user={user}
               onCloseMobile={() => setMobileSidebarOpen(false)}
               onSelectChannel={ch => {
@@ -614,14 +623,14 @@ export const CoursePlayer = () => {
       )}
 
       
-      <main className="flex-1 flex flex-col min-w-0 bg-slate-50 overflow-hidden">
+      <main className="flex-1 flex flex-col min-w-0 bg-slate-50 dark:bg-[#090a0f] overflow-hidden">
         
-        <header className="h-16 border-b border-slate-200 bg-white px-3 sm:px-6 flex items-center justify-between shrink-0 shadow-xs">
+        <header className="h-16 border-b border-slate-200 dark:border-[#222636] bg-white dark:bg-[#0c0d12] px-3 sm:px-6 flex items-center justify-between shrink-0 shadow-xs">
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <button
               type="button"
               onClick={() => setMobileSidebarOpen(true)}
-              className="p-2 -ml-1 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 md:hidden transition-colors cursor-pointer shrink-0"
+              className="p-2 -ml-1 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#171a24] md:hidden transition-colors cursor-pointer shrink-0"
               title="Abrir menu do curso"
               aria-label="Abrir menu do curso"
             >
@@ -657,28 +666,28 @@ export const CoursePlayer = () => {
 
             {activeView === 'lesson' && <div className="flex items-center gap-2 truncate max-w-[140px] xs:max-w-[220px] sm:max-w-md">
                 <Play className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 shrink-0" />
-                <span className="font-extrabold text-slate-900 text-sm sm:text-base truncate">
+                <span className="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base truncate">
                   {currentLesson?.title || 'Aula em Vídeo'}
                 </span>
               </div>}
 
             {activeView === 'live-room' && <div className="flex items-center gap-2 text-blue-600 truncate max-w-[140px] xs:max-w-[220px] sm:max-w-md">
                 <Radio className="w-4 h-4 sm:w-5 sm:h-5 animate-pulse text-red-500 shrink-0" />
-                <span className="font-extrabold text-slate-900 text-sm sm:text-base truncate">
+                <span className="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base truncate">
                   {liveRoomName}
                 </span>
               </div>}
 
             {activeView === 'quiz' && <div className="flex items-center gap-2 truncate">
                 <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 shrink-0" />
-                <span className="font-extrabold text-slate-900 text-sm sm:text-base truncate">
+                <span className="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base truncate">
                   Quizzes
                 </span>
               </div>}
 
             {activeView === 'documents' && <div className="flex items-center gap-2 truncate">
                 <FileCode2 className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 shrink-0" />
-                <span className="font-extrabold text-slate-900 text-sm sm:text-base truncate">
+                <span className="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base truncate">
                   Documentos
                 </span>
               </div>}
@@ -705,7 +714,7 @@ export const CoursePlayer = () => {
             {isCreatorOrAdmin && (
               <Link
                 to={`/creator/courses/${course.id}/edit?step=3`}
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors cursor-pointer"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-[#171a24] hover:bg-slate-200 dark:hover:bg-[#222636] text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors cursor-pointer"
                 title="Adicionar ou gerir aulas e módulos"
               >
                 <Settings className="w-3.5 h-3.5" />
@@ -713,9 +722,9 @@ export const CoursePlayer = () => {
               </Link>
             )}
 
-            {activeView === 'lesson' && currentLesson && <button onClick={handleMarkComplete} className={`px-2.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1 sm:gap-2 transition-all cursor-pointer shrink-0 ${isCurrentCompleted ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-500/20'}`}>
+            {activeView === 'lesson' && currentLesson && <button onClick={handleMarkComplete} className={`px-2.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1 sm:gap-2 transition-all cursor-pointer shrink-0 ${isCurrentCompleted ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-500/20'}`}>
                 {isCurrentCompleted ? <>
-                    <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600" />
+                    <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600 dark:text-emerald-400" />
                     <span className="hidden xs:inline">Concluída</span>
                     <span className="xs:hidden">Feito</span>
                   </> : <>
@@ -795,56 +804,7 @@ export const CoursePlayer = () => {
           }
         }} onNextLesson={nextLesson ? () => setCurrentLesson(nextLesson) : undefined} />}
 
-            
-            {currentLesson?.type === 'code' && <div className="flex flex-col gap-4 bg-[#11131a] p-6 rounded-xl border border-[#1e2230] text-white">
-                <div className="flex items-center justify-between pb-3 border-b border-[#1e2230]">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
-                      <Code2 className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h2 className="text-base font-black text-white">{currentLesson.title}</h2>
-                      <span className="text-[11px] text-emerald-400 font-mono">
-                        Sandbox Interativo • {currentLesson.codeChallenge?.language || 'TypeScript'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="p-4 rounded-2xl bg-[#181a24] border border-[#262a3b] text-xs text-zinc-300 leading-relaxed">
-                  <p className="font-bold text-white mb-1 flex items-center gap-1.5">
-                    <FileCode2 className="w-4 h-4 text-indigo-400" />
-                    Instruções do Desafio Técnico:
-                  </p>
-                  <p>
-                    {currentLesson.codeChallenge?.instructions || currentLesson.content || 'Implemente a lógica solicitada e clique em "Executar e Testar".'}
-                  </p>
-                </div>
-
-                
-                <div className="flex flex-col rounded-2xl overflow-hidden border border-[#262a3b] bg-[#0c0d12]">
-                  <div className="flex items-center justify-between px-4 py-2.5 bg-[#141620] border-b border-[#262a3b] text-xs text-zinc-400">
-                    <span className="font-mono font-bold text-indigo-300 flex items-center gap-1.5">
-                      <Terminal className="w-3.5 h-3.5" />
-                      main.ts
-                    </span>
-                    <button onClick={handleRunCode} disabled={isRunningCode} className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md shadow-emerald-600/20 transition-all disabled:opacity-50">
-                      <Play className="w-3.5 h-3.5" />
-                      <span>{isRunningCode ? 'A Executar...' : 'Executar e Validar Testes'}</span>
-                    </button>
-                  </div>
-
-                  <textarea value={userCode} onChange={e => setUserCode(e.target.value)} rows={8} className="w-full bg-[#0c0d12] p-4 font-mono text-xs text-emerald-300 focus:outline-none resize-none" spellCheck={false} />
-
-                  
-                  {codeOutput && <div className="p-4 border-t border-[#262a3b] bg-[#08090d] font-mono text-xs text-zinc-300 whitespace-pre-wrap animate-fade-in">
-                      <span className="text-[10px] text-zinc-500 font-bold uppercase block mb-1">
-                        Terminal de Saída:
-                      </span>
-                      <p className="text-emerald-400 font-medium">{codeOutput}</p>
-                    </div>}
-                </div>
-              </div>}
 
             
             {currentLesson?.type === 'resource' && <div className="flex flex-col gap-4 bg-[#11131a] p-6 rounded-xl border border-[#1e2230] text-white">
@@ -869,7 +829,7 @@ export const CoursePlayer = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                   {(currentLesson.resources || [{
               id: 'r1',
-              name: 'Starter-Kit-LearnSpace.zip',
+              name: 'Starter-Kit-NEXO.zip',
               url: '#',
               size: '14.2 MB',
               type: 'zip'
@@ -1070,13 +1030,10 @@ export const CoursePlayer = () => {
               label: 'Visão Geral da Aula'
             }, {
               id: 'resources',
-              label: `Recursos (${course.resources?.length || 0})`
+              label: `Recursos (${courseDocs.length})`
             }, {
               id: 'notes',
               label: 'Notas Pessoais'
-            }, {
-              id: 'qa',
-              label: `Dúvidas & Q&A (${questions.length})`
             }].map(tab => <button key={tab.id} onClick={() => setActiveLessonTab(tab.id)} className={`px-4 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap ${activeLessonTab === tab.id ? 'text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800/50 font-extrabold shadow-xs' : 'hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#171a24]'}`}>
                     {tab.label}
                   </button>)}
@@ -1089,18 +1046,16 @@ export const CoursePlayer = () => {
 
                 {activeLessonTab === 'notes' && <LessonNotesTab lessonId={currentLesson?.id} />}
 
-                {activeLessonTab === 'resources' && <LessonResourcesTab resources={course.resources || []} />}
-
-                {activeLessonTab === 'qa' && <LessonQATab questions={questions} onOpenAskModal={() => setShowAskModal(true)} />}
+                {activeLessonTab === 'resources' && <LessonResourcesTab resources={courseDocs} />}
               </div>
             </div>
           </div>))}
 
         
-        {activeView === 'quiz' && <CourseQuizView quizTitle={`Quiz: ${course.title}`} onCompleteQuiz={() => {}} />}
+        {activeView === 'quiz' && <CourseQuizView quizTitle={`Quiz: ${course.title}`} questions={courseQuizQuestions.length > 0 ? courseQuizQuestions : undefined} onCompleteQuiz={() => {}} />}
 
         
-        {activeView === 'documents' && <CourseDocumentsView documents={course.documents || course.resources || []} />}
+        {activeView === 'documents' && <CourseDocumentsView documents={courseDocs} />}
       </main>
 
       
@@ -1111,7 +1066,7 @@ export const CoursePlayer = () => {
           <form onSubmit={handleSaveChannelSubmit} className="flex flex-col gap-5">
             
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-2">
                 Sugestões Rápidas (1-Clique)
               </label>
               <div className="flex flex-wrap gap-2">
@@ -1149,14 +1104,14 @@ export const CoursePlayer = () => {
               setNewChannelName(tmpl.name);
               setNewChannelType(tmpl.type);
               setNewChannelTopic(tmpl.topic);
-            }} className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs font-medium text-slate-700 transition-all cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900">
+            }} className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#151720] hover:bg-slate-100 dark:hover:bg-neutral-800 text-xs font-medium text-slate-700 dark:text-slate-300 transition-all cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900">
                     {tmpl.label}
                   </button>)}
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-900 mb-2">
+              <label className="block text-xs font-semibold text-slate-900 dark:text-white mb-2">
                 Tipo do Canal
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -1176,11 +1131,11 @@ export const CoursePlayer = () => {
               id: 'voice',
               label: 'Sala de Voz',
               desc: 'Live e áudio'
-            }].map(t => <button type="button" key={t.id} onClick={() => setNewChannelType(t.id)} className={`p-3 rounded-xl border text-left text-xs transition-all cursor-pointer ${newChannelType === t.id ? 'bg-slate-900 text-white border-slate-900 font-medium shadow-xs' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}>
-                    <p className={`font-semibold ${newChannelType === t.id ? 'text-white' : 'text-slate-900'}`}>
+            }].map(t => <button type="button" key={t.id} onClick={() => setNewChannelType(t.id)} className={`p-3 rounded-xl border text-left text-xs transition-all cursor-pointer ${newChannelType === t.id ? 'bg-slate-900 dark:bg-blue-600 text-white border-slate-900 dark:border-blue-500 font-medium shadow-xs' : 'bg-white dark:bg-[#151720] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-neutral-800 hover:border-slate-300 dark:hover:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-800'}`}>
+                    <p className={`font-semibold ${newChannelType === t.id ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
                       {t.label}
                     </p>
-                    <p className={`text-xs mt-1 ${newChannelType === t.id ? 'text-slate-300' : 'text-slate-500'}`}>
+                    <p className={`text-xs mt-1 ${newChannelType === t.id ? 'text-slate-300 dark:text-blue-100' : 'text-slate-500 dark:text-zinc-400'}`}>
                       {t.desc}
                     </p>
                   </button>)}
@@ -1188,29 +1143,29 @@ export const CoursePlayer = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-800 mb-1.5">
+              <label className="block text-sm font-bold text-slate-800 dark:text-white mb-1.5">
                 Nome do Canal (URL Slug)
               </label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">
                   #
                 </span>
-                <input type="text" required placeholder="ex: duvidas-modulo-2 ou projetos-finais" value={newChannelName} onChange={e => setNewChannelName(e.target.value)} className="w-full bg-slate-50 border border-slate-300 focus:border-blue-600 focus:bg-white rounded-xl pl-9 pr-4 py-3 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all font-mono" />
+                <input type="text" required placeholder="ex: duvidas-modulo-2 ou projetos-finais" value={newChannelName} onChange={e => setNewChannelName(e.target.value)} className="w-full bg-slate-50 dark:bg-[#151720] border border-slate-300 dark:border-neutral-700 focus:border-blue-600 focus:bg-white dark:focus:bg-[#151720] rounded-xl pl-9 pr-4 py-3 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 transition-all font-mono" />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-800 mb-1.5">
+              <label className="block text-sm font-bold text-slate-800 dark:text-white mb-1.5">
                 Descrição do Objetivo do Canal
               </label>
-              <input type="text" placeholder="ex: Canal dedicado a tirar dúvidas técnicas sobre a matéria do módulo" value={newChannelTopic} onChange={e => setNewChannelTopic(e.target.value)} className="w-full bg-slate-50 border border-slate-300 focus:border-blue-600 focus:bg-white rounded-xl px-4 py-3 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all" />
+              <input type="text" placeholder="ex: Canal dedicado a tirar dúvidas técnicas sobre a matéria do módulo" value={newChannelTopic} onChange={e => setNewChannelTopic(e.target.value)} className="w-full bg-slate-50 dark:bg-[#151720] border border-slate-300 dark:border-neutral-700 focus:border-blue-600 focus:bg-white dark:focus:bg-[#151720] rounded-xl px-4 py-3 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 transition-all" />
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-neutral-800">
               <button type="button" onClick={() => {
             setShowCreateChannelModal(false);
             setEditingChannel(null);
-          }} className="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 cursor-pointer">
+          }} className="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-neutral-800 cursor-pointer">
                 Cancelar
               </button>
               <button type="submit" disabled={isCreatingChannel} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 cursor-pointer disabled:opacity-50">
@@ -1220,55 +1175,7 @@ export const CoursePlayer = () => {
           </form>
         </Modal>}
 
-      
-      {showAskModal && <Modal isOpen={showAskModal} onClose={() => setShowAskModal(false)} title="Colocar Dúvida à Turma & Instrutor">
-          <div className="flex flex-col gap-4">
-            <div>
-              <label className="block text-sm font-bold text-slate-800 mb-1.5">
-                Título Resumido da Questão
-              </label>
-              <input type="text" placeholder="ex: Erro de tipagem no generic com useOptimistic" value={newQuestionTitle} onChange={e => setNewQuestionTitle(e.target.value)} className="w-full bg-slate-50 border border-slate-300 focus:border-blue-600 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all" />
-            </div>
 
-            <div>
-              <label className="block text-sm font-bold text-slate-800 mb-1.5">
-                Descrição Detalhada do Problema
-              </label>
-              <textarea rows={5} placeholder="Descreva o que tentou implementar, código relevante e mensagem de erro..." value={newQuestionContent} onChange={e => setNewQuestionContent(e.target.value)} className="w-full bg-slate-50 border border-slate-300 focus:border-blue-600 focus:bg-white rounded-2xl p-4 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all font-mono" />
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
-              <button onClick={() => setShowAskModal(false)} className="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 cursor-pointer">
-                Cancelar
-              </button>
-              <button onClick={() => {
-            if (newQuestionTitle.trim()) {
-              setQuestions(prev => [{
-                id: 'q-' + Date.now(),
-                title: newQuestionTitle,
-                content: newQuestionContent,
-                upvotes: 1,
-                author: {
-                  name: user?.name || 'Você',
-                  avatarUrl: user?.avatarUrl
-                }
-              }, ...prev]);
-              setShowAskModal(false);
-              setNewQuestionTitle('');
-              setNewQuestionContent('');
-              soundEffects.playSuccess();
-              toast({
-                title: 'Pergunta Publicada!',
-                message: 'A sua dúvida foi enviada para a turma e o instrutor.',
-                type: 'success'
-              });
-            }
-          }} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md cursor-pointer">
-                Publicar Dúvida
-              </button>
-            </div>
-          </div>
-        </Modal>}
 
       {/* Modal de confirmação com informações principais antes de entrar na chamada */}
       <JoinCallModal

@@ -1,4 +1,4 @@
-﻿import { Router } from 'express';
+import { Router } from 'express';
 import { queryAll, queryOne, execute } from '../database/connection.js';
 import { authenticate } from '../middleware/auth.js';
 import { canAccessChannel } from '../middleware/channelAccess.js';
@@ -19,7 +19,6 @@ router.get('/channels/:channelId/messages', authenticate, async (req, res) => {
        ORDER BY m.createdAt ASC
        LIMIT 100`, [channelId]);
     const formatted = messages.map(m => {
-      const reactions = queryAll(`SELECT r.*, u.username FROM reactions r JOIN users u ON r.userId = u.id WHERE r.messageId = ?`, [m.id]);
       let replyTo = null;
       if (m.parentId) {
         const parent = queryOne(`SELECT m.id, m.content, u.username FROM messages m JOIN users u ON m.userId = u.id WHERE m.id = ?`, [m.parentId]);
@@ -50,7 +49,7 @@ router.get('/channels/:channelId/messages', authenticate, async (req, res) => {
           avatarUrl: m.user_avatarUrl,
           role: m.user_role
         },
-        reactions,
+        reactions: [],
         replyTo
       };
     });
@@ -75,6 +74,30 @@ router.post('/channels/:channelId/messages', authenticate, async (req, res) => {
     const userId = req.user.id;
     if (!canAccessChannel(req.user, channelId)) {
       return res.status(403).json({ error: 'Não tem acesso a este canal.' });
+    }
+    const channelInfo = queryOne(
+      `SELECT c.isLocked, c.accessMode, c.type, c.spaceId, s.ownerId
+       FROM channels c
+       LEFT JOIN spaces s ON s.id = c.spaceId
+       WHERE c.id = ?`,
+      [channelId]
+    );
+    if (!channelInfo) {
+      return res.status(404).json({ error: 'Canal não encontrado.' });
+    }
+    if (channelInfo.isLocked === 1 || channelInfo.accessMode === 'announcement' || channelInfo.type === 'announcement') {
+      const isGlobalMod = req.user.role === 'ADMIN';
+      const isSpaceOwner = channelInfo.ownerId === userId;
+      const isCourseCreatorOrCollab = Boolean(queryOne(
+        `SELECT c.id FROM courses c
+         LEFT JOIN course_collaborators cc ON cc.courseId = c.id
+         WHERE c.spaceId = ? AND (c.creatorId = ? OR cc.userId = ?)
+         LIMIT 1`,
+        [channelInfo.spaceId, userId, userId]
+      ));
+      if (!isGlobalMod && !isSpaceOwner && !isCourseCreatorOrCollab) {
+        return res.status(403).json({ error: 'Apenas formadores, colaboradores e administradores podem publicar neste canal.' });
+      }
     }
     const now = new Date().toISOString();
     if (!content || !content.trim()) {
@@ -112,46 +135,28 @@ router.post('/channels/:channelId/messages', authenticate, async (req, res) => {
     });
   }
 });
-router.post('/messages/:messageId/reactions', authenticate, async (req, res) => {
+
+
+router.post('/messages/:messageId/pin', authenticate, async (req, res) => {
   try {
-    const {
-      messageId
-    } = req.params;
-    const {
-      emoji
-    } = req.body;
-    const userId = req.user.id;
-    const message = queryOne('SELECT channelId FROM messages WHERE id = ?', [messageId]);
+    const { messageId } = req.params;
+    const message = queryOne('SELECT channelId, isPinned FROM messages WHERE id = ?', [messageId]);
     if (!message) {
       return res.status(404).json({ error: 'Mensagem não encontrada.' });
     }
     if (!canAccessChannel(req.user, message.channelId)) {
       return res.status(403).json({ error: 'Não tem acesso a este canal.' });
     }
-    if (!emoji) {
-      return res.status(400).json({
-        error: 'O emoji é obrigatório'
-      });
-    }
-    const existing = queryOne('SELECT id FROM reactions WHERE messageId = ? AND userId = ? AND emoji = ?', [messageId, userId, emoji]);
-    if (existing) {
-      execute('DELETE FROM reactions WHERE id = ?', [existing.id]);
-      return res.json({
-        removed: true,
-        emoji
-      });
-    } else {
-      const reactionId = `react-${Date.now()}`;
-      execute('INSERT INTO reactions (id, messageId, userId, emoji) VALUES (?, ?, ?, ?)', [reactionId, messageId, userId, emoji]);
-      return res.status(201).json({
-        added: true,
-        emoji
-      });
-    }
-  } catch (err) {
-    return res.status(500).json({
-      error: 'Falha ao processar reação'
+    const newPinned = message.isPinned === 1 ? 0 : 1;
+    execute('UPDATE messages SET isPinned = ? WHERE id = ?', [newPinned, messageId]);
+    return res.json({
+      success: true,
+      messageId,
+      isPinned: newPinned === 1
     });
+  } catch (err) {
+    return res.status(500).json({ error: 'Falha ao fixar/desafixar mensagem.' });
   }
 });
+
 export default router;

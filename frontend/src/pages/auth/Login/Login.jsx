@@ -1,5 +1,5 @@
-﻿import React, { useState } from 'react';
-import { Link, useNavigate, Navigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { Lock, Mail, AlertCircle } from 'lucide-react';
 import { Logo } from '../../../components/ui/Logo';
 import { SEO } from '../../../components/common/SEO';
@@ -15,9 +15,17 @@ export const Login = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const getRoleRedirect = (role) => {
+    if (role === 'ADMIN') return '/admin';
+    if (role === 'CREATOR') return '/creator';
+    return '/dashboard';
+  };
 
   if (user) {
-    return <Navigate to="/dashboard" replace />;
+    const target = location.state?.from?.pathname || getRoleRedirect(user.role);
+    return <Navigate to={target} replace />;
   }
   const handleSubmit = async e => {
     e.preventDefault();
@@ -28,7 +36,8 @@ export const Login = () => {
         login: loginInput,
         password
       });
-      navigate('/dashboard');
+      const target = location.state?.from?.pathname || getRoleRedirect(loggedUser?.role);
+      navigate(target, { replace: true });
     } catch (err) {
       setError(err.message || 'Nome de utilizador ou palavra-passe incorretos');
     } finally {

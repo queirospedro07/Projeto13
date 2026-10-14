@@ -1,100 +1,90 @@
 # NEXO — Plataforma de E-Learning e Comunidade
 
-> Aplicação web full-stack de e-learning com cursos em vídeo, comunidades em tempo real, gamificação, quizzes e chamadas de voz/vídeo.
+Aplicação web desenvolvida no âmbito da unidade curricular de **Programação Web** do **CTeSP em Tecnologias e Programação de Sistemas de Informação (TPSI)** — **IPVC**.
 
-**Disciplina:** Programação Web | **Curso:** CTeSP TPSI - IPVC
+- **Ano Letivo:** 2025/2026
+- **Instituição:** Instituto Politécnico de Viana do Castelo (IPVC)
+- **Curso:** CTeSP em Tecnologias e Programação de Sistemas de Informação (TPSI)
+- **Unidade Curricular:** Programação Web
+- **Realizado por:**
+  - Pedro Queirós
 
-Consulte o [Manual de Utilizador](MANUAL_UTILIZADOR.md) para instruções práticas de utilização como aluno, formador ou administrador.
-
----
-
-## Funcionalidades
-
-### Para Alunos
-
-| Funcionalidade | Descrição |
-|----------------|-----------|
-| Catálogo de Cursos | Explorar, filtrar e inscrever-se em cursos por categoria e dificuldade |
-| Sala de Aula | Reprodutor de vídeo, progresso por aula, quizzes e notas pessoais |
-| Comunidade | Espaços com canais de texto, voz e partilha de ecrã em tempo real |
-| Gamificação | XP, níveis, conquistas, streaks diários e leaderboard |
-| Mensagens | Chat direto com outros utilizadores e gestão de amizades |
-| Pesquisa Global | Pesquisa de cursos e utilizadores na barra de navegação, disponível apenas para utilizadores autenticados |
-| Certificados | Certificado digital gerado automaticamente ao completar um curso |
-
-### Para Criadores
-
-| Funcionalidade | Descrição |
-|----------------|-----------|
-| Estúdio do Criador | Dashboard com estatísticas de alunos e cursos publicados |
-| Construtor de Cursos | Criação de módulos, aulas (vídeo, texto, quiz, código), documentos |
-| Candidatura | Submissão de inquérito de candidatura a formador para aprovação |
-
-### Para Administradores
-
-| Funcionalidade | Descrição |
-|----------------|-----------|
-| Painel Admin | Estatísticas globais da plataforma |
-| Gestão de Utilizadores | Suspender/reativar contas, gerir roles |
-| Moderação de Cursos | Aprovar/rejeitar cursos submetidos pelos criadores |
-| Candidaturas | Avaliar candidaturas a formador e sub-administrador |
+Para instruções detalhadas sobre a utilização da aplicação em cada perfil, consultar o [Manual de Utilizador](MANUAL_UTILIZADOR.md) e o [Relatório Técnico](RELATORIO_COMPLETO.md).
 
 ---
 
-## Tecnologias
+## Sobre o Projeto
+
+O **NEXO** é uma plataforma web que junta cursos online (vídeo, artigos e quizzes) com uma componente de comunidade em tempo real (canais de texto, salas de voz/vídeo via WebRTC e mensagens diretas). O objetivo do trabalho foi criar uma aplicação full-stack completa com controlo de acessos por perfil (Aluno, Formador e Administrador), acompanhamento de progresso e emissão de certificados no final dos cursos.
+
+### Funcionalidades Principais
+
+#### Aluno (`STUDENT`)
+- Exploração e pesquisa de cursos por categoria e nível de dificuldade
+- Inscrição em cursos gratuitos ou pagos
+- Visualização de aulas em vídeo e texto, marcação de aulas concluídas e caderno de apontamentos por aula
+- Resolução de questionários (quizzes) com correção automática
+- Participação em espaços da comunidade (chat em tempo real e chamadas de voz/vídeo com partilha de ecrã)
+- Sistema de mensagens privadas e lista de amigos
+- Registo de dias seguidos de estudo (streak) e medalhas de conclusão
+- Geração de certificado quando o curso chega aos 100%
+
+#### Formador (`CREATOR`)
+- Painel com estatísticas dos seus cursos e alunos inscritos
+- Construtor de cursos dividido por etapas (informação geral, módulos, aulas e quizzes)
+- Criação, edição e publicação direta de cursos com autonomia total
+- Gestão de colaboradores e estudantes do curso
+- Formulário de candidatura a formador para alunos que queiram lecionar
+
+#### Administrador (`ADMIN` / `SUBADMIN`)
+- Painel de administração com métricas gerais da plataforma
+- Gestão de utilizadores (alteração de cargos e suspensão de contas)
+- Gestão e supervisão do catálogo global de cursos
+- Avaliação de candidaturas a formador e subadministrador
+- Resposta a pedidos de suporte (tickets)
+
+---
+
+## Tecnologias Utilizadas
 
 ### Backend
-
-| Tecnologia | Função |
-|------------|--------|
-| Node.js (ESM) + Express | API REST |
-| PostgreSQL (produção) | Base de dados relacional |
-| SQLite nativo (fallback) | Desenvolvimento local sem instalação |
-| Socket.IO | Comunicação em tempo real |
-| jsonwebtoken | Autenticação JWT |
-| bcryptjs | Hash de palavras-passe |
-| express-validator | Validação de dados |
-| helmet + express-rate-limit | Segurança da API |
+- **Node.js (ES Modules) + Express** — servidor e API REST
+- **SQLite (`node:sqlite`)** — base de dados local (criada automaticamente no arranque)
+- **PostgreSQL (`pg`)** — suporte opcional para ambiente de produção
+- **Socket.IO** — eventos em tempo real (chat, estado online e sinalização WebRTC)
+- **JSON Web Tokens (`jsonwebtoken`) + `bcryptjs`** — autenticação e encriptação de palavras-passe
+- **`express-validator`, `helmet`, `express-rate-limit`** — validação de dados e segurança das rotas
 
 ### Frontend
-
-| Tecnologia | Função |
-|------------|--------|
-| React 18 + Vite | Interface reativa com build rápido |
-| react-router-dom v6 | Navegação SPA |
-| Axios | Pedidos HTTP com interceptors |
-| socket.io-client | WebSockets em tempo real |
-| Tailwind CSS | Estilos utilitários |
-| framer-motion | Animações |
-| lucide-react | Ícones |
-| Recharts | Gráficos |
+- **React 18 + Vite** — interface e bundler de desenvolvimento
+- **React Router DOM v6** — navegação entre páginas e proteção de rotas
+- **Tailwind CSS** — estilização e modo escuro
+- **Axios** — comunicação com a API REST
+- **Socket.IO Client + WebRTC** — chat e chamadas de voz/vídeo
+- **Lucide React & Recharts** — ícones e gráficos dos painéis
 
 ---
 
-## Como Executar
+## Como Executar o Projeto Localmente
 
 ### Pré-requisitos
+- **Node.js v22+** (necessário para o módulo nativo `node:sqlite`)
 
-- Node.js 22+
+Não é preciso configurar nenhum servidor de base de dados externo para correr o projeto localmente, pois o backend cria o ficheiro SQLite (`backend/data/nexo.db`) e insere os dados iniciais automaticamente.
 
-> O backend tem fallback automático para SQLite — não é necessário instalar PostgreSQL para desenvolvimento local.
-
-### 1. Clonar e instalar
+### 1. Instalar dependências
 
 ```bash
-git clone <repo-url>
-cd Projeto
-
-# Backend
+# Instalar dependências do backend
 cd backend
 npm install
-cp .env.example .env   # editar se necessário
 
-# Frontend
+# Instalar dependências do frontend
 cd ../frontend
 npm install
-cp .env.example .env
 ```
+
+*(Em alternativa, no Windows, pode executar diretamente o ficheiro `start.bat` na raiz do projeto depois de fazer `npm install` nas duas pastas.)*
 
 ### 2. Iniciar o Backend
 
@@ -103,23 +93,33 @@ cd backend
 npm run dev
 ```
 
-O backend inicia em `http://localhost:5000`.  
-Na primeira execução, o esquema SQLite e os dados de seed são criados automaticamente.
+O servidor fica a correr em `http://localhost:5000`.
 
-### Contas de Demonstração
+### 3. Iniciar o Frontend
 
-As contas abaixo são criadas pelos seeds locais. Não são inseridas quando `NODE_ENV=production`.
+```bash
+cd frontend
+npm run dev
+```
 
-**Contas iniciais** — palavra-passe comum: `password123`
+O cliente React fica acessível em `http://localhost:5173`.
 
-| Email | Perfil inicial |
-|-------|----------------|
-| `aluno@nexo.pt` | Aluno |
-| `sarah@nexo.pt` | Formadora |
-| `alex@nexo.pt` | Administrador |
-| `tiago@nexo.pt` | Aluno com candidatura a formador |
+---
 
-**Contas adicionais** — palavra-passe comum: `nexoDemo2026!`
+## Contas de Teste (Seed)
+
+Na primeira execução em ambiente de desenvolvimento, a base de dados é preenchida com contas de teste para facilitar a avaliação do projeto:
+
+### Contas principais (palavra-passe: `password123`)
+
+| Email | Utilizador | Nome | Perfil |
+|-------|------------|------|--------|
+| `aluno@nexo.pt` | `aluno` | Pedro Silva | Aluno (`STUDENT`) |
+| `mariana@nexo.pt` | `mariana_costa` | Mariana Costa | Formadora (`CREATOR`) |
+| `admin@nexo.pt` | `rui_admin` | Rui Oliveira | Administrador (`ADMIN`) |
+| `tiago@nexo.pt` | `tiago_sec` | Tiago Ramos | Aluno (com candidatura a formador pendente) |
+
+### Contas adicionais de demonstração (palavra-passe: `nexoDemo2026!`)
 
 | Email | Perfil |
 |-------|--------|
@@ -132,201 +132,61 @@ As contas abaixo são criadas pelos seeds locais. Não são inseridas quando `NO
 | `ines.carvalho@nexo.pt` | Aluna |
 | `rafael.moreira@nexo.pt` | Aluno |
 
-Em desenvolvimento, estes seeds criam cursos de demonstração com aulas ligadas a vídeos distintos do YouTube.
-
-### 3. Iniciar o Frontend
-
-```bash
-cd frontend
-npm run dev
-```
-
-A aplicação fica disponível em `http://localhost:5173`.
-
-> Segurança: a barra de pesquisa e a página `/search` só ficam disponíveis para utilizadores autenticados. Visitantes anónimos são redirecionados para o login.
-
 ---
 
-## Estrutura de Ficheiros
+## Estrutura de Pastas
 
-```
-Projeto/
-├── .env.example                 # Variáveis de ambiente de exemplo
-├── .gitignore
-├── README.md
-│
+```text
+ProjetoFinal/
 ├── backend/
-│   ├── .env.example
 │   ├── package.json
 │   └── src/
-│       ├── server.js            # Ponto de entrada — HTTP + Socket.IO
-│       ├── app.js               # Express — middleware e rotas
+│       ├── server.js            # Arranque do servidor HTTP e Socket.IO
+│       ├── app.js               # Configuração do Express e rotas da API
 │       ├── database/
-│       │   ├── connection.js    # Pool PostgreSQL + fallback SQLite
-│       │   ├── init.js          # Schema SQLite + seed inicial
-│       │   ├── migrate.js       # Script de migração
-│       │   └── seed.js          # Script de seed
-│       ├── middleware/
-│       │   ├── auth.js          # protect, optionalAuth, signJwtToken
-│       │   ├── admin.js         # requireAdmin, requireCreator
-│       │   ├── security.js      # Helmet, CORS, rate limiter, sanitização
-│       │   └── validate.js      # Helpers de validação
-│       ├── models/
-│       │   ├── User.js
-│       │   └── Course.js
-│       ├── controllers/
-│       │   ├── auth.controller.js
-│       │   ├── course.controller.js
-│       │   ├── space.controller.js
-│       │   ├── gamification.controller.js
-│       │   ├── admin.controller.js
-│       │   ├── creator.controller.js
-│       │   └── notification.controller.js
-│       ├── routes/
-│       │   ├── auth.routes.js
-│       │   ├── course.routes.js
-│       │   ├── quiz.routes.js
-│       │   ├── space.routes.js
-│       │   ├── chat.routes.js
-│       │   ├── gamification.routes.js
-│       │   ├── creator.routes.js
-│       │   ├── admin.routes.js
-│       │   ├── notes.routes.js
-│       │   ├── qa.routes.js
-│       │   ├── certificate.routes.js
-│       │   ├── notification.routes.js
-│       │   ├── social.routes.js
-│       │   └── support.routes.js
-│       └── sockets/
-│           └── chatSocket.js    # Socket.IO — mensagens, voz, WebRTC
+│       │   ├── connection.js    # Ligação ao SQLite / PostgreSQL
+│       │   ├── init.js          # Criação das tabelas, views e seed inicial
+│       │   ├── demoSeed.js      # Dados extra para testes locais
+│       │   ├── migrate.js       # Script de migração para PostgreSQL
+│       │   └── seed.js          # Script manual de seed
+│       ├── middleware/          # Autenticação JWT, permissões e segurança
+│       ├── models/              # Modelos User e Course
+│       ├── controllers/         # Controladores das rotas principais
+│       ├── routes/              # Definição das rotas da API REST
+│       └── sockets/             # Eventos Socket.IO (chat e chamadas)
 │
-└── frontend/
-    ├── index.html
-    ├── package.json
-    ├── vite.config.js
-    ├── eslint.config.js
-    ├── tailwind.config.js
-    ├── postcss.config.js
-    └── src/
-        ├── main.jsx             # Ponto de entrada React
-        ├── App.jsx              # BrowserRouter + Providers + Routes
-        ├── index.css            # Design system global (Tailwind + variáveis)
-        ├── services/
-        │   ├── api.js           # Instância Axios com interceptors
-        │   └── soundEffects.js  # Sons de notificação
-        ├── context/
-        │   ├── AuthContext.jsx
-        │   ├── ThemeContext.jsx
-        │   ├── SocketContext.jsx
-        │   └── ActiveCallContext.jsx
-        ├── constants/
-        │   └── categories.js    # Categorias, dificuldades, roles, XP
-        ├── utils/
-        │   ├── analytics.js
-        │   └── formatters.js
-        ├── components/
-        │   ├── auth/            # ProtectedRoute
-        │   ├── call/            # ActiveCallBanner, CallRoomModal, ...
-        │   ├── common/          # CookieConsent, SEO, SocialShareModal
-        │   ├── course/          # CourseEnrollModal
-        │   ├── layout/          # AppLayout, Navbar, Sidebar, Footer, ...
-        │   └── ui/              # Avatar, Badge, Button, Card, Modal, Toast, ...
-        ├── features/
-        │   ├── community/       # SpaceChannelList, SpaceMessageStream, ...
-        │   ├── learn/           # CourseServerSidebar, LessonVideoPlayer, ...
-        │   └── messages/        # DirectChatPane, FriendsManager
-        └── pages/
-            ├── LandingPage/         # LandingPage.jsx + LandingPage.css + index.js
-            ├── Dashboard/           # Dashboard.jsx + ...
-            ├── CourseDetails/
-            ├── ExploreCourses/
-            ├── LibraryPage/
-            ├── SettingsPage/
-            ├── HelpSupportPage/
-            ├── PrivacyPolicyPage/
-            ├── TermsPage/
-            ├── ProgressPage/
-            ├── NotFoundPage/
-            ├── auth/
-            │   ├── Login/
-            │   ├── Register/
-            │   └── ForgotPassword/
-            ├── community/
-            │   ├── DiscoverSpaces/
-            │   ├── SpaceChat/
-            │   └── SpaceDetails/
-            ├── creator/
-            │   ├── CreatorDashboard/
-            │   ├── CourseBuilder/
-            │   ├── CreatorMembers/
-            │   └── ApplyCreator/
-            ├── admin/
-            │   └── AdminDashboard/
-            ├── learn/
-            │   └── CoursePlayer/
-            ├── messages/
-            │   └── MessagesPage/
-            ├── profile/
-            │   └── ProfilePage/
-            ├── certificates/
-            │   └── CertificateView/
-            └── gamification/
-                ├── AchievementsPage/
-                └── LeaderboardPage/
+├── frontend/
+│   ├── package.json
+│   ├── vite.config.js
+│   ├── tailwind.config.js
+│   └── src/
+│       ├── main.jsx
+│       ├── App.jsx              # Rotas da aplicação
+│       ├── services/            # Configuração do Axios (api.js) e sons
+│       ├── context/             # Contextos React (Auth, Theme, Socket, Call)
+│       ├── components/          # Componentes reutilizáveis (Navbar, Sidebar, UI)
+│       ├── features/            # Componentes específicos de cursos, chat e mensagens
+│       └── pages/               # Páginas da aplicação
+│
+├── README.md
+├── MANUAL_UTILIZADOR.md
+├── RELATORIO_COMPLETO.md
+├── DEPLOY.md
+└── start.bat
 ```
 
 ---
 
-## Base de Dados
+## Scripts Disponíveis
 
-### Modo Automático (SQLite)
+### Pasta `backend`
+- `npm run dev` — inicia o servidor em modo de desenvolvimento (`node --watch`)
+- `npm start` — inicia o servidor em modo de produção
+- `npm run migrate` — corre as migrações da base de dados
+- `npm run seed` — volta a executar o seed de dados iniciais
 
-Sem configuração necessária. Na primeira execução, o servidor cria o ficheiro `backend/data/nexo.db` com todo o esquema e dados de demonstração.
-
-Consulte a secção [Contas de Demonstração](#contas-de-demonstração) acima para ver todos os emails, perfis e palavras-passe seedados.
-
-### PostgreSQL (Produção)
-
-```env
-DATABASE_URL=postgresql://user:password@host:5432/nexo
-```
-
-```bash
-npm run migrate   # criar tabelas
-npm run seed      # popular dados iniciais
-```
-
----
-
-## Scripts
-
-### Backend
-
-| Comando | Descrição |
-|---------|-----------|
-| `npm run dev` | Servidor com auto-restart |
-| `npm start` | Produção |
-| `npm run migrate` | Criar/atualizar tabelas PostgreSQL |
-| `npm run seed` | Popular dados iniciais |
-
-### Frontend
-
-| Comando | Descrição |
-|---------|-----------|
-| `npm run dev` | Servidor de desenvolvimento com HMR |
-| `npm run build` | Build otimizado para produção |
-| `npm run preview` | Pré-visualizar build |
-| `npm run lint` | Verificar qualidade do código |
-
----
-
-## Segurança
-
-- Palavras-passe com bcrypt (10 salt rounds)
-- Autenticação stateless JWT (expiração 24h)
-- Queries SQL parametrizadas (prevenção de SQL Injection)
-- Helmet (cabeçalhos de segurança HTTP)
-- Rate limiting nas rotas de autenticação
-- CORS restrito à origem do frontend
-- Sanitização de inputs (prototype pollution)
-- Contas suspensas bloqueadas no login
+### Pasta `frontend`
+- `npm run dev` — inicia o servidor de desenvolvimento Vite
+- `npm run build` — gera a versão de produção na pasta `dist`
+- `npm run preview` — testa localmente a build de produção
+- `npm run lint` — corre o ESLint nos ficheiros do frontend

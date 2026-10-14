@@ -30,11 +30,15 @@
     overflow-x: clip;
     scrollbar-gutter: stable;
     scroll-behavior: smooth;
+    overscroll-behavior: none;
+    overscroll-behavior-y: none;
+    overscroll-behavior-x: none;
   }
 
   #root {
     min-width: 0;
     overflow-x: clip;
+    overscroll-behavior: none;
   }
 
   body {
@@ -42,6 +46,9 @@
     background-color: #ffffff;
     color: #0f172a;
     overflow-x: clip;
+    overscroll-behavior: none;
+    overscroll-behavior-y: none;
+    overscroll-behavior-x: none;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-size: 16px;
@@ -109,6 +116,9 @@
     opacity: 1;
     transform: none;
   }
+}
+.custom-scrollbar {
+  overscroll-behavior: contain;
 }
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;
