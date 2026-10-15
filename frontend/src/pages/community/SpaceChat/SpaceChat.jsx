@@ -1,3 +1,4 @@
+import './SpaceChat.css';
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { Menu } from 'lucide-react';
@@ -14,27 +15,11 @@ import { SpaceChannelList } from '../../../features/community/components/SpaceCh
 import { SpaceMessageStream } from '../../../features/community/components/SpaceMessageStream';
 import { SpaceMembersSidebar } from '../../../features/community/components/SpaceMembersSidebar';
 export const SpaceChat = () => {
-  const {
-    id
-  } = useParams();
-  const {
-    user
-  } = useAuth();
-  const {
-    socket,
-    joinChannel,
-    leaveChannel,
-    sendTyping,
-    sendStopTyping
-  } = useSocket();
-  const {
-    toast
-  } = useToast();
-  const {
-    activeCall,
-    startCall,
-    endCall
-  } = useActiveCall();
+  const { id } = useParams();
+  const { user } = useAuth();
+  const { socket, joinChannel, leaveChannel, sendTyping, sendStopTyping } = useSocket();
+  const { toast } = useToast();
+  const { activeCall, startCall, endCall } = useActiveCall();
   const [space, setSpace] = useState(null);
   const [channels, setChannels] = useState([]);
   const [currentChannel, setCurrentChannel] = useState(null);
@@ -47,7 +32,10 @@ export const SpaceChat = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [inVoiceRoom, setInVoiceRoom] = useState(null);
   const [pendingVoiceRoom, setPendingVoiceRoom] = useState(null);
-  const [voiceRoomPreferences, setVoiceRoomPreferences] = useState({ startMuted: false, startVideoOff: true });
+  const [voiceRoomPreferences, setVoiceRoomPreferences] = useState({
+    startMuted: false,
+    startVideoOff: true,
+  });
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [showChannelModal, setShowChannelModal] = useState(false);
   const [newChName, setNewChName] = useState('');
@@ -66,29 +54,40 @@ export const SpaceChat = () => {
 
   useEffect(() => {
     if (!id) return;
-    api.getSpace(id).then(data => {
-      setSpace(data);
-      setChannels(data.channels || []);
-      if (data.channels && data.channels.length > 0) {
-        setCurrentChannel(data.channels[0]);
-      }
-    }).catch(err => console.error(err));
+    api
+      .getSpace(id)
+      .then((data) => {
+        setSpace(data);
+        setChannels(data.channels || []);
+        if (data.channels && data.channels.length > 0) {
+          setCurrentChannel(data.channels[0]);
+        }
+      })
+      .catch((err) => console.error(err));
   }, [id]);
   useEffect(() => {
     if (!currentChannel) return;
     joinChannel(currentChannel.id);
-    api.getChannelMessages(currentChannel.id).then(msgs => setMessages(msgs || [])).catch(() => {});
+    api
+      .getChannelMessages(currentChannel.id)
+      .then((msgs) => setMessages(msgs || []))
+      .catch(() => {});
     return () => {
       leaveChannel(currentChannel.id);
     };
   }, [currentChannel?.id]);
   useEffect(() => {
     if (!socket) return;
-    const handleNewMessage = msg => {
+    const handleNewMessage = (msg) => {
       if (msg.channelId === currentChannel?.id) {
-        setMessages(prev => {
-          if (prev.some(m => m.id === msg.id)) return prev;
-          const optimisticIdx = prev.findIndex(m => m.id.startsWith('temp-') && (m.senderId === msg.senderId || m.sender?.username === msg.sender?.username) && m.content === msg.content);
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === msg.id)) return prev;
+          const optimisticIdx = prev.findIndex(
+            (m) =>
+              m.id.startsWith('temp-') &&
+              (m.senderId === msg.senderId || m.sender?.username === msg.sender?.username) &&
+              m.content === msg.content,
+          );
           if (optimisticIdx !== -1) {
             const next = [...prev];
             next[optimisticIdx] = msg;
@@ -98,20 +97,18 @@ export const SpaceChat = () => {
         });
       }
     };
-    const handleTyping = ({
-      channelId,
-      username
-    }) => {
-      if (channelId === currentChannel?.id && username !== user?.name && username !== user?.username) {
-        setTypingUsers(prev => Array.from(new Set([...prev, username])));
+    const handleTyping = ({ channelId, username }) => {
+      if (
+        channelId === currentChannel?.id &&
+        username !== user?.name &&
+        username !== user?.username
+      ) {
+        setTypingUsers((prev) => Array.from(new Set([...prev, username])));
       }
     };
-    const handleStopTyping = ({
-      channelId,
-      username
-    }) => {
+    const handleStopTyping = ({ channelId, username }) => {
       if (channelId === currentChannel?.id) {
-        setTypingUsers(prev => prev.filter(u => u !== username));
+        setTypingUsers((prev) => prev.filter((u) => u !== username));
       }
     };
     socket.on('new-message', handleNewMessage);
@@ -123,7 +120,7 @@ export const SpaceChat = () => {
       socket.off('stop-typing', handleStopTyping);
     };
   }, [socket, currentChannel?.id, user?.name, user?.username]);
-  const handleSendMessage = async e => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!inputContent.trim() || !currentChannel) return;
     const contentToSend = inputContent.trim();
@@ -141,37 +138,39 @@ export const SpaceChat = () => {
         name: user?.name || 'Eu',
         username: user?.username || 'eu',
         avatarUrl: user?.avatarUrl,
-        role: user?.role || 'STUDENT'
+        role: user?.role || 'STUDENT',
       },
-      replyTo: currentReply ? {
-        id: currentReply.id,
-        content: currentReply.content,
-        sender: currentReply.sender
-      } : undefined,
-      reactions: []
+      replyTo: currentReply
+        ? {
+            id: currentReply.id,
+            content: currentReply.content,
+            sender: currentReply.sender,
+          }
+        : undefined,
+      reactions: [],
     };
     setInputContent('');
     setReplyingTo(null);
-    setMessages(prev => [...prev, optimisticMsg]);
+    setMessages((prev) => [...prev, optimisticMsg]);
     soundEffects.playMessage();
     sendStopTyping(currentChannel.id);
     try {
       const newMsg = await api.sendMessage(currentChannel.id, {
         content: contentToSend,
-        replyToId: currentReply?.id
+        replyToId: currentReply?.id,
       });
-      setMessages(prev => prev.map(m => m.id === tempId ? newMsg : m));
+      setMessages((prev) => prev.map((m) => (m.id === tempId ? newMsg : m)));
     } catch (err) {
-      setMessages(prev => prev.filter(m => m.id !== tempId));
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
       setInputContent(contentToSend);
       toast({
         title: 'Erro',
         message: 'Não foi possível enviar a mensagem',
-        type: 'error'
+        type: 'error',
       });
     }
   };
-  const handleInputChange = e => {
+  const handleInputChange = (e) => {
     setInputContent(e.target.value);
     if (!currentChannel) return;
     sendTyping(currentChannel.id);
@@ -180,7 +179,7 @@ export const SpaceChat = () => {
       sendStopTyping(currentChannel.id);
     }, 2000);
   };
-  const handleCreateChannel = async e => {
+  const handleCreateChannel = async (e) => {
     e.preventDefault();
     if (!newChName.trim() || !space) return;
     setIsSavingChannel(true);
@@ -189,9 +188,9 @@ export const SpaceChat = () => {
       const created = await api.createChannel(space.id, {
         name: formattedName,
         type: newChType,
-        topic: newChTopic
+        topic: newChTopic,
       });
-      setChannels(prev => [...prev, created]);
+      setChannels((prev) => [...prev, created]);
       setCurrentChannel(created);
       soundEffects.playSuccess();
       setShowChannelModal(false);
@@ -200,156 +199,255 @@ export const SpaceChat = () => {
       toast({
         title: 'Canal Criado!',
         message: `Canal #${created.name} adicionado com sucesso.`,
-        type: 'success'
+        type: 'success',
       });
     } catch (err) {
       toast({
         title: 'Erro ao criar canal',
         message: err.message,
-        type: 'error'
+        type: 'error',
       });
     } finally {
       setIsSavingChannel(false);
     }
   };
-  const isOwnerOrAdmin = user?.role === 'ADMIN' || user?.role === 'CREATOR' || space?.ownerId === user?.id;
-  const handleTogglePin = async messageId => {
+  const isOwnerOrAdmin =
+    user?.role === 'ADMIN' || user?.role === 'CREATOR' || space?.ownerId === user?.id;
+  const handleTogglePin = async (messageId) => {
     try {
       const res = await api.togglePin(messageId);
-      setMessages(prev => prev.map(m => m.id === messageId ? {
-        ...m,
-        isPinned: res.isPinned
-      } : m));
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId
+            ? {
+                ...m,
+                isPinned: res.isPinned,
+              }
+            : m,
+        ),
+      );
       toast({
-        title: res.isPinned ? 'Mensagem Fixada' : 'Mensagem Desafixada'
+        title: res.isPinned ? 'Mensagem Fixada' : 'Mensagem Desafixada',
       });
     } catch (err) {}
   };
-  const filteredMessages = messages.filter(m => {
+  const filteredMessages = messages.filter((m) => {
     if (pinnedOnly && !m.isPinned) return false;
-    if (searchQuery && !(m.content || '').toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    if (searchQuery && !(m.content || '').toLowerCase().includes(searchQuery.toLowerCase()))
+      return false;
     return true;
   });
-  return <div className="flex h-[calc(100dvh-8rem)] md:h-[calc(100vh-5rem)] overflow-hidden bg-white dark:bg-[#0c0d12] border border-slate-200 dark:border-neutral-800 rounded-2xl md:rounded-xl shadow-sm relative">
-      
-      {showMobileSidebar && <div className="fixed inset-0 z-20 bg-black/40 md:hidden" onClick={() => setShowMobileSidebar(false)} />}
+  return (
+    <div className="space-chat-panel">
+      {showMobileSidebar && (
+        <div className="space-chat-panel-2" onClick={() => setShowMobileSidebar(false)} />
+      )}
 
-      
-      
-      <div className={`
-        absolute inset-y-0 left-0 z-30 transition-transform duration-200
-        md:relative md:translate-x-0 md:z-auto
-        ${showMobileSidebar ? 'translate-x-0' : '-translate-x-full'}
-      `}>
-        <SpaceChannelList space={space} channels={channels} currentChannel={currentChannel} inVoiceRoom={inVoiceRoom} isOwnerOrAdmin={isOwnerOrAdmin} onSelectChannel={ch => {
-        setInVoiceRoom(null);
-        setCurrentChannel(ch);
-        setShowMobileSidebar(false);
-      }} onSelectVoiceRoom={roomName => {
-        setPendingVoiceRoom(roomName);
-        setShowMobileSidebar(false);
-      }} onDisconnectVoiceRoom={() => {
-        setInVoiceRoom(null);
-        endCall();
-        soundEffects.playLeaveCall();
-      }} onOpenCreateChannelModal={() => {
-        setNewChType('text');
-        setShowChannelModal(true);
-        setShowMobileSidebar(false);
-      }} />
+      <div
+        className={`
+        space-chat-panel-3
+        ${showMobileSidebar ? 'space-chat-panel-4' : 'space-chat-panel-5'}
+      `}
+      >
+        <SpaceChannelList
+          space={space}
+          channels={channels}
+          currentChannel={currentChannel}
+          inVoiceRoom={inVoiceRoom}
+          isOwnerOrAdmin={isOwnerOrAdmin}
+          onSelectChannel={(ch) => {
+            setInVoiceRoom(null);
+            setCurrentChannel(ch);
+            setShowMobileSidebar(false);
+          }}
+          onSelectVoiceRoom={(roomName) => {
+            setPendingVoiceRoom(roomName);
+            setShowMobileSidebar(false);
+          }}
+          onDisconnectVoiceRoom={() => {
+            setInVoiceRoom(null);
+            endCall();
+            soundEffects.playLeaveCall();
+          }}
+          onOpenCreateChannelModal={() => {
+            setNewChType('text');
+            setShowChannelModal(true);
+            setShowMobileSidebar(false);
+          }}
+        />
       </div>
 
-      
-      {inVoiceRoom ? <CallStage key={`${space?.id || id || 'community'}_${inVoiceRoom}`} roomName={inVoiceRoom} roomId={`space_${space?.id || id || 'community'}_${inVoiceRoom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '_')}`} roomType={inVoiceRoom.toLowerCase().includes('palco') || inVoiceRoom.toLowerCase().includes('masterclass') ? 'stage' : inVoiceRoom.toLowerCase().includes('dúvida') || inVoiceRoom.toLowerCase().includes('duvidas') ? 'qa' : 'voice'} isStageMode={inVoiceRoom.toLowerCase().includes('palco') || inVoiceRoom.toLowerCase().includes('masterclass')} initialMuted={voiceRoomPreferences.startMuted} initialCameraOn={!voiceRoomPreferences.startVideoOff} onDisconnect={() => {
-        setInVoiceRoom(null);
-        endCall();
-      }} /> : <>
-          
-          <button onClick={() => setShowMobileSidebar(true)} className="md:hidden absolute top-3 left-3 z-10 p-2 rounded-xl bg-white dark:bg-[#151720] border border-slate-200 dark:border-neutral-800 shadow-sm text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors cursor-pointer" title="Canais" aria-label="Abrir lista de canais">
-            <Menu className="w-5 h-5" />
+      {inVoiceRoom ? (
+        <CallStage
+          key={`${space?.id || id || 'community'}_${inVoiceRoom}`}
+          roomName={inVoiceRoom}
+          roomId={`space_${space?.id || id || 'community'}_${inVoiceRoom
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]/g, '_')}`}
+          roomType={
+            inVoiceRoom.toLowerCase().includes('palco') ||
+            inVoiceRoom.toLowerCase().includes('masterclass')
+              ? 'stage'
+              : inVoiceRoom.toLowerCase().includes('dúvida') ||
+                  inVoiceRoom.toLowerCase().includes('duvidas')
+                ? 'qa'
+                : 'voice'
+          }
+          isStageMode={
+            inVoiceRoom.toLowerCase().includes('palco') ||
+            inVoiceRoom.toLowerCase().includes('masterclass')
+          }
+          initialMuted={voiceRoomPreferences.startMuted}
+          initialCameraOn={!voiceRoomPreferences.startVideoOff}
+          onDisconnect={() => {
+            setInVoiceRoom(null);
+            endCall();
+          }}
+        />
+      ) : (
+        <>
+          <button
+            onClick={() => setShowMobileSidebar(true)}
+            className="space-chat-button"
+            title="Canais"
+            aria-label="Abrir lista de canais"
+          >
+            <Menu className="space-chat-menu" />
           </button>
-          <SpaceMessageStream currentChannel={currentChannel} messages={filteredMessages} inputContent={inputContent} onInputChange={handleInputChange} onSendMessage={handleSendMessage} replyingTo={replyingTo} onSetReplyingTo={setReplyingTo} typingUsers={typingUsers} searchQuery={searchQuery} onSearchChange={setSearchQuery} pinnedOnly={pinnedOnly} onTogglePinnedOnly={() => setPinnedOnly(!pinnedOnly)} showMembers={showMembers} onToggleMembers={() => setShowMembers(!showMembers)} isOwnerOrAdmin={isOwnerOrAdmin} onTogglePin={handleTogglePin} />
+          <SpaceMessageStream
+            currentChannel={currentChannel}
+            messages={filteredMessages}
+            inputContent={inputContent}
+            onInputChange={handleInputChange}
+            onSendMessage={handleSendMessage}
+            replyingTo={replyingTo}
+            onSetReplyingTo={setReplyingTo}
+            typingUsers={typingUsers}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            pinnedOnly={pinnedOnly}
+            onTogglePinnedOnly={() => setPinnedOnly(!pinnedOnly)}
+            showMembers={showMembers}
+            onToggleMembers={() => setShowMembers(!showMembers)}
+            isOwnerOrAdmin={isOwnerOrAdmin}
+            onTogglePin={handleTogglePin}
+          />
 
           {showMembers && <SpaceMembersSidebar space={space} />}
-        </>}
+        </>
+      )}
 
-      
-      {showChannelModal && <Modal isOpen={showChannelModal} onClose={() => setShowChannelModal(false)} title="Criar Novo Canal">
-          <form onSubmit={handleCreateChannel} className="flex flex-col gap-4">
-            
+      {showChannelModal && (
+        <Modal
+          isOpen={showChannelModal}
+          onClose={() => setShowChannelModal(false)}
+          title="Criar Novo Canal"
+        >
+          <form onSubmit={handleCreateChannel} className="space-chat-form">
             <div>
-              <label className="block text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-2">
-                Sugestões Rápidas (1-Clique)
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {[{
-              name: 'anuncios',
-              type: 'text',
-              label: 'Anúncios',
-              topic: 'Avisos e novidades importantes da comunidade'
-            }, {
-              name: 'geral',
-              type: 'text',
-              label: 'Geral',
-              topic: 'Conversas gerais e apresentações'
-            }, {
-              name: 'sala-de-estudo',
-              type: 'voice',
-              label: 'Voz Livre',
-              topic: 'Sala com áudio e partilha livre para todos'
-            }, {
-              name: 'palco-masterclass',
-              type: 'stage',
-              label: 'Palco (Apenas Adm)',
-              topic: 'Apenas os instrutores falam e partilham ecrã'
-            }, {
-              name: 'fila-de-duvidas',
-              type: 'qa',
-              label: 'Dúvidas & Q&A',
-              topic: 'Fila moderada de perguntas e respostas'
-            }].map(tmpl => <button key={tmpl.name} type="button" onClick={() => {
-              setNewChName(tmpl.name);
-              setNewChType(tmpl.type);
-              setNewChTopic(tmpl.topic);
-            }} className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#151720] hover:bg-slate-100 dark:hover:bg-neutral-800 text-xs font-medium text-slate-700 dark:text-slate-300 transition-all cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900">
+              <label className="space-chat-field-label">Sugestões Rápidas (1-Clique)</label>
+              <div className="space-chat-panel-6">
+                {[
+                  {
+                    name: 'anuncios',
+                    type: 'text',
+                    label: 'Anúncios',
+                    topic: 'Avisos e novidades importantes da comunidade',
+                  },
+                  {
+                    name: 'geral',
+                    type: 'text',
+                    label: 'Geral',
+                    topic: 'Conversas gerais e apresentações',
+                  },
+                  {
+                    name: 'sala-de-estudo',
+                    type: 'voice',
+                    label: 'Voz Livre',
+                    topic: 'Sala com áudio e partilha livre para todos',
+                  },
+                  {
+                    name: 'palco-masterclass',
+                    type: 'stage',
+                    label: 'Palco (Apenas Adm)',
+                    topic: 'Apenas os instrutores falam e partilham ecrã',
+                  },
+                  {
+                    name: 'fila-de-duvidas',
+                    type: 'qa',
+                    label: 'Dúvidas & Q&A',
+                    topic: 'Fila moderada de perguntas e respostas',
+                  },
+                ].map((tmpl) => (
+                  <button
+                    key={tmpl.name}
+                    type="button"
+                    onClick={() => {
+                      setNewChName(tmpl.name);
+                      setNewChType(tmpl.type);
+                      setNewChTopic(tmpl.topic);
+                    }}
+                    className="space-chat-button-2"
+                  >
                     {tmpl.label}
-                  </button>)}
+                  </button>
+                ))}
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-900 dark:text-white mb-2">
-                Tipo e Regras do Canal
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <button type="button" onClick={() => setNewChType('text')} className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${newChType === 'text' ? 'border-slate-900 dark:border-blue-500 bg-slate-900 dark:bg-blue-600 text-white font-medium shadow-xs' : 'border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#151720] text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-800'}`}>
-                  <p className="font-semibold text-xs">Canal de Texto</p>
-                  <p className={`text-[11px] mt-0.5 ${newChType === 'text' ? 'text-slate-300 dark:text-blue-100' : 'text-slate-500 dark:text-zinc-400'}`}>
+              <label className="space-chat-field-label-2">Tipo e Regras do Canal</label>
+              <div className="space-chat-panel-7">
+                <button
+                  type="button"
+                  onClick={() => setNewChType('text')}
+                  className={`space-chat-button-3 ${newChType === 'text' ? 'space-chat-button-4' : 'space-chat-button-5'}`}
+                >
+                  <p className="space-chat-description">Canal de Texto</p>
+                  <p
+                    className={`space-chat-description-2 ${newChType === 'text' ? 'space-chat-description-3' : 'space-chat-description-4'}`}
+                  >
                     Mensagens e fórum
                   </p>
                 </button>
 
-                <button type="button" onClick={() => setNewChType('voice')} className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${newChType === 'voice' ? 'border-slate-900 dark:border-blue-500 bg-slate-900 dark:bg-blue-600 text-white font-medium shadow-xs' : 'border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#151720] text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-800'}`}>
-                  <p className="font-semibold text-xs">Conversação Livre</p>
-                  <p className={`text-[11px] mt-0.5 ${newChType === 'voice' ? 'text-slate-300 dark:text-blue-100' : 'text-slate-500 dark:text-zinc-400'}`}>
+                <button
+                  type="button"
+                  onClick={() => setNewChType('voice')}
+                  className={`space-chat-button-3 ${newChType === 'voice' ? 'space-chat-button-4' : 'space-chat-button-5'}`}
+                >
+                  <p className="space-chat-description">Conversação Livre</p>
+                  <p
+                    className={`space-chat-description-2 ${newChType === 'voice' ? 'space-chat-description-3' : 'space-chat-description-4'}`}
+                  >
                     Todos podem falar e partilhar
                   </p>
                 </button>
 
-                <button type="button" onClick={() => setNewChType('stage')} className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${newChType === 'stage' ? 'border-purple-600 bg-purple-950 text-white font-medium shadow-xs' : 'border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#151720] text-slate-700 dark:text-slate-300 hover:border-purple-300 hover:bg-purple-50/50 dark:hover:bg-purple-950/30'}`}>
-                  <p className="font-semibold text-xs text-purple-600 dark:text-purple-400">
-                    Palco (Apenas Adm Fala)
-                  </p>
-                  <p className={`text-[11px] mt-0.5 ${newChType === 'stage' ? 'text-purple-200' : 'text-slate-500 dark:text-zinc-400'}`}>
+                <button
+                  type="button"
+                  onClick={() => setNewChType('stage')}
+                  className={`space-chat-button-3 ${newChType === 'stage' ? 'space-chat-button-6' : 'space-chat-button-7'}`}
+                >
+                  <p className="space-chat-description-5">Palco (Apenas Adm Fala)</p>
+                  <p
+                    className={`space-chat-description-2 ${newChType === 'stage' ? 'space-chat-description-6' : 'space-chat-description-4'}`}
+                  >
                     Alunos proibidos sem autorização
                   </p>
                 </button>
 
-                <button type="button" onClick={() => setNewChType('qa')} className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${newChType === 'qa' ? 'border-amber-600 bg-amber-950 text-white font-medium shadow-xs' : 'border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#151720] text-slate-700 dark:text-slate-300 hover:border-amber-300 hover:bg-amber-50/50 dark:hover:bg-amber-950/30'}`}>
-                  <p className="font-semibold text-xs text-amber-600 dark:text-amber-400">
-                    Sala de Dúvidas (Q&A)
-                  </p>
-                  <p className={`text-[11px] mt-0.5 ${newChType === 'qa' ? 'text-amber-200' : 'text-slate-500 dark:text-zinc-400'}`}>
+                <button
+                  type="button"
+                  onClick={() => setNewChType('qa')}
+                  className={`space-chat-button-3 ${newChType === 'qa' ? 'space-chat-button-8' : 'space-chat-button-9'}`}
+                >
+                  <p className="space-chat-description-7">Sala de Dúvidas (Q&A)</p>
+                  <p
+                    className={`space-chat-description-2 ${newChType === 'qa' ? 'space-chat-description-8' : 'space-chat-description-4'}`}
+                  >
                     Fila moderada de oradores
                   </p>
                 </button>
@@ -357,32 +455,46 @@ export const SpaceChat = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-800 dark:text-white mb-1">Nome do Canal</label>
-              <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">
-                  #
-                </span>
-                <input type="text" required placeholder="ex: palco-masterclass" value={newChName} onChange={e => setNewChName(e.target.value)} className="w-full bg-slate-50 dark:bg-[#151720] border border-slate-300 dark:border-neutral-700 focus:border-blue-600 focus:bg-white dark:focus:bg-[#151720] rounded-xl pl-8 pr-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none transition-all font-mono" />
+              <label className="space-chat-field-label-3">Nome do Canal</label>
+              <div className="space-chat-panel-8">
+                <span className="space-chat-label">#</span>
+                <input
+                  type="text"
+                  required
+                  placeholder="ex: palco-masterclass"
+                  value={newChName}
+                  onChange={(e) => setNewChName(e.target.value)}
+                  className="space-chat-field"
+                />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-800 dark:text-white mb-1">
-                Tópico ou Descrição (Opcional)
-              </label>
-              <input type="text" placeholder="ex: Partilha de recursos e links recomendados" value={newChTopic} onChange={e => setNewChTopic(e.target.value)} className="w-full bg-slate-50 dark:bg-[#151720] border border-slate-300 dark:border-neutral-700 focus:border-blue-600 focus:bg-white dark:focus:bg-[#151720] rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none transition-all" />
+              <label className="space-chat-field-label-3">Tópico ou Descrição (Opcional)</label>
+              <input
+                type="text"
+                placeholder="ex: Partilha de recursos e links recomendados"
+                value={newChTopic}
+                onChange={(e) => setNewChTopic(e.target.value)}
+                className="space-chat-field-2"
+              />
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-neutral-800">
-              <button type="button" onClick={() => setShowChannelModal(false)} className="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-neutral-800 cursor-pointer">
+            <div className="space-chat-panel-9">
+              <button
+                type="button"
+                onClick={() => setShowChannelModal(false)}
+                className="space-chat-button-10"
+              >
                 Cancelar
               </button>
-              <button type="submit" disabled={isSavingChannel} className="px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 cursor-pointer disabled:opacity-50">
+              <button type="submit" disabled={isSavingChannel} className="space-chat-button-11">
                 {isSavingChannel ? 'A criar...' : 'Criar Canal'}
               </button>
             </div>
           </form>
-        </Modal>}
+        </Modal>
+      )}
 
       {/* Modal de confirmação com informações principais antes de entrar na chamada da comunidade */}
       <JoinCallModal
@@ -398,17 +510,22 @@ export const SpaceChat = () => {
           setVoiceRoomPreferences({ startMuted, startVideoOff });
           setInVoiceRoom(room);
           soundEffects.playJoinCall();
-          const cleanRoomId = `space_${space?.id || id || 'community'}_${room.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '_')}`;
+          const cleanRoomId = `space_${space?.id || id || 'community'}_${room
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]/g, '_')}`;
           startCall({
             roomId: cleanRoomId,
             roomName: room,
             contextTitle: space?.name || 'Comunidade',
             spaceId: space?.id || id,
-            returnUrl: `/community/${space?.id || id}`
+            returnUrl: `/community/${space?.id || id}`,
           });
           setPendingVoiceRoom(null);
         }}
       />
-    </div>;
+    </div>
+  );
 };
 export default SpaceChat;

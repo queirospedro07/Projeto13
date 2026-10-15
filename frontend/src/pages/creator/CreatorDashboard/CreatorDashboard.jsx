@@ -1,3 +1,8 @@
+import {
+  ReviewQueue,
+  CourseAccessManager,
+} from '../../../features/creator/components/CreatorTools';
+import './CreatorDashboard.css';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -8,7 +13,7 @@ import {
   Eye,
   BarChart3,
   CheckCircle2,
-  Trash2
+  Trash2,
 } from 'lucide-react';
 import { api } from '../../../services/api';
 import { formatCoursePrice, formatCategory } from '../../../utils/formatters';
@@ -22,7 +27,7 @@ export const CreatorDashboard = () => {
   useEffect(() => {
     Promise.all([
       api.getCreatorStats().catch(() => null),
-      api.getCreatorCourses().catch(() => [])
+      api.getCreatorCourses().catch(() => []),
     ]).then(([statsData, coursesData]) => {
       setStats(statsData);
       setCourses(coursesData || []);
@@ -31,11 +36,12 @@ export const CreatorDashboard = () => {
   }, []);
 
   const totalStudents =
-    stats?.totalStudents ||
-    courses.reduce((acc, c) => acc + (c._count?.enrollments || 0), 0);
+    stats?.totalStudents || courses.reduce((acc, c) => acc + (c._count?.enrollments || 0), 0);
 
   const handleDeleteCourse = async (course) => {
-    const confirmed = window.confirm(`Tem a certeza de que pretende eliminar "${course.title}"? Esta ação não pode ser desfeita.`);
+    const confirmed = window.confirm(
+      `Tem a certeza de que pretende eliminar "${course.title}"? Esta ação não pode ser desfeita.`,
+    );
     if (!confirmed) return;
 
     setDeletingCourseId(course.id);
@@ -50,147 +56,119 @@ export const CreatorDashboard = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto flex flex-col gap-8 animate-fade-in pb-16">
-      
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-zinc-800">
+    <div className="creator-dashboard-panel">
+      <div className="creator-dashboard-panel-2">
         <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 px-2.5 py-0.5 rounded-md border border-indigo-100 dark:border-indigo-900/40">
-            Estúdio do Criador
-          </span>
-          <h1 className="text-3xl sm:text-4xl font-black text-slate-950 dark:text-white tracking-tight mt-1.5">
-            Painel do Formador
-          </h1>
-          <p className="text-sm sm:text-base text-slate-600 dark:text-zinc-400 mt-1">
+          <span className="creator-dashboard-label">Estúdio do Criador</span>
+          <h1 className="creator-dashboard-title">Painel do Formador</h1>
+          <p className="creator-dashboard-description">
             Gira os seus cursos, publique novas aulas e acompanhe os seus alunos.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="creator-dashboard-panel-3">
           <Link to="/creator/members">
-            <button className="px-4 py-2.5 text-sm font-bold bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-200 border border-slate-200 dark:border-zinc-800 rounded-lg transition-colors flex items-center gap-2 cursor-pointer shadow-xs">
-              <Users className="w-4 h-4 text-slate-500" />
+            <button className="creator-dashboard-button">
+              <Users className="creator-dashboard-users" />
               <span>Ver Alunos</span>
             </button>
           </Link>
           <Link to="/creator/courses/new">
-            <button className="px-5 py-2.5 text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-xs flex items-center gap-2 transition-all cursor-pointer">
-              <PlusCircle className="w-4 h-4" />
+            <button className="creator-dashboard-button-2">
+              <PlusCircle className="creator-dashboard-plus-circle" />
               <span>Criar Novo Curso</span>
             </button>
           </Link>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div className="p-6 rounded-xl bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 shadow-xs flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
-            <DollarSign className="w-6 h-6" />
+      <div className="creator-dashboard-panel-4">
+        <div className="creator-dashboard-panel-5">
+          <div className="creator-dashboard-panel-6">
+            <DollarSign className="creator-dashboard-dollar-sign" />
           </div>
           <div>
-            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
-              Receita Total
-            </p>
-            <p className="text-2xl font-black text-slate-950 dark:text-white mt-0.5 font-mono">
-              €{stats?.totalRevenue ? stats.totalRevenue.toLocaleString() : '0'}
-            </p>
+            <p className="creator-dashboard-description-2">Pagamentos online</p>
+            <p className="creator-dashboard-description-3">Por configurar</p>
           </div>
         </div>
 
-        <div className="p-6 rounded-xl bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 shadow-xs flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
-            <Users className="w-6 h-6" />
+        <div className="creator-dashboard-panel-5">
+          <div className="creator-dashboard-panel-7">
+            <Users className="creator-dashboard-dollar-sign" />
           </div>
           <div>
-            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
-              Alunos Inscritos
-            </p>
-            <p className="text-2xl font-black text-slate-950 dark:text-white mt-0.5">
-              {totalStudents}
-            </p>
+            <p className="creator-dashboard-description-2">Alunos Inscritos</p>
+            <p className="creator-dashboard-description-4">{totalStudents}</p>
           </div>
         </div>
 
-        <div className="p-6 rounded-xl bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 shadow-xs flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold">
-            <BookOpen className="w-6 h-6" />
+        <div className="creator-dashboard-panel-5">
+          <div className="creator-dashboard-panel-8">
+            <BookOpen className="creator-dashboard-dollar-sign" />
           </div>
           <div>
-            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
-              Cursos Criados
-            </p>
-            <p className="text-2xl font-black text-slate-950 dark:text-white mt-0.5">
-              {courses.length}
-            </p>
+            <p className="creator-dashboard-description-2">Cursos Criados</p>
+            <p className="creator-dashboard-description-4">{courses.length}</p>
           </div>
         </div>
       </div>
 
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
+      <div className="creator-dashboard-panel-9">
+        <div className="creator-dashboard-panel-10">
           <div>
-            <h2 className="text-xl font-black text-slate-950 dark:text-white tracking-tight">
-              Os Meus Cursos ({courses.length})
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-zinc-400 mt-0.5">
+            <h2 className="creator-dashboard-heading">Os Meus Cursos ({courses.length})</h2>
+            <p className="creator-dashboard-description-5">
               Clique em "Editar" para adicionar aulas, vídeos ou questionários.
             </p>
           </div>
 
           <Link to="/creator/courses/new">
-            <button className="px-4 py-2 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer">
-              <PlusCircle className="w-4 h-4" />
+            <button className="creator-dashboard-button-3">
+              <PlusCircle className="creator-dashboard-plus-circle" />
               <span>Novo Curso</span>
             </button>
           </Link>
         </div>
 
-        <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 overflow-hidden shadow-xs">
+        <div className="creator-dashboard-panel-11">
           {courses.length === 0 ? (
-            <div className="p-12 text-center">
-              <div className="w-12 h-12 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto mb-3">
-                <BookOpen className="w-6 h-6" />
+            <div className="creator-dashboard-panel-12">
+              <div className="creator-dashboard-panel-13">
+                <BookOpen className="creator-dashboard-dollar-sign" />
               </div>
-              <h4 className="font-extrabold text-slate-900 dark:text-white text-base">
-                Ainda não tem cursos criados
-              </h4>
-              <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-sm mx-auto mt-1 mb-6">
+              <h4 className="creator-dashboard-caption">Ainda não tem cursos criados</h4>
+              <p className="creator-dashboard-description-6">
                 Comece agora mesmo a montar o seu primeiro curso com módulos práticos e vídeos.
               </p>
               <Link to="/creator/courses/new">
-                <button className="px-6 py-2.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-xs cursor-pointer">
-                  Criar Primeiro Curso
-                </button>
+                <button className="creator-dashboard-button-4">Criar Primeiro Curso</button>
               </Link>
             </div>
           ) : (
-            <div className="divide-y divide-slate-100 dark:divide-zinc-800">
+            <div className="creator-dashboard-panel-14">
               {courses.map((course) => (
-                <div
-                  key={course.id}
-                  className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/80 dark:hover:bg-zinc-800/50 transition-colors"
-                >
-                  <div className="flex items-center gap-4 min-w-0">
+                <div key={course.id} className="creator-dashboard-panel-15">
+                  <div className="creator-dashboard-panel-16">
                     <img
                       src={
                         course.thumbnailUrl ||
                         'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=80'
                       }
                       alt={course.title}
-                      className="w-16 h-16 rounded-lg object-cover border border-slate-200 dark:border-zinc-800 shrink-0"
+                      className="creator-dashboard-image"
                     />
-                    <div className="min-w-0">
-                      <h4 className="font-extrabold text-slate-950 dark:text-white text-base truncate">
-                        {course.title}
-                      </h4>
-                      <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-slate-500 dark:text-zinc-400">
-                        <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold text-[10px]">
+                    <div className="creator-dashboard-panel-17">
+                      <h4 className="creator-dashboard-caption-2">{course.title}</h4>
+                      <div className="creator-dashboard-panel-18">
+                        <span className="creator-dashboard-label-2">
                           {formatCategory(course.category)}
                         </span>
                         <span
-                          className={`px-2 py-0.5 rounded-md font-bold text-[10px] ${
+                          className={`creator-dashboard-label-3 ${
                             course.isPublished
-                              ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
-                              : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
+                              ? 'creator-dashboard-label-4'
+                              : 'creator-dashboard-label-5'
                           }`}
                         >
                           {course.isPublished ? 'Publicado' : 'Rascunho'}
@@ -198,23 +176,23 @@ export const CreatorDashboard = () => {
                         <span>•</span>
                         <span>{course._count?.enrollments || 0} alunos inscritos</span>
                         <span>•</span>
-                        <span className="font-bold text-slate-900 dark:text-white">
+                        <span className="creator-dashboard-label-6">
                           {formatCoursePrice(course)}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:shrink-0 sm:self-center">
+                  <div className="creator-dashboard-panel-19">
                     <Link to={`/learn/${course.id}`}>
-                      <button className="px-3 py-2 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 transition-colors flex items-center gap-1.5 cursor-pointer">
-                        <Eye className="w-3.5 h-3.5" />
+                      <button className="creator-dashboard-button-5">
+                        <Eye className="creator-dashboard-eye" />
                         <span>Ver</span>
                       </button>
                     </Link>
                     <Link to={`/creator/courses/${course.id}/edit`}>
-                      <button className="px-4 py-2 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer">
-                        <BookOpen className="w-3.5 h-3.5" />
+                      <button className="creator-dashboard-button-6">
+                        <BookOpen className="creator-dashboard-eye" />
                         <span>Editar Curso</span>
                       </button>
                     </Link>
@@ -224,9 +202,9 @@ export const CreatorDashboard = () => {
                       disabled={deletingCourseId === course.id}
                       aria-label={`Eliminar curso ${course.title}`}
                       title="Eliminar curso"
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-red-200 text-red-600 transition-colors hover:bg-red-50 disabled:cursor-wait disabled:opacity-50 dark:border-red-900/60 dark:text-red-400 dark:hover:bg-red-950/40"
+                      className="creator-dashboard-button-7"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="creator-dashboard-trash2" />
                     </button>
                   </div>
                 </div>
@@ -235,6 +213,8 @@ export const CreatorDashboard = () => {
           )}
         </div>
       </div>
+      <ReviewQueue />
+      <CourseAccessManager />
     </div>
   );
 };

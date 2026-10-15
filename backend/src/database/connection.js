@@ -1,151 +1,82 @@
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
+import path from 'node:path';
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
-import pg from 'pg';
 import { DatabaseSync } from 'node:sqlite';
-
-dotenv.config();
-
-const { Pool } = pg;
-
-let pool = null;
+dotenv.config({ path: fileURLToPath(new URL('../../.env', import.meta.url)) });
 let sqliteDb = null;
-let isPostgres = false;
-
-// Converter parâmetros $1, $2 de PostgreSQL para ? no SQLite
-function toSqliteQuery(sql) {
-  return sql.replace(/\$\d+/g, '?');
+export function getDatabasePath() {
+  const configured = process.env.DATABASE_PATH;
+  if (process.env.NODE_ENV === 'production' && !configured)
+    throw new Error(
+      'Configure DATABASE_PATH num volume persistente antes de arrancar em produção.',
+    );
+  const root = fileURLToPath(new URL('../../', import.meta.url));
+  return path.resolve(root, configured || 'data/nexo.db');
 }
-
-function getSqliteDbPath() {
-  const __dirname = path.dirname(fileURLToPath(import.meta.url));
-  const backendRoot = path.resolve(__dirname, '../../');
-  const configuredPath = process.env.DATABASE_PATH || 'data/nexo.db';
-  return path.isAbsolute(configuredPath) ? configuredPath : path.resolve(backendRoot, configuredPath);
-}
-
-export async function connectDB() {
-  const databaseUrl = process.env.DATABASE_URL;
-
-  if (databaseUrl && !databaseUrl.includes('localhost:5432/nexo_desativado')) {
-    try {
-      const testPool = new Pool({
-        connectionString: databaseUrl,
-        connectionTimeoutMillis: 3000,
-      });
-      const client = await testPool.connect();
-      client.release();
-      pool = testPool;
-      isPostgres = true;
-      console.log('Ligado à base de dados PostgreSQL.');
-      return { isPostgres: true, pool };
-    } catch (err) {
-      console.warn('Não foi possível ligar ao PostgreSQL (' + err.message + '). A usar SQLite local.');
-    }
-  }
-
-  // Ligação SQLite local
-  const dbPath = getSqliteDbPath();
-  const dbDir = path.dirname(dbPath);
-  if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
-  }
-
-  sqliteDb = new DatabaseSync(dbPath);
-  try {
-    sqliteDb.exec('PRAGMA foreign_keys = ON;');
-    sqliteDb.exec('PRAGMA journal_mode = WAL;');
-  } catch (_) {}
-
-  isPostgres = false;
-  console.log('Base de dados SQLite iniciada em:', dbPath);
-
-  const { initializeSchemaAndSeed } = await import('./init.js');
-  initializeSchemaAndSeed(sqliteDb);
-
-  return { isPostgres: false, db: sqliteDb };
-}
-
-// Funções auxiliares para queries
-export async function query(sql, params = []) {
-  if (isPostgres && pool) {
-    const res = await pool.query(sql, params);
-    return res;
-  }
-  if (!sqliteDb) {
-    await connectDB();
-  }
-  const converted = toSqliteQuery(sql);
-  const stmt = sqliteDb.prepare(converted);
-  if (/^\s*(SELECT|PRAGMA)/i.test(sql)) {
-    const rows = stmt.all(...params);
-    return { rows, rowCount: rows.length };
-  }
-  const info = stmt.run(...params);
-  return { rows: [], rowCount: info.changes };
-}
-
 function ensureSqliteDb() {
-  if (!sqliteDb) {
-    const dbPath = getSqliteDbPath();
-    const dbDir = path.dirname(dbPath);
-    if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
-    sqliteDb = new DatabaseSync(dbPath);
-    sqliteDb.exec('PRAGMA journal_mode = WAL;');
-    sqliteDb.exec('PRAGMA foreign_keys = ON;');
-  }
+  if (sqliteDb) return sqliteDb;
+  if (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('nexo_desativado'))
+    throw new Error(
+      'Esta versão usa SQLite. Remova DATABASE_URL e configure DATABASE_PATH; não é feito fallback nem migração automática de dados PostgreSQL.',
+    );
+  const dbPath = getDatabasePath();
+  fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+  sqliteDb = new DatabaseSync(dbPath);
+  sqliteDb.exec('PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000;');
   return sqliteDb;
 }
-
+export async function connectDB() {
+  const db = ensureSqliteDb();
+  const { initializeSchemaAndSeed } = await import('./init.js');
+  initializeSchemaAndSeed(db);
+  return { db };
+}
+const sqlForSqlite = (sql) => sql.replace(/\$\d+/g, '?');
 export function queryOne(sql, params = []) {
-  if (isPostgres && pool) {
-    throw new Error('Utilize await query(sql, params) em contexto assíncrono para PostgreSQL.');
-  }
-  const dbInstance = ensureSqliteDb();
-  const converted = toSqliteQuery(sql);
-  const stmt = dbInstance.prepare(converted);
-  return stmt.get(...params);
+  return ensureSqliteDb()
+    .prepare(sqlForSqlite(sql))
+    .get(...params);
 }
-
 export function queryAll(sql, params = []) {
-  if (isPostgres && pool) {
-    throw new Error('Utilize await query(sql, params) em contexto assíncrono para PostgreSQL.');
-  }
-  const dbInstance = ensureSqliteDb();
-  const converted = toSqliteQuery(sql);
-  const stmt = dbInstance.prepare(converted);
-  return stmt.all(...params);
+  return ensureSqliteDb()
+    .prepare(sqlForSqlite(sql))
+    .all(...params);
 }
-
 export function execute(sql, params = []) {
-  if (isPostgres && pool) {
-    throw new Error('Utilize await query(sql, params) em contexto assíncrono para PostgreSQL.');
-  }
-  const dbInstance = ensureSqliteDb();
-  const converted = toSqliteQuery(sql);
-  const stmt = dbInstance.prepare(converted);
-  return stmt.run(...params);
+  return ensureSqliteDb()
+    .prepare(sqlForSqlite(sql))
+    .run(...params);
 }
-
+export async function query(sql, params = []) {
+  if (/^\s*(SELECT|PRAGMA)/i.test(sql)) {
+    const rows = queryAll(sql, params);
+    return { rows, rowCount: rows.length };
+  }
+  const info = execute(sql, params);
+  return { rows: [], rowCount: Number(info.changes) };
+}
 let transactionDepth = 0;
-
 export function transaction(fn) {
-  const dbInstance = ensureSqliteDb();
-  const isOuter = transactionDepth === 0;
-  const savepointName = `sp_${transactionDepth}`;
-  transactionDepth += 1;
-  dbInstance.exec(isOuter ? 'BEGIN' : `SAVEPOINT ${savepointName}`);
+  const db = ensureSqliteDb(),
+    outer = transactionDepth === 0,
+    savepoint = `sp_${transactionDepth}`;
+  transactionDepth++;
+  let started = false;
   try {
+    db.exec(outer ? 'BEGIN IMMEDIATE' : `SAVEPOINT ${savepoint}`);
+    started = true;
     const result = fn();
-    dbInstance.exec(isOuter ? 'COMMIT' : `RELEASE SAVEPOINT ${savepointName}`);
+    if (result && typeof result.then === 'function')
+      throw new Error('As transações SQLite devem usar operações síncronas.');
+    db.exec(outer ? 'COMMIT' : `RELEASE SAVEPOINT ${savepoint}`);
     return result;
-  } catch (err) {
-    dbInstance.exec(isOuter ? 'ROLLBACK' : `ROLLBACK TO SAVEPOINT ${savepointName}`);
-    throw err;
+  } catch (error) {
+    if (started) db.exec(outer ? 'ROLLBACK' : `ROLLBACK TO SAVEPOINT ${savepoint}`);
+    if (started && !outer) db.exec(`RELEASE SAVEPOINT ${savepoint}`);
+    throw error;
   } finally {
-    transactionDepth -= 1;
+    transactionDepth--;
   }
 }
-
-export { pool, sqliteDb as db, isPostgres };
+export { sqliteDb as db };

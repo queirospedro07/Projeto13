@@ -1,57 +1,82 @@
+import './Avatar.css';
 import React, { useState, useEffect } from 'react';
-import { twMerge } from 'tailwind-merge';
+import { clsx } from 'clsx';
 
 // Role-based fallback icon colours and backgrounds
 const ROLE_STYLES = {
   ADMIN: {
-    bg: 'bg-gradient-to-br from-amber-500 to-orange-600',
-    text: 'text-white',
-    border: 'border-amber-600/40',
+    bg: 'avatar-role-styles-bg',
+    text: 'avatar-role-styles-text',
+    border: 'avatar-role-styles-border',
   },
   CREATOR: {
-    bg: 'bg-gradient-to-br from-indigo-500 to-violet-600',
-    text: 'text-white',
-    border: 'border-indigo-600/40',
+    bg: 'avatar-role-styles-bg-2',
+    text: 'avatar-role-styles-text',
+    border: 'avatar-role-styles-border-2',
   },
   STUDENT: {
-    bg: 'bg-gradient-to-br from-blue-500 to-cyan-600',
-    text: 'text-white',
-    border: 'border-blue-600/40',
+    bg: 'avatar-role-styles-bg-3',
+    text: 'avatar-role-styles-text',
+    border: 'avatar-role-styles-border-3',
   },
   default: {
-    bg: 'bg-[#18181b]',
-    text: 'text-zinc-200',
-    border: 'border-[#27272a]',
+    bg: 'avatar-role-styles-bg-4',
+    text: 'avatar-role-styles-text-2',
+    border: 'avatar-role-styles-border-4',
   },
 };
 
 // Role-based SVG icons (shown instead of initials for known roles when there's no avatar)
 const AdminIcon = ({ className }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
   </svg>
 );
 
 const CreatorIcon = ({ className }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 20h9"/>
-    <path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/>
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M12 20h9" />
+    <path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z" />
   </svg>
 );
 
 const StudentIcon = ({ className }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-    <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+    <path d="M6 12v5c3 3 9 3 12 0v-5" />
   </svg>
 );
 
 const DEFAULT_ICON_SIZES = {
-  xs: 'w-2.5 h-2.5',
-  sm: 'w-3.5 h-3.5',
-  md: 'w-4 h-4',
-  lg: 'w-6 h-6',
-  xl: 'w-8 h-8',
+  xs: 'avatar-default-icon-sizes-xs',
+  sm: 'avatar-default-icon-sizes-sm',
+  md: 'avatar-default-icon-sizes-md',
+  lg: 'avatar-default-icon-sizes-lg',
+  xl: 'avatar-default-icon-sizes-xl',
 };
 
 function RoleIcon({ role, sizeKey }) {
@@ -66,9 +91,9 @@ export const Avatar = ({
   name = 'Utilizador',
   size = 'md',
   status,
-  role,        // 'ADMIN' | 'CREATOR' | 'STUDENT' — optional, drives fallback style
+  role, // 'ADMIN' | 'CREATOR' | 'STUDENT' — optional, drives fallback style
   shape = 'circle', // 'circle' | 'square'
-  className
+  className,
 }) => {
   const [imgError, setImgError] = useState(false);
 
@@ -77,35 +102,39 @@ export const Avatar = ({
   }, [src]);
 
   const sizes = {
-    xs: 'w-6 h-6 text-[10px]',
-    sm: 'w-8 h-8 text-xs',
-    md: 'w-10 h-10 text-sm',
-    lg: 'w-14 h-14 text-base font-semibold',
-    xl: 'w-20 h-20 text-xl font-bold'
+    xs: 'avatar-sizes-xs',
+    sm: 'avatar-sizes-sm',
+    md: 'avatar-sizes-md',
+    lg: 'avatar-sizes-lg',
+    xl: 'avatar-sizes-xl',
   };
 
   const statusDotSizes = {
-    xs: 'w-1.5 h-1.5 ring-1',
-    sm: 'w-2 h-2 ring-1',
-    md: 'w-2.5 h-2.5 ring-2',
-    lg: 'w-3.5 h-3.5 ring-2',
-    xl: 'w-4 h-4 ring-2'
+    xs: 'avatar-status-dot-sizes-xs',
+    sm: 'avatar-status-dot-sizes-sm',
+    md: 'avatar-status-dot-sizes-md',
+    lg: 'avatar-status-dot-sizes-lg',
+    xl: 'avatar-status-dot-sizes-xl',
   };
 
   const statusColors = {
-    online: 'bg-emerald-500',
-    away: 'bg-amber-500',
-    dnd: 'bg-red-500',
-    offline: 'bg-zinc-500'
+    online: 'avatar-status-colors-online',
+    away: 'avatar-status-colors-away',
+    dnd: 'avatar-status-colors-dnd',
+    offline: 'avatar-status-colors-offline',
   };
 
-  const isSquare = shape === 'square' || className?.includes('rounded-xl') || className?.includes('rounded-2xl') || className?.includes('rounded-lg');
-  const roundedClass = isSquare ? (size === 'xl' || size === 'lg' ? 'rounded-2xl' : 'rounded-xl') : 'rounded-full';
+  const isSquare = shape === 'square';
+  const roundedClass = isSquare
+    ? size === 'xl' || size === 'lg'
+      ? 'avatar-is-square-2'
+      : 'avatar-is-square'
+    : 'avatar-rounded-class';
 
   const initials = (name || 'Utilizador')
     .split(' ')
     .filter(Boolean)
-    .map(n => n[0])
+    .map((n) => n[0])
     .join('')
     .substring(0, 2)
     .toUpperCase();
@@ -118,45 +147,35 @@ export const Avatar = ({
   const usesRoleIcon = !!normalizedRole && ['ADMIN', 'CREATOR', 'STUDENT'].includes(normalizedRole);
 
   return (
-    <div className={twMerge('relative inline-flex flex-shrink-0', roundedClass, className)}>
+    <div className={clsx('avatar-panel', roundedClass, className)}>
       {src && !imgError ? (
         <img
           src={src}
           alt={name}
-          className={twMerge(
-            'object-cover bg-zinc-800 border border-zinc-700/60',
-            roundedClass,
-            sizes[size]
-          )}
+          className={clsx('avatar-image', roundedClass, sizes[size])}
           onError={() => setImgError(true)}
         />
       ) : (
         <div
-          className={twMerge(
-            'flex items-center justify-center select-none border',
+          className={clsx(
+            'avatar-panel-2',
             roundedClass,
             roleStyle.bg,
             roleStyle.text,
             roleStyle.border,
-            sizes[size]
+            sizes[size],
           )}
         >
           {usesRoleIcon ? (
             <RoleIcon role={normalizedRole} sizeKey={size} />
           ) : (
-            <span className="font-mono font-medium leading-none">{initials}</span>
+            <span className="avatar-label">{initials}</span>
           )}
         </div>
       )}
 
       {status && (
-        <span
-          className={twMerge(
-            'absolute bottom-0 right-0 rounded-full ring-white dark:ring-[#11131a]',
-            statusDotSizes[size],
-            statusColors[status]
-          )}
-        />
+        <span className={clsx('avatar-label-2', statusDotSizes[size], statusColors[status])} />
       )}
     </div>
   );

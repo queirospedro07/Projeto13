@@ -12,20 +12,22 @@ export const axiosInstance = axios.create({
   },
 });
 
+const TOKEN_KEYS = ['nexo_token', 'token', 'learnspace_token'];
 export function getAuthToken() {
-  return localStorage.getItem('token') || localStorage.getItem('nexo_token') || localStorage.getItem('learnspace_token');
+  for (const storage of [sessionStorage, localStorage])
+    for (const key of TOKEN_KEYS) {
+      const token = storage.getItem(key);
+      if (token) return token;
+    }
+  return null;
 }
-
-export function setAuthToken(token) {
-  localStorage.setItem('token', token);
-  localStorage.setItem('nexo_token', token);
-  localStorage.setItem('learnspace_token', token);
+export function setAuthToken(token, remember = false) {
+  removeAuthToken();
+  (remember ? localStorage : sessionStorage).setItem('nexo_token', token);
 }
-
 export function removeAuthToken() {
-  localStorage.removeItem('token');
-  localStorage.removeItem('nexo_token');
-  localStorage.removeItem('learnspace_token');
+  for (const storage of [sessionStorage, localStorage])
+    for (const key of TOKEN_KEYS) storage.removeItem(key);
 }
 
 // Request Interceptor: inject Bearer JWT token into headers
@@ -37,7 +39,7 @@ axiosInstance.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 // Response Interceptor: handle 401 Unauthorized and expired tokens
@@ -60,7 +62,7 @@ axiosInstance.interceptors.response.use(
       error.message ||
       'Erro no pedido';
     return Promise.reject(new Error(message));
-  }
+  },
 );
 
 // Standardized request adapter
@@ -92,6 +94,15 @@ async function request(endpoint, options = {}) {
 }
 
 export const api = {
+  resolveMessage: (id) => request('/messages/' + id + '/resolve', { method: 'POST' }),
+  getSupportTickets: () => request('/support/tickets'),
+  createSupportTicket: (body) =>
+    request('/support/tickets', { method: 'POST', body: JSON.stringify(body) }),
+  replySupportTicket: (id, body) =>
+    request('/support/tickets/' + encodeURIComponent(id), {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    }),
   login: (credentials) =>
     request('/auth/login', {
       method: 'POST',
@@ -149,6 +160,15 @@ export const api = {
       body: JSON.stringify(data),
     }),
   getLessonQuiz: (lessonId) => request(`/quizzes/lesson/${lessonId}`),
+  grantCourseAccess: (courseId, identifier) =>
+    request(`/creator/courses/${courseId}/enrollments`, { method: 'POST', body: { identifier } }),
+  getQuizReviews: () => request('/quizzes/reviews'),
+  reviewQuiz: (id, score) => request(`/quizzes/reviews/${id}`, { method: 'PUT', body: { score } }),
+  getProjectSubmission: (id) => request(`/projects/lesson/${id}`),
+  submitProject: (id, url) => request(`/projects/lesson/${id}`, { method: 'POST', body: { url } }),
+  getProjectReviews: () => request('/projects/reviews'),
+  reviewProject: (id, status, feedback) =>
+    request(`/projects/reviews/${id}`, { method: 'PUT', body: { status, feedback } }),
   submitQuiz: (quizId, answers) =>
     request(`/quizzes/${quizId}/submit`, {
       method: 'POST',
@@ -171,6 +191,11 @@ export const api = {
   createChannel: (spaceId, data) =>
     request(`/spaces/${spaceId}/channels`, {
       method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  updateChannel: (spaceId, channelId, data) =>
+    request('/spaces/' + spaceId + '/channels/' + channelId, {
+      method: 'PUT',
       body: JSON.stringify(data),
     }),
   deleteChannel: (spaceId, channelId) =>
@@ -256,6 +281,9 @@ export const api = {
   // Painel de Administração e Moderação
   getAdminStats: () => request('/admin/stats'),
   getAdminUsers: () => request('/admin/users'),
+  reportContent: (body) => request('/reports', { method: 'POST', body }),
+  reviewReport: (id, status, feedback) =>
+    request(`/admin/reports/${id}`, { method: 'PUT', body: { status, feedback } }),
   getAdminReports: () => request('/admin/reports'),
   getAdminCreatorApplications: () => request('/admin/creator-applications'),
   getAdminCourses: (status = 'all') =>

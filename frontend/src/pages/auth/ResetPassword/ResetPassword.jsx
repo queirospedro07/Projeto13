@@ -1,3 +1,4 @@
+import './ResetPassword.css';
 import React, { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { AlertCircle, CheckCircle2, Lock } from 'lucide-react';
@@ -16,7 +17,7 @@ export const ResetPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = async event => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
     if (password !== confirmPassword) {
@@ -42,74 +43,76 @@ export const ResetPassword = () => {
         description="Defina uma nova palavra-passe para a sua conta NEXO."
         canonical="https://nexo.pt/reset-password"
       />
-      <div className="flex min-h-[85vh] items-center justify-center px-4 py-12 sm:px-6">
-        <div className="w-full max-w-md">
-          <div className="mb-8 text-center">
-            <div className="mb-4 flex justify-center">
+      <div className="reset-password-panel">
+        <div className="reset-password-panel-2">
+          <div className="reset-password-panel-3">
+            <div className="reset-password-panel-4">
               <Logo size="lg" to="/" />
             </div>
-            <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">
-              Criar nova palavra-passe
-            </h1>
-            <p className="mt-1 text-sm text-slate-500 dark:text-neutral-400">
+            <h1 className="reset-password-title">Criar nova palavra-passe</h1>
+            <p className="reset-password-description">
               Escolha uma palavra-passe segura para voltar à sua conta.
             </p>
           </div>
 
-          <Card className="border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50 dark:border-neutral-800 dark:bg-[#0c0d12] sm:p-8">
+          <Card className="reset-password-card">
             {submitted ? (
-              <div className="py-4 text-center">
-                <CheckCircle2 className="mx-auto mb-4 h-12 w-12 text-emerald-500" />
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Palavra-passe atualizada</h2>
-                <p className="mt-2 mb-6 text-sm text-slate-600 dark:text-neutral-400">
+              <div className="reset-password-panel-5">
+                <CheckCircle2 className="reset-password-check-circle2" />
+                <h2 className="reset-password-heading">Palavra-passe atualizada</h2>
+                <p className="reset-password-description-2">
                   Já pode iniciar sessão com a nova palavra-passe.
                 </p>
                 <Link to="/login">
-                  <Button variant="primary" size="lg" className="w-full">Ir para início de sessão</Button>
+                  <Button variant="primary" size="lg" className="reset-password-button">
+                    Ir para início de sessão
+                  </Button>
                 </Link>
               </div>
             ) : !token ? (
-              <div className="py-4 text-center">
-                <AlertCircle className="mx-auto mb-4 h-12 w-12 text-amber-500" />
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Ligação incompleta</h2>
-                <p className="mt-2 mb-6 text-sm text-slate-600 dark:text-neutral-400">
+              <div className="reset-password-panel-5">
+                <AlertCircle className="reset-password-alert-circle" />
+                <h2 className="reset-password-heading">Ligação incompleta</h2>
+                <p className="reset-password-description-2">
                   Peça uma nova ligação de recuperação para continuar.
                 </p>
                 <Link to="/forgot-password">
-                  <Button variant="primary" size="lg" className="w-full">Pedir nova ligação</Button>
+                  <Button variant="primary" size="lg" className="reset-password-button">
+                    Pedir nova ligação
+                  </Button>
                 </Link>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              <form onSubmit={handleSubmit} className="reset-password-form">
                 {error && (
-                  <div role="alert" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
-                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <div role="alert" className="reset-password-panel-6">
+                    <AlertCircle className="reset-password-alert-circle-2" />
                     <span>{error}</span>
                   </div>
                 )}
                 <div>
-                  <label htmlFor="new-password" className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-neutral-200">
+                  <label htmlFor="new-password" className="reset-password-field-label">
                     Nova palavra-passe
                   </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <div className="reset-password-panel-7">
+                    <Lock className="reset-password-lock" />
                     <input
                       id="new-password"
                       name="new-password"
                       type="password"
                       autoComplete="new-password"
-                      minLength={8}
+                      minLength={12}
                       maxLength={128}
                       required
                       value={password}
-                      onChange={event => setPassword(event.target.value)}
-                      className="w-full rounded-lg border border-slate-300 bg-slate-50 py-2.5 pl-10 pr-3.5 text-sm text-slate-900 focus:border-blue-600 focus:outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                      onChange={(event) => setPassword(event.target.value)}
+                      className="reset-password-field"
                     />
                   </div>
-                  <p className="mt-1 text-xs text-slate-500 dark:text-neutral-400">Pelo menos 8 caracteres.</p>
+                  <p className="reset-password-description-3">Pelo menos 12 caracteres.</p>
                 </div>
                 <div>
-                  <label htmlFor="confirm-password" className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-neutral-200">
+                  <label htmlFor="confirm-password" className="reset-password-field-label">
                     Confirmar palavra-passe
                   </label>
                   <input
@@ -121,11 +124,17 @@ export const ResetPassword = () => {
                     maxLength={128}
                     required
                     value={confirmPassword}
-                    onChange={event => setConfirmPassword(event.target.value)}
-                    className="w-full rounded-lg border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 focus:border-blue-600 focus:outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    className="reset-password-field-2"
                   />
                 </div>
-                <Button type="submit" variant="primary" size="lg" isLoading={isLoading} className="mt-2 w-full">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="lg"
+                  isLoading={isLoading}
+                  className="reset-password-button-2"
+                >
                   Guardar nova palavra-passe
                 </Button>
               </form>

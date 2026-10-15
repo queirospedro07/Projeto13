@@ -1,3 +1,5 @@
+> Documento histórico do trabalho académico. As instruções atuais de instalação, permissões e funcionalidades estão em README.md, DEPLOY.md e docs/REVISAO.md. Referências a PostgreSQL, publicação direta, pagamentos ou funcionalidades simuladas neste documento não descrevem a versão revista.
+
 # Relatório Técnico — Projeto NEXO
 
 **Unidade Curricular:** Programação Web  
@@ -46,7 +48,7 @@ A aplicação está dividida em duas pastas independentes (`backend` e `frontend
 ### 2.2. Frontend (`frontend/`)
 - **React 18 + Vite:** construção da interface por componentes e páginas.
 - **React Router DOM (v6):** gestão das rotas públicas e privadas (`ProtectedRoute`), separando as áreas de aluno, formador e administrador.
-- **Tailwind CSS:** estilização responsiva e suporte para tema claro e escuro.
+- **CSS nativo:** ficheiros de estilos próprios para cada página e componente, com media queries e suporte para tema claro e escuro.
 - **Axios (`services/api.js`):** configuração central dos pedidos à API, enviando automaticamente o token JWT no cabeçalho `Authorization` e redirecionando para `/login` caso a sessão expire (erro 401).
 - **WebRTC (`RTCPeerConnection`):** utilizado para as chamadas de voz, vídeo e partilha de ecrã diretamente no navegador.
 

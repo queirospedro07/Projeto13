@@ -1,0 +1,255 @@
+/* Styles for Avatar. */
+
+@layer reset, base, ui, components, pages, overrides;
+
+@layer ui {
+  .avatar-role-styles-bg {
+    background-image: linear-gradient(to bottom right, var(--nexo-gradient-stops));
+    --nexo-gradient-from: #f59e0b var(--nexo-gradient-from-position);
+    --nexo-gradient-to: rgb(245 158 11 / 0) var(--nexo-gradient-to-position);
+    --nexo-gradient-stops: var(--nexo-gradient-from), var(--nexo-gradient-to);
+    --nexo-gradient-to: #ea580c var(--nexo-gradient-to-position);
+  }
+
+  .avatar-role-styles-text {
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+  }
+
+  .avatar-role-styles-border {
+    border-color: rgb(217 119 6 / 0.4);
+  }
+
+  .avatar-role-styles-bg-2 {
+    background-image: linear-gradient(to bottom right, var(--nexo-gradient-stops));
+    --nexo-gradient-from: #6366f1 var(--nexo-gradient-from-position);
+    --nexo-gradient-to: rgb(99 102 241 / 0) var(--nexo-gradient-to-position);
+    --nexo-gradient-stops: var(--nexo-gradient-from), var(--nexo-gradient-to);
+    --nexo-gradient-to: #7c3aed var(--nexo-gradient-to-position);
+  }
+
+  .avatar-role-styles-border-2 {
+    border-color: rgb(79 70 229 / 0.4);
+  }
+
+  .avatar-role-styles-bg-3 {
+    background-image: linear-gradient(to bottom right, var(--nexo-gradient-stops));
+    --nexo-gradient-from: #3b82f6 var(--nexo-gradient-from-position);
+    --nexo-gradient-to: rgb(59 130 246 / 0) var(--nexo-gradient-to-position);
+    --nexo-gradient-stops: var(--nexo-gradient-from), var(--nexo-gradient-to);
+    --nexo-gradient-to: #0891b2 var(--nexo-gradient-to-position);
+  }
+
+  .avatar-role-styles-border-3 {
+    border-color: rgb(37 99 235 / 0.4);
+  }
+
+  .avatar-role-styles-bg-4 {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(24 24 27 / var(--nexo-bg-opacity, 1));
+  }
+
+  .avatar-role-styles-text-2 {
+    --nexo-text-opacity: 1;
+    color: rgb(228 228 231 / var(--nexo-text-opacity, 1));
+  }
+
+  .avatar-role-styles-border-4 {
+    --nexo-border-opacity: 1;
+    border-color: rgb(39 39 42 / var(--nexo-border-opacity, 1));
+  }
+
+  .avatar-default-icon-sizes-xs {
+    height: 0.625rem;
+    width: 0.625rem;
+  }
+
+  .avatar-default-icon-sizes-sm {
+    height: 0.875rem;
+    width: 0.875rem;
+  }
+
+  .avatar-default-icon-sizes-md {
+    height: 1rem;
+    width: 1rem;
+  }
+
+  .avatar-default-icon-sizes-lg {
+    height: 1.5rem;
+    width: 1.5rem;
+  }
+
+  .avatar-default-icon-sizes-xl {
+    height: 2rem;
+    width: 2rem;
+  }
+
+  .avatar-sizes-xs {
+    height: 1.5rem;
+    width: 1.5rem;
+    font-size: 10px;
+  }
+
+  .avatar-sizes-sm {
+    height: 2rem;
+    width: 2rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+
+  .avatar-sizes-md {
+    height: 2.5rem;
+    width: 2.5rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .avatar-sizes-lg {
+    height: 3.5rem;
+    width: 3.5rem;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 500;
+  }
+
+  .avatar-sizes-xl {
+    height: 5rem;
+    width: 5rem;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    font-weight: 600;
+  }
+
+  .avatar-status-dot-sizes-xs {
+    height: 0.375rem;
+    width: 0.375rem;
+    --nexo-ring-offset-shadow: var(--nexo-ring-inset) 0 0 0 var(--nexo-ring-offset-width)
+      var(--nexo-ring-offset-color);
+    --nexo-ring-shadow: var(--nexo-ring-inset) 0 0 0 calc(1px + var(--nexo-ring-offset-width))
+      var(--nexo-ring-color);
+    box-shadow:
+      var(--nexo-ring-offset-shadow), var(--nexo-ring-shadow), var(--nexo-shadow, 0 0 #0000);
+  }
+
+  .avatar-status-dot-sizes-sm {
+    height: 0.5rem;
+    width: 0.5rem;
+    --nexo-ring-offset-shadow: var(--nexo-ring-inset) 0 0 0 var(--nexo-ring-offset-width)
+      var(--nexo-ring-offset-color);
+    --nexo-ring-shadow: var(--nexo-ring-inset) 0 0 0 calc(1px + var(--nexo-ring-offset-width))
+      var(--nexo-ring-color);
+    box-shadow:
+      var(--nexo-ring-offset-shadow), var(--nexo-ring-shadow), var(--nexo-shadow, 0 0 #0000);
+  }
+
+  .avatar-status-dot-sizes-md {
+    height: 0.625rem;
+    width: 0.625rem;
+    --nexo-ring-offset-shadow: var(--nexo-ring-inset) 0 0 0 var(--nexo-ring-offset-width)
+      var(--nexo-ring-offset-color);
+    --nexo-ring-shadow: var(--nexo-ring-inset) 0 0 0 calc(2px + var(--nexo-ring-offset-width))
+      var(--nexo-ring-color);
+    box-shadow:
+      var(--nexo-ring-offset-shadow), var(--nexo-ring-shadow), var(--nexo-shadow, 0 0 #0000);
+  }
+
+  .avatar-status-dot-sizes-lg {
+    height: 0.875rem;
+    width: 0.875rem;
+    --nexo-ring-offset-shadow: var(--nexo-ring-inset) 0 0 0 var(--nexo-ring-offset-width)
+      var(--nexo-ring-offset-color);
+    --nexo-ring-shadow: var(--nexo-ring-inset) 0 0 0 calc(2px + var(--nexo-ring-offset-width))
+      var(--nexo-ring-color);
+    box-shadow:
+      var(--nexo-ring-offset-shadow), var(--nexo-ring-shadow), var(--nexo-shadow, 0 0 #0000);
+  }
+
+  .avatar-status-dot-sizes-xl {
+    height: 1rem;
+    width: 1rem;
+    --nexo-ring-offset-shadow: var(--nexo-ring-inset) 0 0 0 var(--nexo-ring-offset-width)
+      var(--nexo-ring-offset-color);
+    --nexo-ring-shadow: var(--nexo-ring-inset) 0 0 0 calc(2px + var(--nexo-ring-offset-width))
+      var(--nexo-ring-color);
+    box-shadow:
+      var(--nexo-ring-offset-shadow), var(--nexo-ring-shadow), var(--nexo-shadow, 0 0 #0000);
+  }
+
+  .avatar-status-colors-online {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(16 185 129 / var(--nexo-bg-opacity, 1));
+  }
+
+  .avatar-status-colors-away {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(245 158 11 / var(--nexo-bg-opacity, 1));
+  }
+
+  .avatar-status-colors-dnd {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(239 68 68 / var(--nexo-bg-opacity, 1));
+  }
+
+  .avatar-status-colors-offline {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(113 113 122 / var(--nexo-bg-opacity, 1));
+  }
+
+  .avatar-is-square {
+    border-radius: 0.75rem;
+  }
+
+  .avatar-is-square-2 {
+    border-radius: 1rem;
+  }
+
+  .avatar-is-square-3 {
+    border-radius: 0.5rem;
+  }
+
+  .avatar-rounded-class {
+    border-radius: 9999px;
+  }
+
+  .avatar-panel {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+  }
+
+  .avatar-image {
+    border-width: 1px;
+    border-color: rgb(63 63 70 / 0.6);
+    --nexo-bg-opacity: 1;
+    background-color: rgb(39 39 42 / var(--nexo-bg-opacity, 1));
+    object-fit: cover;
+  }
+
+  .avatar-panel-2 {
+    display: flex;
+    user-select: none;
+    align-items: center;
+    justify-content: center;
+    border-width: 1px;
+  }
+
+  .avatar-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 450;
+    line-height: 1;
+  }
+
+  .avatar-label-2 {
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    border-radius: 9999px;
+    --nexo-ring-opacity: 1;
+    --nexo-ring-color: rgb(255 255 255 / var(--nexo-ring-opacity, 1));
+  }
+
+  .avatar-label-2:is(.dark *) {
+    --nexo-ring-opacity: 1;
+    --nexo-ring-color: rgb(17 19 26 / var(--nexo-ring-opacity, 1));
+  }
+}

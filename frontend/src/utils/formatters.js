@@ -1,19 +1,19 @@
-export const formatDuration = seconds => {
+export const formatDuration = (seconds) => {
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
   return `${m}:${s < 10 ? '0' : ''}${s}`;
 };
-export const formatBytes = bytes => {
+export const formatBytes = (bytes) => {
   if (!bytes || bytes === 0) return '0 B';
   const k = 1024;
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 };
-export const formatXP = xp => {
+export const formatXP = (xp) => {
   return `${(xp || 0).toLocaleString('pt-PT')} XP`;
 };
-export const formatDifficulty = difficulty => {
+export const formatDifficulty = (difficulty) => {
   switch (difficulty?.toLowerCase()) {
     case 'beginner':
     case 'iniciante':
@@ -30,19 +30,31 @@ export const formatDifficulty = difficulty => {
       return difficulty || 'Geral';
   }
 };
-export const formatCoursePrice = value => {
+export const formatCoursePrice = (value) => {
   if (typeof value === 'object' && value !== null) {
     const rawPrice = Number(value.price ?? 0);
-    const isFreeCourse = Boolean(value.isFree) || value.price === 0 || value.price === null || value.price === undefined || Number.isNaN(rawPrice) || rawPrice <= 0;
+    const isFreeCourse =
+      Boolean(value.isFree) ||
+      value.price === 0 ||
+      value.price === null ||
+      value.price === undefined ||
+      Number.isNaN(rawPrice) ||
+      rawPrice <= 0;
     if (isFreeCourse) return 'Grátis';
-    return `€${rawPrice.toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1')}`;
+    return `€${rawPrice
+      .toFixed(2)
+      .replace(/\.00$/, '')
+      .replace(/(\.\d)0$/, '$1')}`;
   }
 
   const rawPrice = Number(value ?? 0);
   if (Number.isNaN(rawPrice) || rawPrice <= 0) return 'Grátis';
-  return `€${rawPrice.toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1')}`;
+  return `€${rawPrice
+    .toFixed(2)
+    .replace(/\.00$/, '')
+    .replace(/(\.\d)0$/, '$1')}`;
 };
-export const formatCategory = category => {
+export const formatCategory = (category) => {
   if (!category) return 'Geral';
   const raw = String(category).trim();
   switch (raw.toLowerCase()) {
@@ -82,10 +94,10 @@ export const formatCategory = category => {
       return raw;
   }
 };
-export const formatRole = role => {
+export const formatRole = (role) => {
   switch (String(role || '').toUpperCase()) {
     case 'ADMIN':
-      return 'Administrador';
+      return 'Administrador & Formador';
     case 'CREATOR':
     case 'INSTRUCTOR':
     case 'OWNER':
@@ -102,7 +114,7 @@ export const formatRole = role => {
       return 'Aluno';
   }
 };
-export const formatLessonType = type => {
+export const formatLessonType = (type) => {
   switch (String(type || '').toLowerCase()) {
     case 'video':
       return 'Vídeo';
@@ -119,7 +131,7 @@ export const formatLessonType = type => {
       return 'Vídeo';
   }
 };
-export const formatRelativeTime = isoString => {
+export const formatRelativeTime = (isoString) => {
   if (!isoString) return '';
   const date = new Date(isoString);
   const now = new Date();
@@ -135,6 +147,6 @@ export const formatRelativeTime = isoString => {
   return date.toLocaleDateString('pt-PT', {
     day: '2-digit',
     month: '2-digit',
-    year: 'numeric'
+    year: 'numeric',
   });
 };

@@ -1,34 +1,38 @@
 services:
-  # ─────────────────────────────────────────────
-  # Backend — Node.js API + Socket.IO
-  # ─────────────────────────────────────────────
   - type: web
     name: nexo-backend
     runtime: node
     region: frankfurt
-    plan: free
+    plan: starter
     rootDir: backend
-    buildCommand: npm install
+    buildCommand: npm ci
     startCommand: npm start
     healthCheckPath: /api/health
+    disk:
+      name: nexo-data
+      mountPath: /var/data
+      sizeGB: 1
     envVars:
+      - key: NODE_VERSION
+        value: 24
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000
+      - key: DATABASE_PATH
+        value: /var/data/nexo.db
+      - key: JWT_SECRET
+        generateValue: true
       - key: JWT_EXPIRES_IN
         value: 24h
-      # Definir manualmente no dashboard do Render:
-      - key: JWT_SECRET
-        sync: false
-      - key: DATABASE_URL
-        sync: false
-      # URL do frontend Vercel (para CORS)
+      - key: TRUST_PROXY_HOPS
+        value: 1
       - key: CLIENT_URL
         sync: false
       - key: FRONTEND_URL
         sync: false
-      # Email de recuperação de palavra-passe (SMTP)
+      - key: ENABLE_DEMO_LOGIN
+        value: false
+      - key: SEED_DEMO_DATA
+        value: false
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT

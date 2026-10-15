@@ -1,10 +1,13 @@
+import './LessonVideoPlayer.css';
 import React, { useRef, useState } from 'react';
 import { Play, Pause, Volume2, VolumeX, Subtitles, Check, Award, Video } from 'lucide-react';
 import { formatDuration } from '../../../utils/formatters';
-export const getYouTubeEmbedUrl = url => {
+export const getYouTubeEmbedUrl = (url) => {
   if (!url) return null;
   const trimmed = url.trim();
-  const match = trimmed.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i);
+  const match = trimmed.match(
+    /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i,
+  );
   if (match && match[1]) {
     return `https://www.youtube-nocookie.com/embed/${match[1]}?rel=0&modestbranding=1`;
   }
@@ -16,7 +19,7 @@ export const LessonVideoPlayer = ({
   durationMin = 15,
   isCompleted = false,
   onMarkComplete,
-  xpReward = 25
+  xpReward = 25,
 }) => {
   const youtubeEmbedUrl = getYouTubeEmbedUrl(videoUrl);
   const videoRef = useRef(null);
@@ -46,14 +49,14 @@ export const LessonVideoPlayer = ({
       }
     }
   };
-  const handleSeek = e => {
+  const handleSeek = (e) => {
     const time = Number(e.target.value);
     if (videoRef.current) {
       videoRef.current.currentTime = time;
       setCurrentTime(time);
     }
   };
-  const handleSpeedChange = speed => {
+  const handleSpeedChange = (speed) => {
     if (videoRef.current) {
       videoRef.current.playbackRate = speed;
       setPlaybackRate(speed);
@@ -65,87 +68,143 @@ export const LessonVideoPlayer = ({
     videoRef.current.muted = !isMuted;
     setIsMuted(!isMuted);
   };
-  return <div className="flex flex-col gap-6 antialiased">
-      
-      <div className="relative aspect-video bg-black rounded-xl overflow-hidden shadow-2xl border border-slate-800 group">
-        {youtubeEmbedUrl ? <iframe src={youtubeEmbedUrl} title={title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen className="w-full h-full border-0" /> : videoUrl ? <video ref={videoRef} src={videoUrl} onTimeUpdate={handleTimeUpdate} onLoadedMetadata={handleTimeUpdate} onEnded={() => {
-        setIsPlaying(false);
-        if (onMarkComplete && !isCompleted) onMarkComplete();
-      }} className="w-full h-full object-cover" /> : <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-black to-slate-950 p-8 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-slate-800 text-white flex items-center justify-center mb-4 shadow-lg border border-slate-700">
-              <Video className="w-8 h-8 text-slate-300" />
+  return (
+    <div className="lesson-video-player-panel">
+      <div className="lesson-video-player-panel-2 ui-group">
+        {youtubeEmbedUrl ? (
+          <iframe
+            src={youtubeEmbedUrl}
+            title={title}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+            className="lesson-video-player-iframe"
+          />
+        ) : videoUrl ? (
+          <video
+            ref={videoRef}
+            src={videoUrl}
+            onTimeUpdate={handleTimeUpdate}
+            onLoadedMetadata={handleTimeUpdate}
+            onEnded={() => {
+              setIsPlaying(false);
+              if (onMarkComplete && !isCompleted) onMarkComplete();
+            }}
+            className="lesson-video-player-video"
+          />
+        ) : (
+          <div className="lesson-video-player-panel-3">
+            <div className="lesson-video-player-panel-4">
+              <Video className="lesson-video-player-video-2" />
             </div>
-            <h3 className="text-lg font-bold text-white mb-1.5">{title}</h3>
-            <p className="text-xs text-slate-400 max-w-md mb-6 leading-relaxed">
+            <h3 className="lesson-video-player-subheading">{title}</h3>
+            <p className="lesson-video-player-description">
               Transmissão em alta definição 1080p disponível para reprodução.
             </p>
-            <button onClick={togglePlay} className="px-6 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-950 font-semibold text-xs flex items-center gap-2 cursor-pointer shadow-md transition-all">
-              <Play className="w-4 h-4 fill-current" />
+            <button onClick={togglePlay} className="lesson-video-player-button">
+              <Play className="lesson-video-player-play" />
               <span>Iniciar Vídeo-Aula</span>
             </button>
-          </div>}
+          </div>
+        )}
 
-        
-        {!youtubeEmbedUrl && videoUrl && <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            
-            <input type="range" min={0} max={duration || 100} value={currentTime} onChange={handleSeek} className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-white" />
+        {!youtubeEmbedUrl && videoUrl && (
+          <div className="lesson-video-player-panel-5">
+            <input
+              type="range"
+              min={0}
+              max={duration || 100}
+              value={currentTime}
+              onChange={handleSeek}
+              className="lesson-video-player-field"
+            />
 
-            <div className="flex items-center justify-between text-white text-xs font-semibold">
-              <div className="flex items-center gap-3">
-                <button onClick={togglePlay} className="p-1.5 hover:text-slate-300 cursor-pointer">
-                  {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 fill-current" />}
+            <div className="lesson-video-player-panel-6">
+              <div className="lesson-video-player-panel-7">
+                <button onClick={togglePlay} className="lesson-video-player-button-2">
+                  {isPlaying ? (
+                    <Pause className="lesson-video-player-pause" />
+                  ) : (
+                    <Play className="lesson-video-player-play-2" />
+                  )}
                 </button>
 
-                <div className="flex items-center gap-1.5">
-                  <button onClick={toggleMute} className="p-1.5 hover:text-slate-300 cursor-pointer">
-                    {isMuted ? <VolumeX className="w-5 h-5 text-rose-400" /> : <Volume2 className="w-5 h-5" />}
+                <div className="lesson-video-player-panel-8">
+                  <button onClick={toggleMute} className="lesson-video-player-button-2">
+                    {isMuted ? (
+                      <VolumeX className="lesson-video-player-volume-x" />
+                    ) : (
+                      <Volume2 className="lesson-video-player-pause" />
+                    )}
                   </button>
-                  <span className="font-mono text-xs text-slate-300">
+                  <span className="lesson-video-player-label">
                     {formatDuration(currentTime)} / {formatDuration(duration)}
                   </span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                
-                <div className="relative">
-                  <button onClick={() => setShowSpeedMenu(!showSpeedMenu)} className="px-2 py-1 rounded-md bg-slate-800/80 hover:bg-slate-700 text-xs font-mono font-semibold cursor-pointer">
+              <div className="lesson-video-player-panel-7">
+                <div className="lesson-video-player-panel-9">
+                  <button
+                    onClick={() => setShowSpeedMenu(!showSpeedMenu)}
+                    className="lesson-video-player-button-3"
+                  >
                     {playbackRate}x
                   </button>
-                  {showSpeedMenu && <div className="absolute bottom-8 right-0 bg-slate-900 border border-slate-800 rounded-xl p-1.5 shadow-xl flex flex-col gap-1 z-20">
-                      {[0.75, 1, 1.25, 1.5, 2].map(speed => <button key={speed} onClick={() => handleSpeedChange(speed)} className={`px-3 py-1 rounded-lg text-xs font-semibold text-left cursor-pointer ${playbackRate === speed ? 'bg-white text-slate-950 font-bold' : 'text-slate-300 hover:bg-slate-800'}`}>
+                  {showSpeedMenu && (
+                    <div className="lesson-video-player-panel-10">
+                      {[0.75, 1, 1.25, 1.5, 2].map((speed) => (
+                        <button
+                          key={speed}
+                          onClick={() => handleSpeedChange(speed)}
+                          className={`lesson-video-player-button-4 ${playbackRate === speed ? 'lesson-video-player-button-5' : 'lesson-video-player-button-6'}`}
+                        >
                           {speed}x
-                        </button>)}
-                    </div>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                
-                <button onClick={() => setSubtitlesOn(!subtitlesOn)} className={`p-1.5 rounded cursor-pointer ${subtitlesOn ? 'text-white' : 'text-slate-500 hover:text-white'}`} title="Legendas em Português">
-                  <Subtitles className="w-4 h-4" />
+                <button
+                  onClick={() => setSubtitlesOn(!subtitlesOn)}
+                  className={`lesson-video-player-button-7 ${subtitlesOn ? 'lesson-video-player-button-8' : 'lesson-video-player-button-9'}`}
+                  title="Legendas em Português"
+                >
+                  <Subtitles className="lesson-video-player-subtitles" />
                 </button>
               </div>
             </div>
-          </div>}
+          </div>
+        )}
       </div>
 
-      
-      <div className="flex items-center justify-between p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#12141c] border border-slate-200/80 dark:border-[#222636] shadow-xs">
+      <div className="lesson-video-player-panel-11">
         <div>
-          <h2 className="text-base sm:text-lg font-bold text-slate-950 dark:text-white tracking-tight">{title}</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          <h2 className="lesson-video-player-heading">{title}</h2>
+          <p className="lesson-video-player-description-2">
             Duração estimada: {durationMin} minutos
           </p>
         </div>
 
-        {onMarkComplete && <button onClick={onMarkComplete} className={`px-5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${isCompleted ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800 shadow-2xs' : 'bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200 shadow-xs'}`}>
-            {isCompleted ? <>
-                <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+        {onMarkComplete && (
+          <button
+            onClick={onMarkComplete}
+            className={`lesson-video-player-button-10 ${isCompleted ? 'lesson-video-player-button-11 subtle-shadow' : 'lesson-video-player-button-12'}`}
+          >
+            {isCompleted ? (
+              <>
+                <Check className="lesson-video-player-check" />
                 <span>Aula Concluída</span>
-              </> : <>
-                <Check className="w-4 h-4" />
+              </>
+            ) : (
+              <>
+                <Check className="lesson-video-player-subtitles" />
                 <span>Concluir Aula</span>
-              </>}
-          </button>}
+              </>
+            )}
+          </button>
+        )}
       </div>
-    </div>;
+    </div>
+  );
 };

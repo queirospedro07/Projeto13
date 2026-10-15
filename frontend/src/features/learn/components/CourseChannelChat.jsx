@@ -1,6 +1,19 @@
+import './CourseChannelChat.css';
 import React, { useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Hash, HelpCircle, Sparkles, Users, Send, Reply, X, Check, CheckCircle2, Pin, Lock } from 'lucide-react';
+import {
+  Hash,
+  HelpCircle,
+  Sparkles,
+  Users,
+  Send,
+  Reply,
+  X,
+  Check,
+  CheckCircle2,
+  Pin,
+  Lock,
+} from 'lucide-react';
 import { Avatar } from '../../../components/ui/Avatar';
 import { formatRole } from '../../../utils/formatters';
 export const CourseChannelChat = ({
@@ -20,200 +33,252 @@ export const CourseChannelChat = ({
   creatorUser,
   currentUserId,
   onInsertGuidingPrompt,
-  classmates = []
+  classmates = [],
 }) => {
   const messagesEndRef = useRef(null);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({
-      behavior: 'smooth'
+      behavior: 'smooth',
     });
   }, [messages.length]);
   const isAnnouncement = channel.accessMode === 'announcement' || channel.name.includes('anuncio');
   const canPost = isCreatorOrAdmin || !isAnnouncement;
-  return <div className="flex-1 flex overflow-hidden animate-fade-in bg-white dark:bg-[#0c0d12]">
-      
-      <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-[#0c0d12]">
-
-        
-        {channel.guidingQuestion && <div className="m-4 p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200/80 dark:border-blue-900/40 flex items-center justify-between gap-4 shadow-xs">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm">
-                <Sparkles className="w-4 h-4" />
+  return (
+    <div className="course-channel-chat-panel">
+      <div className="course-channel-chat-panel-2">
+        {channel.guidingQuestion && (
+          <div className="course-channel-chat-panel-3">
+            <div className="course-channel-chat-panel-4">
+              <div className="course-channel-chat-panel-5">
+                <Sparkles className="course-channel-chat-sparkles" />
               </div>
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400">
-                  Desafio / Pergunta Orientadora
-                </p>
-                <p className="text-sm font-extrabold text-slate-900 dark:text-white leading-snug">
-                  {channel.guidingQuestion}
-                </p>
+                <p className="course-channel-chat-description">Desafio / Pergunta Orientadora</p>
+                <p className="course-channel-chat-description-2">{channel.guidingQuestion}</p>
               </div>
             </div>
-            {canPost && <button onClick={() => onInsertGuidingPrompt(channel.guidingQuestion)} className="px-4 py-2 rounded-xl text-xs font-bold bg-white dark:bg-[#1a1d28] hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/60 transition-all cursor-pointer whitespace-nowrap shadow-xs">
+            {canPost && (
+              <button
+                onClick={() => onInsertGuidingPrompt(channel.guidingQuestion)}
+                className="course-channel-chat-button"
+              >
                 Responder ao Desafio
-              </button>}
-          </div>}
+              </button>
+            )}
+          </div>
+        )}
 
-        
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-5 bg-white dark:bg-[#0c0d12]">
-          {messages.length === 0 ? <div className="h-full flex flex-col items-center justify-center text-center p-8 text-slate-400 dark:text-slate-500">
-              <Hash className="w-12 h-12 stroke-[1.5] mb-3 text-slate-300 dark:text-slate-700" />
-              <p className="font-bold text-slate-700 dark:text-slate-300">
-                Início do canal #{channel.name}
+        <div className="course-channel-chat-panel-6 custom-scrollbar">
+          {messages.length === 0 ? (
+            <div className="course-channel-chat-panel-7">
+              <Hash className="course-channel-chat-hash" />
+              <p className="course-channel-chat-description-3">Início do canal #{channel.name}</p>
+              <p className="course-channel-chat-description-4">
+                {isAnnouncement
+                  ? 'Os comunicados e avisos oficiais do instrutor serão publicados aqui.'
+                  : 'Seja o primeiro a enviar uma mensagem para os seus colegas e instrutor.'}
               </p>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-sm">
-                {isAnnouncement ? 'Os comunicados e avisos oficiais do instrutor serão publicados aqui.' : 'Seja o primeiro a enviar uma mensagem para os seus colegas e instrutor.'}
-              </p>
-            </div> : messages.map(m => {
-          const isResolved = resolvedMessageIds.has(m.id);
-          const isSenderCreator = m.sender?.role === 'CREATOR' || m.sender?.role === 'ADMIN';
-          return <div key={m.id} className={`group relative flex gap-3.5 p-3.5 rounded-2xl transition-all ${isResolved ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40' : m.isPinned ? 'bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40' : 'hover:bg-slate-50 dark:hover:bg-[#151720]'}`}>
-                  <Link 
+            </div>
+          ) : (
+            messages.map((m) => {
+              const isResolved = resolvedMessageIds.has(m.id);
+              const isSenderCreator = m.sender?.role === 'CREATOR' || m.sender?.role === 'ADMIN';
+              return (
+                <div
+                  key={m.id}
+                  className={`course-channel-chat-panel-8 ui-group ${isResolved ? 'course-channel-chat-panel-9' : m.isPinned ? 'course-channel-chat-panel-10' : 'course-channel-chat-panel-11'}`}
+                >
+                  <Link
                     to={`/profile/${m.sender?.username || m.sender?.id || ''}`}
-                    className="shrink-0 hover:opacity-80 transition-opacity cursor-pointer"
+                    className="course-channel-chat-link"
                     title={m.sender?.name ? `Ver perfil de ${m.sender.name}` : 'Ver perfil'}
                   >
                     <Avatar src={m.sender?.avatarUrl} name={m.sender?.name || 'Aluno'} size="md" />
                   </Link>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                  <div className="course-channel-chat-panel-12">
+                    <div className="course-channel-chat-panel-13">
                       <Link
                         to={`/profile/${m.sender?.username || m.sender?.id || ''}`}
-                        className="font-bold text-sm text-slate-900 dark:text-white hover:underline cursor-pointer"
+                        className="course-channel-chat-link-2"
                         title={m.sender?.name ? `Ver perfil de ${m.sender.name}` : 'Ver perfil'}
                       >
                         {m.sender?.name || 'Aluno'}
                       </Link>
-                      {isSenderCreator && <span className="px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 text-[10px] font-extrabold uppercase">
-                          Instrutor
-                        </span>}
-                      <span className="text-[11px] text-slate-400 dark:text-slate-500">
+                      {isSenderCreator && (
+                        <span className="course-channel-chat-label">Instrutor</span>
+                      )}
+                      <span className="course-channel-chat-label-2">
                         {new Date(m.createdAt).toLocaleTimeString('pt-PT', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
                       </span>
 
-                      {isResolved && <span className="ml-auto px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-400 text-xs font-bold flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
+                      {isResolved && (
+                        <span className="course-channel-chat-label-3">
+                          <CheckCircle2 className="course-channel-chat-check-circle2" />
                           Resolvido
-                        </span>}
+                        </span>
+                      )}
                     </div>
 
-                    {m.replyTo && <div className="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-[#1a1d28] p-2 rounded-xl mb-2 flex items-center gap-2 border-l-2 border-blue-500">
-                        <Reply className="w-3 h-3 text-blue-500 shrink-0" />
-                        <span className="font-bold">{m.replyTo.sender?.name || 'Aluno'}:</span>
-                        <span className="truncate">{m.replyTo.content}</span>
-                      </div>}
+                    {m.replyTo && (
+                      <div className="course-channel-chat-panel-14">
+                        <Reply className="course-channel-chat-reply" />
+                        <span className="course-channel-chat-label-4">
+                          {m.replyTo.sender?.name || 'Aluno'}:
+                        </span>
+                        <span className="course-channel-chat-label-5">{m.replyTo.content}</span>
+                      </div>
+                    )}
 
-                    <p className="text-sm text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-line">
-                      {m.content}
-                    </p>
+                    <p className="course-channel-chat-description-5">{m.content}</p>
                   </div>
 
-                  
-                  <div className="absolute right-4 top-3 hidden group-hover:flex items-center gap-1 bg-white dark:bg-[#1a1d28] border border-slate-200 dark:border-[#2a2e42] rounded-xl p-1 shadow-sm">
-                    {canPost && <button onClick={() => onSetReplyingTo(m)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-[#25293a] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg text-xs cursor-pointer" title="Responder">
-                        <Reply className="w-3.5 h-3.5" />
-                      </button>}
+                  <div className="course-channel-chat-panel-15">
+                    {canPost && (
+                      <button
+                        onClick={() => onSetReplyingTo(m)}
+                        className="course-channel-chat-button-2"
+                        title="Responder"
+                      >
+                        <Reply className="course-channel-chat-check-circle2" />
+                      </button>
+                    )}
 
-                    {channel.type === 'qa' && onToggleResolve && <button onClick={() => onToggleResolve(m.id)} className={`p-1.5 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg text-xs cursor-pointer ${isResolved ? 'text-emerald-600 font-bold' : 'text-slate-400 hover:text-emerald-600'}`} title={isResolved ? 'Reabrir dúvida' : 'Marcar como resolvido'}>
-                        <Check className="w-3.5 h-3.5" />
-                      </button>}
+                    {channel.type === 'qa' && onToggleResolve && (
+                      <button
+                        onClick={() => onToggleResolve(m.id)}
+                        className={`course-channel-chat-button-3 ${isResolved ? 'course-channel-chat-button-4' : 'course-channel-chat-button-5'}`}
+                        title={isResolved ? 'Reabrir dúvida' : 'Marcar como resolvido'}
+                      >
+                        <Check className="course-channel-chat-check-circle2" />
+                      </button>
+                    )}
 
-                    {isCreatorOrAdmin && onTogglePin && <button onClick={() => onTogglePin(m.id)} className={`p-1.5 hover:bg-slate-100 dark:hover:bg-[#25293a] rounded-lg text-xs cursor-pointer ${m.isPinned ? 'text-amber-600' : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'}`} title={m.isPinned ? 'Desafixar' : 'Fixar'}>
-                        <Pin className="w-3.5 h-3.5" />
-                      </button>}
+                    {isCreatorOrAdmin && onTogglePin && (
+                      <button
+                        onClick={() => onTogglePin(m.id)}
+                        className={`course-channel-chat-button-6 ${m.isPinned ? 'course-channel-chat-button-7' : 'course-channel-chat-button-8'}`}
+                        title={m.isPinned ? 'Desafixar' : 'Fixar'}
+                      >
+                        <Pin className="course-channel-chat-check-circle2" />
+                      </button>
+                    )}
                   </div>
-                </div>;
-        })}
+                </div>
+              );
+            })
+          )}
           <div ref={messagesEndRef} />
         </div>
 
-        
-        {replyingTo && <div className="px-6 py-2 bg-blue-50 dark:bg-blue-950/30 border-t border-blue-100 dark:border-blue-900/40 flex items-center justify-between text-xs text-blue-900 dark:text-blue-300">
-            <div className="flex items-center gap-2 truncate">
-              <Reply className="w-4 h-4 text-blue-600 shrink-0" />
+        {replyingTo && (
+          <div className="course-channel-chat-panel-16">
+            <div className="course-channel-chat-panel-17">
+              <Reply className="course-channel-chat-reply-2" />
               <span>
                 A responder a <strong>{replyingTo.sender?.name}</strong>: "{replyingTo.content}"
               </span>
             </div>
-            <button onClick={() => onSetReplyingTo(null)} className="p-1 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-md text-blue-600 dark:text-blue-400 cursor-pointer">
-              <X className="w-4 h-4" />
+            <button onClick={() => onSetReplyingTo(null)} className="course-channel-chat-button-9">
+              <X className="course-channel-chat-sparkles" />
             </button>
-          </div>}
+          </div>
+        )}
 
-        
-        {!canPost ? <div className="p-4 border-t border-slate-200 dark:border-[#222636] bg-slate-50 dark:bg-[#12141c] text-center">
-            <div className="flex items-center justify-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
-              <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+        {!canPost ? (
+          <div className="course-channel-chat-panel-18">
+            <div className="course-channel-chat-panel-19">
+              <Lock className="course-channel-chat-lock" />
               <span>
                 Apenas o instrutor e administradores podem enviar comunicados neste canal.
               </span>
             </div>
-          </div> : <div className="p-4 border-t border-slate-200 dark:border-[#222636] bg-white dark:bg-[#0c0d12]">
-            <form onSubmit={onSendMessage} className="flex items-center gap-2 bg-slate-50 dark:bg-[#151720] border border-slate-200 dark:border-[#222636] rounded-2xl px-4 py-2 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 dark:focus-within:ring-blue-900/30 transition-all">
-              <input type="text" placeholder={`Enviar mensagem em #${channel.name}...`} value={chatInput} onChange={e => onChatInputChange(e.target.value)} className="flex-1 bg-transparent text-slate-900 dark:text-white text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none" />
-              <button type="submit" disabled={!chatInput.trim()} className="p-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:hover:bg-blue-600 transition-all cursor-pointer shadow-xs">
-                <Send className="w-4 h-4" />
+          </div>
+        ) : (
+          <div className="course-channel-chat-panel-20">
+            <form onSubmit={onSendMessage} className="course-channel-chat-form">
+              <input
+                type="text"
+                placeholder={`Enviar mensagem em #${channel.name}...`}
+                value={chatInput}
+                onChange={(e) => onChatInputChange(e.target.value)}
+                className="course-channel-chat-field"
+              />
+              <button
+                type="submit"
+                disabled={!chatInput.trim()}
+                className="course-channel-chat-button-10"
+              >
+                <Send className="course-channel-chat-sparkles" />
               </button>
             </form>
-          </div>}
+          </div>
+        )}
       </div>
 
-      
-      {showMembersList && <aside className="hidden lg:flex w-64 bg-slate-50 dark:bg-[#12141c] border-l border-slate-200 dark:border-[#222636] flex-col p-4 overflow-y-auto custom-scrollbar select-none shrink-0">
-          <div className="mb-5">
-            <div className="px-2 pb-2 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Instrutor do Curso
-            </div>
+      {showMembersList && (
+        <aside className="course-channel-chat-sidebar custom-scrollbar">
+          <div className="course-channel-chat-panel-21">
+            <div className="course-channel-chat-panel-22">Instrutor do Curso</div>
             <Link
               to={`/profile/${creatorUser?.username || creatorUser?.id || ''}`}
-              className="flex items-center gap-2.5 p-2 rounded-xl bg-white dark:bg-[#171a24] border border-slate-200 dark:border-[#222636] shadow-2xs hover:border-slate-300 dark:hover:border-neutral-700 transition-colors cursor-pointer group"
-              title={creatorUser?.name ? `Ver perfil de ${creatorUser.name}` : 'Ver perfil do instrutor'}
+              className="course-channel-chat-link-3 subtle-shadow ui-group"
+              title={
+                creatorUser?.name ? `Ver perfil de ${creatorUser.name}` : 'Ver perfil do instrutor'
+              }
             >
-              <Avatar src={creatorUser?.avatarUrl} name={creatorUser?.name || 'Instrutor'} size="sm" status="online" />
-              <div className="min-w-0">
-                <p className="font-bold text-slate-900 dark:text-white text-sm truncate group-hover:underline">
+              <Avatar
+                src={creatorUser?.avatarUrl}
+                name={creatorUser?.name || 'Instrutor'}
+                size="sm"
+                status="online"
+              />
+              <div className="course-channel-chat-panel-23">
+                <p className="course-channel-chat-description-6">
                   {creatorUser?.name || 'Instrutor'}
                 </p>
-                <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold">
-                  Corpo Docente
-                </p>
+                <p className="course-channel-chat-description-7">Corpo Docente</p>
               </div>
             </Link>
           </div>
 
           <div>
-            <div className="px-2 pb-2 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Colegas de Turma
-            </div>
-            {classmates.length === 0 ? <div className="p-3 rounded-xl bg-white dark:bg-[#171a24] border border-slate-200 dark:border-[#222636] text-center">
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+            <div className="course-channel-chat-panel-22">Colegas de Turma</div>
+            {classmates.length === 0 ? (
+              <div className="course-channel-chat-panel-24">
+                <p className="course-channel-chat-description-8">
                   Ainda não há outros colegas matriculados nesta turma.
                 </p>
-              </div> : <div className="flex flex-col gap-1">
-                {classmates.map(m => (
+              </div>
+            ) : (
+              <div className="course-channel-chat-panel-25">
+                {classmates.map((m) => (
                   <Link
                     key={m.id}
                     to={`/profile/${m.username || m.id || ''}`}
-                    className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-white dark:hover:bg-[#171a24] transition-colors cursor-pointer group"
+                    className="course-channel-chat-link-4 ui-group"
                     title={`Ver perfil de ${m.name}`}
                   >
-                    <Avatar src={m.avatarUrl} name={m.name} size="sm" status={m.isOnline ? 'online' : undefined} />
-                    <div className="min-w-0">
-                      <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm truncate group-hover:underline">
-                        {m.name}
-                      </p>
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                        {formatRole(m.role)}
-                      </p>
+                    <Avatar
+                      src={m.avatarUrl}
+                      name={m.name}
+                      size="sm"
+                      status={m.isOnline ? 'online' : undefined}
+                    />
+                    <div className="course-channel-chat-panel-23">
+                      <p className="course-channel-chat-description-9">{m.name}</p>
+                      <p className="course-channel-chat-label-2">{formatRole(m.role)}</p>
                     </div>
                   </Link>
                 ))}
-              </div>}
+              </div>
+            )}
           </div>
-        </aside>}
-    </div>;
+        </aside>
+      )}
+    </div>
+  );
 };

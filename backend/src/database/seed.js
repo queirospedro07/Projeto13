@@ -9,7 +9,10 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 async function runSeed() {
-  console.log('A inserir dados iniciais na base de dados...');
+  if (process.env.NODE_ENV === 'production')
+    throw new Error('Dados de demonstração não podem ser inseridos em produção.');
+  process.env.SEED_DEMO_DATA = 'true';
+  console.log('A inserir dados de demonstração locais...');
   await connectDB();
   const { initializeSchemaAndSeed } = await import('./init.js');
   initializeSchemaAndSeed(db);

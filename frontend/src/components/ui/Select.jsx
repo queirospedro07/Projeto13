@@ -1,3 +1,4 @@
+import './Select.css';
 import React, { Children, isValidElement, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, ChevronDown } from 'lucide-react';
@@ -5,6 +6,7 @@ import { Check, ChevronDown } from 'lucide-react';
 export const Select = ({
   value,
   defaultValue,
+  placeholder = 'Selecionar...',
   onChange,
   children,
   className = '',
@@ -24,14 +26,16 @@ export const Select = ({
   const [menuPosition, setMenuPosition] = useState(null);
 
   const options = Children.toArray(children)
-    .filter(option => isValidElement(option) && option.type === 'option')
+    .filter((option) => isValidElement(option) && option.type === 'option')
     .map((option, index) => ({
       value: option.props.value ?? String(index),
       label: option.props.children,
-      disabled: option.props.disabled
+      disabled: option.props.disabled,
     }));
   const selectedValue = value ?? defaultValue ?? options[0]?.value ?? '';
-  const selectedIndex = options.findIndex(option => String(option.value) === String(selectedValue));
+  const selectedIndex = options.findIndex(
+    (option) => String(option.value) === String(selectedValue),
+  );
   const selectedOption = options[selectedIndex];
 
   useEffect(() => {
@@ -43,10 +47,13 @@ export const Select = ({
 
       const bounds = trigger.getBoundingClientRect();
       const viewportPadding = 12;
-      const menuWidth = Math.min(Math.max(bounds.width, 200), window.innerWidth - viewportPadding * 2);
+      const menuWidth = Math.min(
+        Math.max(bounds.width, 200),
+        window.innerWidth - viewportPadding * 2,
+      );
       const left = Math.min(
         Math.max(viewportPadding, bounds.left),
-        window.innerWidth - menuWidth - viewportPadding
+        window.innerWidth - menuWidth - viewportPadding,
       );
       const spaceBelow = window.innerHeight - bounds.bottom - viewportPadding;
       const spaceAbove = bounds.top - viewportPadding;
@@ -55,14 +62,14 @@ export const Select = ({
       const maxHeight = Math.max(120, Math.min(280, availableSpace - 8));
 
       setMenuPosition({
-        left,
-        width: menuWidth,
-        top: placement === 'above' ? Math.max(viewportPadding, bounds.top - maxHeight - 8) : bounds.bottom + 8,
-        maxHeight
+        '--menu-left': `${left}px`,
+        '--menu-width': `${menuWidth}px`,
+        '--menu-top': `${placement === 'above' ? Math.max(viewportPadding, bounds.top - maxHeight - 8) : bounds.bottom + 8}px`,
+        '--menu-max-height': `${maxHeight}px`,
       });
     };
 
-    const handlePointerDown = event => {
+    const handlePointerDown = (event) => {
       if (!triggerRef.current?.contains(event.target) && !menuRef.current?.contains(event.target)) {
         setIsOpen(false);
       }
@@ -86,14 +93,14 @@ export const Select = ({
     }
   }, [activeIndex, isOpen]);
 
-  const selectOption = option => {
+  const selectOption = (option) => {
     if (option.disabled) return;
     onChange?.({ target: { name, value: String(option.value) } });
     setIsOpen(false);
     triggerRef.current?.focus();
   };
 
-  const handleKeyDown = event => {
+  const handleKeyDown = (event) => {
     if (event.key === 'Escape' && isOpen) {
       event.preventDefault();
       setIsOpen(false);
@@ -110,7 +117,7 @@ export const Select = ({
         return;
       }
 
-      setActiveIndex(current => (current + direction + options.length) % options.length);
+      setActiveIndex((current) => (current + direction + options.length) % options.length);
       return;
     }
 
@@ -159,46 +166,53 @@ export const Select = ({
         onClick={() => {
           if (disabled) return;
           setActiveIndex(Math.max(0, selectedIndex));
-          setIsOpen(open => !open);
+          setIsOpen((open) => !open);
         }}
         className={`custom-select-trigger ${className}`}
       >
-        <span className="custom-select-label">{selectedOption?.label ?? 'Selecionar...'}</span>
-        <ChevronDown className={`custom-select-chevron ${isOpen ? 'is-open' : ''}`} aria-hidden="true" />
+        <span className="custom-select-label">{selectedOption?.label ?? placeholder}</span>
+        <ChevronDown
+          className={`custom-select-chevron ${isOpen ? 'is-open' : ''}`}
+          aria-hidden="true"
+        />
       </button>
 
-      {isOpen && menuPosition && createPortal(
-        <div
-          ref={menuRef}
-          id={listboxId}
-          role="listbox"
-          className="custom-select-menu custom-scrollbar"
-          style={menuPosition}
-        >
-          {options.map((option, index) => {
-            const isSelected = index === selectedIndex;
-            const isActive = index === activeIndex;
+      {isOpen &&
+        menuPosition &&
+        createPortal(
+          <div
+            ref={menuRef}
+            id={listboxId}
+            role="listbox"
+            className="custom-select-menu custom-scrollbar"
+            style={menuPosition}
+          >
+            {options.map((option, index) => {
+              const isSelected = index === selectedIndex;
+              const isActive = index === activeIndex;
 
-            return (
-              <button
-                key={`${option.value}-${index}`}
-                id={`${listboxId}-${index}`}
-                type="button"
-                role="option"
-                aria-selected={isSelected}
-                disabled={option.disabled}
-                className={`custom-select-option ${isActive ? 'is-active' : ''} ${isSelected ? 'is-selected' : ''}`}
-                onMouseEnter={() => setActiveIndex(index)}
-                onClick={() => selectOption(option)}
-              >
-                <span className="custom-select-option-label">{option.label}</span>
-                {isSelected && <Check className="custom-select-option-check" aria-hidden="true" />}
-              </button>
-            );
-          })}
-        </div>,
-        document.body
-      )}
+              return (
+                <button
+                  key={`${option.value}-${index}`}
+                  id={`${listboxId}-${index}`}
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  disabled={option.disabled}
+                  className={`custom-select-option ${isActive ? 'is-active' : ''} ${isSelected ? 'is-selected' : ''}`}
+                  onMouseEnter={() => setActiveIndex(index)}
+                  onClick={() => selectOption(option)}
+                >
+                  <span className="custom-select-option-label">{option.label}</span>
+                  {isSelected && (
+                    <Check className="custom-select-option-check" aria-hidden="true" />
+                  )}
+                </button>
+              );
+            })}
+          </div>,
+          document.body,
+        )}
     </>
   );
 };

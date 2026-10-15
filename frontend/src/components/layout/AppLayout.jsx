@@ -1,3 +1,4 @@
+import './AppLayout.css';
 import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -16,16 +17,24 @@ export const AppLayout = () => {
 
   React.useEffect(() => {
     const mainContent = mainContentRef.current;
-    if (!mainContent || !('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
+    if (
+      !mainContent ||
+      !('IntersectionObserver' in window) ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    )
+      return undefined;
 
     const observedElements = new Set();
-    const intersectionObserver = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        entry.target.classList.add('is-visible');
-        intersectionObserver.unobserve(entry.target);
-      });
-    }, { threshold: 0.08, rootMargin: '0px 0px -32px 0px' });
+    const intersectionObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add('is-visible');
+          intersectionObserver.unobserve(entry.target);
+        });
+      },
+      { threshold: 0.08, rootMargin: '0px 0px -32px 0px' },
+    );
 
     const observeSections = () => {
       mainContent.querySelectorAll('section, article, [data-scroll-reveal]').forEach((element) => {
@@ -60,24 +69,27 @@ export const AppLayout = () => {
   const showAppSidebar = Boolean(user) && !isLanding && !isAuthPage;
 
   return (
-    <div className="min-h-dvh bg-slate-50 dark:bg-black text-slate-900 dark:text-white flex flex-col transition-colors duration-200">
+    <div className="app-layout-panel app-shell">
       <Navbar />
 
-      <div className="flex-1 min-w-0 flex">
+      <div className="app-layout-panel-2">
         {showAppSidebar && <Sidebar />}
 
         <main
           id="main-content"
           ref={mainContentRef}
-          className={`min-w-0 flex-1 ${
+          className={`app-layout-main ${
             isLearnPlayer || isLanding || isAuthPage || isCourseBuilder
-              ? 'p-0'
+              ? 'app-layout-main-2'
               : isMessages
-              ? 'p-2 sm:p-4 lg:p-6'
-              : 'p-3.5 sm:p-6 lg:p-8'
+                ? 'app-layout-main-3'
+                : 'app-layout-main-4'
           }`}
         >
-          <div key={location.pathname} className={`route-enter ${showAppSidebar ? 'pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0' : ''}`}>
+          <div
+            key={location.pathname}
+            className={`route-enter ${showAppSidebar ? 'app-layout-panel-3' : ''}`}
+          >
             <Outlet />
           </div>
         </main>

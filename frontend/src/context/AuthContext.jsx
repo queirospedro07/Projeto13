@@ -1,9 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { api, setAuthToken, removeAuthToken, getAuthToken } from '../services/api';
 const AuthContext = createContext(undefined);
-export const AuthProvider = ({
-  children
-}) => {
+export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(getAuthToken());
   const [isLoading, setIsLoading] = useState(true);
@@ -28,21 +26,21 @@ export const AuthProvider = ({
   useEffect(() => {
     fetchCurrentUser();
   }, []);
-  const login = async credentials => {
+  const login = async (credentials, remember = false) => {
     const res = await api.login(credentials);
-    setAuthToken(res.token);
+    setAuthToken(res.token, remember);
     setToken(res.token);
     setUser(res.user);
     return res.user;
   };
-  const register = async userData => {
+  const register = async (userData) => {
     const res = await api.register(userData);
     setAuthToken(res.token);
     setToken(res.token);
     setUser(res.user);
     return res.user;
   };
-  const demoLogin = async role => {
+  const demoLogin = async (role) => {
     setIsLoading(true);
     try {
       const res = await api.demoLogin(role);
@@ -68,18 +66,22 @@ export const AuthProvider = ({
       }
     }
   };
-  return <AuthContext.Provider value={{
-    user,
-    token,
-    isLoading,
-    login,
-    register,
-    demoLogin,
-    logout,
-    refreshUser
-  }}>
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        isLoading,
+        login,
+        register,
+        demoLogin,
+        logout,
+        refreshUser,
+      }}
+    >
       {children}
-    </AuthContext.Provider>;
+    </AuthContext.Provider>
+  );
 };
 export const useAuth = () => {
   const context = useContext(AuthContext);

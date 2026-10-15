@@ -1,49 +1,14 @@
+import { ADDITIONAL_SCHEMA } from './additionalSchema.js';
+import { PROFILE_SOCIAL_SCHEMA } from '../models/ProfileSocials.js';
 import bcrypt from 'bcryptjs';
 import { seedDemoShowcaseData } from './demoSeed.js';
 
 export function initializeSchemaAndSeed(db) {
-  try {
-    const legacyQuizzesTable = db.prepare("SELECT type FROM sqlite_master WHERE name = 'quizzes'").get();
-    if (legacyQuizzesTable && legacyQuizzesTable.type === 'table') {
-      db.exec(`
-        PRAGMA foreign_keys = OFF;
-        CREATE TABLE IF NOT EXISTS questionarios (
-          id TEXT PRIMARY KEY,
-          id_aula TEXT UNIQUE NOT NULL,
-          titulo TEXT NOT NULL,
-          descricao TEXT,
-          pontuacao_aprovacao INTEGER NOT NULL DEFAULT 70,
-          recompensa_xp INTEGER NOT NULL DEFAULT 50,
-          FOREIGN KEY(id_aula) REFERENCES aulas(id) ON DELETE CASCADE
-        );
-        INSERT OR IGNORE INTO questionarios SELECT * FROM quizzes;
-        DROP TABLE quizzes;
-        PRAGMA foreign_keys = ON;
-      `);
-    }
-
-    db.exec(`
-      PRAGMA foreign_keys = OFF;
-      DROP VIEW IF EXISTS reactions;
-      DROP VIEW IF EXISTS course_roles;
-      DROP VIEW IF EXISTS course_member_roles;
-      DROP VIEW IF EXISTS admin_applications;
-      DROP VIEW IF EXISTS support_tickets;
-      DROP VIEW IF EXISTS ticket_messages;
-      DROP VIEW IF EXISTS qa_questions;
-      DROP VIEW IF EXISTS qa_answers;
-
-      DROP TABLE IF EXISTS reacoes;
-      DROP TABLE IF EXISTS cargos_membros_curso;
-      DROP TABLE IF EXISTS cargos_curso;
-      DROP TABLE IF EXISTS candidaturas_admin;
-      DROP TABLE IF EXISTS perguntas_qa;
-      DROP TABLE IF EXISTS respostas_qa;
-
-      UPDATE utilizadores SET esta_suspenso = 0 WHERE esta_suspenso != 1 OR papel = 'ADMIN';
-      PRAGMA foreign_keys = ON;
-    `);
-  } catch (_) {}
+  const legacy = db.prepare("SELECT type FROM sqlite_master WHERE name = 'quizzes'").get();
+  if (legacy?.type === 'table')
+    throw new Error(
+      'Base de dados de uma versão antiga: faça uma cópia de segurança e uma migração explícita antes de arrancar.',
+    );
 
   // 1. CRIAÇÃO DAS TABELAS EM PORTUGUÊS DE PORTUGAL (PT-PT)
   db.exec(`
@@ -80,6 +45,7 @@ export function initializeSchemaAndSeed(db) {
       titulo_perfil TEXT,
       website TEXT,
       github TEXT,
+      twitter TEXT,
       linkedin TEXT,
       url_banner TEXT,
       posicao_banner TEXT DEFAULT '50% 50%',
@@ -95,6 +61,9 @@ export function initializeSchemaAndSeed(db) {
       preferencia_tema TEXT NOT NULL DEFAULT 'light',
       FOREIGN KEY(id_utilizador) REFERENCES utilizadores(id) ON DELETE CASCADE
     );
+
+    ${PROFILE_SOCIAL_SCHEMA}
+    ${ADDITIONAL_SCHEMA}
 
     CREATE TABLE IF NOT EXISTS categorias (
       id TEXT PRIMARY KEY,
@@ -1077,11 +1046,12 @@ export function initializeSchemaAndSeed(db) {
     END;
   `);
 
+  const userColumns = db.prepare('PRAGMA table_info(utilizadores)').all();
+  if (!userColumns.some((c) => c.name === 'versao_sessao'))
+    db.exec('ALTER TABLE utilizadores ADD COLUMN versao_sessao INTEGER NOT NULL DEFAULT 0');
   const userCount = db.prepare('SELECT COUNT(*) as count FROM utilizadores').get().count;
-  if (userCount === 0) {
-    seedData(db);
-  }
-  if (process.env.NODE_ENV !== 'production') {
+  if (process.env.NODE_ENV !== 'production' && process.env.SEED_DEMO_DATA === 'true') {
+    if (userCount === 0) seedData(db);
     seedDemoShowcaseData(db);
   }
 }
@@ -1178,9 +1148,17 @@ function seedData(db) {
       1450,
       0,
       now,
-      now
+      now,
     );
-    insertProfile.run('prof-student', 'user-student', 'Estudante de Programação Web', 'https://nexo.pt', 'https://github.com/pedrosilva', '', '');
+    insertProfile.run(
+      'prof-student',
+      'user-student',
+      'Estudante de Programação Web',
+      'https://nexo.pt',
+      'https://github.com/pedrosilva',
+      '',
+      '',
+    );
 
     insertUser.run(
       'user-sarah',
@@ -1197,9 +1175,17 @@ function seedData(db) {
       8900,
       0,
       now,
-      now
+      now,
     );
-    insertProfile.run('prof-sarah', 'user-sarah', 'Formadora de Desenvolvimento Web', '', 'https://github.com/marianacosta', '', '');
+    insertProfile.run(
+      'prof-sarah',
+      'user-sarah',
+      'Formadora de Desenvolvimento Web',
+      '',
+      'https://github.com/marianacosta',
+      '',
+      '',
+    );
 
     insertUser.run(
       'user-alex',
@@ -1216,9 +1202,17 @@ function seedData(db) {
       25400,
       0,
       now,
-      now
+      now,
     );
-    insertProfile.run('prof-alex', 'user-alex', 'Administrador da Plataforma', '', 'https://github.com/ruioliveira', '', '');
+    insertProfile.run(
+      'prof-alex',
+      'user-alex',
+      'Administrador da Plataforma',
+      '',
+      'https://github.com/ruioliveira',
+      '',
+      '',
+    );
 
     insertUser.run(
       'user-tiago',
@@ -1235,9 +1229,17 @@ function seedData(db) {
       820,
       0,
       now,
-      now
+      now,
     );
-    insertProfile.run('prof-tiago', 'user-tiago', 'Técnico de Redes e Segurança', '', 'https://github.com/tiagoramos', '', '');
+    insertProfile.run(
+      'prof-tiago',
+      'user-tiago',
+      'Técnico de Redes e Segurança',
+      '',
+      'https://github.com/tiagoramos',
+      '',
+      '',
+    );
 
     // 2. CANDIDATURA A CRIADOR
     insertApplication.run(
@@ -1254,15 +1256,45 @@ function seedData(db) {
       'PENDING',
       null,
       now,
-      now
+      now,
     );
 
     // 3. CATEGORIAS
-    insertCategory.run('cat-prog', 'Programação e Engenharia de Software', 'programming', 'Desenvolvimento web, APIs REST, JavaScript, TypeScript e bases de dados.', 'Code');
-    insertCategory.run('cat-design', 'Design e Interfaces (UI/UX)', 'design', 'Prototipagem no Figma, criação de interfaces e usabilidade.', 'Palette');
-    insertCategory.run('cat-ai', 'Inteligência Artificial e Dados', 'ai', 'Introdução a Machine Learning, Python e análise de dados.', 'Cpu');
-    insertCategory.run('cat-sec', 'Cibersegurança e Redes', 'cybersecurity', 'Segurança de redes, Linux e boas práticas em aplicações web.', 'ShieldCheck');
-    insertCategory.run('cat-cloud', 'Cloud, DevOps e Servidores', 'cloud', 'Docker, servidores Linux e publicação de aplicações.', 'Server');
+    insertCategory.run(
+      'cat-prog',
+      'Programação e Engenharia de Software',
+      'programming',
+      'Desenvolvimento web, APIs REST, JavaScript, TypeScript e bases de dados.',
+      'Code',
+    );
+    insertCategory.run(
+      'cat-design',
+      'Design e Interfaces (UI/UX)',
+      'design',
+      'Prototipagem no Figma, criação de interfaces e usabilidade.',
+      'Palette',
+    );
+    insertCategory.run(
+      'cat-ai',
+      'Inteligência Artificial e Dados',
+      'ai',
+      'Introdução a Machine Learning, Python e análise de dados.',
+      'Cpu',
+    );
+    insertCategory.run(
+      'cat-sec',
+      'Cibersegurança e Redes',
+      'cybersecurity',
+      'Segurança de redes, Linux e boas práticas em aplicações web.',
+      'ShieldCheck',
+    );
+    insertCategory.run(
+      'cat-cloud',
+      'Cloud, DevOps e Servidores',
+      'cloud',
+      'Docker, servidores Linux e publicação de aplicações.',
+      'Server',
+    );
 
     // 4. ESPAÇOS DA COMUNIDADE E CANAIS
     insertSpace.run(
@@ -1276,13 +1308,57 @@ function seedData(db) {
       'programming',
       'user-sarah',
       142,
-      now
+      now,
     );
 
-    insertChannel.run('ch-general', 'space-react', 'geral', 'text', 'Conversa geral sobre programação e os cursos da plataforma', 0, 0, 0, 'O que estás a estudar esta semana?', 'Mantém o respeito pelos colegas.');
-    insertChannel.run('ch-qa', 'space-react', 'duvidas-exercicios', 'text', 'Canal para colocar dúvidas sobre as aulas e exercícios', 1, 0, 0, 'Qual é o erro ou dúvida que tens?', 'Partilha o código ou print do erro para ser mais fácil ajudar.');
-    insertChannel.run('ch-showcase', 'space-react', 'projetos-alunos', 'text', 'Mostra os teus trabalhos e projetos aos outros colegas', 2, 0, 0, 'Que tecnologias usaste neste projeto?', 'Podes deixar o link do GitHub.');
-    insertChannel.run('ch-voice-1', 'space-react', 'Sala de Estudo 01 (Voz / Vídeo)', 'voice', 'Sala de voz para estudar em grupo e partilhar ecrã', 3, 1, 0, 'Que matéria estão a rever?', 'Desliga o microfone quando não estiveres a falar.');
+    insertChannel.run(
+      'ch-general',
+      'space-react',
+      'geral',
+      'text',
+      'Conversa geral sobre programação e os cursos da plataforma',
+      0,
+      0,
+      0,
+      'O que estás a estudar esta semana?',
+      'Mantém o respeito pelos colegas.',
+    );
+    insertChannel.run(
+      'ch-qa',
+      'space-react',
+      'duvidas-exercicios',
+      'text',
+      'Canal para colocar dúvidas sobre as aulas e exercícios',
+      1,
+      0,
+      0,
+      'Qual é o erro ou dúvida que tens?',
+      'Partilha o código ou print do erro para ser mais fácil ajudar.',
+    );
+    insertChannel.run(
+      'ch-showcase',
+      'space-react',
+      'projetos-alunos',
+      'text',
+      'Mostra os teus trabalhos e projetos aos outros colegas',
+      2,
+      0,
+      0,
+      'Que tecnologias usaste neste projeto?',
+      'Podes deixar o link do GitHub.',
+    );
+    insertChannel.run(
+      'ch-voice-1',
+      'space-react',
+      'Sala de Estudo 01 (Voz / Vídeo)',
+      'voice',
+      'Sala de voz para estudar em grupo e partilhar ecrã',
+      3,
+      1,
+      0,
+      'Que matéria estão a rever?',
+      'Desliga o microfone quando não estiveres a falar.',
+    );
 
     insertSpace.run(
       'space-ui-ux',
@@ -1295,13 +1371,57 @@ function seedData(db) {
       'design',
       'user-sarah',
       98,
-      now
+      now,
     );
 
-    insertChannel.run('ch-uiux-general', 'space-ui-ux', 'geral-design', 'text', 'Conversas sobre UI/UX, Figma e CSS', 0, 0, 0, 'Que ferramentas de design costumas usar?', 'Respeita o trabalho dos colegas.');
-    insertChannel.run('ch-uiux-feedback', 'space-ui-ux', 'feedback-interfaces', 'text', 'Pede opiniões e sugestões sobre os teus layouts', 1, 0, 0, 'Para que tipo de aplicação é este ecrã?', 'Deixa feedback construtivo.');
-    insertChannel.run('ch-uiux-showcase', 'space-ui-ux', 'prototipos', 'text', 'Partilha de protótipos e componentes', 2, 0, 0, 'Que funcionalidade desenhaste?', 'Podes incluir o link do Figma.');
-    insertChannel.run('ch-uiux-voice', 'space-ui-ux', 'Sala de Design (Voz / Vídeo)', 'voice', 'Sessões de estudo em grupo com partilha de ecrã', 3, 1, 0, 'Em que projeto estão a trabalhar?', '');
+    insertChannel.run(
+      'ch-uiux-general',
+      'space-ui-ux',
+      'geral-design',
+      'text',
+      'Conversas sobre UI/UX, Figma e CSS',
+      0,
+      0,
+      0,
+      'Que ferramentas de design costumas usar?',
+      'Respeita o trabalho dos colegas.',
+    );
+    insertChannel.run(
+      'ch-uiux-feedback',
+      'space-ui-ux',
+      'feedback-interfaces',
+      'text',
+      'Pede opiniões e sugestões sobre os teus layouts',
+      1,
+      0,
+      0,
+      'Para que tipo de aplicação é este ecrã?',
+      'Deixa feedback construtivo.',
+    );
+    insertChannel.run(
+      'ch-uiux-showcase',
+      'space-ui-ux',
+      'prototipos',
+      'text',
+      'Partilha de protótipos e componentes',
+      2,
+      0,
+      0,
+      'Que funcionalidade desenhaste?',
+      'Podes incluir o link do Figma.',
+    );
+    insertChannel.run(
+      'ch-uiux-voice',
+      'space-ui-ux',
+      'Sala de Design (Voz / Vídeo)',
+      'voice',
+      'Sessões de estudo em grupo com partilha de ecrã',
+      3,
+      1,
+      0,
+      'Em que projeto estão a trabalhar?',
+      '',
+    );
 
     insertSpace.run(
       'space-cloud-devops',
@@ -1314,13 +1434,57 @@ function seedData(db) {
       'cloud',
       'user-sarah',
       76,
-      now
+      now,
     );
 
-    insertChannel.run('ch-cloud-general', 'space-cloud-devops', 'geral-cloud', 'text', 'Dúvidas e conversa sobre Docker, Linux e servidores', 0, 0, 0, 'Onde costumas alojar os teus projetos?', 'Nunca partilhes ficheiros .env ou chaves privadas.');
-    insertChannel.run('ch-cloud-qa', 'space-cloud-devops', 'ajuda-docker', 'text', 'Ajuda com configuração de contentores e bases de dados', 1, 0, 0, 'Qual é a mensagem de erro no terminal?', 'Usa blocos de código para os logs.');
-    insertChannel.run('ch-cloud-labs', 'space-cloud-devops', 'tutoriais-e-dicas', 'text', 'Partilha de comandos úteis e configurações', 2, 0, 0, '', '');
-    insertChannel.run('ch-cloud-voice', 'space-cloud-devops', 'Sala DevOps (Voz / Vídeo)', 'voice', 'Sala de voz para resolver problemas em conjunto', 3, 1, 0, '', '');
+    insertChannel.run(
+      'ch-cloud-general',
+      'space-cloud-devops',
+      'geral-cloud',
+      'text',
+      'Dúvidas e conversa sobre Docker, Linux e servidores',
+      0,
+      0,
+      0,
+      'Onde costumas alojar os teus projetos?',
+      'Nunca partilhes ficheiros .env ou chaves privadas.',
+    );
+    insertChannel.run(
+      'ch-cloud-qa',
+      'space-cloud-devops',
+      'ajuda-docker',
+      'text',
+      'Ajuda com configuração de contentores e bases de dados',
+      1,
+      0,
+      0,
+      'Qual é a mensagem de erro no terminal?',
+      'Usa blocos de código para os logs.',
+    );
+    insertChannel.run(
+      'ch-cloud-labs',
+      'space-cloud-devops',
+      'tutoriais-e-dicas',
+      'text',
+      'Partilha de comandos úteis e configurações',
+      2,
+      0,
+      0,
+      '',
+      '',
+    );
+    insertChannel.run(
+      'ch-cloud-voice',
+      'space-cloud-devops',
+      'Sala DevOps (Voz / Vídeo)',
+      'voice',
+      'Sala de voz para resolver problemas em conjunto',
+      3,
+      1,
+      0,
+      '',
+      '',
+    );
 
     insertSpace.run(
       'space-ai-applied',
@@ -1333,21 +1497,67 @@ function seedData(db) {
       'ai',
       'user-sarah',
       115,
-      now
+      now,
     );
 
-    insertChannel.run('ch-ai-general', 'space-ai-applied', 'geral-python', 'text', 'Conversas sobre Python, bibliotecas e projetos de dados', 0, 0, 0, '', '');
-    insertChannel.run('ch-ai-prompts', 'space-ai-applied', 'duvidas-python', 'text', 'Ajuda com exercícios e scripts em Python', 1, 0, 0, '', '');
-    insertChannel.run('ch-ai-projects', 'space-ai-applied', 'projetos-dados', 'text', 'Partilha de notebooks e pequenos projetos', 2, 0, 0, '', '');
-    insertChannel.run('ch-ai-voice', 'space-ai-applied', 'Sala de Estudo Python (Voz)', 'voice', 'Estudo em grupo e resolução de exercícios', 3, 1, 0, '', '');
+    insertChannel.run(
+      'ch-ai-general',
+      'space-ai-applied',
+      'geral-python',
+      'text',
+      'Conversas sobre Python, bibliotecas e projetos de dados',
+      0,
+      0,
+      0,
+      '',
+      '',
+    );
+    insertChannel.run(
+      'ch-ai-prompts',
+      'space-ai-applied',
+      'duvidas-python',
+      'text',
+      'Ajuda com exercícios e scripts em Python',
+      1,
+      0,
+      0,
+      '',
+      '',
+    );
+    insertChannel.run(
+      'ch-ai-projects',
+      'space-ai-applied',
+      'projetos-dados',
+      'text',
+      'Partilha de notebooks e pequenos projetos',
+      2,
+      0,
+      0,
+      '',
+      '',
+    );
+    insertChannel.run(
+      'ch-ai-voice',
+      'space-ai-applied',
+      'Sala de Estudo Python (Voz)',
+      'voice',
+      'Estudo em grupo e resolução de exercícios',
+      3,
+      1,
+      0,
+      '',
+      '',
+    );
 
     // Relações de Membros
-    ['space-react', 'space-ui-ux', 'space-cloud-devops', 'space-ai-applied'].forEach((spId, idx) => {
-      insertMembership.run(`mem-sarah-${idx}`, 'user-sarah', spId, 'OWNER', now);
-      insertMembership.run(`mem-student-${idx}`, 'user-student', spId, 'MEMBER', now);
-      insertMembership.run(`mem-alex-${idx}`, 'user-alex', spId, 'ADMIN', now);
-      insertMembership.run(`mem-tiago-${idx}`, 'user-tiago', spId, 'MEMBER', now);
-    });
+    ['space-react', 'space-ui-ux', 'space-cloud-devops', 'space-ai-applied'].forEach(
+      (spId, idx) => {
+        insertMembership.run(`mem-sarah-${idx}`, 'user-sarah', spId, 'OWNER', now);
+        insertMembership.run(`mem-student-${idx}`, 'user-student', spId, 'MEMBER', now);
+        insertMembership.run(`mem-alex-${idx}`, 'user-alex', spId, 'ADMIN', now);
+        insertMembership.run(`mem-tiago-${idx}`, 'user-tiago', spId, 'MEMBER', now);
+      },
+    );
 
     // 5. CURSOS INICIAIS
     insertCourse.run(
@@ -1370,17 +1580,86 @@ function seedData(db) {
       'user-sarah',
       'space-react',
       now,
-      now
+      now,
     );
 
-    insertModule.run('mod-1', 'course-react-ts', 'Módulo 1: Introdução ao React com TypeScript', 'Configuração do projeto com Vite e criação dos primeiros componentes tipados.', 0);
-    insertLesson.run('les-1', 'mod-1', '1.1 Configuração do Projeto com Vite e TypeScript', 'video', 'Nesta aula criamos o projeto base com Vite e revemos a estrutura de pastas.', 'https://www.w3schools.com/html/mov_bbb.mp4', 12, 0, 30);
-    insertLesson.run('les-2', 'mod-1', '1.2 Tipagem de Props e Hooks (useState e useEffect)', 'video', 'Como definir tipos para as propriedades dos componentes e estados mais comuns.', 'https://www.w3schools.com/html/mov_bbb.mp4', 18, 1, 35);
-    insertLesson.run('les-3', 'mod-1', '1.3 Questionário de Revisão', 'quiz', 'Pequeno teste para rever a matéria deste módulo.', '', 10, 2, 50);
+    insertModule.run(
+      'mod-1',
+      'course-react-ts',
+      'Módulo 1: Introdução ao React com TypeScript',
+      'Configuração do projeto com Vite e criação dos primeiros componentes tipados.',
+      0,
+    );
+    insertLesson.run(
+      'les-1',
+      'mod-1',
+      '1.1 Configuração do Projeto com Vite e TypeScript',
+      'video',
+      'Nesta aula criamos o projeto base com Vite e revemos a estrutura de pastas.',
+      'https://www.w3schools.com/html/mov_bbb.mp4',
+      12,
+      0,
+      30,
+    );
+    insertLesson.run(
+      'les-2',
+      'mod-1',
+      '1.2 Tipagem de Props e Hooks (useState e useEffect)',
+      'video',
+      'Como definir tipos para as propriedades dos componentes e estados mais comuns.',
+      'https://www.w3schools.com/html/mov_bbb.mp4',
+      18,
+      1,
+      35,
+    );
+    insertLesson.run(
+      'les-3',
+      'mod-1',
+      '1.3 Questionário de Revisão',
+      'quiz',
+      'Pequeno teste para rever a matéria deste módulo.',
+      '',
+      10,
+      2,
+      50,
+    );
 
-    insertQuiz.run('quiz-1', 'les-3', 'Questionário: Fundamentos de React com TypeScript', 'Responde às duas questões sobre tipagem de componentes.', 70, 50);
-    insertQuizQuestion.run('qq-1', 'quiz-1', 'Qual é a forma recomendada de tipar as props de um componente funcional em React?', JSON.stringify(['Criar uma interface ou type para as props', 'Usar sempre o tipo "any"', 'Não definir tipos', 'Usar apenas variáveis globais']), 0, 'Definir uma interface ou type ajuda a detetar erros nas propriedades passadas ao componente.', 0);
-    insertQuizQuestion.run('qq-2', 'quiz-1', 'Para que serve o modo strict do TypeScript num projeto React?', JSON.stringify(['Detetar erros de tipos e valores nulos antes de correr o código', 'Aumentar a velocidade da internet', 'Aplicar estilos CSS automaticamente', 'Ignorar erros de compilação']), 0, 'O modo estrito avisa durante o desenvolvimento quando tentamos aceder a propriedades que podem ser undefined.', 1);
+    insertQuiz.run(
+      'quiz-1',
+      'les-3',
+      'Questionário: Fundamentos de React com TypeScript',
+      'Responde às duas questões sobre tipagem de componentes.',
+      70,
+      50,
+    );
+    insertQuizQuestion.run(
+      'qq-1',
+      'quiz-1',
+      'Qual é a forma recomendada de tipar as props de um componente funcional em React?',
+      JSON.stringify([
+        'Criar uma interface ou type para as props',
+        'Usar sempre o tipo "any"',
+        'Não definir tipos',
+        'Usar apenas variáveis globais',
+      ]),
+      0,
+      'Definir uma interface ou type ajuda a detetar erros nas propriedades passadas ao componente.',
+      0,
+    );
+    insertQuizQuestion.run(
+      'qq-2',
+      'quiz-1',
+      'Para que serve o modo strict do TypeScript num projeto React?',
+      JSON.stringify([
+        'Detetar erros de tipos e valores nulos antes de correr o código',
+        'Aumentar a velocidade da internet',
+        'Aplicar estilos CSS automaticamente',
+        'Ignorar erros de compilação',
+      ]),
+      0,
+      'O modo estrito avisa durante o desenvolvimento quando tentamos aceder a propriedades que podem ser undefined.',
+      1,
+    );
 
     insertCourse.run(
       'course-ui-ux',
@@ -1402,11 +1681,27 @@ function seedData(db) {
       'user-sarah',
       'space-ui-ux',
       now,
-      now
+      now,
     );
 
-    insertModule.run('mod-design-1', 'course-ui-ux', 'Módulo 1: Componentes e Estilos no Figma', 'Organização de cores, tipografia, grelhas e auto-layout.', 0);
-    insertLesson.run('les-design-1', 'mod-design-1', '1.1 Criação de Estilos e Componentes Base', 'video', 'Como configurar estilos de texto e cor no Figma para reutilizar nas páginas do projeto.', 'https://www.w3schools.com/html/mov_bbb.mp4', 15, 0, 30);
+    insertModule.run(
+      'mod-design-1',
+      'course-ui-ux',
+      'Módulo 1: Componentes e Estilos no Figma',
+      'Organização de cores, tipografia, grelhas e auto-layout.',
+      0,
+    );
+    insertLesson.run(
+      'les-design-1',
+      'mod-design-1',
+      '1.1 Criação de Estilos e Componentes Base',
+      'video',
+      'Como configurar estilos de texto e cor no Figma para reutilizar nas páginas do projeto.',
+      'https://www.w3schools.com/html/mov_bbb.mp4',
+      15,
+      0,
+      30,
+    );
 
     insertCourse.run(
       'course-cloud-devops',
@@ -1428,7 +1723,7 @@ function seedData(db) {
       'user-sarah',
       'space-cloud-devops',
       now,
-      now
+      now,
     );
 
     insertCourse.run(
@@ -1451,18 +1746,52 @@ function seedData(db) {
       'user-sarah',
       'space-ai-applied',
       now,
-      now
+      now,
     );
 
-    insertModule.run('mod-ai-1', 'course-ai-pending', 'Módulo 1: Primeiros Passos com Python', 'Instalação do Python e estruturas de dados básicas.', 0);
-    insertLesson.run('les-ai-1', 'mod-ai-1', '1.1 Ambiente de Trabalho e Primeiros Scripts', 'video', 'Como instalar o Python e correr os primeiros programas no terminal.', 'https://www.w3schools.com/html/mov_bbb.mp4', 16, 0, 30);
+    insertModule.run(
+      'mod-ai-1',
+      'course-ai-pending',
+      'Módulo 1: Primeiros Passos com Python',
+      'Instalação do Python e estruturas de dados básicas.',
+      0,
+    );
+    insertLesson.run(
+      'les-ai-1',
+      'mod-ai-1',
+      '1.1 Ambiente de Trabalho e Primeiros Scripts',
+      'video',
+      'Como instalar o Python e correr os primeiros programas no terminal.',
+      'https://www.w3schools.com/html/mov_bbb.mp4',
+      16,
+      0,
+      30,
+    );
 
     // 6. INSCRIÇÃO INICIAL
     insertEnrollment.run('enr-1', 'user-student', 'course-react-ts', now, 68.0, 'les-2');
 
     // 7. NOTIFICAÇÕES
-    insertNotification.run('notif-1', 'user-student', 'welcome', 'Bem-vindo ao NEXO!', 'Explora o catálogo de cursos e experimenta os canais da comunidade.', '/explore', 0, now);
-    insertNotification.run('notif-admin', 'user-alex', 'admin', 'Nova Candidatura a Formador', 'O utilizador Tiago Ramos submeteu uma candidatura para ser Formador.', '/admin', 0, now);
+    insertNotification.run(
+      'notif-1',
+      'user-student',
+      'welcome',
+      'Bem-vindo ao NEXO!',
+      'Explora o catálogo de cursos e experimenta os canais da comunidade.',
+      '/explore',
+      0,
+      now,
+    );
+    insertNotification.run(
+      'notif-admin',
+      'user-alex',
+      'admin',
+      'Nova Candidatura a Formador',
+      'O utilizador Tiago Ramos submeteu uma candidatura para ser Formador.',
+      '/admin',
+      0,
+      now,
+    );
 
     db.exec('COMMIT');
   } catch (err) {

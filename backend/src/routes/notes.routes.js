@@ -1,82 +1,117 @@
+import { canStudyCourse, lessonWithCourse } from '../services/courseAccess.js';
 import { Router } from 'express';
 import { queryAll, queryOne, execute } from '../database/connection.js';
 import { authenticate } from '../middleware/auth.js';
 const router = Router();
 router.get('/:lessonId', authenticate, async (req, res) => {
   try {
-    const {
-      lessonId
-    } = req.params;
+    const { lessonId } = req.params;
     const userId = req.user.id;
-    const note = queryOne('SELECT * FROM notes WHERE userId = ? AND lessonId = ?', [userId, lessonId]);
-    return res.json(note || {
-      content: ''
-    });
+    const selectedLesson = lessonWithCourse(req.params.lessonId);
+    if (
+      req.params.lessonId &&
+      (!selectedLesson ||
+        !canStudyCourse(
+          req.user,
+          queryOne('SELECT * FROM courses WHERE id = ?', [selectedLesson.courseId]),
+        ))
+    )
+      return res.status(403).json({ error: 'Sem acesso a esta aula.' });
+    const note = queryOne('SELECT * FROM notes WHERE userId = ? AND lessonId = ?', [
+      userId,
+      lessonId,
+    ]);
+    return res.json(
+      note || {
+        content: '',
+      },
+    );
   } catch (err) {
     return res.status(500).json({
-      error: 'Falha ao obter anotação'
+      error: 'Falha ao obter anotação',
     });
   }
 });
 router.post('/:lessonId', authenticate, async (req, res) => {
   try {
-    const {
-      lessonId
-    } = req.params;
-    const {
-      content
-    } = req.body;
+    const { lessonId } = req.params;
+    const { content } = req.body;
     const userId = req.user.id;
+    if (typeof content !== 'string' || content.length > 20000)
+      return res.status(400).json({ error: 'A anotação deve ter até 20 000 caracteres.' });
     const now = new Date().toISOString();
-    const lesson = queryOne('SELECT id FROM lessons WHERE id = ?', [lessonId]);
+    const lesson = lessonWithCourse(lessonId);
+    if (
+      lesson &&
+      !canStudyCourse(req.user, queryOne('SELECT * FROM courses WHERE id = ?', [lesson.courseId]))
+    )
+      return res.status(403).json({ error: 'Sem acesso a esta aula.' });
     if (!lesson) {
       return res.status(404).json({
-        error: 'Aula não encontrada'
+        error: 'Aula não encontrada',
       });
     }
-    const existing = queryOne('SELECT id FROM notes WHERE userId = ? AND lessonId = ?', [userId, lessonId]);
+    const existing = queryOne('SELECT id FROM notes WHERE userId = ? AND lessonId = ?', [
+      userId,
+      lessonId,
+    ]);
     if (existing) {
-      execute('UPDATE notes SET content = ?, updatedAt = ? WHERE id = ?', [content || '', now, existing.id]);
+      execute('UPDATE notes SET content = ?, updatedAt = ? WHERE id = ?', [
+        content || '',
+        now,
+        existing.id,
+      ]);
     } else {
-      execute('INSERT INTO notes (id, userId, lessonId, content, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)', [`note-${Date.now()}`, userId, lessonId, content || '', now, now]);
+      execute(
+        'INSERT INTO notes (id, userId, lessonId, content, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
+        [`note-${Date.now()}`, userId, lessonId, content || '', now, now],
+      );
     }
-    const note = queryOne('SELECT * FROM notes WHERE userId = ? AND lessonId = ?', [userId, lessonId]);
+    const note = queryOne('SELECT * FROM notes WHERE userId = ? AND lessonId = ?', [
+      userId,
+      lessonId,
+    ]);
     return res.json(note);
   } catch (err) {
     return res.status(500).json({
-      error: 'Falha ao guardar anotação'
+      error: 'Falha ao guardar anotação',
     });
   }
 });
 router.get('/', authenticate, async (req, res) => {
   try {
     const userId = req.user.id;
-    const notes = queryAll(`SELECT n.*, l.title as lesson_title, m.title as module_title, c.title as course_title, c.id as course_id
+    const notes = queryAll(
+      `SELECT n.*, l.title as lesson_title, m.title as module_title, c.title as course_title, c.id as course_id
        FROM notes n
        JOIN lessons l ON n.lessonId = l.id
        JOIN course_modules m ON l.moduleId = m.id
        JOIN courses c ON m.courseId = c.id
        WHERE n.userId = ?
-       ORDER BY n.updatedAt DESC`, [userId]);
-    return res.json(notes.map(n => ({
-      id: n.id,
-      content: n.content,
-      updatedAt: n.updatedAt,
-      lesson: {
-        id: n.lessonId,
-        title: n.lesson_title,
-        module: {
-          title: n.module_title,
-          course: {
-            id: n.course_id,
-            title: n.course_title
-          }
-        }
-      }
-    })));
+       ORDER BY n.updatedAt DESC`,
+      [userId],
+    );
+    return res.json(
+      notes.map((n) => ({
+        id: n.id,
+        content: n.content,
+        updatedAt: n.updatedAt,
+        lesson: {
+          id: n.lessonId,
+          title: n.lesson_title,
+          module: {
+            title: n.module_title,
+            course: {
+              id: n.course_id,
+              title: n.course_title,
+            },
+          },
+        },
+      })),
+    );
   } catch (err) {
     return res.status(500).json({
-      error: 'Falha ao obter anotações'
+      error: 'Falha ao obter anotações',
     });
   }
 });

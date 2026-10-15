@@ -1,3 +1,4 @@
+import './Sidebar.css';
 import React, { useState, useEffect, useMemo } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import {
@@ -18,7 +19,7 @@ import {
   MicOff,
   Headphones,
   HeadphoneOff,
-  PhoneOff
+  PhoneOff,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
@@ -29,7 +30,8 @@ import { api } from '../../services/api';
 export const Sidebar = () => {
   const { user } = useAuth();
   const { socket, onlineUsers = [] } = useSocket();
-  const { activeCall, isMicMuted, isDeafened, toggleMic, toggleDeafen, leaveCall } = useActiveCall();
+  const { activeCall, isMicMuted, isDeafened, toggleMic, toggleDeafen, leaveCall } =
+    useActiveCall();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [enrolledCourses, setEnrolledCourses] = useState([]);
@@ -41,24 +43,35 @@ export const Sidebar = () => {
   const [hiddenCourseIds, setHiddenCourseIds] = useState([]);
   const [hideCompleted, setHideCompleted] = useState(false);
 
-  const isCreator = user?.role === 'CREATOR';
+  const isCreator = user?.role === 'CREATOR' || user?.role === 'ADMIN';
   const isAdmin = user?.role === 'ADMIN';
 
   const fetchSidebarData = () => {
     if (user) {
-      api.getMyCourses().then(data => setEnrolledCourses(data || [])).catch(() => {});
-      api.getDirectConversations().then(convs => {
-        const total = (convs || []).reduce((acc, c) => acc + (c.unreadCount || 0), 0);
-        setUnreadDms(total);
-        const peers = (convs || []).map(c => ({
-          ...c.peer,
-          unreadCount: c.unreadCount || 0
-        })).filter(p => p && p.id);
-        setRecentPeers(peers);
-      }).catch(() => {});
-      api.getFriends().then(data => {
-        setPendingRequestsCount(data?.incoming?.length || 0);
-      }).catch(() => {});
+      api
+        .getMyCourses()
+        .then((data) => setEnrolledCourses(data || []))
+        .catch(() => {});
+      api
+        .getDirectConversations()
+        .then((convs) => {
+          const total = (convs || []).reduce((acc, c) => acc + (c.unreadCount || 0), 0);
+          setUnreadDms(total);
+          const peers = (convs || [])
+            .map((c) => ({
+              ...c.peer,
+              unreadCount: c.unreadCount || 0,
+            }))
+            .filter((p) => p && p.id);
+          setRecentPeers(peers);
+        })
+        .catch(() => {});
+      api
+        .getFriends()
+        .then((data) => {
+          setPendingRequestsCount(data?.incoming?.length || 0);
+        })
+        .catch(() => {});
     }
   };
 
@@ -71,14 +84,25 @@ export const Sidebar = () => {
     const handleSync = () => {
       try {
         setPinnedPeerIds(JSON.parse(localStorage.getItem(`nexo_pinned_peers_${user?.id}`) || '[]'));
-        setPinnedCourseIds(JSON.parse(localStorage.getItem(`nexo_pinned_courses_${user?.id}`) || '[]'));
-        setHiddenCourseIds(JSON.parse(localStorage.getItem('nexo_hidden_courses') || localStorage.getItem('learnspace_hidden_courses') || '[]'));
+        setPinnedCourseIds(
+          JSON.parse(localStorage.getItem(`nexo_pinned_courses_${user?.id}`) || '[]'),
+        );
+        setHiddenCourseIds(
+          JSON.parse(
+            localStorage.getItem('nexo_hidden_courses') ||
+              localStorage.getItem('learnspace_hidden_courses') ||
+              '[]',
+          ),
+        );
       } catch {
         setPinnedPeerIds([]);
         setPinnedCourseIds([]);
         setHiddenCourseIds([]);
       }
-      setHideCompleted((localStorage.getItem('nexo_hide_completed') ?? localStorage.getItem('learnspace_hide_completed')) === 'true');
+      setHideCompleted(
+        (localStorage.getItem('nexo_hide_completed') ??
+          localStorage.getItem('learnspace_hide_completed')) === 'true',
+      );
     };
 
     handleSync();
@@ -109,11 +133,12 @@ export const Sidebar = () => {
   const sortedEnrolledCourses = useMemo(() => {
     if (!enrolledCourses || enrolledCourses.length === 0) return [];
 
-    const visibleCourses = enrolledCourses.filter(e => {
+    const visibleCourses = enrolledCourses.filter((e) => {
       const courseId = e.course?.id || e.courseId;
       if (!courseId) return false;
       if (!pinnedCourseIds.includes(courseId)) return false;
-      const isFinished = e.isCompleted || Math.round(e.progressPercent || e.progressPercentage || 0) >= 100;
+      const isFinished =
+        e.isCompleted || Math.round(e.progressPercent || e.progressPercentage || 0) >= 100;
       if (hiddenCourseIds.includes(courseId)) return false;
       if (hideCompleted && isFinished) return false;
       return true;
@@ -128,9 +153,10 @@ export const Sidebar = () => {
 
   const hiddenCoursesCount = useMemo(() => {
     if (!enrolledCourses || enrolledCourses.length === 0) return 0;
-    return enrolledCourses.filter(e => {
+    return enrolledCourses.filter((e) => {
       const courseId = e.course?.id || e.courseId;
-      const isFinished = e.isCompleted || Math.round(e.progressPercent || e.progressPercentage || 0) >= 100;
+      const isFinished =
+        e.isCompleted || Math.round(e.progressPercent || e.progressPercentage || 0) >= 100;
       return (courseId && hiddenCourseIds.includes(courseId)) || (hideCompleted && isFinished);
     }).length;
   }, [enrolledCourses, hiddenCourseIds, hideCompleted]);
@@ -139,23 +165,16 @@ export const Sidebar = () => {
     location.pathname === '/messages' &&
     (location.search.includes('tab=friends') || location.search.includes('tab=add'));
 
-  const isMessagesActive =
-    location.pathname === '/messages' && !isFriendsActive;
-  const pinnedPeers = recentPeers.filter(peer => pinnedPeerIds.includes(peer.id));
+  const isMessagesActive = location.pathname === '/messages' && !isFriendsActive;
+  const pinnedPeers = recentPeers.filter((peer) => pinnedPeerIds.includes(peer.id));
 
   const getNavItemClass = (isActive) =>
-    `group flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all select-none ${
-      isActive
-        ? 'bg-blue-600 text-white shadow-xs font-bold'
-        : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-[#121827]'
+    `sidebar-get-nav-item-class ui-group ${
+      isActive ? 'sidebar-get-nav-item-class-2' : 'sidebar-get-nav-item-class-3'
     }`;
 
   const getIconClass = (isActive) =>
-    `w-4 h-4 shrink-0 transition-colors ${
-      isActive
-        ? 'text-white'
-        : 'text-slate-400 group-hover:text-slate-900 dark:text-zinc-400 dark:group-hover:text-white'
-    }`;
+    `sidebar-get-icon-class ${isActive ? 'sidebar-get-icon-class-2' : 'sidebar-get-icon-class-3'}`;
 
   const navClass = ({ isActive }) => getNavItemClass(isActive);
 
@@ -163,42 +182,41 @@ export const Sidebar = () => {
 
   return (
     <aside
-      className={`hidden md:flex flex-col justify-between border-r border-slate-200/90 dark:border-neutral-900 bg-white dark:bg-black transition-all duration-300 select-none z-30 shrink-0 sticky top-16 h-[calc(100dvh-4rem)] ${
-        collapsed ? 'w-18' : 'w-64'
+      className={`sidebar-sidebar app-sidebar ${
+        collapsed ? 'sidebar-sidebar-2' : 'sidebar-sidebar-3'
       }`}
     >
-      <div className="flex-1 min-h-0 pt-2 pb-4 px-2.5 overflow-y-auto custom-scrollbar flex flex-col gap-3.5">
-        <div className="flex items-center justify-between px-2 pt-0.5 pb-1">
-          {!collapsed ? (
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
-              Navegação
-            </span>
-          ) : <span />}
+      <div className="sidebar-panel custom-scrollbar">
+        <div className="sidebar-panel-2">
+          {!collapsed ? <span className="sidebar-label">Navegação</span> : <span />}
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="p-1 rounded-md text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800/60 transition-colors cursor-pointer"
+            className="sidebar-button"
             title={collapsed ? 'Expandir menu' : 'Recolher menu'}
           >
-            {collapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
+            {collapsed ? (
+              <ChevronRight className="sidebar-chevron-right" />
+            ) : (
+              <ChevronLeft className="sidebar-chevron-right" />
+            )}
           </button>
         </div>
 
-        <div className="flex flex-col gap-1">
-
+        <div className="sidebar-panel-3">
           <NavLink to="/dashboard" className={navClass}>
             {({ isActive }) => (
-              <div className="flex items-center gap-2.5 min-w-0">
+              <div className="sidebar-panel-4">
                 <Home className={iconClass(isActive)} />
-                {!collapsed && <span className="truncate">Início</span>}
+                {!collapsed && <span className="sidebar-label-2">Início</span>}
               </div>
             )}
           </NavLink>
 
           <NavLink to="/explore" className={navClass}>
             {({ isActive }) => (
-              <div className="flex items-center gap-2.5 min-w-0">
+              <div className="sidebar-panel-4">
                 <Compass className={iconClass(isActive)} />
-                {!collapsed && <span className="truncate">Explorar</span>}
+                {!collapsed && <span className="sidebar-label-2">Explorar</span>}
               </div>
             )}
           </NavLink>
@@ -206,95 +224,85 @@ export const Sidebar = () => {
           <NavLink to="/library" className={navClass}>
             {({ isActive }) => (
               <>
-                <div className="flex items-center gap-2.5 min-w-0">
+                <div className="sidebar-panel-4">
                   <BookOpen className={iconClass(isActive)} />
-                  {!collapsed && <span className="truncate">Os Meus Cursos</span>}
+                  {!collapsed && <span className="sidebar-label-2">Os Meus Cursos</span>}
                 </div>
                 {!collapsed && enrolledCourses.length > 0 && (
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
-                    isActive
-                      ? 'bg-slate-800 text-slate-200 dark:bg-zinc-200 dark:text-black'
-                      : 'bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-400'
-                  }`}>
+                  <span
+                    className={`sidebar-label-3 ${
+                      isActive ? 'sidebar-label-4' : 'sidebar-label-5'
+                    }`}
+                  >
                     {enrolledCourses.length}
                   </span>
                 )}
               </>
             )}
           </NavLink>
-
-
         </div>
 
-        <div className="flex flex-col gap-1 pt-3 border-t border-slate-100 dark:border-zinc-800/80">
+        <div className="sidebar-panel-5">
           {!collapsed && (
-            <div className="flex items-center justify-between px-3 mb-1">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
-                Social & Mensagens
-              </span>
-              <Link
-                to="/messages?tab=add"
-                className="p-1 rounded-md text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
-                title="Adicionar Amigo"
-              >
-                <UserPlus className="w-3.5 h-3.5" />
+            <div className="sidebar-panel-6">
+              <span className="sidebar-label">Social & Mensagens</span>
+              <Link to="/messages?tab=add" className="sidebar-link" title="Adicionar Amigo">
+                <UserPlus className="sidebar-chevron-right" />
               </Link>
             </div>
           )}
 
           <Link to="/messages" className={getNavItemClass(isMessagesActive)}>
-            <div className="flex items-center gap-2.5 min-w-0">
+            <div className="sidebar-panel-4">
               <MessageSquare className={getIconClass(isMessagesActive)} />
-              {!collapsed && <span className="truncate">Mensagens</span>}
+              {!collapsed && <span className="sidebar-label-2">Mensagens</span>}
             </div>
-            {unreadDms > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full bg-blue-600 text-white font-black text-[10px] shadow-xs">
-                {unreadDms}
-              </span>
-            )}
+            {unreadDms > 0 && <span className="sidebar-label-6">{unreadDms}</span>}
           </Link>
 
           <Link to="/messages?tab=friends" className={getNavItemClass(isFriendsActive)}>
-            <div className="flex items-center gap-2.5 min-w-0">
+            <div className="sidebar-panel-4">
               <Users className={getIconClass(isFriendsActive)} />
-              {!collapsed && <span className="truncate">Redes & Amigos</span>}
+              {!collapsed && <span className="sidebar-label-2">Redes & Amigos</span>}
             </div>
             {pendingRequestsCount > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-white font-black text-[10px] shadow-xs">
-                {pendingRequestsCount}
-              </span>
+              <span className="sidebar-label-7">{pendingRequestsCount}</span>
             )}
           </Link>
 
           {!collapsed && pinnedPeers.length > 0 && (
-            <div className="flex flex-col gap-0.5 mt-1">
-              {pinnedPeers.map(p => {
+            <div className="sidebar-panel-7">
+              {pinnedPeers.map((p) => {
+                const isPeerActive =
+                  location.pathname === '/messages' &&
+                  new URLSearchParams(location.search).get('userId') === p.id;
                 const isOnline = Boolean(
                   typeof onlineUsers?.has === 'function'
                     ? onlineUsers.has(p.id)
                     : Array.isArray(onlineUsers) &&
-                      onlineUsers.some((u) => String(typeof u === 'string' ? u : u?.userId || u?.id) === String(p.id))
+                        onlineUsers.some(
+                          (u) =>
+                            String(typeof u === 'string' ? u : u?.userId || u?.id) === String(p.id),
+                        ),
                 );
                 return (
                   <Link
                     key={p.id}
                     to={`/messages?userId=${p.id}`}
-                    className={`flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs transition-colors ${
-                      isPeerActive
-                        ? 'bg-slate-100 dark:bg-zinc-800 text-slate-900 dark:text-white font-bold'
-                        : 'text-slate-600 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-zinc-900/60 hover:text-slate-900 dark:hover:text-white'
+                    className={`sidebar-link-2 ${
+                      isPeerActive ? 'sidebar-link-3' : 'sidebar-link-4'
                     }`}
                   >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="relative shrink-0">
+                    <div className="sidebar-panel-8">
+                      <div className="sidebar-panel-9">
                         <Avatar src={p.avatarUrl} name={p.name} size="xs" />
-                        <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-slate-400 dark:bg-zinc-600'} border border-white dark:border-black absolute -bottom-0.5 -right-0.5`} />
+                        <span
+                          className={`sidebar-label-8 ${isOnline ? 'sidebar-label-10' : 'sidebar-label-11'} sidebar-label-9`}
+                        />
                       </div>
-                      <span className="truncate text-xs">{p.name}</span>
+                      <span className="sidebar-label-12">{p.name}</span>
                     </div>
-                    {p.unreadCount > 0 && (
-                      <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0" />
-                    )}
+                    {p.unreadCount > 0 && <span className="sidebar-label-13" />}
                   </Link>
                 );
               })}
@@ -303,36 +311,32 @@ export const Sidebar = () => {
         </div>
 
         {isCreator && (
-          <div className="flex flex-col gap-1 pt-3 border-t border-slate-100 dark:border-zinc-800/80">
-            {!collapsed && (
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-zinc-500 px-3 mb-1">
-                Área de Criador
-              </span>
-            )}
+          <div className="sidebar-panel-5">
+            {!collapsed && <span className="sidebar-label-14">Área de Criador</span>}
 
             <NavLink to="/creator" end className={navClass}>
               {({ isActive }) => (
-                <div className="flex items-center gap-2.5 min-w-0">
+                <div className="sidebar-panel-4">
                   <BarChart3 className={iconClass(isActive)} />
-                  {!collapsed && <span className="truncate">Painel Geral</span>}
+                  {!collapsed && <span className="sidebar-label-2">Painel Geral</span>}
                 </div>
               )}
             </NavLink>
 
             <NavLink to="/creator/courses/new" className={navClass}>
               {({ isActive }) => (
-                <div className="flex items-center gap-2.5 min-w-0">
+                <div className="sidebar-panel-4">
                   <PlusCircle className={iconClass(isActive)} />
-                  {!collapsed && <span className="truncate">Novo Curso</span>}
+                  {!collapsed && <span className="sidebar-label-2">Novo Curso</span>}
                 </div>
               )}
             </NavLink>
 
             <NavLink to="/creator/members" className={navClass}>
               {({ isActive }) => (
-                <div className="flex items-center gap-2.5 min-w-0">
+                <div className="sidebar-panel-4">
                   <Users className={iconClass(isActive)} />
-                  {!collapsed && <span className="truncate">Alunos & Vendas</span>}
+                  {!collapsed && <span className="sidebar-label-2">Alunos & Vendas</span>}
                 </div>
               )}
             </NavLink>
@@ -340,18 +344,14 @@ export const Sidebar = () => {
         )}
 
         {isAdmin && (
-          <div className="flex flex-col gap-1 pt-3 border-t border-slate-100 dark:border-zinc-800/80">
-            {!collapsed && (
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-zinc-500 px-3 mb-1">
-                Administração
-              </span>
-            )}
+          <div className="sidebar-panel-5">
+            {!collapsed && <span className="sidebar-label-14">Administração</span>}
 
             <NavLink to="/admin" className={navClass}>
               {({ isActive }) => (
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <ShieldCheck className="w-4 h-4 text-amber-500 shrink-0" />
-                  {!collapsed && <span className="truncate">Painel de Controlo</span>}
+                <div className="sidebar-panel-4">
+                  <ShieldCheck className="sidebar-shield-check" />
+                  {!collapsed && <span className="sidebar-label-2">Painel de Controlo</span>}
                 </div>
               )}
             </NavLink>
@@ -359,24 +359,23 @@ export const Sidebar = () => {
         )}
 
         {sortedEnrolledCourses.length > 0 && !collapsed && (
-          <div className="flex flex-col gap-1.5 pt-3 border-t border-slate-100 dark:border-zinc-800/80">
-            <div className="px-3 mb-1">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
-                Os Meus Cursos
-              </span>
+          <div className="sidebar-panel-10">
+            <div className="sidebar-panel-11">
+              <span className="sidebar-label">Os Meus Cursos</span>
             </div>
 
-            <div className="flex flex-col gap-1">
+            <div className="sidebar-panel-3">
               {sortedEnrolledCourses.map((e) => {
                 const course = e.course;
                 if (!course) return null;
                 const progress = Math.round(e.progressPercent || e.progressPercentage || 0);
-                const isCourseInCall = activeCall && String(activeCall.courseId) === String(course.id);
+                const isCourseInCall =
+                  activeCall && String(activeCall.courseId) === String(course.id);
                 const targetPath = isCourseInCall
                   ? `/learn/${course.id}`
                   : location.pathname.startsWith('/courses/')
-                  ? `/courses/${course.id}`
-                  : `/learn/${course.id}`;
+                    ? `/courses/${course.id}`
+                    : `/learn/${course.id}`;
 
                 return (
                   <NavLink
@@ -385,55 +384,45 @@ export const Sidebar = () => {
                     onClick={() => {
                       if (isCourseInCall) {
                         try {
-                          window.dispatchEvent(new CustomEvent('nexo_focus_call', { detail: activeCall }));
+                          window.dispatchEvent(
+                            new CustomEvent('nexo_focus_call', { detail: activeCall }),
+                          );
                         } catch {}
                       }
                     }}
                     className={({ isActive }) =>
-                      `flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                        isActive
-                          ? 'bg-slate-100 text-slate-950 dark:bg-zinc-800 dark:text-white font-bold'
-                          : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-zinc-900/60'
-                      } ${isCourseInCall ? 'ring-1 ring-emerald-500/50' : ''}`
+                      `sidebar-nav-link ${
+                        isActive ? 'sidebar-nav-link-2' : 'sidebar-nav-link-3'
+                      } ${isCourseInCall ? 'sidebar-nav-link-4' : ''}`
                     }
                     title={`${course.title} (${progress}%)${isCourseInCall ? ' • Em chamada ativa' : ''}`}
                   >
-                    <div className="relative shrink-0">
+                    <div className="sidebar-panel-9">
                       {course.thumbnailUrl ? (
                         <img
                           src={course.thumbnailUrl}
                           alt={course.title}
-                          className="w-7 h-7 rounded-lg object-cover shrink-0 border border-slate-200/80 dark:border-zinc-800"
+                          className="sidebar-image"
                         />
                       ) : (
-                        <div className="w-7 h-7 rounded-lg bg-blue-600 text-white font-bold flex items-center justify-center text-[10px] shrink-0">
-                          {course.title?.charAt(0) || 'C'}
-                        </div>
+                        <div className="sidebar-panel-12">{course.title?.charAt(0) || 'C'}</div>
                       )}
-                      {isCourseInCall && (
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-white dark:border-black absolute -top-1 -right-1 animate-pulse" />
-                      )}
+                      {isCourseInCall && <span className="sidebar-label-15" />}
                     </div>
 
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-1">
-                        <p className="truncate font-bold text-xs leading-tight">{course.title}</p>
-                        {isCourseInCall && (
-                          <span className="text-[9px] font-mono font-bold text-emerald-500 uppercase tracking-wider shrink-0">
-                            Voz
-                          </span>
-                        )}
+                    <div className="sidebar-panel-13">
+                      <div className="sidebar-panel-14">
+                        <p className="sidebar-description">{course.title}</p>
+                        {isCourseInCall && <span className="sidebar-label-16">Voz</span>}
                       </div>
-                      <div className="flex items-center gap-1.5 mt-1">
-                        <div className="flex-1 bg-slate-200/80 dark:bg-zinc-800 h-1 rounded-full overflow-hidden">
+                      <div className="sidebar-panel-15">
+                        <div className="sidebar-panel-16">
                           <div
-                            className="h-full rounded-full bg-blue-600"
-                            style={{ width: `${progress}%` }}
+                            className="sidebar-panel-17 sidebar-dynamic-1"
+                            style={{ '--sidebar-width': `${progress}%` }}
                           />
                         </div>
-                        <span className="text-[9px] text-slate-400 dark:text-zinc-500 font-mono font-bold">
-                          {progress}%
-                        </span>
+                        <span className="sidebar-label-17">{progress}%</span>
                       </div>
                     </div>
                   </NavLink>
@@ -445,19 +434,13 @@ export const Sidebar = () => {
       </div>
 
       {Boolean(activeCall) && (
-        <div className={`border-t border-slate-200/80 dark:border-zinc-800 bg-emerald-500/10 dark:bg-emerald-950/30 flex items-center justify-between shrink-0 transition-all ${
-          collapsed ? 'p-2 justify-center' : 'px-3 py-2'
-        }`}>
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+        <div className={`sidebar-panel-18 ${collapsed ? 'sidebar-panel-19' : 'sidebar-panel-20'}`}>
+          <div className="sidebar-panel-8">
+            <span className="sidebar-label-18" />
             {!collapsed && (
-              <div className="min-w-0">
-                <p className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 truncate leading-tight">
-                  Voz Conectada
-                </p>
-                <p className="text-[10px] text-slate-500 dark:text-zinc-400 truncate leading-tight">
-                  {activeCall.roomName || 'Chamada em curso'}
-                </p>
+              <div className="sidebar-panel-21">
+                <p className="sidebar-description-2">Voz Conectada</p>
+                <p className="sidebar-description-3">{activeCall.roomName || 'Chamada em curso'}</p>
               </div>
             )}
           </div>
@@ -469,34 +452,37 @@ export const Sidebar = () => {
               e.stopPropagation();
               leaveCall();
             }}
-            className="p-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:text-white hover:bg-rose-600 bg-rose-500/15 dark:bg-rose-500/25 transition-all cursor-pointer shrink-0 shadow-xs active:scale-95 border border-rose-500/20"
+            className="sidebar-button-2"
             title="Desconectar / Sair da Chamada"
             aria-label="Sair da chamada"
           >
-            <PhoneOff className="w-3.5 h-3.5" />
+            <PhoneOff className="sidebar-chevron-right" />
           </button>
         </div>
       )}
 
       {user && (
-        <div className="p-3 border-t border-slate-100 dark:border-zinc-800/80 bg-slate-50/50 dark:bg-[#08080a] shrink-0 mt-auto">
-          <div className="flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800/60 transition-colors">
-            <Link to="/profile" className="flex items-center gap-2.5 min-w-0 flex-1">
-              <Avatar src={user.avatarUrl} name={user.name} role={user.role} size="sm" status="online" className="shrink-0" />
+        <div className="sidebar-panel-22">
+          <div className="sidebar-panel-23">
+            <Link to="/profile" className="sidebar-link-5">
+              <Avatar
+                src={user.avatarUrl}
+                name={user.name}
+                role={user.role}
+                size="sm"
+                status="online"
+                className="sidebar-avatar"
+              />
               {!collapsed && (
-                <div className="min-w-0">
-                  <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                    {user.name}
-                  </p>
-                  <p className="text-[10px] text-slate-400 dark:text-zinc-500 truncate">
-                    @{user.username}
-                  </p>
+                <div className="sidebar-panel-21">
+                  <p className="sidebar-description-4">{user.name}</p>
+                  <p className="sidebar-description-5">@{user.username}</p>
                 </div>
               )}
             </Link>
 
             {!collapsed && (
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="sidebar-panel-24">
                 <button
                   type="button"
                   onClick={(e) => {
@@ -504,15 +490,17 @@ export const Sidebar = () => {
                     e.stopPropagation();
                     toggleMic();
                   }}
-                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                    isMicMuted
-                      ? 'text-rose-600 bg-rose-500/10 hover:bg-rose-500/20'
-                      : 'text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-zinc-700'
+                  className={`sidebar-button-3 ${
+                    isMicMuted ? 'sidebar-button-4' : 'sidebar-button-5'
                   }`}
                   title={isMicMuted ? 'Ativar Microfone' : 'Silenciar Microfone'}
                   aria-label={isMicMuted ? 'Ativar Microfone' : 'Silenciar Microfone'}
                 >
-                  {isMicMuted ? <MicOff className="w-3.5 h-3.5 text-rose-500" /> : <Mic className="w-3.5 h-3.5" />}
+                  {isMicMuted ? (
+                    <MicOff className="sidebar-mic-off" />
+                  ) : (
+                    <Mic className="sidebar-chevron-right" />
+                  )}
                 </button>
 
                 <button
@@ -522,15 +510,17 @@ export const Sidebar = () => {
                     e.stopPropagation();
                     toggleDeafen();
                   }}
-                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                    isDeafened
-                      ? 'text-rose-600 bg-rose-500/10 hover:bg-rose-500/20'
-                      : 'text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-zinc-700'
+                  className={`sidebar-button-3 ${
+                    isDeafened ? 'sidebar-button-4' : 'sidebar-button-5'
                   }`}
                   title={isDeafened ? 'Desativar Ensurdecer' : 'Ensurdecer'}
                   aria-label={isDeafened ? 'Desativar Ensurdecer' : 'Ensurdecer'}
                 >
-                  {isDeafened ? <HeadphoneOff className="w-3.5 h-3.5 text-rose-500" /> : <Headphones className="w-3.5 h-3.5" />}
+                  {isDeafened ? (
+                    <HeadphoneOff className="sidebar-mic-off" />
+                  ) : (
+                    <Headphones className="sidebar-chevron-right" />
+                  )}
                 </button>
 
                 {Boolean(activeCall) && (
@@ -541,20 +531,16 @@ export const Sidebar = () => {
                       e.stopPropagation();
                       leaveCall();
                     }}
-                    className="p-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:text-white hover:bg-rose-600 bg-rose-500/10 dark:bg-rose-500/20 transition-all cursor-pointer shrink-0 shadow-xs active:scale-95"
+                    className="sidebar-button-6"
                     title="Desconectar / Sair da Chamada"
                     aria-label="Sair da chamada"
                   >
-                    <PhoneOff className="w-3.5 h-3.5" />
+                    <PhoneOff className="sidebar-chevron-right" />
                   </button>
                 )}
 
-                <Link
-                  to="/settings"
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-zinc-700 transition-colors shrink-0"
-                  title="Definições da conta"
-                >
-                  <Settings className="w-3.5 h-3.5" />
+                <Link to="/settings" className="sidebar-link-6" title="Definições da conta">
+                  <Settings className="sidebar-chevron-right" />
                 </Link>
               </div>
             )}

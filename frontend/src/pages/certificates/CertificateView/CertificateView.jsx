@@ -1,4 +1,5 @@
-﻿import React, { useState, useEffect } from 'react';
+import './CertificateView.css';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Award, CheckCircle2, Printer, ArrowLeft, ShieldCheck, Share2 } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
@@ -15,9 +16,13 @@ export const CertificateView = () => {
 
   useEffect(() => {
     if (!id) return;
-    api.verifyCertificate(id).then(data => setCert(data)).catch(() => {
-      setCert(null);
-    }).finally(() => setLoading(false));
+    api
+      .verifyCertificate(id)
+      .then((data) => setCert(data))
+      .catch(() => {
+        setCert(null);
+      })
+      .finally(() => setLoading(false));
   }, [id]);
 
   const handlePrint = () => {
@@ -25,27 +30,26 @@ export const CertificateView = () => {
   };
 
   if (loading) {
-    return (
-      <div className="p-16 text-center text-slate-500 font-medium">
-        A verificar credencial de certificado...
-      </div>
-    );
+    return <div className="certificate-view-panel">A verificar credencial de certificado...</div>;
   }
 
   if (!cert) {
     return (
-      <div className="max-w-xl mx-auto py-20 px-6 text-center animate-fade-in">
-        <SEO title="Certificado Não Encontrado — NEXO" description="O certificado solicitado não existe ou não foi emitido." />
-        <div className="p-10 rounded-xl bg-white dark:bg-[#0b0c0e] border border-slate-200 dark:border-neutral-800 shadow-sm flex flex-col items-center">
-          <div className="w-16 h-16 rounded-lg bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400 flex items-center justify-center mb-4">
-            <Award className="w-8 h-8" />
+      <div className="certificate-view-panel-2">
+        <SEO
+          title="Certificado Não Encontrado — NEXO"
+          description="O certificado solicitado não existe ou não foi emitido."
+        />
+        <div className="certificate-view-panel-3">
+          <div className="certificate-view-panel-4">
+            <Award className="certificate-view-award" />
           </div>
-          <h2 className="text-2xl font-black text-slate-950 dark:text-white mb-2">Certificado Não Encontrado</h2>
-          <p className="text-base text-slate-600 dark:text-neutral-400 mb-6">
+          <h2 className="certificate-view-heading">Certificado Não Encontrado</h2>
+          <p className="certificate-view-description">
             O certificado com o identificador informado não existe ou ainda não foi emitido.
           </p>
           <Link to="/library">
-            <Button variant="primary" size="md" className="font-bold">
+            <Button variant="primary" size="md" className="certificate-view-button">
               Voltar aos Meus Cursos
             </Button>
           </Link>
@@ -62,20 +66,25 @@ export const CertificateView = () => {
         canonical={`https://nexo.pt/certificates/verify/${cert.certificateId || id}`}
       />
 
-      <div className="max-w-4xl mx-auto flex flex-col gap-8 py-8 animate-fade-in pb-16">
-        <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
+      <div className="certificate-view-panel-5">
+        <div className="certificate-view-panel-6">
           <Link to="/library">
-            <Button variant="secondary" size="md" leftIcon={<ArrowLeft className="w-4 h-4" />} className="font-semibold">
+            <Button
+              variant="secondary"
+              size="md"
+              leftIcon={<ArrowLeft className="certificate-view-arrow-left" />}
+              className="certificate-view-button-2"
+            >
               Voltar aos Cursos
             </Button>
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="certificate-view-panel-7">
             <Button
               onClick={() => setIsShareModalOpen(true)}
               variant="secondary"
               size="md"
-              leftIcon={<Share2 className="w-4 h-4" />}
-              className="font-bold"
+              leftIcon={<Share2 className="certificate-view-arrow-left" />}
+              className="certificate-view-button"
             >
               Partilhar Conquista
             </Button>
@@ -83,79 +92,73 @@ export const CertificateView = () => {
               onClick={handlePrint}
               variant="primary"
               size="md"
-              leftIcon={<Printer className="w-4 h-4" />}
-              className="font-bold shadow-md shadow-blue-500/20"
+              leftIcon={<Printer className="certificate-view-arrow-left" />}
+              className="certificate-view-button-3"
             >
               Imprimir / PDF
             </Button>
           </div>
         </div>
 
-        <div className="border-4 border-slate-200 p-3 sm:p-4 rounded-xl bg-slate-100 dark:bg-neutral-900 shadow-xl print:border-none print:p-0 print:shadow-none">
-          <div className="relative border-2 border-slate-300 dark:border-neutral-700 rounded-lg p-10 sm:p-16 bg-white dark:bg-[#0c0d12] text-center select-none text-slate-900 dark:text-white overflow-hidden shadow-sm">
-            <div className="absolute top-4 left-4 w-12 h-12 border-t-2 border-l-2 border-amber-500/60 rounded-tl-xl" />
-            <div className="absolute top-4 right-4 w-12 h-12 border-t-2 border-r-2 border-amber-500/60 rounded-tr-xl" />
-            <div className="absolute bottom-4 left-4 w-12 h-12 border-b-2 border-l-2 border-amber-500/60 rounded-bl-xl" />
-            <div className="absolute bottom-4 right-4 w-12 h-12 border-b-2 border-r-2 border-amber-500/60 rounded-br-xl" />
+        <div className="certificate-view-panel-8">
+          <div className="certificate-view-panel-9">
+            <div className="certificate-view-panel-10" />
+            <div className="certificate-view-panel-11" />
+            <div className="certificate-view-panel-12" />
+            <div className="certificate-view-panel-13" />
 
-            <div className="flex flex-col items-center gap-2 mb-10">
+            <div className="certificate-view-panel-14">
               <Logo size="lg" showText={false} />
-              <span className="text-xs font-bold tracking-[0.25em] text-blue-700 dark:text-blue-400 uppercase mt-2">
-                NEXO Autoridade de Certificação
-              </span>
-              <div className="w-16 h-0.5 bg-slate-200 dark:bg-neutral-800 mt-2" />
+              <span className="certificate-view-label">NEXO Autoridade de Certificação</span>
+              <div className="certificate-view-panel-15" />
             </div>
 
-            <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-6">
+            <p className="certificate-view-description-2">
               Certificado Oficial de Conclusão de Curso
             </p>
 
-            <p className="text-sm text-slate-500 dark:text-neutral-400 font-serif italic mb-3">Certifica-se que</p>
+            <p className="certificate-view-description-3">Certifica-se que</p>
 
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-slate-950 dark:text-white tracking-tight mb-4">
-              {cert.recipientName}
-            </h2>
+            <h2 className="certificate-view-heading-2">{cert.recipientName}</h2>
 
-            <p className="text-sm text-slate-500 dark:text-neutral-400 font-serif italic mb-4 max-w-xl mx-auto">
-              concluiu com distinção todos os módulos teóricos, projetos práticos e avaliações do curso
+            <p className="certificate-view-description-4">
+              concluiu com distinção todos os módulos teóricos, projetos práticos e avaliações do
+              curso
             </p>
 
-            <h3 className="text-2xl sm:text-3xl font-bold text-blue-600 dark:text-blue-400 max-w-2xl mx-auto mb-12 leading-snug">
-              {cert.courseTitle}
-            </h3>
+            <h3 className="certificate-view-subheading">{cert.courseTitle}</h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 pt-8 mt-4 border-t border-slate-200 dark:border-neutral-800 items-end">
-              <div className="flex flex-col items-center">
-                <div className="h-10 border-b-2 border-slate-400 dark:border-neutral-600 w-44 flex items-center justify-center font-serif text-slate-800 dark:text-neutral-200 italic text-base">
-                  {cert.creatorName}
-                </div>
-                <p className="text-xs font-bold text-slate-500 mt-2">Assinatura do Formador</p>
+            <div className="certificate-view-panel-16">
+              <div className="certificate-view-panel-17">
+                <div className="certificate-view-panel-18">{cert.creatorName}</div>
+                <p className="certificate-view-description-5">Assinatura do Formador</p>
               </div>
 
-              <div className="flex flex-col items-center">
-                <div className="w-16 h-16 rounded-full border-2 border-amber-400 bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center text-amber-600 shadow-md">
-                  <ShieldCheck className="w-8 h-8" />
+              <div className="certificate-view-panel-17">
+                <div className="certificate-view-panel-19">
+                  <ShieldCheck className="certificate-view-award" />
                 </div>
-                <span className="text-xs font-bold text-slate-700 dark:text-neutral-300 mt-2 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Credencial Verificada
+                <span className="certificate-view-label-2">
+                  <CheckCircle2 className="certificate-view-check-circle2" /> Credencial Verificada
                 </span>
               </div>
 
-              <div className="flex flex-col items-center">
-                <p className="text-sm font-bold text-slate-900 dark:text-white">
+              <div className="certificate-view-panel-17">
+                <p className="certificate-view-description-6">
                   {new Date(cert.issuedAt).toLocaleDateString('pt-PT', {
                     year: 'numeric',
                     month: 'long',
-                    day: 'numeric'
+                    day: 'numeric',
                   })}
                 </p>
-                <p className="text-xs font-bold text-slate-500 mt-2">Data de Emissão</p>
+                <p className="certificate-view-description-5">Data de Emissão</p>
               </div>
             </div>
 
-            <div className="mt-12 pt-4 border-t border-slate-100 dark:border-neutral-800 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-400 font-medium">
+            <div className="certificate-view-panel-20">
               <span>
-                ID do Certificado: <strong className="text-slate-700 dark:text-neutral-300">{cert.certificateId}</strong>
+                ID do Certificado:{' '}
+                <strong className="certificate-view-strong">{cert.certificateId}</strong>
               </span>
               <span>nexo.pt/certificates/verify/{cert.certificateId}</span>
             </div>

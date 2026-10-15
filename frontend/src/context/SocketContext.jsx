@@ -2,13 +2,8 @@ import React, { createContext, useContext, useEffect, useMemo, useRef, useState 
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 const SocketContext = createContext(undefined);
-export const SocketProvider = ({
-  children
-}) => {
-  const {
-    user,
-    token
-  } = useAuth();
+export const SocketProvider = ({ children }) => {
+  const { user, token } = useAuth();
   const [socket, setSocket] = useState(null);
   const [onlineUsersList, setOnlineUsersList] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
@@ -17,7 +12,7 @@ export const SocketProvider = ({
   const onlineUsers = useMemo(() => {
     const arr = Array.isArray(onlineUsersList) ? [...onlineUsersList] : [];
     const idSet = new Set(
-      arr.map((u) => (typeof u === 'string' ? u : u?.userId || u?.id)).filter(Boolean)
+      arr.map((u) => (typeof u === 'string' ? u : u?.userId || u?.id)).filter(Boolean),
     );
     arr.has = (id) => idSet.has(id);
     return arr;
@@ -30,7 +25,9 @@ export const SocketProvider = ({
     }
 
     const envSocketUrl = import.meta.env?.VITE_SOCKET_URL || import.meta.env?.VITE_API_URL;
-    let socketServerUrl = envSocketUrl ? envSocketUrl.replace(/\/api\/?$/, '').replace(/\/$/, '') : window.location.origin;
+    let socketServerUrl = envSocketUrl
+      ? envSocketUrl.replace(/\/api\/?$/, '').replace(/\/$/, '')
+      : window.location.origin;
     if (!envSocketUrl && window.location.hostname === 'localhost') {
       socketServerUrl = 'http://localhost:5000';
     }
@@ -41,21 +38,21 @@ export const SocketProvider = ({
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 10000,
-      timeout: 60000
+      timeout: 60000,
     });
     newSocket.on('connect', () => {
       setIsConnected(true);
       if (user) {
         newSocket.emit('user-connected', {
           userId: user.id,
-          username: user.username || user.name || 'Utilizador'
+          username: user.username || user.name || 'Utilizador',
         });
       }
     });
     newSocket.on('disconnect', () => {
       setIsConnected(false);
     });
-    newSocket.on('presence-update', users => {
+    newSocket.on('presence-update', (users) => {
       setOnlineUsersList(users);
     });
     setSocket(newSocket);
@@ -69,40 +66,44 @@ export const SocketProvider = ({
     const ping = () => {
       fetch(`${url}/api/health`, {
         method: 'GET',
-        cache: 'no-store'
+        cache: 'no-store',
       }).catch(() => {});
     };
     ping();
     const interval = setInterval(ping, 10 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
-  const joinChannel = channelId => {
+  const joinChannel = (channelId) => {
     socket?.emit('join-channel', channelId);
   };
-  const leaveChannel = channelId => {
+  const leaveChannel = (channelId) => {
     socket?.emit('leave-channel', channelId);
   };
-  const sendTyping = channelId => {
+  const sendTyping = (channelId) => {
     if (user && socket) {
       socket.emit('typing', { channelId });
     }
   };
-  const sendStopTyping = channelId => {
+  const sendStopTyping = (channelId) => {
     if (user && socket) {
       socket.emit('stop-typing', { channelId });
     }
   };
-  return <SocketContext.Provider value={{
-    socket,
-    onlineUsers,
-    isConnected,
-    joinChannel,
-    leaveChannel,
-    sendTyping,
-    sendStopTyping
-  }}>
+  return (
+    <SocketContext.Provider
+      value={{
+        socket,
+        onlineUsers,
+        isConnected,
+        joinChannel,
+        leaveChannel,
+        sendTyping,
+        sendStopTyping,
+      }}
+    >
       {children}
-    </SocketContext.Provider>;
+    </SocketContext.Provider>
+  );
 };
 export const useSocket = () => {
   const context = useContext(SocketContext);

@@ -1,5 +1,5 @@
 /**
- * Privacy-friendly, GDPR-compliant client analytics logger.
+ * Consent-based local analytics logger.
  * Stores anonymous event counts and pageviews locally or forwards to server telemetry.
  */
 
@@ -30,7 +30,7 @@ export const trackPageView = (path = window.location.pathname) => {
       path,
       timestamp: new Date().toISOString(),
       referrer: document.referrer || 'direct',
-      screen: `${window.innerWidth}x${window.innerHeight}`
+      screen: `${window.innerWidth}x${window.innerHeight}`,
     };
 
     const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
@@ -39,7 +39,7 @@ export const trackPageView = (path = window.location.pathname) => {
     if (existing.length > 50) existing.shift();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
 
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.log('[Analytics PageView]', path);
     }
   } catch {
@@ -55,7 +55,7 @@ export const trackEvent = (eventName, properties = {}) => {
       type: 'event',
       name: eventName,
       properties,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
@@ -63,7 +63,7 @@ export const trackEvent = (eventName, properties = {}) => {
     if (existing.length > 50) existing.shift();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
 
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.log('[Analytics Event]', eventName, properties);
     }
   } catch {

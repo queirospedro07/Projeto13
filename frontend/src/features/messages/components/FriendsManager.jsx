@@ -1,3 +1,4 @@
+import './FriendsManager.css';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Users, UserPlus, MessageSquare, Check, X, Search } from 'lucide-react';
@@ -17,50 +18,42 @@ export const FriendsManager = ({
   onAcceptRequest,
   onRejectRequest,
   onRemoveFriend,
-  onOpenConversationWithUser
+  onOpenConversationWithUser,
 }) => {
   return (
-    <div className="p-6 sm:p-8 overflow-y-auto flex-1 space-y-6 animate-fade-in bg-white dark:bg-[#0b0c0e] text-slate-900 dark:text-white">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-slate-200 dark:border-zinc-800 gap-4">
+    <div className="friends-manager-panel">
+      <div className="friends-manager-panel-2">
         <div>
-          <h2 className="text-2xl font-extrabold text-slate-950 dark:text-white tracking-tight">
-            Comunidade & Amigos
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+          <h2 className="friends-manager-heading">Comunidade & Amigos</h2>
+          <p className="friends-manager-description">
             Conecte-se com outros utilizadores, envie pedidos de amizade e troque mensagens diretas.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="friends-manager-panel-3">
           <button
             onClick={() => onSetFriendsSubTab('all')}
-            className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-colors cursor-pointer ${
-              friendsSubTab === 'all'
-                ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
-                : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700'
+            className={`friends-manager-button ${
+              friendsSubTab === 'all' ? 'friends-manager-button-2' : 'friends-manager-button-3'
             }`}
           >
             Amigos ({friendsData?.friends?.length || 0})
           </button>
           <button
             onClick={() => onSetFriendsSubTab('pending')}
-            className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-colors cursor-pointer relative ${
-              friendsSubTab === 'pending'
-                ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
-                : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700'
+            className={`friends-manager-button-4 ${
+              friendsSubTab === 'pending' ? 'friends-manager-button-2' : 'friends-manager-button-3'
             }`}
           >
             Pendentes ({friendsData?.incoming?.length || 0})
           </button>
           <button
             onClick={() => onSetFriendsSubTab('add')}
-            className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-colors cursor-pointer flex items-center gap-1.5 ${
-              friendsSubTab === 'add'
-                ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-500/20'
-                : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50'
+            className={`friends-manager-button-5 ${
+              friendsSubTab === 'add' ? 'friends-manager-button-6' : 'friends-manager-button-7'
             }`}
           >
-            <UserPlus className="w-3.5 h-3.5" />
+            <UserPlus className="friends-manager-user-plus" />
             <span>Adicionar</span>
           </button>
         </div>
@@ -68,61 +61,59 @@ export const FriendsManager = ({
 
       {friendsSubTab === 'all' && (
         <div>
-          {(!friendsData?.friends || friendsData.friends.length === 0) ? (
-            <div className="p-12 text-center border-2 border-dashed border-slate-200 dark:border-zinc-800 rounded-xl bg-slate-50/50 dark:bg-zinc-900/30">
-              <Users className="w-12 h-12 text-slate-400 dark:text-zinc-600 mx-auto mb-3" />
-              <h3 className="font-bold text-slate-800 dark:text-zinc-200 text-base mb-1">
-                Ainda não tem amigos adicionados
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-sm mx-auto mb-4">
+          {!friendsData?.friends || friendsData.friends.length === 0 ? (
+            <div className="friends-manager-panel-4">
+              <Users className="friends-manager-users" />
+              <h3 className="friends-manager-subheading">Ainda não tem amigos adicionados</h3>
+              <p className="friends-manager-description-2">
                 Adicione colegas pelo nome de utilizador ou explore os perfis na plataforma.
               </p>
               <Button
                 variant="primary"
                 size="sm"
                 onClick={() => onSetFriendsSubTab('add')}
-                leftIcon={<UserPlus className="w-3.5 h-3.5" />}
-                className="font-bold cursor-pointer"
+                leftIcon={<UserPlus className="friends-manager-user-plus" />}
+                className="friends-manager-button-8"
               >
                 Adicionar Primeiro Amigo
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {friendsData.friends.map(f => (
-                <div
-                  key={f.friendshipId}
-                  className="p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-blue-200 dark:hover:border-zinc-700 hover:shadow-xs transition-all flex items-center justify-between gap-3 group"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <Avatar src={f.user.avatarUrl} name={f.user.name} size="md" className="rounded-xl shrink-0" />
-                    <div className="min-w-0">
-                      <Link
-                        to={`/profile/${f.user.username}`}
-                        className="font-bold text-sm text-slate-900 dark:text-white hover:underline truncate block"
-                      >
+            <div className="friends-manager-panel-5">
+              {friendsData.friends.map((f) => (
+                <div key={f.friendshipId} className="friends-manager-panel-6 ui-group">
+                  <div className="friends-manager-panel-7">
+                    <Avatar
+                      shape="square"
+                      src={f.user.avatarUrl}
+                      name={f.user.name}
+                      size="md"
+                      className="friends-manager-avatar"
+                    />
+                    <div className="friends-manager-panel-8">
+                      <Link to={`/profile/${f.user.username}`} className="friends-manager-link">
                         {f.user.name}
                       </Link>
-                      <p className="text-xs text-slate-500 dark:text-zinc-400 truncate">@{f.user.username}</p>
+                      <p className="friends-manager-description-3">@{f.user.username}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="friends-manager-panel-9">
                     <Button
                       variant="secondary"
                       size="sm"
                       onClick={() => onOpenConversationWithUser(f.user)}
-                      leftIcon={<MessageSquare className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />}
-                      className="font-bold text-xs cursor-pointer"
+                      leftIcon={<MessageSquare className="friends-manager-message-square" />}
+                      className="friends-manager-button-9"
                     >
                       Mensagem
                     </Button>
                     <button
                       onClick={() => onRemoveFriend(f.user.id)}
-                      className="p-2 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors cursor-pointer"
+                      className="friends-manager-button-10"
                       title="Remover Amigo"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="friends-manager-x" />
                     </button>
                   </div>
                 </div>
@@ -133,36 +124,39 @@ export const FriendsManager = ({
       )}
 
       {friendsSubTab === 'pending' && (
-        <div className="space-y-6">
+        <div className="friends-manager-panel-10">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 mb-3">
+            <p className="friends-manager-description-4">
               Pedidos Recebidos ({friendsData?.incoming?.length || 0})
             </p>
 
-            {(!friendsData?.incoming || friendsData.incoming.length === 0) ? (
-              <p className="text-xs text-slate-500 dark:text-zinc-400">Nenhum pedido de amizade pendente.</p>
+            {!friendsData?.incoming || friendsData.incoming.length === 0 ? (
+              <p className="friends-manager-description-5">Nenhum pedido de amizade pendente.</p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {friendsData.incoming.map(r => (
-                  <div
-                    key={r.friendshipId}
-                    className="p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex items-center justify-between gap-3 shadow-xs"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <Avatar src={r.user.avatarUrl} name={r.user.name} size="md" className="rounded-xl shrink-0" />
-                      <div className="min-w-0">
-                        <p className="font-bold text-sm text-slate-900 dark:text-white truncate">{r.user.name}</p>
-                        <p className="text-xs text-slate-500 dark:text-zinc-400 truncate">@{r.user.username}</p>
+              <div className="friends-manager-panel-11">
+                {friendsData.incoming.map((r) => (
+                  <div key={r.friendshipId} className="friends-manager-panel-12">
+                    <div className="friends-manager-panel-7">
+                      <Avatar
+                        shape="square"
+                        src={r.user.avatarUrl}
+                        name={r.user.name}
+                        size="md"
+                        className="friends-manager-avatar"
+                      />
+                      <div className="friends-manager-panel-8">
+                        <p className="friends-manager-description-6">{r.user.name}</p>
+                        <p className="friends-manager-description-3">@{r.user.username}</p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="friends-manager-panel-13">
                       <Button
                         variant="primary"
                         size="sm"
                         onClick={() => onAcceptRequest(r.friendshipId)}
-                        leftIcon={<Check className="w-3.5 h-3.5" />}
-                        className="font-bold cursor-pointer"
+                        leftIcon={<Check className="friends-manager-user-plus" />}
+                        className="friends-manager-button-8"
                       >
                         Aceitar
                       </Button>
@@ -170,8 +164,8 @@ export const FriendsManager = ({
                         variant="secondary"
                         size="sm"
                         onClick={() => onRejectRequest(r.friendshipId)}
-                        leftIcon={<X className="w-3.5 h-3.5 text-red-500" />}
-                        className="font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer"
+                        leftIcon={<X className="friends-manager-x-2" />}
+                        className="friends-manager-button-11"
                       >
                         Recusar
                       </Button>
@@ -185,63 +179,66 @@ export const FriendsManager = ({
       )}
 
       {friendsSubTab === 'add' && (
-        <div className="max-w-xl space-y-6">
+        <div className="friends-manager-panel-14">
           <div>
-            <h3 className="font-bold text-slate-900 dark:text-white text-base mb-1">
-              Adicionar Amigo por Nome de Utilizador
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-zinc-400">
+            <h3 className="friends-manager-subheading-2">Adicionar Amigo por Nome de Utilizador</h3>
+            <p className="friends-manager-description-5">
               Escreva o nome de utilizador (ex:{' '}
-              <span className="font-mono text-blue-600 dark:text-blue-400 font-semibold">@mariana_costa</span>) para lhe enviar um pedido de amizade.
+              <span className="friends-manager-label">@mariana_costa</span>) para lhe enviar um
+              pedido de amizade.
             </p>
           </div>
 
-          <form onSubmit={onSearchAndAddFriend} className="flex gap-2">
-            <div className="relative flex-1">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-400 dark:text-zinc-500">
-                @
-              </span>
+          <form onSubmit={onSearchAndAddFriend} className="friends-manager-form">
+            <div className="friends-manager-panel-15">
+              <span className="friends-manager-label-2">@</span>
               <input
                 type="text"
                 required
                 placeholder="nome_de_utilizador"
                 value={addFriendQuery}
-                onChange={e => onAddFriendQueryChange(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 focus:border-blue-600 dark:focus:border-blue-500 focus:bg-white dark:focus:bg-zinc-800 rounded-xl pl-9 pr-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none transition-all font-mono"
+                onChange={(e) => onAddFriendQueryChange(e.target.value)}
+                className="friends-manager-field"
               />
             </div>
             <Button
               type="submit"
               variant="primary"
               size="md"
-              leftIcon={<Search className="w-4 h-4" />}
-              className="font-bold px-6 shadow-md shadow-blue-500/20 cursor-pointer"
+              leftIcon={<Search className="friends-manager-x" />}
+              className="friends-manager-button-12"
             >
               Pesquisar
             </Button>
           </form>
 
           {searchResult && (
-            <div className="p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3 min-w-0">
-                <Avatar src={searchResult.avatarUrl} name={searchResult.name} size="md" className="rounded-xl shrink-0" />
-                <div className="min-w-0">
-                  <p className="font-bold text-slate-900 dark:text-white text-sm truncate">{searchResult.name}</p>
-                  <p className="text-xs text-slate-500 dark:text-zinc-400 truncate">@{searchResult.username}</p>
+            <div className="friends-manager-panel-16">
+              <div className="friends-manager-panel-7">
+                <Avatar
+                  shape="square"
+                  src={searchResult.avatarUrl}
+                  name={searchResult.name}
+                  size="md"
+                  className="friends-manager-avatar"
+                />
+                <div className="friends-manager-panel-8">
+                  <p className="friends-manager-description-7">{searchResult.name}</p>
+                  <p className="friends-manager-description-3">@{searchResult.username}</p>
                 </div>
               </div>
 
               {requestSent ? (
-                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 shrink-0">
-                  <Check className="w-4 h-4" /> Pedido Enviado
+                <span className="friends-manager-label-3">
+                  <Check className="friends-manager-x" /> Pedido Enviado
                 </span>
               ) : (
                 <Button
                   variant="primary"
                   size="sm"
                   onClick={() => onSendFriendRequest(searchResult.id)}
-                  leftIcon={<UserPlus className="w-3.5 h-3.5" />}
-                  className="font-bold shrink-0 cursor-pointer"
+                  leftIcon={<UserPlus className="friends-manager-user-plus" />}
+                  className="friends-manager-button-13"
                 >
                   Enviar Pedido
                 </Button>

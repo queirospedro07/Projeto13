@@ -1,0 +1,265 @@
+/* Styles for NotFoundPage. */
+
+@layer reset, base, ui, components, pages, overrides;
+
+@layer pages {
+  .not-found-page-panel {
+    display: flex;
+    min-height: 80vh;
+    animation: fadeIn 0.15s ease-out forwards;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+    text-align: center;
+  }
+
+  .not-found-page-panel-2 {
+    margin-left: auto;
+    margin-right: auto;
+    display: flex;
+    max-width: 28rem;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .not-found-page-panel-3 {
+    position: relative;
+  }
+
+  .not-found-page-label {
+    user-select: none;
+    font-family:
+      'Lexend',
+      -apple-system,
+      BlinkMacSystemFont,
+      sans-serif;
+    font-size: 6rem;
+    line-height: 1;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    --nexo-text-opacity: 1;
+    color: rgb(229 229 229 / var(--nexo-text-opacity, 1));
+  }
+
+  .not-found-page-label:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(23 23 23 / var(--nexo-text-opacity, 1));
+  }
+
+  @media (min-width: 640px) {
+    .not-found-page-label {
+      font-size: 8rem;
+      line-height: 1;
+    }
+  }
+
+  .not-found-page-panel-4 {
+    position: absolute;
+    inset: 0px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .not-found-page-label-2 {
+    font-family:
+      'Lexend',
+      -apple-system,
+      BlinkMacSystemFont,
+      sans-serif;
+    font-size: 1.5rem;
+    line-height: 2rem;
+    font-weight: 700;
+    --nexo-text-opacity: 1;
+    color: rgb(28 28 28 / var(--nexo-text-opacity, 1));
+  }
+
+  .not-found-page-label-2:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+  }
+
+  @media (min-width: 640px) {
+    .not-found-page-label-2 {
+      font-size: 1.875rem;
+      line-height: 2.25rem;
+    }
+  }
+
+  .not-found-page-description {
+    max-width: 24rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    --nexo-text-opacity: 1;
+    color: rgb(82 82 82 / var(--nexo-text-opacity, 1));
+  }
+
+  .not-found-page-description:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(163 163 163 / var(--nexo-text-opacity, 1));
+  }
+
+  .not-found-page-panel-5 {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding-top: 0.5rem;
+  }
+
+  @media (min-width: 640px) {
+    .not-found-page-panel-5 {
+      width: auto;
+      flex-direction: row;
+    }
+  }
+
+  .not-found-page-home {
+    height: 1rem;
+    width: 1rem;
+  }
+
+  .not-found-page-button {
+    width: 100%;
+    --nexo-bg-opacity: 1;
+    background-color: rgb(28 28 28 / var(--nexo-bg-opacity, 1));
+    font-weight: 600;
+  }
+
+  .not-found-page-button:hover {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(0 0 0 / var(--nexo-bg-opacity, 1));
+  }
+
+  .not-found-page-button:is(.dark *) {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(255 255 255 / var(--nexo-bg-opacity, 1));
+    --nexo-text-opacity: 1;
+    color: rgb(0 0 0 / var(--nexo-text-opacity, 1));
+  }
+
+  .not-found-page-button:hover:is(.dark *) {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(243 243 243 / var(--nexo-bg-opacity, 1));
+  }
+
+  @media (min-width: 640px) {
+    .not-found-page-button {
+      width: auto;
+    }
+  }
+
+  .not-found-page-button-2 {
+    width: 100%;
+    font-weight: 500;
+  }
+
+  @media (min-width: 640px) {
+    .not-found-page-button-2 {
+      width: auto;
+    }
+  }
+
+  .not-found-page-panel-6 {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border-top-width: 1px;
+    --nexo-border-opacity: 1;
+    border-color: rgb(229 229 229 / var(--nexo-border-opacity, 1));
+    padding-top: 1.5rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    --nexo-text-opacity: 1;
+    color: rgb(115 115 115 / var(--nexo-text-opacity, 1));
+  }
+
+  .not-found-page-panel-6:is(.dark *) {
+    --nexo-border-opacity: 1;
+    border-color: rgb(38 38 38 / var(--nexo-border-opacity, 1));
+    --nexo-text-opacity: 1;
+    color: rgb(163 163 163 / var(--nexo-text-opacity, 1));
+  }
+
+  .not-found-page-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+
+  .not-found-page-link:hover {
+    --nexo-text-opacity: 1;
+    color: rgb(37 99 235 / var(--nexo-text-opacity, 1));
+  }
+
+  .not-found-page-link:hover:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(96 165 250 / var(--nexo-text-opacity, 1));
+  }
+
+  .not-found-page-help-circle {
+    height: 0.875rem;
+    width: 0.875rem;
+  }
+
+  .not-found-page-button-3 {
+    display: inline-flex;
+    cursor: pointer;
+    align-items: center;
+    gap: 0.25rem;
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+
+  .not-found-page-button-3:hover {
+    --nexo-text-opacity: 1;
+    color: rgb(28 28 28 / var(--nexo-text-opacity, 1));
+  }
+
+  .not-found-page-button-3:hover:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+  }
+}
+
+/* Theme and shared surface adjustments. */
+
+@layer overrides {
+  html.dark .not-found-page-panel-6 {
+    border-color: #333333 !important;
+  }
+
+  html.dark .not-found-page-label-2 {
+    color: #ffffff !important;
+  }
+
+  html.dark .not-found-page-description {
+    color: #a1a1aa !important;
+  }
+
+  html.dark .not-found-page-panel-6 {
+    color: #71717a !important;
+  }
+
+  html.dark .not-found-page-button-3:hover {
+    color: #ffffff !important;
+  }
+
+  .not-found-page-label {
+    font-family: 'Lexend', sans-serif !important;
+  }
+
+  .not-found-page-label-2 {
+    font-family: 'Lexend', sans-serif !important;
+  }
+}

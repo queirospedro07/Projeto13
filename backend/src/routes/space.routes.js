@@ -1,13 +1,83 @@
+import { randomUUID } from 'node:crypto';
+import { canModerateSpace, canStudyCourse, canAccessSpace } from '../services/courseAccess.js';
 import { Router } from 'express';
 import { queryAll, queryOne, execute } from '../database/connection.js';
 import { authenticate, optionalAuth } from '../middleware/auth.js';
 const router = Router();
+function channelBody(req, res, next) {
+  const body = req.body;
+  if (
+    typeof body.name !== 'string' ||
+    !body.name.trim() ||
+    body.name.length > 80 ||
+    !['text', 'voice', 'announcement', 'qa', 'project'].includes(body.type) ||
+    (body.topic != null && (typeof body.topic !== 'string' || body.topic.length > 1000)) ||
+    (body.guidingQuestion != null &&
+      (typeof body.guidingQuestion !== 'string' || body.guidingQuestion.length > 2000))
+  )
+    return res.status(400).json({ error: 'Dados de canal inválidos.' });
+  return next();
+}
+router.post('/:id/channels', authenticate, channelBody, (req, res) => {
+  if (!canModerateSpace(req.user, req.params.id))
+    return res.status(403).json({ error: 'Sem permissão para gerir canais.' });
+  const id = randomUUID(),
+    b = req.body;
+  execute(
+    'INSERT INTO channels(id,spaceId,name,type,topic,isVoice,guidingQuestion) VALUES(?,?,?,?,?,?,?)',
+    [
+      id,
+      req.params.id,
+      b.name.trim(),
+      b.type,
+      b.topic || '',
+      b.type === 'voice' ? 1 : 0,
+      b.guidingQuestion || '',
+    ],
+  );
+  return res.status(201).json(queryOne('SELECT * FROM channels WHERE id=?', [id]));
+});
+router.put('/:id/channels/:channelId', authenticate, channelBody, (req, res) => {
+  if (!canModerateSpace(req.user, req.params.id))
+    return res.status(403).json({ error: 'Sem permissão para gerir canais.' });
+  if (
+    !queryOne('SELECT id FROM channels WHERE id=? AND spaceId=?', [
+      req.params.channelId,
+      req.params.id,
+    ])
+  )
+    return res.status(404).json({ error: 'Canal não encontrado.' });
+  const b = req.body;
+  execute(
+    'UPDATE channels SET name=?,type=?,topic=?,isVoice=?,guidingQuestion=? WHERE id=? AND spaceId=?',
+    [
+      b.name.trim(),
+      b.type,
+      b.topic || '',
+      b.type === 'voice' ? 1 : 0,
+      b.guidingQuestion || '',
+      req.params.channelId,
+      req.params.id,
+    ],
+  );
+  return res.json(queryOne('SELECT * FROM channels WHERE id=?', [req.params.channelId]));
+});
+router.delete('/:id/channels/:channelId', authenticate, (req, res) => {
+  if (!canModerateSpace(req.user, req.params.id))
+    return res.status(403).json({ error: 'Sem permissão para gerir canais.' });
+  if (
+    !queryOne('SELECT id FROM channels WHERE id=? AND spaceId=?', [
+      req.params.channelId,
+      req.params.id,
+    ])
+  )
+    return res.status(404).json({ error: 'Canal não encontrado.' });
+  execute('DELETE FROM channels WHERE id=? AND spaceId=?', [req.params.channelId, req.params.id]);
+  return res.json({ success: true });
+});
 router.get('/', optionalAuth, async (req, res) => {
   try {
-    const {
-      category,
-      search
-    } = req.query;
+    const { category, search } = req.query;
     let sql = `
       SELECT s.*,
              u.id as owner_id, u.name as owner_name, u.username as owner_username, u.avatarUrl as owner_avatarUrl,
@@ -34,11 +104,14 @@ router.get('/', optionalAuth, async (req, res) => {
     }
     sql += ` ORDER BY membersCount DESC`;
     const rows = queryAll(sql, params);
-    const enriched = rows.map(s => {
+    const enriched = rows.map((s) => {
       let isMember = false;
       let memberRole = null;
       if (req.user) {
-        const mem = queryOne('SELECT role FROM memberships WHERE spaceId = ? AND userId = ?', [s.id, req.user.id]);
+        const mem = queryOne('SELECT role FROM memberships WHERE spaceId = ? AND userId = ?', [
+          s.id,
+          req.user.id,
+        ]);
         if (mem) {
           isMember = true;
           memberRole = mem.role;
@@ -56,49 +129,56 @@ router.get('/', optionalAuth, async (req, res) => {
           id: s.owner_id,
           name: s.owner_name,
           username: s.owner_username,
-          avatarUrl: s.owner_avatarUrl
+          avatarUrl: s.owner_avatarUrl,
         },
         membersCount: s.membersCount,
         channelsCount: s.channelsCount,
         coursesCount: s.coursesCount,
         isMember,
-        memberRole
+        memberRole,
       };
     });
     return res.json(enriched);
   } catch (err) {
     console.error('Failed to fetch spaces:', err);
     return res.status(500).json({
-      error: 'Falha ao carregar comunidades'
+      error: 'Falha ao carregar comunidades',
     });
   }
 });
 router.get('/:id', optionalAuth, async (req, res) => {
   try {
-    const {
-      id
-    } = req.params;
-    let space = queryOne(`SELECT s.*,
+    const { id } = req.params;
+    let space = queryOne(
+      `SELECT s.*,
               u.id as owner_id, u.name as owner_name, u.username as owner_username, u.avatarUrl as owner_avatarUrl, u.bio as owner_bio,
               (SELECT COUNT(*) FROM memberships WHERE spaceId = s.id) as membersCount,
               (SELECT COUNT(*) FROM channels WHERE spaceId = s.id) as channelsCount
        FROM spaces s
        JOIN users u ON s.ownerId = u.id
-       WHERE s.id = ? OR s.slug = ?`, [id, id]);
+       WHERE s.id = ? OR s.slug = ?`,
+      [id, id],
+    );
     if (!space) {
-      const courseRow = queryOne(`SELECT c.*, u.id as owner_id, u.name as owner_name, u.username as owner_username, u.avatarUrl as owner_avatarUrl, u.bio as owner_bio
+      const courseRow = queryOne(
+        `SELECT c.*, u.id as owner_id, u.name as owner_name, u.username as owner_username, u.avatarUrl as owner_avatarUrl, u.bio as owner_bio
          FROM courses c
          JOIN users u ON c.creatorId = u.id
-         WHERE c.id = ? OR c.slug = ?`, [id, id]);
+         WHERE c.id = ? OR c.slug = ?`,
+        [id, id],
+      );
       if (courseRow) {
         if (courseRow.spaceId) {
-          space = queryOne(`SELECT s.*,
+          space = queryOne(
+            `SELECT s.*,
                     u.id as owner_id, u.name as owner_name, u.username as owner_username, u.avatarUrl as owner_avatarUrl, u.bio as owner_bio,
                     (SELECT COUNT(*) FROM memberships WHERE spaceId = s.id) as membersCount,
                     (SELECT COUNT(*) FROM channels WHERE spaceId = s.id) as channelsCount
              FROM spaces s
              JOIN users u ON s.ownerId = u.id
-             WHERE s.id = ?`, [courseRow.spaceId]);
+             WHERE s.id = ?`,
+            [courseRow.spaceId],
+          );
         }
         if (!space) {
           space = {
@@ -116,50 +196,26 @@ router.get('/:id', optionalAuth, async (req, res) => {
             owner_bio: courseRow.owner_bio,
             membersCount: 1,
             channelsCount: 4,
-            courseId: courseRow.id
+            courseId: courseRow.id,
           };
         }
       }
     }
     if (!space) {
       return res.status(404).json({
-        error: 'Comunidade não encontrada'
+        error: 'Comunidade não encontrada',
       });
     }
-    let channels = queryAll('SELECT * FROM channels WHERE spaceId = ? ORDER BY orderIndex ASC', [space.id]);
-    if (channels.length === 0) {
-      channels = [{
-        id: `ch-gen-${space.id}`,
-        spaceId: space.id,
-        name: 'geral',
-        type: 'text',
-        topic: 'Boas-vindas e conversa geral.',
-        isVoice: 0
-      }, {
-        id: `ch-qa-${space.id}`,
-        spaceId: space.id,
-        name: 'duvidas-aulas',
-        type: 'text',
-        topic: 'Tira-dúvidas sobre o conteúdo.',
-        isVoice: 0
-      }, {
-        id: `ch-proj-${space.id}`,
-        spaceId: space.id,
-        name: 'projetos-showcase',
-        type: 'text',
-        topic: 'Partilha de projetos desenvolvidos.',
-        isVoice: 0
-      }, {
-        id: `ch-voice-${space.id}`,
-        spaceId: space.id,
-        name: 'Sala de Mentoria & Ecrã',
-        type: 'voice',
-        topic: 'Mentoria em direto e partilha de ecrã.',
-        isVoice: 1
-      }];
-    }
-    const courses = queryAll('SELECT id, title, slug, thumbnailUrl, difficulty, durationHours, price, isFree FROM courses WHERE spaceId = ?', [space.id]);
-    const members = queryAll(`SELECT DISTINCT u.id as user_id, u.name, u.username, u.avatarUrl, u.role as user_role, u.xp, u.level,
+    let channels = queryAll('SELECT * FROM channels WHERE spaceId = ? ORDER BY orderIndex ASC', [
+      space.id,
+    ]);
+
+    const courses = queryAll(
+      'SELECT id, title, slug, thumbnailUrl, difficulty, durationHours, price, isFree FROM courses WHERE spaceId = ?',
+      [space.id],
+    );
+    const members = queryAll(
+      `SELECT DISTINCT u.id as user_id, u.name, u.username, u.avatarUrl, u.role as user_role,
               COALESCE(m.role, 'MEMBER') as role,
               COALESCE(m.id, 'mem-' || u.id) as id
        FROM (
@@ -172,11 +228,16 @@ router.get('/:id', optionalAuth, async (req, res) => {
        JOIN users u ON t.userId = u.id
        LEFT JOIN memberships m ON m.userId = u.id AND m.spaceId = ?
        ORDER BY (CASE WHEN u.id = ? THEN 0 ELSE 1 END), u.name ASC
-       LIMIT 50`, [space.id, space.id, space.id, space.owner_id || '']);
+       LIMIT 50`,
+      [space.id, space.id, space.id, space.owner_id || ''],
+    );
     let isMember = false;
     let memberRole = null;
     if (req.user) {
-      const mem = queryOne('SELECT role FROM memberships WHERE spaceId = ? AND userId = ?', [space.id, req.user.id]);
+      const mem = queryOne('SELECT role FROM memberships WHERE spaceId = ? AND userId = ?', [
+        space.id,
+        req.user.id,
+      ]);
       if (mem) {
         isMember = true;
         memberRole = mem.role;
@@ -189,11 +250,11 @@ router.get('/:id', optionalAuth, async (req, res) => {
         name: space.owner_name,
         username: space.owner_username,
         avatarUrl: space.owner_avatarUrl,
-        bio: space.owner_bio
+        bio: space.owner_bio,
       },
-      channels,
+      channels: canAccessSpace(req.user, space.id) ? channels : [],
       courses,
-      members: members.map(m => ({
+      members: (canAccessSpace(req.user, space.id) ? members : []).map((m) => ({
         id: m.id,
         role: m.role,
         joinedAt: m.joinedAt,
@@ -204,61 +265,80 @@ router.get('/:id', optionalAuth, async (req, res) => {
           avatarUrl: m.avatarUrl,
           role: m.user_role,
           xp: m.xp,
-          level: m.level
-        }
+          level: m.level,
+        },
       })),
       isMember,
-      memberRole
+      memberRole,
     });
   } catch (err) {
     console.error('Failed to load space details:', err);
     return res.status(500).json({
-      error: 'Falha ao carregar detalhes do espaço'
+      error: 'Falha ao carregar detalhes do espaço',
     });
   }
 });
 router.post('/:id/join', authenticate, async (req, res) => {
   try {
-    const {
-      id
-    } = req.params;
+    const { id } = req.params;
     const userId = req.user.id;
     const now = new Date().toISOString();
-    const space = queryOne('SELECT id, name, isPrivate, ownerId FROM spaces WHERE id = ? OR slug = ?', [id, id]);
+    const space = queryOne(
+      'SELECT id, name, isPrivate, ownerId FROM spaces WHERE id = ? OR slug = ?',
+      [id, id],
+    );
     if (!space) {
       return res.status(404).json({
-        error: 'Comunidade não encontrada'
+        error: 'Comunidade não encontrada',
       });
     }
     if (space.isPrivate === 1 && req.user.role !== 'ADMIN' && req.user.id !== space.ownerId) {
       return res.status(403).json({ error: 'Esta comunidade é privada.' });
     }
-    const pendingCourse = queryOne(`
+    const pendingCourse = queryOne(
+      `
       SELECT id FROM courses
       WHERE spaceId = ?
         AND (isPublished <> 1 OR (approvalStatus IS NOT NULL AND approvalStatus <> 'APPROVED'))
       LIMIT 1
-    `, [space.id]);
+    `,
+      [space.id],
+    );
     if (pendingCourse) {
       return res.status(403).json({ error: 'Este curso ainda aguarda aprovação.' });
     }
-    const existing = queryOne('SELECT id FROM memberships WHERE spaceId = ? AND userId = ?', [space.id, userId]);
+    const lockedCourse = queryAll(
+      'SELECT * FROM courses WHERE spaceId = ? AND isFree = 0 AND price > 0',
+      [space.id],
+    ).find((course) => !canStudyCourse(req.user, course));
+    if (lockedCourse)
+      return res.status(403).json({ error: 'Inscreva-se no curso antes de entrar na comunidade.' });
+    const existing = queryOne('SELECT id FROM memberships WHERE spaceId = ? AND userId = ?', [
+      space.id,
+      userId,
+    ]);
     if (!existing) {
-      execute(`INSERT INTO memberships (id, userId, spaceId, role, joinedAt) VALUES (?, ?, ?, 'MEMBER', ?)`, [`mem-${Date.now()}`, userId, space.id, now]);
+      execute(
+        `INSERT INTO memberships (id, userId, spaceId, role, joinedAt) VALUES (?, ?, ?, 'MEMBER', ?)`,
+        [`mem-${Date.now()}`, userId, space.id, now],
+      );
     }
     const linkedCourses = queryAll(
       `SELECT id FROM courses WHERE (spaceId = ? OR id = ?) AND isFree = 1 AND isPublished = 1 AND (approvalStatus = 'APPROVED' OR approvalStatus IS NULL)`,
-      [space.id, space.id]
+      [space.id, space.id],
     );
-    linkedCourses.forEach(c => {
-      execute(`INSERT OR IGNORE INTO enrollments (id, userId, courseId, enrolledAt, progressPercent) VALUES (?, ?, ?, ?, 0)`, [`enr-${Date.now()}-${c.id}`, userId, c.id, now]);
+    linkedCourses.forEach((c) => {
+      execute(
+        `INSERT OR IGNORE INTO enrollments (id, userId, courseId, enrolledAt, progressPercent) VALUES (?, ?, ?, ?, 0)`,
+        [`enr-${Date.now()}-${c.id}`, userId, c.id, now],
+      );
     });
     return res.status(201).json({
-      message: 'Entrou na comunidade e no curso com sucesso!'
+      message: 'Entrou na comunidade e no curso com sucesso!',
     });
   } catch (err) {
     return res.status(500).json({
-      error: 'Falha ao entrar na comunidade'
+      error: 'Falha ao entrar na comunidade',
     });
   }
 });

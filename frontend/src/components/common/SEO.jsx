@@ -5,13 +5,13 @@ import { useEffect } from 'react';
  * canonical link, OpenGraph, Twitter and description meta tags.
  */
 export const SEO = ({
-  title = 'NEXO — Plataforma de Formação & Conhecimento de Excelência',
-  description = 'NEXO — Plataforma de aprendizagem de alta performance, mentoria WebRTC em direto, certificação digital verificada e estúdio de criadores em Portugal.',
+  title = 'NEXO — Cursos e comunidade de aprendizagem',
+  description = 'NEXO — Plataforma de aprendizagem online, mentoria por voz e vídeo em direto, certificação digital verificada e estúdio de criadores em Portugal.',
   canonical,
   ogType = 'website',
   ogImage = '/hero-showcase.jpg',
-  keywords = 'cursos online, formação prática, mentoria WebRTC, certificados portugal, programação, marketing, negócios, NEXO',
-  structuredData
+  keywords = 'cursos online, formação prática, mentoria por voz e vídeo, certificados portugal, programação, marketing, negócios, NEXO',
+  structuredData,
 }) => {
   useEffect(() => {
     // 1. Page Title
@@ -40,7 +40,9 @@ export const SEO = ({
     setMetaTag('property', 'og:site_name', 'NEXO');
     setMetaTag('property', 'og:locale', 'pt_PT');
     if (ogImage) {
-      const fullImageUrl = ogImage.startsWith('http') ? ogImage : `${window.location.origin}${ogImage}`;
+      const fullImageUrl = ogImage.startsWith('http')
+        ? ogImage
+        : `${window.location.origin}${ogImage}`;
       setMetaTag('property', 'og:image', fullImageUrl);
     }
     const currentUrl = canonical || window.location.href;
@@ -51,7 +53,9 @@ export const SEO = ({
     setMetaTag('name', 'twitter:title', title);
     setMetaTag('name', 'twitter:description', description);
     if (ogImage) {
-      const fullImageUrl = ogImage.startsWith('http') ? ogImage : `${window.location.origin}${ogImage}`;
+      const fullImageUrl = ogImage.startsWith('http')
+        ? ogImage
+        : `${window.location.origin}${ogImage}`;
       setMetaTag('name', 'twitter:image', fullImageUrl);
     }
 

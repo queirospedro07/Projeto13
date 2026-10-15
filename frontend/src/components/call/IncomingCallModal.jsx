@@ -1,3 +1,4 @@
+import './IncomingCallModal.css';
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Phone, PhoneOff, Video } from 'lucide-react';
@@ -29,7 +30,7 @@ export const IncomingCallModal = ({ onAcceptCall }) => {
     };
 
     const handleEnded = ({ roomId }) => {
-      setIncomingCall(current => {
+      setIncomingCall((current) => {
         if (current && current.roomId === roomId) {
           if (ringtoneIntervalRef.current) clearInterval(ringtoneIntervalRef.current);
           return null;
@@ -55,7 +56,7 @@ export const IncomingCallModal = ({ onAcceptCall }) => {
     socket?.emit('direct-call-accepted', {
       callerId: incomingCall.caller.id,
       roomId: incomingCall.roomId,
-      acceptor: user
+      acceptor: user,
     });
 
     const callData = incomingCall;
@@ -70,7 +71,7 @@ export const IncomingCallModal = ({ onAcceptCall }) => {
     socket?.emit('direct-call-rejected', {
       callerId: incomingCall.caller.id,
       roomId: incomingCall.roomId,
-      rejector: user
+      rejector: user,
     });
 
     setIncomingCall(null);
@@ -79,43 +80,34 @@ export const IncomingCallModal = ({ onAcceptCall }) => {
   if (!incomingCall) return null;
 
   const modalContent = (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/85 animate-fade-in" style={{ isolation: 'isolate' }}>
-      <div className="bg-[#12141a] border border-white/10 rounded-2xl p-6 sm:p-8 max-w-sm w-full shadow-2xl flex flex-col items-center text-center animate-scale-in">
-        <div className="relative mb-5">
-          <div className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping" />
+    <div className="incoming-call-modal-panel dialog-layer">
+      <div className="incoming-call-modal-panel-2 animate-scale-in">
+        <div className="incoming-call-modal-panel-3">
+          <div className="incoming-call-modal-panel-4" />
           <Avatar
             src={incomingCall.caller.avatarUrl}
             name={incomingCall.caller.name}
             size="xl"
-            className="ring-4 ring-emerald-500 relative"
+            className="incoming-call-modal-avatar"
           />
-          <div className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-emerald-500 text-white shadow-md">
-            <Video className="w-3.5 h-3.5" />
+          <div className="incoming-call-modal-panel-5">
+            <Video className="incoming-call-modal-video" />
           </div>
         </div>
 
-        <h3 className="text-lg font-bold text-white mb-1">
-          {incomingCall.caller.name}
-        </h3>
-        <p className="text-xs text-slate-400 mb-6 flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          A ligar para si em chamada direta...
+        <h3 className="incoming-call-modal-subheading">{incomingCall.caller.name}</h3>
+        <p className="incoming-call-modal-description">
+          <span className="incoming-call-modal-label" />A ligar para si em chamada direta...
         </p>
 
-        <div className="flex items-center gap-4 w-full">
-          <button
-            onClick={handleReject}
-            className="flex-1 py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-rose-600/30 transition-all hover:scale-105 active:scale-95"
-          >
-            <PhoneOff className="w-4 h-4" />
+        <div className="incoming-call-modal-panel-6">
+          <button onClick={handleReject} className="incoming-call-modal-button">
+            <PhoneOff className="incoming-call-modal-phone-off" />
             <span>Recusar</span>
           </button>
 
-          <button
-            onClick={handleAccept}
-            className="flex-1 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-600/30 transition-all hover:scale-105 active:scale-95"
-          >
-            <Phone className="w-4 h-4" />
+          <button onClick={handleAccept} className="incoming-call-modal-button-2">
+            <Phone className="incoming-call-modal-phone-off" />
             <span>Atender</span>
           </button>
         </div>

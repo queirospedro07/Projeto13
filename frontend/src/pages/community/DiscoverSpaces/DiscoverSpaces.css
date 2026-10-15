@@ -1,0 +1,1300 @@
+/* Styles for DiscoverSpaces. */
+
+@layer reset, base, ui, components, pages, overrides;
+
+@layer pages {
+  .discover-spaces-panel {
+    margin-left: auto;
+    margin-right: auto;
+    display: flex;
+    max-width: 80rem;
+    animation: fadeIn 0.15s ease-out forwards;
+    flex-direction: column;
+    gap: 2.5rem;
+    padding-bottom: 4rem;
+  }
+
+  .discover-spaces-panel-2 {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 1.5rem;
+    border-bottom-width: 1px;
+    --nexo-border-opacity: 1;
+    border-color: rgb(229 229 229 / var(--nexo-border-opacity, 1));
+    padding-bottom: 1.5rem;
+  }
+
+  .discover-spaces-panel-2:is(.dark *) {
+    --nexo-border-opacity: 1;
+    border-color: rgb(38 38 38 / var(--nexo-border-opacity, 1));
+  }
+
+  @media (min-width: 640px) {
+    .discover-spaces-panel-2 {
+      flex-direction: row;
+      align-items: center;
+    }
+  }
+
+  .discover-spaces-panel-3 {
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .discover-spaces-title {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+    font-weight: 650;
+    letter-spacing: -0.025em;
+    --nexo-text-opacity: 1;
+    color: rgb(28 28 28 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-title:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+  }
+
+  @media (min-width: 640px) {
+    .discover-spaces-title {
+      font-size: 2.25rem;
+      line-height: 2.5rem;
+    }
+  }
+
+  .discover-spaces-description {
+    margin-top: 0.25rem;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    --nexo-text-opacity: 1;
+    color: rgb(82 82 82 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-description:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(163 163 163 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-plus {
+    height: 1rem;
+    width: 1rem;
+  }
+
+  .discover-spaces-button {
+    font-weight: 500;
+  }
+
+  .discover-spaces-panel-4 {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .discover-spaces-panel-5 {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  @media (min-width: 1024px) {
+    .discover-spaces-panel-5 {
+      flex-direction: row;
+    }
+  }
+
+  .discover-spaces-panel-6 {
+    position: relative;
+    flex: 1 1 0%;
+  }
+
+  .discover-spaces-search {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    height: 1.25rem;
+    width: 1.25rem;
+    --nexo-translate-y: -50%;
+    transform: translate(var(--nexo-translate-x), var(--nexo-translate-y))
+      rotate(var(--nexo-rotate)) skewX(var(--nexo-skew-x)) skewY(var(--nexo-skew-y))
+      scaleX(var(--nexo-scale-x)) scaleY(var(--nexo-scale-y));
+    --nexo-text-opacity: 1;
+    color: rgb(150 150 150 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-field {
+    width: 100%;
+    border-radius: 1rem;
+    border-width: 1px;
+    --nexo-border-opacity: 1;
+    border-color: rgb(229 229 229 / var(--nexo-border-opacity, 1));
+    --nexo-bg-opacity: 1;
+    background-color: rgb(255 255 255 / var(--nexo-bg-opacity, 1));
+    padding-top: 0.875rem;
+    padding-bottom: 0.875rem;
+    padding-left: 3rem;
+    padding-right: 1rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 450;
+    --nexo-text-opacity: 1;
+    color: rgb(28 28 28 / var(--nexo-text-opacity, 1));
+    --nexo-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+    --nexo-shadow-colored: 0 1px 2px var(--nexo-shadow-color);
+    box-shadow:
+      var(--nexo-ring-offset-shadow, 0 0 #0000), var(--nexo-ring-shadow, 0 0 #0000),
+      var(--nexo-shadow);
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+
+  .discover-spaces-field::placeholder {
+    --nexo-text-opacity: 1;
+    color: rgb(150 150 150 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-field:focus {
+    --nexo-border-opacity: 1;
+    border-color: rgb(23 23 23 / var(--nexo-border-opacity, 1));
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+  }
+
+  .discover-spaces-field:is(.dark *) {
+    --nexo-border-opacity: 1;
+    border-color: rgb(38 38 38 / var(--nexo-border-opacity, 1));
+    --nexo-bg-opacity: 1;
+    background-color: rgb(26 26 26 / var(--nexo-bg-opacity, 1));
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-field:focus:is(.dark *) {
+    --nexo-border-opacity: 1;
+    border-color: rgb(255 255 255 / var(--nexo-border-opacity, 1));
+  }
+
+  .discover-spaces-panel-7 {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .discover-spaces-panel-8 {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 1rem;
+    border-width: 1px;
+    --nexo-border-opacity: 1;
+    border-color: rgb(229 229 229 / var(--nexo-border-opacity, 1));
+    --nexo-bg-opacity: 1;
+    background-color: rgb(243 243 243 / var(--nexo-bg-opacity, 1));
+    padding: 0.25rem;
+  }
+
+  .discover-spaces-panel-8:is(.dark *) {
+    --nexo-border-opacity: 1;
+    border-color: rgb(38 38 38 / var(--nexo-border-opacity, 1));
+    --nexo-bg-opacity: 1;
+    background-color: rgb(23 23 23 / var(--nexo-bg-opacity, 1));
+  }
+
+  .discover-spaces-button-2 {
+    cursor: pointer;
+    border-radius: 0.75rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 500;
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+
+  .discover-spaces-button-3 {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(28 28 28 / var(--nexo-bg-opacity, 1));
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+    --nexo-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+    --nexo-shadow-colored: 0 1px 2px var(--nexo-shadow-color);
+    box-shadow:
+      var(--nexo-ring-offset-shadow, 0 0 #0000), var(--nexo-ring-shadow, 0 0 #0000),
+      var(--nexo-shadow);
+  }
+
+  .discover-spaces-button-3:is(.dark *) {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(255 255 255 / var(--nexo-bg-opacity, 1));
+    --nexo-text-opacity: 1;
+    color: rgb(23 23 23 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-button-4 {
+    --nexo-text-opacity: 1;
+    color: rgb(82 82 82 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-button-4:hover {
+    --nexo-text-opacity: 1;
+    color: rgb(28 28 28 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-button-4:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(163 163 163 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-button-4:hover:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-button-5 {
+    display: flex;
+    cursor: pointer;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 0.75rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 500;
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+
+  .discover-spaces-users {
+    height: 0.75rem;
+    width: 0.75rem;
+  }
+
+  .discover-spaces-panel-9 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+  }
+
+  .discover-spaces-button-6 {
+    cursor: pointer;
+    white-space: nowrap;
+    border-radius: 0.75rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 500;
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+
+  .discover-spaces-button-7 {
+    border-width: 1px;
+    --nexo-border-opacity: 1;
+    border-color: rgb(229 229 229 / var(--nexo-border-opacity, 1));
+    --nexo-bg-opacity: 1;
+    background-color: rgb(255 255 255 / var(--nexo-bg-opacity, 1));
+    --nexo-text-opacity: 1;
+    color: rgb(82 82 82 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-button-7:hover {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(250 250 250 / var(--nexo-bg-opacity, 1));
+    --nexo-text-opacity: 1;
+    color: rgb(28 28 28 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-button-7:is(.dark *) {
+    --nexo-border-opacity: 1;
+    border-color: rgb(38 38 38 / var(--nexo-border-opacity, 1));
+    --nexo-bg-opacity: 1;
+    background-color: rgb(26 26 26 / var(--nexo-bg-opacity, 1));
+    --nexo-text-opacity: 1;
+    color: rgb(163 163 163 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-button-7:hover:is(.dark *) {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(23 23 23 / var(--nexo-bg-opacity, 1));
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-panel-10 {
+    padding-top: 6rem;
+    padding-bottom: 6rem;
+    text-align: center;
+  }
+
+  .discover-spaces-panel-11 {
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 1rem;
+    height: 2.5rem;
+    width: 2.5rem;
+    animation: spin 1s linear infinite;
+    border-radius: 9999px;
+    border-width: 4px;
+    --nexo-border-opacity: 1;
+    border-color: rgb(28 28 28 / var(--nexo-border-opacity, 1));
+    border-top-color: transparent;
+  }
+
+  .discover-spaces-panel-11:is(.dark *) {
+    --nexo-border-opacity: 1;
+    border-color: rgb(255 255 255 / var(--nexo-border-opacity, 1));
+  }
+
+  .discover-spaces-description-2 {
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 450;
+    --nexo-text-opacity: 1;
+    color: rgb(115 115 115 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-panel-12 {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 36rem;
+    border-radius: 0.75rem;
+    border-width: 1px;
+    border-style: dashed;
+    --nexo-border-opacity: 1;
+    border-color: rgb(229 229 229 / var(--nexo-border-opacity, 1));
+    --nexo-bg-opacity: 1;
+    background-color: rgb(255 255 255 / var(--nexo-bg-opacity, 1));
+    padding: 2.5rem;
+    padding-top: 5rem;
+    padding-bottom: 5rem;
+    text-align: center;
+  }
+
+  .discover-spaces-panel-12:is(.dark *) {
+    --nexo-border-opacity: 1;
+    border-color: rgb(38 38 38 / var(--nexo-border-opacity, 1));
+    --nexo-bg-opacity: 1;
+    background-color: rgb(26 26 26 / var(--nexo-bg-opacity, 1));
+  }
+
+  .discover-spaces-panel-13 {
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 1rem;
+    display: flex;
+    height: 4rem;
+    width: 4rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1rem;
+    --nexo-bg-opacity: 1;
+    background-color: rgb(243 243 243 / var(--nexo-bg-opacity, 1));
+    --nexo-text-opacity: 1;
+    color: rgb(28 28 28 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-panel-13:is(.dark *) {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(23 23 23 / var(--nexo-bg-opacity, 1));
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-book-open {
+    height: 2rem;
+    width: 2rem;
+  }
+
+  .discover-spaces-subheading {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    font-weight: 600;
+    --nexo-text-opacity: 1;
+    color: rgb(28 28 28 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-subheading:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-description-3 {
+    margin-top: 0.5rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    --nexo-text-opacity: 1;
+    color: rgb(115 115 115 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-panel-14 {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 2rem;
+  }
+
+  @media (min-width: 768px) {
+    .discover-spaces-panel-14 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .discover-spaces-panel-14 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .discover-spaces-panel-15 {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+    border-radius: 0.75rem;
+    border-width: 1px;
+    border-color: rgb(229 229 229 / 0.9);
+    --nexo-bg-opacity: 1;
+    background-color: rgb(255 255 255 / var(--nexo-bg-opacity, 1));
+    --nexo-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+    --nexo-shadow-colored: 0 1px 2px var(--nexo-shadow-color);
+    box-shadow:
+      var(--nexo-ring-offset-shadow, 0 0 #0000), var(--nexo-ring-shadow, 0 0 #0000),
+      var(--nexo-shadow);
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+
+  .discover-spaces-panel-15:hover {
+    --nexo-border-opacity: 1;
+    border-color: rgb(212 212 212 / var(--nexo-border-opacity, 1));
+    --nexo-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --nexo-shadow-colored: 0 1px 2px 0 var(--nexo-shadow-color);
+    box-shadow:
+      var(--nexo-ring-offset-shadow, 0 0 #0000), var(--nexo-ring-shadow, 0 0 #0000),
+      var(--nexo-shadow);
+  }
+
+  .discover-spaces-panel-15:is(.dark *) {
+    --nexo-border-opacity: 1;
+    border-color: rgb(38 38 38 / var(--nexo-border-opacity, 1));
+    --nexo-bg-opacity: 1;
+    background-color: rgb(26 26 26 / var(--nexo-bg-opacity, 1));
+  }
+
+  .discover-spaces-panel-15:hover:is(.dark *) {
+    --nexo-border-opacity: 1;
+    border-color: rgb(64 64 64 / var(--nexo-border-opacity, 1));
+  }
+
+  .discover-spaces-link {
+    position: relative;
+    display: block;
+    aspect-ratio: 16 / 9;
+    width: 100%;
+    cursor: pointer;
+    overflow: hidden;
+    --nexo-bg-opacity: 1;
+    background-color: rgb(28 28 28 / var(--nexo-bg-opacity, 1));
+  }
+
+  .discover-spaces-image {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+    opacity: 0.9;
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+  }
+
+  .group\/thumb:hover .discover-spaces-image {
+    --nexo-scale-x: 1.05;
+    --nexo-scale-y: 1.05;
+    transform: translate(var(--nexo-translate-x), var(--nexo-translate-y))
+      rotate(var(--nexo-rotate)) skewX(var(--nexo-skew-x)) skewY(var(--nexo-skew-y))
+      scaleX(var(--nexo-scale-x)) scaleY(var(--nexo-scale-y));
+  }
+
+  .ui-group:hover .discover-spaces-image {
+    opacity: 1;
+  }
+
+  .discover-spaces-panel-16 {
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    background-image: linear-gradient(to top, var(--nexo-gradient-stops));
+    --nexo-gradient-from: rgb(0 0 0 / 0.85) var(--nexo-gradient-from-position);
+    --nexo-gradient-to: rgb(0 0 0 / 0) var(--nexo-gradient-to-position);
+    --nexo-gradient-stops: var(--nexo-gradient-from), var(--nexo-gradient-to);
+    --nexo-gradient-to: rgb(0 0 0 / 0) var(--nexo-gradient-to-position);
+    --nexo-gradient-stops:
+      var(--nexo-gradient-from), rgb(0 0 0 / 0.2) var(--nexo-gradient-via-position),
+      var(--nexo-gradient-to);
+    --nexo-gradient-to: rgb(0 0 0 / 0.6) var(--nexo-gradient-to-position);
+  }
+
+  .discover-spaces-panel-17 {
+    pointer-events: none;
+    position: absolute;
+    left: 0.875rem;
+    right: 0.875rem;
+    top: 0.875rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .discover-spaces-panel-18 {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.375rem;
+  }
+
+  .discover-spaces-label {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 0.75rem;
+    border-width: 1px;
+    border-color: rgb(255 255 255 / 0.2);
+    background-color: rgb(0 0 0 / 0.6);
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 600;
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+    --nexo-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --nexo-shadow-colored:
+      0 10px 15px -3px var(--nexo-shadow-color), 0 4px 6px -4px var(--nexo-shadow-color);
+    box-shadow:
+      var(--nexo-ring-offset-shadow, 0 0 #0000), var(--nexo-ring-shadow, 0 0 #0000),
+      var(--nexo-shadow);
+    --nexo-backdrop-blur: blur(12px);
+    -webkit-backdrop-filter: var(--nexo-backdrop-blur) var(--nexo-backdrop-brightness)
+      var(--nexo-backdrop-contrast) var(--nexo-backdrop-grayscale) var(--nexo-backdrop-hue-rotate)
+      var(--nexo-backdrop-invert) var(--nexo-backdrop-opacity) var(--nexo-backdrop-saturate)
+      var(--nexo-backdrop-sepia);
+    backdrop-filter: var(--nexo-backdrop-blur) var(--nexo-backdrop-brightness)
+      var(--nexo-backdrop-contrast) var(--nexo-backdrop-grayscale) var(--nexo-backdrop-hue-rotate)
+      var(--nexo-backdrop-invert) var(--nexo-backdrop-opacity) var(--nexo-backdrop-saturate)
+      var(--nexo-backdrop-sepia);
+  }
+
+  .discover-spaces-graduation-cap {
+    height: 0.875rem;
+    width: 0.875rem;
+    --nexo-text-opacity: 1;
+    color: rgb(96 165 250 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-label-2 {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 0.75rem;
+    border-width: 1px;
+    border-color: rgb(255 255 255 / 0.15);
+    background-color: rgb(0 0 0 / 0.6);
+    padding-left: 0.625rem;
+    padding-right: 0.625rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    font-size: 11px;
+    font-weight: 500;
+    --nexo-text-opacity: 1;
+    color: rgb(228 228 231 / var(--nexo-text-opacity, 1));
+    --nexo-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --nexo-shadow-colored:
+      0 10px 15px -3px var(--nexo-shadow-color), 0 4px 6px -4px var(--nexo-shadow-color);
+    box-shadow:
+      var(--nexo-ring-offset-shadow, 0 0 #0000), var(--nexo-ring-shadow, 0 0 #0000),
+      var(--nexo-shadow);
+    --nexo-backdrop-blur: blur(12px);
+    -webkit-backdrop-filter: var(--nexo-backdrop-blur) var(--nexo-backdrop-brightness)
+      var(--nexo-backdrop-contrast) var(--nexo-backdrop-grayscale) var(--nexo-backdrop-hue-rotate)
+      var(--nexo-backdrop-invert) var(--nexo-backdrop-opacity) var(--nexo-backdrop-saturate)
+      var(--nexo-backdrop-sepia);
+    backdrop-filter: var(--nexo-backdrop-blur) var(--nexo-backdrop-brightness)
+      var(--nexo-backdrop-contrast) var(--nexo-backdrop-grayscale) var(--nexo-backdrop-hue-rotate)
+      var(--nexo-backdrop-invert) var(--nexo-backdrop-opacity) var(--nexo-backdrop-saturate)
+      var(--nexo-backdrop-sepia);
+  }
+
+  .discover-spaces-users-2 {
+    height: 0.75rem;
+    width: 0.75rem;
+    --nexo-text-opacity: 1;
+    color: rgb(52 211 153 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-book-open-2 {
+    height: 0.75rem;
+    width: 0.75rem;
+    --nexo-text-opacity: 1;
+    color: rgb(96 165 250 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-label-3 {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 0.75rem;
+    border-width: 1px;
+    border-color: rgb(52 211 153 / 0.3);
+    background-color: rgb(5 150 105 / 0.95);
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 650;
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+    --nexo-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --nexo-shadow-colored:
+      0 10px 15px -3px var(--nexo-shadow-color), 0 4px 6px -4px var(--nexo-shadow-color);
+    box-shadow:
+      var(--nexo-ring-offset-shadow, 0 0 #0000), var(--nexo-ring-shadow, 0 0 #0000),
+      var(--nexo-shadow);
+    --nexo-backdrop-blur: blur(12px);
+    -webkit-backdrop-filter: var(--nexo-backdrop-blur) var(--nexo-backdrop-brightness)
+      var(--nexo-backdrop-contrast) var(--nexo-backdrop-grayscale) var(--nexo-backdrop-hue-rotate)
+      var(--nexo-backdrop-invert) var(--nexo-backdrop-opacity) var(--nexo-backdrop-saturate)
+      var(--nexo-backdrop-sepia);
+    backdrop-filter: var(--nexo-backdrop-blur) var(--nexo-backdrop-brightness)
+      var(--nexo-backdrop-contrast) var(--nexo-backdrop-grayscale) var(--nexo-backdrop-hue-rotate)
+      var(--nexo-backdrop-invert) var(--nexo-backdrop-opacity) var(--nexo-backdrop-saturate)
+      var(--nexo-backdrop-sepia);
+  }
+
+  .discover-spaces-check {
+    height: 0.875rem;
+    width: 0.875rem;
+    stroke-width: 3;
+  }
+
+  .discover-spaces-label-4 {
+    border-radius: 0.75rem;
+    border-width: 1px;
+    border-color: rgb(52 211 153 / 0.3);
+    background-color: rgb(16 185 129 / 0.9);
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 650;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+    --nexo-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --nexo-shadow-colored:
+      0 10px 15px -3px var(--nexo-shadow-color), 0 4px 6px -4px var(--nexo-shadow-color);
+    box-shadow:
+      var(--nexo-ring-offset-shadow, 0 0 #0000), var(--nexo-ring-shadow, 0 0 #0000),
+      var(--nexo-shadow);
+    --nexo-backdrop-blur: blur(12px);
+    -webkit-backdrop-filter: var(--nexo-backdrop-blur) var(--nexo-backdrop-brightness)
+      var(--nexo-backdrop-contrast) var(--nexo-backdrop-grayscale) var(--nexo-backdrop-hue-rotate)
+      var(--nexo-backdrop-invert) var(--nexo-backdrop-opacity) var(--nexo-backdrop-saturate)
+      var(--nexo-backdrop-sepia);
+    backdrop-filter: var(--nexo-backdrop-blur) var(--nexo-backdrop-brightness)
+      var(--nexo-backdrop-contrast) var(--nexo-backdrop-grayscale) var(--nexo-backdrop-hue-rotate)
+      var(--nexo-backdrop-invert) var(--nexo-backdrop-opacity) var(--nexo-backdrop-saturate)
+      var(--nexo-backdrop-sepia);
+  }
+
+  .discover-spaces-label-5 {
+    border-radius: 0.75rem;
+    border-width: 1px;
+    border-color: rgb(255 255 255 / 0.2);
+    background-color: rgb(28 28 28 / 0.9);
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 650;
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+    --nexo-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --nexo-shadow-colored:
+      0 10px 15px -3px var(--nexo-shadow-color), 0 4px 6px -4px var(--nexo-shadow-color);
+    box-shadow:
+      var(--nexo-ring-offset-shadow, 0 0 #0000), var(--nexo-ring-shadow, 0 0 #0000),
+      var(--nexo-shadow);
+    --nexo-backdrop-blur: blur(12px);
+    -webkit-backdrop-filter: var(--nexo-backdrop-blur) var(--nexo-backdrop-brightness)
+      var(--nexo-backdrop-contrast) var(--nexo-backdrop-grayscale) var(--nexo-backdrop-hue-rotate)
+      var(--nexo-backdrop-invert) var(--nexo-backdrop-opacity) var(--nexo-backdrop-saturate)
+      var(--nexo-backdrop-sepia);
+    backdrop-filter: var(--nexo-backdrop-blur) var(--nexo-backdrop-brightness)
+      var(--nexo-backdrop-contrast) var(--nexo-backdrop-grayscale) var(--nexo-backdrop-hue-rotate)
+      var(--nexo-backdrop-invert) var(--nexo-backdrop-opacity) var(--nexo-backdrop-saturate)
+      var(--nexo-backdrop-sepia);
+  }
+
+  .discover-spaces-panel-19 {
+    pointer-events: none;
+    position: absolute;
+    left: 0.875rem;
+    right: 0.875rem;
+    bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .discover-spaces-panel-20 {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 0.75rem;
+    border-width: 1px;
+    border-color: rgb(255 255 255 / 0.15);
+    background-color: rgb(0 0 0 / 0.7);
+    padding-left: 0.625rem;
+    padding-right: 0.625rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 600;
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+    --nexo-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --nexo-shadow-colored:
+      0 4px 6px -1px var(--nexo-shadow-color), 0 2px 4px -2px var(--nexo-shadow-color);
+    box-shadow:
+      var(--nexo-ring-offset-shadow, 0 0 #0000), var(--nexo-ring-shadow, 0 0 #0000),
+      var(--nexo-shadow);
+    --nexo-backdrop-blur: blur(12px);
+    -webkit-backdrop-filter: var(--nexo-backdrop-blur) var(--nexo-backdrop-brightness)
+      var(--nexo-backdrop-contrast) var(--nexo-backdrop-grayscale) var(--nexo-backdrop-hue-rotate)
+      var(--nexo-backdrop-invert) var(--nexo-backdrop-opacity) var(--nexo-backdrop-saturate)
+      var(--nexo-backdrop-sepia);
+    backdrop-filter: var(--nexo-backdrop-blur) var(--nexo-backdrop-brightness)
+      var(--nexo-backdrop-contrast) var(--nexo-backdrop-grayscale) var(--nexo-backdrop-hue-rotate)
+      var(--nexo-backdrop-invert) var(--nexo-backdrop-opacity) var(--nexo-backdrop-saturate)
+      var(--nexo-backdrop-sepia);
+  }
+
+  .discover-spaces-star {
+    height: 0.875rem;
+    width: 0.875rem;
+    fill: #fbbf24;
+    --nexo-text-opacity: 1;
+    color: rgb(251 191 36 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-star-2 {
+    height: 0.875rem;
+    width: 0.875rem;
+    --nexo-text-opacity: 1;
+    color: rgb(161 161 170 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-label-6 {
+    font-size: 11px;
+    --nexo-text-opacity: 1;
+    color: rgb(161 161 170 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-panel-21 {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 0.75rem;
+    border-width: 1px;
+    border-color: rgb(255 255 255 / 0.15);
+    background-color: rgb(0 0 0 / 0.7);
+    padding-left: 0.625rem;
+    padding-right: 0.625rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 600;
+    --nexo-text-opacity: 1;
+    color: rgb(228 228 231 / var(--nexo-text-opacity, 1));
+    --nexo-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --nexo-shadow-colored:
+      0 4px 6px -1px var(--nexo-shadow-color), 0 2px 4px -2px var(--nexo-shadow-color);
+    box-shadow:
+      var(--nexo-ring-offset-shadow, 0 0 #0000), var(--nexo-ring-shadow, 0 0 #0000),
+      var(--nexo-shadow);
+    --nexo-backdrop-blur: blur(12px);
+    -webkit-backdrop-filter: var(--nexo-backdrop-blur) var(--nexo-backdrop-brightness)
+      var(--nexo-backdrop-contrast) var(--nexo-backdrop-grayscale) var(--nexo-backdrop-hue-rotate)
+      var(--nexo-backdrop-invert) var(--nexo-backdrop-opacity) var(--nexo-backdrop-saturate)
+      var(--nexo-backdrop-sepia);
+    backdrop-filter: var(--nexo-backdrop-blur) var(--nexo-backdrop-brightness)
+      var(--nexo-backdrop-contrast) var(--nexo-backdrop-grayscale) var(--nexo-backdrop-hue-rotate)
+      var(--nexo-backdrop-invert) var(--nexo-backdrop-opacity) var(--nexo-backdrop-saturate)
+      var(--nexo-backdrop-sepia);
+  }
+
+  .discover-spaces-panel-22 {
+    display: flex;
+    flex: 1 1 0%;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 1.5rem;
+  }
+
+  .discover-spaces-link-2 {
+    display: block;
+  }
+
+  .discover-spaces-subheading-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    cursor: pointer;
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+    font-weight: 650;
+    line-height: 1.375;
+    --nexo-text-opacity: 1;
+    color: rgb(23 23 23 / var(--nexo-text-opacity, 1));
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+
+  .discover-spaces-subheading-2:hover {
+    --nexo-text-opacity: 1;
+    color: rgb(37 99 235 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-subheading-2:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-subheading-2:hover:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(96 165 250 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-description-4 {
+    margin-top: 0.5rem;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    line-height: 1.625;
+    --nexo-text-opacity: 1;
+    color: rgb(82 82 82 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-description-4:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(161 161 170 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-panel-23 {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    border-top-width: 1px;
+    --nexo-border-opacity: 1;
+    border-color: rgb(243 243 243 / var(--nexo-border-opacity, 1));
+    padding-top: 1rem;
+  }
+
+  .discover-spaces-panel-23:is(.dark *) {
+    border-color: rgb(38 38 38 / 0.8);
+  }
+
+  .discover-spaces-panel-24 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .discover-spaces-link-3 {
+    display: flex;
+    min-width: 0px;
+    cursor: pointer;
+    align-items: center;
+    gap: 0.625rem;
+    transition-property: opacity;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+
+  .discover-spaces-link-3:hover {
+    opacity: 0.8;
+  }
+
+  .discover-spaces-label-7 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 600;
+    --nexo-text-opacity: 1;
+    color: rgb(41 41 41 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-label-7:hover {
+    text-decoration-line: underline;
+  }
+
+  .discover-spaces-label-7:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(228 228 231 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-label-8 {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 700;
+    --nexo-text-opacity: 1;
+    color: rgb(23 23 23 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-label-8:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-panel-25 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .discover-spaces-link-4 {
+    width: 100%;
+  }
+
+  .discover-spaces-button-8 {
+    display: flex;
+    width: 100%;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    border-radius: 0.75rem;
+    border-width: 1px;
+    --nexo-border-opacity: 1;
+    border-color: rgb(229 229 229 / var(--nexo-border-opacity, 1));
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 600;
+    --nexo-text-opacity: 1;
+    color: rgb(41 41 41 / var(--nexo-text-opacity, 1));
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+
+  .discover-spaces-button-8:hover {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(243 243 243 / var(--nexo-bg-opacity, 1));
+  }
+
+  .discover-spaces-button-8:is(.dark *) {
+    --nexo-border-opacity: 1;
+    border-color: rgb(38 38 38 / var(--nexo-border-opacity, 1));
+    --nexo-text-opacity: 1;
+    color: rgb(228 228 231 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-button-8:hover:is(.dark *) {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(23 23 23 / var(--nexo-bg-opacity, 1));
+  }
+
+  .discover-spaces-book-open-3 {
+    height: 0.875rem;
+    width: 0.875rem;
+    --nexo-text-opacity: 1;
+    color: rgb(59 130 246 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-button-9 {
+    display: flex;
+    width: 100%;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    border-radius: 0.75rem;
+    --nexo-bg-opacity: 1;
+    background-color: rgb(5 150 105 / var(--nexo-bg-opacity, 1));
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 600;
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+    --nexo-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+    --nexo-shadow-colored: 0 1px 2px var(--nexo-shadow-color);
+    box-shadow:
+      var(--nexo-ring-offset-shadow, 0 0 #0000), var(--nexo-ring-shadow, 0 0 #0000),
+      var(--nexo-shadow);
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+
+  .discover-spaces-button-9:hover {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(16 185 129 / var(--nexo-bg-opacity, 1));
+  }
+
+  .discover-spaces-check-2 {
+    height: 0.875rem;
+    width: 0.875rem;
+    flex-shrink: 0;
+    stroke-width: 3;
+  }
+
+  .discover-spaces-label-9 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .discover-spaces-button-10 {
+    display: flex;
+    width: 100%;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    border-radius: 0.75rem;
+    --nexo-bg-opacity: 1;
+    background-color: rgb(23 23 23 / var(--nexo-bg-opacity, 1));
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 600;
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+    --nexo-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+    --nexo-shadow-colored: 0 1px 2px var(--nexo-shadow-color);
+    box-shadow:
+      var(--nexo-ring-offset-shadow, 0 0 #0000), var(--nexo-ring-shadow, 0 0 #0000),
+      var(--nexo-shadow);
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+
+  .discover-spaces-button-10:hover {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(41 41 41 / var(--nexo-bg-opacity, 1));
+  }
+
+  .discover-spaces-button-10:is(.dark *) {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(255 255 255 / var(--nexo-bg-opacity, 1));
+    --nexo-text-opacity: 1;
+    color: rgb(23 23 23 / var(--nexo-text-opacity, 1));
+  }
+
+  .discover-spaces-button-10:hover:is(.dark *) {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(243 243 243 / var(--nexo-bg-opacity, 1));
+  }
+
+  .discover-spaces-arrow-right {
+    height: 0.875rem;
+    width: 0.875rem;
+  }
+}
+
+/* Theme and shared surface adjustments. */
+
+@layer overrides {
+  html.dark .discover-spaces-field {
+    background-color: #1a1a1a !important;
+  }
+
+  html.dark .discover-spaces-button-7 {
+    background-color: #1a1a1a !important;
+  }
+
+  html.dark .discover-spaces-panel-12 {
+    background-color: #1a1a1a !important;
+  }
+
+  html.dark .discover-spaces-panel-15 {
+    background-color: #1a1a1a !important;
+  }
+
+  html.dark .discover-spaces-panel-8 {
+    background-color: #232323 !important;
+  }
+
+  html.dark .discover-spaces-panel-13 {
+    background-color: #232323 !important;
+  }
+
+  html.dark .discover-spaces-panel-2 {
+    border-color: #333333 !important;
+  }
+
+  html.dark .discover-spaces-field {
+    border-color: #333333 !important;
+  }
+
+  html.dark .discover-spaces-panel-8 {
+    border-color: #333333 !important;
+  }
+
+  html.dark .discover-spaces-button-7 {
+    border-color: #333333 !important;
+  }
+
+  html.dark .discover-spaces-panel-12 {
+    border-color: #333333 !important;
+  }
+
+  html.dark .discover-spaces-button-8 {
+    border-color: #333333 !important;
+  }
+
+  html.dark .discover-spaces-panel-23 {
+    border-color: #333333 !important;
+  }
+
+  html.dark .discover-spaces-subheading-2 {
+    color: #ffffff !important;
+  }
+
+  html.dark .discover-spaces-label-8 {
+    color: #ffffff !important;
+  }
+
+  html.dark .discover-spaces-title {
+    color: #ffffff !important;
+  }
+
+  html.dark .discover-spaces-field {
+    color: #ffffff !important;
+  }
+
+  html.dark .discover-spaces-panel-13 {
+    color: #ffffff !important;
+  }
+
+  html.dark .discover-spaces-subheading {
+    color: #ffffff !important;
+  }
+
+  html.dark .discover-spaces-label-7 {
+    color: #ffffff !important;
+  }
+
+  html.dark .discover-spaces-button-8 {
+    color: #ffffff !important;
+  }
+
+  html.dark .discover-spaces-description {
+    color: #a1a1aa !important;
+  }
+
+  html.dark .discover-spaces-button-4 {
+    color: #a1a1aa !important;
+  }
+
+  html.dark .discover-spaces-button-7 {
+    color: #a1a1aa !important;
+  }
+
+  html.dark .discover-spaces-description-4 {
+    color: #a1a1aa !important;
+  }
+
+  html.dark .discover-spaces-description-2 {
+    color: #71717a !important;
+  }
+
+  html.dark .discover-spaces-description-3 {
+    color: #71717a !important;
+  }
+
+  html.dark .discover-spaces-search {
+    color: #71717a !important;
+  }
+
+  html.dark .discover-spaces-button-7:hover {
+    background-color: #262626 !important;
+  }
+
+  html.dark .discover-spaces-button-8:hover {
+    background-color: #262626 !important;
+  }
+
+  html.dark .discover-spaces-panel-15:hover {
+    border-color: #454545 !important;
+  }
+
+  html.dark .discover-spaces-button-4:hover {
+    color: #ffffff !important;
+  }
+
+  html.dark .discover-spaces-button-7:hover {
+    color: #ffffff !important;
+  }
+}
+
+/* Values supplied by application state. */
+
+@layer pages {
+  .discover-spaces-dynamic-1 {
+    object-position: var(--discover-spaces-object-position);
+  }
+}

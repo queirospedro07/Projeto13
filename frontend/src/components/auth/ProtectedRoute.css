@@ -1,0 +1,60 @@
+/* Styles for ProtectedRoute. */
+
+@layer reset, base, ui, components, pages, overrides;
+
+@layer components {
+  .protected-route-panel {
+    display: flex;
+    min-height: 60vh;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    --nexo-bg-opacity: 1;
+    background-color: rgb(250 250 250 / var(--nexo-bg-opacity, 1));
+    --nexo-text-opacity: 1;
+    color: rgb(82 82 82 / var(--nexo-text-opacity, 1));
+  }
+
+  .protected-route-panel:is(.dark *) {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(18 18 18 / var(--nexo-bg-opacity, 1));
+    --nexo-text-opacity: 1;
+    color: rgb(212 212 212 / var(--nexo-text-opacity, 1));
+  }
+
+  .protected-route-panel-2 {
+    height: 2rem;
+    width: 2rem;
+    animation: spin 1s linear infinite;
+    border-radius: 9999px;
+    border-width: 2px;
+    --nexo-border-opacity: 1;
+    border-color: rgb(37 99 235 / var(--nexo-border-opacity, 1));
+    border-top-color: transparent;
+  }
+
+  .protected-route-description {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    --nexo-text-opacity: 1;
+    color: rgb(150 150 150 / var(--nexo-text-opacity, 1));
+  }
+}
+
+/* Theme and shared surface adjustments. */
+
+@layer overrides {
+  html.dark .protected-route-panel {
+    background-color: #121212 !important;
+    color: #a1a1aa !important;
+  }
+
+  html.dark .protected-route-description {
+    color: #71717a !important;
+  }
+}

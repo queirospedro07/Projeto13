@@ -1,0 +1,76 @@
+@layer components {
+  .report-content-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.45rem 0.6rem;
+    border-radius: 0.5rem;
+    color: #737373;
+    font-size: 0.6875rem;
+  }
+  .report-content-button:hover {
+    background: rgb(239 68 68 / 0.07);
+    color: #dc2626;
+  }
+  .report-content-button svg {
+    width: 0.85rem;
+    height: 0.85rem;
+  }
+  .report-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    font-size: 0.8125rem;
+  }
+  .report-form p {
+    color: #737373;
+  }
+  .report-form textarea {
+    border: 1px solid #d4d4d4;
+    border-radius: 0.75rem;
+    padding: 0.75rem;
+  }
+  .moderation-queue {
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    border: 1px solid #d4d4d4;
+    border-radius: 1rem;
+    background: #fff;
+  }
+  .dark .moderation-queue {
+    background: #1a1a1a;
+    border-color: #333;
+  }
+  .moderation-queue header,
+  .moderation-queue article > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+  .moderation-queue h2 {
+    font-size: 1.15rem;
+  }
+  .moderation-queue p,
+  .moderation-queue span {
+    font-size: 0.8125rem;
+    line-height: 1.7;
+  }
+  .moderation-queue span {
+    color: #737373;
+    display: block;
+  }
+  .moderation-queue article {
+    border-top: 1px solid #d4d4d4;
+    margin-top: 1rem;
+    padding-top: 1rem;
+  }
+  .moderation-queue article strong {
+    font-size: 0.875rem;
+  }
+  .moderation-queue article p {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+}

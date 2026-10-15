@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import './Modal.css';
+import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
@@ -8,74 +9,108 @@ export const Modal = ({
   title,
   children,
   maxWidth = 'lg',
-  bodyClassName = 'p-6 sm:p-8 overflow-y-auto custom-scrollbar text-slate-900 dark:text-neutral-100 flex-1 min-h-0'
+  bodyClassName = 'modal-modal-body-class-name custom-scrollbar',
 }) => {
   const [mounted, setMounted] = useState(false);
+  const dialogRef = useRef(null);
+  const closeRef = useRef(onClose);
+  useEffect(() => {
+    closeRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') onClose();
+    if (!isOpen || !mounted) return;
+    const previouslyFocused = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    const dialog = dialogRef.current;
+    const focusable = () =>
+      [
+        ...dialog.querySelectorAll(
+          'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex="0"]',
+        ),
+      ].filter((el) => el.getClientRects().length > 0);
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeRef.current();
+      }
+      if (event.key !== 'Tab') return;
+      const elements = focusable(),
+        first = elements[0],
+        last = elements.at(-1);
+      if (!first) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+      if (
+        event.shiftKey &&
+        (document.activeElement === first || !dialog.contains(document.activeElement))
+      ) {
+        event.preventDefault();
+        last.focus();
+      } else if (
+        !event.shiftKey &&
+        (document.activeElement === last || !dialog.contains(document.activeElement))
+      ) {
+        event.preventDefault();
+        first.focus();
+      }
     };
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      window.addEventListener('keydown', handleKeyDown);
-    }
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+    (focusable()[0] || dialog)?.focus();
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', handleKeyDown);
+      if (previouslyFocused?.isConnected) previouslyFocused.focus();
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, mounted]);
 
   if (!isOpen || !mounted) return null;
 
   const maxWidths = {
-    sm: 'max-w-sm',
-    md: 'max-w-md',
-    lg: 'max-w-lg',
-    xl: 'max-w-xl',
-    '2xl': 'max-w-2xl',
-    '4xl': 'max-w-4xl'
+    sm: 'modal-max-widths-sm',
+    md: 'modal-max-widths-md',
+    lg: 'modal-max-widths-lg',
+    xl: 'modal-max-widths-xl',
+    '2xl': 'modal-max-widths-2xl',
+    '4xl': 'modal-max-widths-4xl',
   };
 
   const modalContent = (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto p-4 sm:p-6" style={{ isolation: 'isolate' }}>
+    <div className="modal-panel dialog-layer">
       {/* Crisp Solid Dark Backdrop - Fixed to viewport */}
-      <div 
-        className="fixed inset-0 bg-black/80 dark:bg-black/90 transition-opacity" 
-        onClick={onClose} 
-        aria-hidden="true"
-      />
+      <div className="modal-panel-2" onClick={onClose} aria-hidden="true" />
 
       <div
-        className={`relative w-full ${maxWidths[maxWidth]} bg-white dark:bg-[#0c0d12] border border-slate-200 dark:border-neutral-800 rounded-2xl shadow-2xl text-left overflow-hidden z-10 animate-fade-in max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-3rem)] flex flex-col text-slate-900 dark:text-white`}
+        className={`modal-panel-3 ${maxWidths[maxWidth]} modal-panel-4`}
         onClick={(e) => e.stopPropagation()}
+        ref={dialogRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label={title || 'Janela de diálogo'}
       >
-          {title && (
-            <div className="flex items-center justify-between px-6 py-4.5 border-b border-slate-100 dark:border-neutral-800 bg-slate-50/80 dark:bg-[#12141a] shrink-0">
-              <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">
-                {title}
-              </h3>
-              <button 
-                onClick={onClose} 
-                className="min-h-10 min-w-10 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
-                aria-label="Fechar diálogo"
-                title="Fechar"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-          )}
+        {title && (
+          <div className="modal-panel-5 modal-header-spacing">
+            <h3 className="modal-subheading">{title}</h3>
+            <button
+              onClick={onClose}
+              className="modal-button"
+              aria-label="Fechar diálogo"
+              title="Fechar"
+            >
+              <X className="modal-x" />
+            </button>
+          </div>
+        )}
 
-        <div className={bodyClassName}>
-          {children}
-        </div>
+        <div className={bodyClassName}>{children}</div>
       </div>
     </div>
   );

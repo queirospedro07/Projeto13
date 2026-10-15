@@ -1,10 +1,28 @@
+import './CallStage.css';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  Mic, MicOff, Video, VideoOff, Monitor, MonitorOff,
-  PhoneOff, MessageSquare, Users, Maximize2, Minimize2,
-  X, Send, Volume2, ShieldCheck, Crown, LayoutGrid, Check,
-  Radio, Headphones, HeadphoneOff
+  Mic,
+  MicOff,
+  Video,
+  VideoOff,
+  Monitor,
+  MonitorOff,
+  PhoneOff,
+  MessageSquare,
+  Users,
+  Maximize2,
+  Minimize2,
+  X,
+  Send,
+  Volume2,
+  ShieldCheck,
+  Crown,
+  LayoutGrid,
+  Check,
+  Radio,
+  Headphones,
+  HeadphoneOff,
 } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import { useAuth } from '../../context/AuthContext';
@@ -21,8 +39,8 @@ const RTC_CONFIG = {
     { urls: 'stun:stun2.l.google.com:19302' },
     { urls: 'stun:stun3.l.google.com:19302' },
     { urls: 'stun:stun4.l.google.com:19302' },
-    { urls: 'stun:stun.relay.metered.ca:80' }
-  ]
+    { urls: 'stun:stun.relay.metered.ca:80' },
+  ],
 };
 
 const VideoPlayer = ({ stream, isMirrored = false, isContain = false }) => {
@@ -56,7 +74,7 @@ const VideoPlayer = ({ stream, isMirrored = false, isContain = false }) => {
       playsInline
       muted
       onLoadedMetadata={() => videoRef.current?.play().catch(() => {})}
-      className={`w-full h-full ${isContain ? 'object-contain bg-black' : 'object-cover bg-black'} ${isMirrored ? 'scale-x-[-1]' : ''}`}
+      className={`call-stage-video ${isContain ? 'call-stage-video-2' : 'call-stage-video-3'} ${isMirrored ? 'call-stage-video-4' : ''}`}
     />
   );
 };
@@ -69,13 +87,17 @@ export const CallStage = ({
   onDisconnect,
   isModal = false,
   initialMuted = false,
-  initialCameraOn = false
+  initialCameraOn = false,
 }) => {
   const effectiveRoomId = roomId || roomName;
   const { user } = useAuth();
   const { socket } = useSocket();
   const { toast } = useToast();
-  const { updateCallAudioState, isMicMuted: contextMicMuted, isDeafened: contextDeafened } = useActiveCall();
+  const {
+    updateCallAudioState,
+    isMicMuted: contextMicMuted,
+    isDeafened: contextDeafened,
+  } = useActiveCall();
 
   const startMutedCalc = Boolean(initialMuted || contextMicMuted || contextDeafened);
   const startDeafenedCalc = Boolean(contextDeafened);
@@ -119,25 +141,27 @@ export const CallStage = ({
   const [participants, setParticipants] = useState(() => {
     if (initialParticipants.length > 0) return initialParticipants;
     if (!user) return [];
-    return [{
-      id: user.id,
-      socketId: 'self',
-      name: `${user.name} (Você)`,
-      username: user.username,
-      avatarUrl: user.avatarUrl,
-      role: user.role,
-      isSelf: true,
-      isSpeaking: false,
-      isMuted: startMutedCalc,
-      isDeafened: startDeafenedCalc,
-      isCameraOn: Boolean(initialCameraOn),
-      isScreenSharing: false
-    }];
+    return [
+      {
+        id: user.id,
+        socketId: 'self',
+        name: `${user.name} (Você)`,
+        username: user.username,
+        avatarUrl: user.avatarUrl,
+        role: user.role,
+        isSelf: true,
+        isSpeaking: false,
+        isMuted: startMutedCalc,
+        isDeafened: startDeafenedCalc,
+        isCameraOn: Boolean(initialCameraOn),
+        isScreenSharing: false,
+      },
+    ];
   });
 
   useEffect(() => {
     if (socket?.id) {
-      setParticipants(prev => prev.map(p => p.isSelf ? { ...p, socketId: socket.id } : p));
+      setParticipants((prev) => prev.map((p) => (p.isSelf ? { ...p, socketId: socket.id } : p)));
     }
   }, [socket?.id]);
 
@@ -148,7 +172,13 @@ export const CallStage = ({
   const [selectedScreenUserId, setSelectedScreenUserId] = useState(null);
 
   const [chatMessages, setChatMessages] = useState([
-    { id: '1', sender: 'Sistema', content: `Chamada iniciada em "${roomName}".`, time: 'Agora', isSystem: true }
+    {
+      id: '1',
+      sender: 'Sistema',
+      content: `Chamada iniciada em "${roomName}".`,
+      time: 'Agora',
+      isSystem: true,
+    },
   ]);
   const [chatInput, setChatInput] = useState('');
 
@@ -189,18 +219,20 @@ export const CallStage = ({
 
   // Duration Timer
   useEffect(() => {
-    const timer = setInterval(() => setCallDuration(d => d + 1), 1000);
+    const timer = setInterval(() => setCallDuration((d) => d + 1), 1000);
     return () => clearInterval(timer);
   }, []);
 
   const formatTime = (secs) => {
-    const m = Math.floor(secs / 60).toString().padStart(2, '0');
+    const m = Math.floor(secs / 60)
+      .toString()
+      .padStart(2, '0');
     const s = (secs % 60).toString().padStart(2, '0');
     return `${m}:${s}`;
   };
 
   const handleUnblockAudio = () => {
-    remoteAudioElementsRef.current.forEach(audio => {
+    remoteAudioElementsRef.current.forEach((audio) => {
       audio.play().catch(() => {});
     });
     if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
@@ -228,16 +260,23 @@ export const CallStage = ({
         let sum = 0;
         for (let i = 0; i < data.length; i++) sum += data[i];
         const avg = sum / data.length;
-        const isSpeakingNow = avg > 14 &&
+        const isSpeakingNow =
+          avg > 14 &&
           !localAudioStreamRef.current?.getAudioTracks()[0]?.muted &&
           localAudioStreamRef.current?.getAudioTracks()[0]?.enabled;
 
         if (lastSpeakingRef.current !== isSpeakingNow) {
           lastSpeakingRef.current = isSpeakingNow;
           const currentUserId = userRef.current?.id;
-          setParticipants(prev => prev.map(p => p.id === currentUserId ? { ...p, isSpeaking: isSpeakingNow } : p));
+          setParticipants((prev) =>
+            prev.map((p) => (p.id === currentUserId ? { ...p, isSpeaking: isSpeakingNow } : p)),
+          );
           if (socket) {
-            socket.emit('voice-speaking-state', { roomId: effectiveRoomId, userId: currentUserId, isSpeaking: isSpeakingNow });
+            socket.emit('voice-speaking-state', {
+              roomId: effectiveRoomId,
+              userId: currentUserId,
+              isSpeaking: isSpeakingNow,
+            });
           }
         }
         animFrameRef.current = requestAnimationFrame(checkAudio);
@@ -251,10 +290,10 @@ export const CallStage = ({
       if (localAudioStreamRef.current) return localAudioStreamRef.current;
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-        video: false
+        video: false,
       });
       if (startMutedCalc) {
-        stream.getAudioTracks().forEach(t => {
+        stream.getAudioTracks().forEach((t) => {
           t.enabled = false;
         });
       }
@@ -275,7 +314,7 @@ export const CallStage = ({
       targetUserId,
       stream,
       track,
-      streamId: stream.id
+      streamId: stream.id,
     });
 
     const knownScreenStreamId = peerScreenStreamIdsRef.current.get(targetUserId);
@@ -289,8 +328,9 @@ export const CallStage = ({
       isScreen = true;
     } else {
       // Check if we already have a camera stream for this user that is distinct from this stream
-      setRemoteCameraStreams(currentCameras => {
-        const hasExistingCam = !!currentCameras[targetUserId] && currentCameras[targetUserId].id !== stream.id;
+      setRemoteCameraStreams((currentCameras) => {
+        const hasExistingCam =
+          !!currentCameras[targetUserId] && currentCameras[targetUserId].id !== stream.id;
         if (hasExistingCam) {
           isScreen = true;
         }
@@ -305,23 +345,23 @@ export const CallStage = ({
     }
 
     if (isScreen) {
-      setRemoteScreenStreams(prev => ({ ...prev, [targetUserId]: stream }));
+      setRemoteScreenStreams((prev) => ({ ...prev, [targetUserId]: stream }));
       // Automatically focus on the shared screen
       setSelectedScreenUserId(targetUserId);
     } else {
-      setRemoteCameraStreams(prev => ({ ...prev, [targetUserId]: stream }));
+      setRemoteCameraStreams((prev) => ({ ...prev, [targetUserId]: stream }));
     }
 
     track.onended = () => {
       recentVideoTracksRef.current.delete(track.id);
       if (isScreen) {
-        setRemoteScreenStreams(prev => {
+        setRemoteScreenStreams((prev) => {
           const next = { ...prev };
           delete next[targetUserId];
           return next;
         });
       } else {
-        setRemoteCameraStreams(prev => {
+        setRemoteCameraStreams((prev) => {
           const next = { ...prev };
           delete next[targetUserId];
           return next;
@@ -331,124 +371,131 @@ export const CallStage = ({
   }, []);
 
   // WebRTC Peer Connection Factory (Stable, not recreating on state updates)
-  const getOrCreatePeerConnection = useCallback((targetSocketId, remoteUser) => {
-    if (peerConnectionsRef.current.has(targetSocketId)) {
-      return peerConnectionsRef.current.get(targetSocketId);
-    }
-
-    const pc = new RTCPeerConnection(RTC_CONFIG);
-    peerConnectionsRef.current.set(targetSocketId, pc);
-
-    // Add local audio
-    if (localAudioStreamRef.current) {
-      localAudioStreamRef.current.getAudioTracks().forEach(track => {
-        try {
-          const sender = pc.addTrack(track, localAudioStreamRef.current);
-          audioSendersRef.current.set(targetSocketId, sender);
-        } catch (_) {}
-      });
-    }
-
-    // Add local camera if active
-    if (localCameraStreamRef.current) {
-      const camTrack = localCameraStreamRef.current.getVideoTracks()[0];
-      if (camTrack) {
-        try {
-          const sender = pc.addTrack(camTrack, localCameraStreamRef.current);
-          cameraSendersRef.current.set(targetSocketId, sender);
-        } catch (_) {}
+  const getOrCreatePeerConnection = useCallback(
+    (targetSocketId, remoteUser) => {
+      if (peerConnectionsRef.current.has(targetSocketId)) {
+        return peerConnectionsRef.current.get(targetSocketId);
       }
-    }
 
-    // Add local screen share if active
-    if (localScreenStreamRef.current) {
-      const screenTrack = localScreenStreamRef.current.getVideoTracks()[0];
-      if (screenTrack) {
-        try {
-          const sender = pc.addTrack(screenTrack, localScreenStreamRef.current);
-          screenSendersRef.current.set(targetSocketId, sender);
-        } catch (_) {}
-      }
-      const screenAudioTrack = localScreenStreamRef.current.getAudioTracks()[0];
-      if (screenAudioTrack) {
-        try {
-          const audioSender = pc.addTrack(screenAudioTrack, localScreenStreamRef.current);
-          screenAudioSendersRef.current.set(targetSocketId, audioSender);
-        } catch (_) {}
-      }
-    }
+      const pc = new RTCPeerConnection(RTC_CONFIG);
+      peerConnectionsRef.current.set(targetSocketId, pc);
 
-    pc.onicecandidate = (event) => {
-      if (event.candidate && socket) {
-        socket.emit('voice-signal-ice', {
-          targetSocketId,
-          candidate: event.candidate
+      // Add local audio
+      if (localAudioStreamRef.current) {
+        localAudioStreamRef.current.getAudioTracks().forEach((track) => {
+          try {
+            const sender = pc.addTrack(track, localAudioStreamRef.current);
+            audioSendersRef.current.set(targetSocketId, sender);
+          } catch (_) {}
         });
       }
-    };
 
-    pc.ontrack = (event) => {
-      const { track } = event;
-      const targetUserId = socketToUserRef.current.get(targetSocketId) || remoteUser?.id;
-      const stream = event.streams && event.streams[0] ? event.streams[0] : new MediaStream([track]);
-
-      if (track.kind === 'audio') {
-        let audio = remoteAudioElementsRef.current.get(targetSocketId);
-        if (!audio) {
-          audio = document.createElement('audio');
-          audio.autoplay = true;
-          audio.playsInline = true;
-          audio.muted = isDeafenedRef.current;
-          document.body.appendChild(audio);
-          remoteAudioElementsRef.current.set(targetSocketId, audio);
-        } else {
-          audio.muted = isDeafenedRef.current;
+      // Add local camera if active
+      if (localCameraStreamRef.current) {
+        const camTrack = localCameraStreamRef.current.getVideoTracks()[0];
+        if (camTrack) {
+          try {
+            const sender = pc.addTrack(camTrack, localCameraStreamRef.current);
+            cameraSendersRef.current.set(targetSocketId, sender);
+          } catch (_) {}
         }
-        audio.srcObject = stream;
-        audio.play().catch(() => setAutoplayBlocked(true));
-      } else if (track.kind === 'video') {
-        classifyAndStoreVideoTrack(track, stream, targetUserId);
       }
-    };
 
-    return pc;
-  }, [socket, classifyAndStoreVideoTrack]);
+      // Add local screen share if active
+      if (localScreenStreamRef.current) {
+        const screenTrack = localScreenStreamRef.current.getVideoTracks()[0];
+        if (screenTrack) {
+          try {
+            const sender = pc.addTrack(screenTrack, localScreenStreamRef.current);
+            screenSendersRef.current.set(targetSocketId, sender);
+          } catch (_) {}
+        }
+        const screenAudioTrack = localScreenStreamRef.current.getAudioTracks()[0];
+        if (screenAudioTrack) {
+          try {
+            const audioSender = pc.addTrack(screenAudioTrack, localScreenStreamRef.current);
+            screenAudioSendersRef.current.set(targetSocketId, audioSender);
+          } catch (_) {}
+        }
+      }
+
+      pc.onicecandidate = (event) => {
+        if (event.candidate && socket) {
+          socket.emit('voice-signal-ice', {
+            targetSocketId,
+            candidate: event.candidate,
+          });
+        }
+      };
+
+      pc.ontrack = (event) => {
+        const { track } = event;
+        const targetUserId = socketToUserRef.current.get(targetSocketId) || remoteUser?.id;
+        const stream =
+          event.streams && event.streams[0] ? event.streams[0] : new MediaStream([track]);
+
+        if (track.kind === 'audio') {
+          let audio = remoteAudioElementsRef.current.get(targetSocketId);
+          if (!audio) {
+            audio = document.createElement('audio');
+            audio.autoplay = true;
+            audio.playsInline = true;
+            audio.muted = isDeafenedRef.current;
+            document.body.appendChild(audio);
+            remoteAudioElementsRef.current.set(targetSocketId, audio);
+          } else {
+            audio.muted = isDeafenedRef.current;
+          }
+          audio.srcObject = stream;
+          audio.play().catch(() => setAutoplayBlocked(true));
+        } else if (track.kind === 'video') {
+          classifyAndStoreVideoTrack(track, stream, targetUserId);
+        }
+      };
+
+      return pc;
+    },
+    [socket, classifyAndStoreVideoTrack],
+  );
 
   // Signaling: Send Offer
-  const sendOfferToPeer = useCallback(async (targetSocketId, callerUser) => {
-    try {
-      if (makingOfferRef.current.get(targetSocketId)) return;
-      makingOfferRef.current.set(targetSocketId, true);
+  const sendOfferToPeer = useCallback(
+    async (targetSocketId, callerUser) => {
+      try {
+        if (makingOfferRef.current.get(targetSocketId)) return;
+        makingOfferRef.current.set(targetSocketId, true);
 
-      const pc = getOrCreatePeerConnection(targetSocketId, callerUser);
-      const offer = await pc.createOffer({
-        offerToReceiveAudio: true,
-        offerToReceiveVideo: true
-      });
+        const pc = getOrCreatePeerConnection(targetSocketId, callerUser);
+        const offer = await pc.createOffer({
+          offerToReceiveAudio: true,
+          offerToReceiveVideo: true,
+        });
 
-      if (pc.signalingState !== 'stable') {
-        await pc.setLocalDescription({ type: 'rollback' }).catch(() => {});
+        if (pc.signalingState !== 'stable') {
+          await pc.setLocalDescription({ type: 'rollback' }).catch(() => {});
+        }
+
+        await pc.setLocalDescription(offer);
+
+        socket?.emit('voice-signal-offer', {
+          targetSocketId,
+          offer: pc.localDescription,
+          callerUser: userRef.current,
+          cameraStreamId: localCameraStreamRef.current?.id || null,
+          screenStreamId: localScreenStreamRef.current?.id || null,
+          cameraTrackId: localCameraStreamRef.current?.getVideoTracks()[0]?.id || null,
+          screenTrackId: localScreenStreamRef.current?.getVideoTracks()[0]?.id || null,
+          isCameraOn: !!localCameraStreamRef.current,
+          isScreenSharing: !!localScreenStreamRef.current,
+        });
+      } catch (err) {
+        console.error('Erro ao criar ou enviar oferta WebRTC:', err);
+      } finally {
+        makingOfferRef.current.set(targetSocketId, false);
       }
-
-      await pc.setLocalDescription(offer);
-
-      socket?.emit('voice-signal-offer', {
-        targetSocketId,
-        offer: pc.localDescription,
-        callerUser: userRef.current,
-        cameraStreamId: localCameraStreamRef.current?.id || null,
-        screenStreamId: localScreenStreamRef.current?.id || null,
-        cameraTrackId: localCameraStreamRef.current?.getVideoTracks()[0]?.id || null,
-        screenTrackId: localScreenStreamRef.current?.getVideoTracks()[0]?.id || null,
-        isCameraOn: !!localCameraStreamRef.current,
-        isScreenSharing: !!localScreenStreamRef.current
-      });
-    } catch (err) {
-      console.error('Erro ao criar ou enviar oferta WebRTC:', err);
-    } finally {
-      makingOfferRef.current.set(targetSocketId, false);
-    }
-  }, [getOrCreatePeerConnection, socket]);
+    },
+    [getOrCreatePeerConnection, socket],
+  );
 
   // Main Session & WebRTC Lifecycle
   useEffect(() => {
@@ -463,16 +510,16 @@ export const CallStage = ({
           name: userRef.current.name,
           username: userRef.current.username,
           avatarUrl: userRef.current.avatarUrl,
-          role: userRef.current.role
+          role: userRef.current.role,
         },
         isMuted: isMicMuted,
         isDeafened: isDeafened,
-        isCameraOn: Boolean(initialCameraOn)
+        isCameraOn: Boolean(initialCameraOn),
       });
     }
 
     // 2. Initialize local audio stream in background and add to any open peer connections
-    initLocalAudio().then(stream => {
+    initLocalAudio().then((stream) => {
       if (stream && isMounted) {
         const audioTrack = stream.getAudioTracks()[0];
         if (audioTrack) {
@@ -492,36 +539,39 @@ export const CallStage = ({
 
     // 3. If user chose to enter with camera on, initialize camera stream
     if (initialCameraOn) {
-      navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
-        audio: false
-      }).then(camStream => {
-        if (!isMounted) {
-          camStream.getTracks().forEach(t => t.stop());
-          return;
-        }
-        localCameraStreamRef.current = camStream;
-        setLocalCameraStream(camStream);
-        setIsCameraOn(true);
-        const camTrack = camStream.getVideoTracks()[0];
-        for (const [targetSocketId, pc] of peerConnectionsRef.current.entries()) {
-          try {
-            const sender = pc.addTrack(camTrack, camStream);
-            cameraSendersRef.current.set(targetSocketId, sender);
-            sendOfferToPeer(targetSocketId);
-          } catch (_) {}
-        }
-        setParticipants(prev => prev.map(p => p.isSelf ? { ...p, isCameraOn: true } : p));
-        socket?.emit('voice-state-update', {
-          roomId: effectiveRoomId,
-          userId: userRef.current?.id,
-          isCameraOn: true,
-          cameraTrackId: camTrack?.id,
-          cameraStreamId: camStream.id
+      navigator.mediaDevices
+        .getUserMedia({
+          video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+          audio: false,
+        })
+        .then((camStream) => {
+          if (!isMounted) {
+            camStream.getTracks().forEach((t) => t.stop());
+            return;
+          }
+          localCameraStreamRef.current = camStream;
+          setLocalCameraStream(camStream);
+          setIsCameraOn(true);
+          const camTrack = camStream.getVideoTracks()[0];
+          for (const [targetSocketId, pc] of peerConnectionsRef.current.entries()) {
+            try {
+              const sender = pc.addTrack(camTrack, camStream);
+              cameraSendersRef.current.set(targetSocketId, sender);
+              sendOfferToPeer(targetSocketId);
+            } catch (_) {}
+          }
+          setParticipants((prev) => prev.map((p) => (p.isSelf ? { ...p, isCameraOn: true } : p)));
+          socket?.emit('voice-state-update', {
+            roomId: effectiveRoomId,
+            userId: userRef.current?.id,
+            isCameraOn: true,
+            cameraTrackId: camTrack?.id,
+            cameraStreamId: camStream.id,
+          });
+        })
+        .catch((err) => {
+          console.warn('Erro ao ligar câmara na entrada:', err);
         });
-      }).catch(err => {
-        console.warn('Erro ao ligar câmara na entrada:', err);
-      });
     }
 
     if (socket && userRef.current?.id) {
@@ -529,7 +579,7 @@ export const CallStage = ({
       socket.on('voice-room-existing-users', async (existingList) => {
         if (!Array.isArray(existingList) || !isMounted) return;
 
-        setParticipants(prev => {
+        setParticipants((prev) => {
           const next = [...prev];
           for (const item of existingList) {
             const remoteUser = item.user;
@@ -551,7 +601,7 @@ export const CallStage = ({
                 peerCameraTrackIdsRef.current.set(remoteUser.id, item.cameraTrackId);
               }
 
-              const existingIdx = next.findIndex(p => p.socketId === item.socketId);
+              const existingIdx = next.findIndex((p) => p.socketId === item.socketId);
               const pData = {
                 id: remoteUser.id,
                 socketId: item.socketId,
@@ -566,7 +616,7 @@ export const CallStage = ({
                 isCameraOn: !!item.isCameraOn,
                 isScreenSharing: !!item.isScreenSharing,
                 screenTrackId: item.screenTrackId,
-                cameraTrackId: item.cameraTrackId
+                cameraTrackId: item.cameraTrackId,
               };
               if (existingIdx >= 0) {
                 next[existingIdx] = { ...next[existingIdx], ...pData };
@@ -591,135 +641,155 @@ export const CallStage = ({
       });
 
       // 2. New remote user joined
-      socket.on('user-joined-voice', ({ user: remoteUser, socketId: remoteSocketId, isMuted: remoteMuted, isDeafened: remoteDeafened, isCameraOn: remoteCameraOn }) => {
-        if (!remoteUser || !remoteSocketId || remoteSocketId === socket.id || !isMounted) return;
+      socket.on(
+        'user-joined-voice',
+        ({
+          user: remoteUser,
+          socketId: remoteSocketId,
+          isMuted: remoteMuted,
+          isDeafened: remoteDeafened,
+          isCameraOn: remoteCameraOn,
+        }) => {
+          if (!remoteUser || !remoteSocketId || remoteSocketId === socket.id || !isMounted) return;
 
-        socketToUserRef.current.set(remoteSocketId, remoteUser.id);
-        userToSocketRef.current.set(remoteUser.id, remoteSocketId);
+          socketToUserRef.current.set(remoteSocketId, remoteUser.id);
+          userToSocketRef.current.set(remoteUser.id, remoteSocketId);
 
-        setParticipants(prev => {
-          const existingIdx = prev.findIndex(p => p.socketId === remoteSocketId);
-          const pData = {
-            id: remoteUser.id,
-            socketId: remoteSocketId,
-            name: remoteUser.name,
-            username: remoteUser.username,
-            avatarUrl: remoteUser.avatarUrl,
-            role: remoteUser.role,
-            isSelf: false,
-            isSpeaking: false,
-            isMuted: remoteMuted !== undefined ? Boolean(remoteMuted) : false,
-            isDeafened: remoteDeafened !== undefined ? Boolean(remoteDeafened) : false,
-            isCameraOn: remoteCameraOn !== undefined ? Boolean(remoteCameraOn) : false,
-            isScreenSharing: false
-          };
-          if (existingIdx >= 0) {
-            const next = [...prev];
-            next[existingIdx] = { ...next[existingIdx], ...pData };
-            return next;
-          }
-          return [...prev, pData];
-        });
+          setParticipants((prev) => {
+            const existingIdx = prev.findIndex((p) => p.socketId === remoteSocketId);
+            const pData = {
+              id: remoteUser.id,
+              socketId: remoteSocketId,
+              name: remoteUser.name,
+              username: remoteUser.username,
+              avatarUrl: remoteUser.avatarUrl,
+              role: remoteUser.role,
+              isSelf: false,
+              isSpeaking: false,
+              isMuted: remoteMuted !== undefined ? Boolean(remoteMuted) : false,
+              isDeafened: remoteDeafened !== undefined ? Boolean(remoteDeafened) : false,
+              isCameraOn: remoteCameraOn !== undefined ? Boolean(remoteCameraOn) : false,
+              isScreenSharing: false,
+            };
+            if (existingIdx >= 0) {
+              const next = [...prev];
+              next[existingIdx] = { ...next[existingIdx], ...pData };
+              return next;
+            }
+            return [...prev, pData];
+          });
 
-        toast({
-          title: 'Conectado',
-          message: `${remoteUser.name} juntou-se à chamada.`,
-          type: 'info'
-        });
-      });
+          toast({
+            title: 'Conectado',
+            message: `${remoteUser.name} juntou-se à chamada.`,
+            type: 'info',
+          });
+        },
+      );
 
       // 3. Incoming WebRTC Offer (Perfect Negotiation with Glare Handling)
-      socket.on('voice-signal-offer', async ({
-        callerSocketId,
-        offer,
-        callerUser,
-        screenStreamId,
-        cameraStreamId,
-        screenTrackId,
-        cameraTrackId
-      }) => {
-        try {
-          if (callerUser?.id) {
-            if (callerSocketId) {
-              socketToUserRef.current.set(callerSocketId, callerUser.id);
-              userToSocketRef.current.set(callerUser.id, callerSocketId);
+      socket.on(
+        'voice-signal-offer',
+        async ({
+          callerSocketId,
+          offer,
+          callerUser,
+          screenStreamId,
+          cameraStreamId,
+          screenTrackId,
+          cameraTrackId,
+        }) => {
+          try {
+            if (callerUser?.id) {
+              if (callerSocketId) {
+                socketToUserRef.current.set(callerSocketId, callerUser.id);
+                userToSocketRef.current.set(callerUser.id, callerSocketId);
+              }
+              if (screenStreamId) peerScreenStreamIdsRef.current.set(callerUser.id, screenStreamId);
+              if (cameraStreamId) peerCameraStreamIdsRef.current.set(callerUser.id, cameraStreamId);
+              if (screenTrackId) peerScreenTrackIdsRef.current.set(callerUser.id, screenTrackId);
+              if (cameraTrackId) peerCameraTrackIdsRef.current.set(callerUser.id, cameraTrackId);
             }
-            if (screenStreamId) peerScreenStreamIdsRef.current.set(callerUser.id, screenStreamId);
-            if (cameraStreamId) peerCameraStreamIdsRef.current.set(callerUser.id, cameraStreamId);
-            if (screenTrackId) peerScreenTrackIdsRef.current.set(callerUser.id, screenTrackId);
-            if (cameraTrackId) peerCameraTrackIdsRef.current.set(callerUser.id, cameraTrackId);
+
+            const pc = getOrCreatePeerConnection(callerSocketId, callerUser);
+            const isPolite = (socket.id || '').localeCompare(callerSocketId) > 0;
+            const offerCollision =
+              pc.signalingState !== 'stable' || makingOfferRef.current.get(callerSocketId);
+
+            if (offerCollision && !isPolite) {
+              return;
+            }
+
+            if (offerCollision && isPolite) {
+              await pc.setLocalDescription({ type: 'rollback' }).catch(() => {});
+            }
+
+            await pc.setRemoteDescription(new RTCSessionDescription(offer));
+
+            // Drain queued ICE candidates
+            const pending = pendingIceCandidatesRef.current.get(callerSocketId) || [];
+            for (const cand of pending) {
+              try {
+                await pc.addIceCandidate(new RTCIceCandidate(cand));
+              } catch (_) {}
+            }
+            pendingIceCandidatesRef.current.delete(callerSocketId);
+
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+
+            socket.emit('voice-signal-answer', {
+              targetSocketId: callerSocketId,
+              answer: pc.localDescription,
+              responderUser: userRef.current,
+              screenStreamId: localScreenStreamRef.current?.id || null,
+              cameraStreamId: localCameraStreamRef.current?.id || null,
+              screenTrackId: localScreenStreamRef.current?.getVideoTracks()[0]?.id || null,
+              cameraTrackId: localCameraStreamRef.current?.getVideoTracks()[0]?.id || null,
+            });
+          } catch (err) {
+            console.error('Erro ao processar oferta WebRTC:', err);
           }
-
-          const pc = getOrCreatePeerConnection(callerSocketId, callerUser);
-          const isPolite = (socket.id || '').localeCompare(callerSocketId) > 0;
-          const offerCollision = (pc.signalingState !== 'stable') || makingOfferRef.current.get(callerSocketId);
-
-          if (offerCollision && !isPolite) {
-            return;
-          }
-
-          if (offerCollision && isPolite) {
-            await pc.setLocalDescription({ type: 'rollback' }).catch(() => {});
-          }
-
-          await pc.setRemoteDescription(new RTCSessionDescription(offer));
-
-          // Drain queued ICE candidates
-          const pending = pendingIceCandidatesRef.current.get(callerSocketId) || [];
-          for (const cand of pending) {
-            try { await pc.addIceCandidate(new RTCIceCandidate(cand)); } catch (_) {}
-          }
-          pendingIceCandidatesRef.current.delete(callerSocketId);
-
-          const answer = await pc.createAnswer();
-          await pc.setLocalDescription(answer);
-
-          socket.emit('voice-signal-answer', {
-            targetSocketId: callerSocketId,
-            answer: pc.localDescription,
-            responderUser: userRef.current,
-            screenStreamId: localScreenStreamRef.current?.id || null,
-            cameraStreamId: localCameraStreamRef.current?.id || null,
-            screenTrackId: localScreenStreamRef.current?.getVideoTracks()[0]?.id || null,
-            cameraTrackId: localCameraStreamRef.current?.getVideoTracks()[0]?.id || null
-          });
-        } catch (err) {
-          console.error('Erro ao processar oferta WebRTC:', err);
-        }
-      });
+        },
+      );
 
       // 4. Incoming WebRTC Answer
-      socket.on('voice-signal-answer', async ({
-        responderSocketId,
-        answer,
-        responderUser,
-        screenStreamId,
-        cameraStreamId,
-        screenTrackId,
-        cameraTrackId
-      }) => {
-        try {
-          const rId = responderUser?.id || socketToUserRef.current.get(responderSocketId);
-          if (rId) {
-            if (screenStreamId) peerScreenStreamIdsRef.current.set(rId, screenStreamId);
-            if (cameraStreamId) peerCameraStreamIdsRef.current.set(rId, cameraStreamId);
-            if (screenTrackId) peerScreenTrackIdsRef.current.set(rId, screenTrackId);
-            if (cameraTrackId) peerCameraTrackIdsRef.current.set(rId, cameraTrackId);
-          }
-
-          const pc = peerConnectionsRef.current.get(responderSocketId);
-          if (pc && pc.signalingState === 'have-local-offer') {
-            await pc.setRemoteDescription(new RTCSessionDescription(answer));
-            const pending = pendingIceCandidatesRef.current.get(responderSocketId) || [];
-            for (const cand of pending) {
-              try { await pc.addIceCandidate(new RTCIceCandidate(cand)); } catch (_) {}
+      socket.on(
+        'voice-signal-answer',
+        async ({
+          responderSocketId,
+          answer,
+          responderUser,
+          screenStreamId,
+          cameraStreamId,
+          screenTrackId,
+          cameraTrackId,
+        }) => {
+          try {
+            const rId = responderUser?.id || socketToUserRef.current.get(responderSocketId);
+            if (rId) {
+              if (screenStreamId) peerScreenStreamIdsRef.current.set(rId, screenStreamId);
+              if (cameraStreamId) peerCameraStreamIdsRef.current.set(rId, cameraStreamId);
+              if (screenTrackId) peerScreenTrackIdsRef.current.set(rId, screenTrackId);
+              if (cameraTrackId) peerCameraTrackIdsRef.current.set(rId, cameraTrackId);
             }
-            pendingIceCandidatesRef.current.delete(responderSocketId);
+
+            const pc = peerConnectionsRef.current.get(responderSocketId);
+            if (pc && pc.signalingState === 'have-local-offer') {
+              await pc.setRemoteDescription(new RTCSessionDescription(answer));
+              const pending = pendingIceCandidatesRef.current.get(responderSocketId) || [];
+              for (const cand of pending) {
+                try {
+                  await pc.addIceCandidate(new RTCIceCandidate(cand));
+                } catch (_) {}
+              }
+              pendingIceCandidatesRef.current.delete(responderSocketId);
+            }
+          } catch (err) {
+            console.error('Erro ao processar resposta WebRTC:', err);
           }
-        } catch (err) {
-          console.error('Erro ao processar resposta WebRTC:', err);
-        }
-      });
+        },
+      );
 
       // 5. Incoming ICE Candidate
       socket.on('voice-signal-ice', async ({ candidate, fromSocketId }) => {
@@ -736,98 +806,112 @@ export const CallStage = ({
       });
 
       // 6. Remote user state changed (Mic, Camera, Screen Share)
-      socket.on('user-voice-state-changed', ({
-        userId,
-        socketId,
-        isMuted,
-        isDeafened: remoteDeafened,
-        isCameraOn: remoteCameraOn,
-        isScreenSharing: remoteScreenSharing,
-        cameraTrackId,
-        screenTrackId,
-        cameraStreamId,
-        screenStreamId
-      }) => {
-        if (socketId && userId) {
-          socketToUserRef.current.set(socketId, userId);
-          userToSocketRef.current.set(userId, socketId);
-        }
+      socket.on(
+        'user-voice-state-changed',
+        ({
+          userId,
+          socketId,
+          isMuted,
+          isDeafened: remoteDeafened,
+          isCameraOn: remoteCameraOn,
+          isScreenSharing: remoteScreenSharing,
+          cameraTrackId,
+          screenTrackId,
+          cameraStreamId,
+          screenStreamId,
+        }) => {
+          if (socketId && userId) {
+            socketToUserRef.current.set(socketId, userId);
+            userToSocketRef.current.set(userId, socketId);
+          }
 
-        if (screenStreamId) peerScreenStreamIdsRef.current.set(userId, screenStreamId);
-        if (cameraStreamId) peerCameraStreamIdsRef.current.set(userId, cameraStreamId);
-        if (screenTrackId) peerScreenTrackIdsRef.current.set(userId, screenTrackId);
-        if (cameraTrackId) peerCameraTrackIdsRef.current.set(userId, cameraTrackId);
+          if (screenStreamId) peerScreenStreamIdsRef.current.set(userId, screenStreamId);
+          if (cameraStreamId) peerCameraStreamIdsRef.current.set(userId, cameraStreamId);
+          if (screenTrackId) peerScreenTrackIdsRef.current.set(userId, screenTrackId);
+          if (cameraTrackId) peerCameraTrackIdsRef.current.set(userId, cameraTrackId);
 
-        // Screen share turned OFF
-        if (remoteScreenSharing === false && userId) {
-          setRemoteScreenStreams(prev => {
-            const next = { ...prev };
-            delete next[userId];
-            return next;
-          });
-          setSelectedScreenUserId(current => current === userId ? null : current);
-        }
-        // Screen share turned ON
-        else if (remoteScreenSharing === true && userId) {
-          setSelectedScreenUserId(userId);
-          // Look for matching video track in recent tracks
-          for (const [, data] of recentVideoTracksRef.current.entries()) {
-            if (data.targetUserId === userId) {
-              if (!screenStreamId || data.streamId === screenStreamId || data.track?.id === screenTrackId) {
-                setRemoteScreenStreams(prev => ({ ...prev, [userId]: data.stream }));
-                break;
+          // Screen share turned OFF
+          if (remoteScreenSharing === false && userId) {
+            setRemoteScreenStreams((prev) => {
+              const next = { ...prev };
+              delete next[userId];
+              return next;
+            });
+            setSelectedScreenUserId((current) => (current === userId ? null : current));
+          }
+          // Screen share turned ON
+          else if (remoteScreenSharing === true && userId) {
+            setSelectedScreenUserId(userId);
+            // Look for matching video track in recent tracks
+            for (const [, data] of recentVideoTracksRef.current.entries()) {
+              if (data.targetUserId === userId) {
+                if (
+                  !screenStreamId ||
+                  data.streamId === screenStreamId ||
+                  data.track?.id === screenTrackId
+                ) {
+                  setRemoteScreenStreams((prev) => ({ ...prev, [userId]: data.stream }));
+                  break;
+                }
               }
             }
           }
-        }
 
-        // Camera turned OFF
-        if (remoteCameraOn === false && userId) {
-          setRemoteCameraStreams(prev => {
-            const next = { ...prev };
-            delete next[userId];
-            return next;
-          });
-        }
-        // Camera turned ON
-        else if (remoteCameraOn === true && userId) {
-          for (const [, data] of recentVideoTracksRef.current.entries()) {
-            if (data.targetUserId === userId) {
-              if (data.streamId !== screenStreamId && data.track?.id !== screenTrackId) {
-                setRemoteCameraStreams(prev => ({ ...prev, [userId]: data.stream }));
-                break;
+          // Camera turned OFF
+          if (remoteCameraOn === false && userId) {
+            setRemoteCameraStreams((prev) => {
+              const next = { ...prev };
+              delete next[userId];
+              return next;
+            });
+          }
+          // Camera turned ON
+          else if (remoteCameraOn === true && userId) {
+            for (const [, data] of recentVideoTracksRef.current.entries()) {
+              if (data.targetUserId === userId) {
+                if (data.streamId !== screenStreamId && data.track?.id !== screenTrackId) {
+                  setRemoteCameraStreams((prev) => ({ ...prev, [userId]: data.stream }));
+                  break;
+                }
               }
             }
           }
-        }
 
-        setParticipants(prev => prev.map(p => {
-          const isTarget = socketId ? p.socketId === socketId : (p.id === userId && !p.isSelf);
-          if (!isTarget) return p;
-          return {
-            ...p,
-            socketId: p.socketId || socketId,
-            isMuted: isMuted !== undefined ? isMuted : p.isMuted,
-            isDeafened: remoteDeafened !== undefined ? remoteDeafened : p.isDeafened,
-            isCameraOn: remoteCameraOn !== undefined ? remoteCameraOn : p.isCameraOn,
-            isScreenSharing: remoteScreenSharing !== undefined ? remoteScreenSharing : p.isScreenSharing,
-            screenTrackId: screenTrackId || p.screenTrackId,
-            cameraTrackId: cameraTrackId || p.cameraTrackId
-          };
-        }));
-      });
+          setParticipants((prev) =>
+            prev.map((p) => {
+              const isTarget = socketId ? p.socketId === socketId : p.id === userId && !p.isSelf;
+              if (!isTarget) return p;
+              return {
+                ...p,
+                socketId: p.socketId || socketId,
+                isMuted: isMuted !== undefined ? isMuted : p.isMuted,
+                isDeafened: remoteDeafened !== undefined ? remoteDeafened : p.isDeafened,
+                isCameraOn: remoteCameraOn !== undefined ? remoteCameraOn : p.isCameraOn,
+                isScreenSharing:
+                  remoteScreenSharing !== undefined ? remoteScreenSharing : p.isScreenSharing,
+                screenTrackId: screenTrackId || p.screenTrackId,
+                cameraTrackId: cameraTrackId || p.cameraTrackId,
+              };
+            }),
+          );
+        },
+      );
 
       // 7. Speaking state changed
       socket.on('user-voice-speaking-changed', ({ userId, socketId, isSpeaking }) => {
-        setParticipants(prev => prev.map(p => {
-          const isTarget = socketId ? p.socketId === socketId : (p.id === userId && !p.isSelf);
-          return isTarget ? { ...p, isSpeaking: !!isSpeaking } : p;
-        }));
+        setParticipants((prev) =>
+          prev.map((p) => {
+            const isTarget = socketId ? p.socketId === socketId : p.id === userId && !p.isSelf;
+            return isTarget ? { ...p, isSpeaking: !!isSpeaking } : p;
+          }),
+        );
       });
 
       // 8. Remote user left voice
       socket.on('user-left-voice', ({ userId, socketId }) => {
-        setParticipants(prev => prev.filter(p => p.isSelf || (socketId ? p.socketId !== socketId : p.id !== userId)));
+        setParticipants((prev) =>
+          prev.filter((p) => p.isSelf || (socketId ? p.socketId !== socketId : p.id !== userId)),
+        );
         const sId = socketId || userToSocketRef.current.get(userId);
         if (sId) {
           const pc = peerConnectionsRef.current.get(sId);
@@ -848,25 +932,25 @@ export const CallStage = ({
           }
         }
         if (userId) {
-          setRemoteCameraStreams(prev => {
+          setRemoteCameraStreams((prev) => {
             const next = { ...prev };
             delete next[userId];
             return next;
           });
-          setRemoteScreenStreams(prev => {
+          setRemoteScreenStreams((prev) => {
             const next = { ...prev };
             delete next[userId];
             return next;
           });
-          setSelectedScreenUserId(current => current === userId ? null : current);
+          setSelectedScreenUserId((current) => (current === userId ? null : current));
         }
       });
 
       // 9. Voice chat message
       socket.on('voice-chat-message', (msg) => {
         if (!msg) return;
-        setChatMessages(prev => {
-          if (prev.some(m => m.id === msg.id)) return prev;
+        setChatMessages((prev) => {
+          if (prev.some((m) => m.id === msg.id)) return prev;
           return [...prev, msg];
         });
       });
@@ -890,23 +974,23 @@ export const CallStage = ({
       }
 
       if (localAudioStreamRef.current) {
-        localAudioStreamRef.current.getTracks().forEach(t => t.stop());
+        localAudioStreamRef.current.getTracks().forEach((t) => t.stop());
       }
       if (localCameraStreamRef.current) {
-        localCameraStreamRef.current.getTracks().forEach(t => t.stop());
+        localCameraStreamRef.current.getTracks().forEach((t) => t.stop());
       }
       if (localScreenStreamRef.current) {
-        localScreenStreamRef.current.getTracks().forEach(t => t.stop());
+        localScreenStreamRef.current.getTracks().forEach((t) => t.stop());
       }
 
-      peerConnectionsRef.current.forEach(pc => pc.close());
+      peerConnectionsRef.current.forEach((pc) => pc.close());
       peerConnectionsRef.current.clear();
       cameraSendersRef.current.clear();
       screenSendersRef.current.clear();
       screenAudioSendersRef.current.clear();
       audioSendersRef.current.clear();
 
-      remoteAudioElementsRef.current.forEach(audio => {
+      remoteAudioElementsRef.current.forEach((audio) => {
         audio.srcObject = null;
         audio.remove();
       });
@@ -916,11 +1000,11 @@ export const CallStage = ({
 
   // Controls: Toggle Mic
   const toggleMic = useCallback(() => {
-    setIsMicMuted(prevMuted => {
+    setIsMicMuted((prevMuted) => {
       const nextMuted = !prevMuted;
 
       if (localAudioStreamRef.current) {
-        localAudioStreamRef.current.getAudioTracks().forEach(t => {
+        localAudioStreamRef.current.getAudioTracks().forEach((t) => {
           t.enabled = !nextMuted;
         });
       }
@@ -937,18 +1021,22 @@ export const CallStage = ({
         nextDeafened = false;
         isDeafenedRef.current = false;
         setIsDeafened(false);
-        remoteAudioElementsRef.current.forEach(audio => {
+        remoteAudioElementsRef.current.forEach((audio) => {
           audio.muted = false;
         });
       }
 
       const currentUserId = userRef.current?.id;
-      setParticipants(prev => prev.map(p => p.id === currentUserId ? { ...p, isMuted: nextMuted, isDeafened: nextDeafened } : p));
+      setParticipants((prev) =>
+        prev.map((p) =>
+          p.id === currentUserId ? { ...p, isMuted: nextMuted, isDeafened: nextDeafened } : p,
+        ),
+      );
       socket?.emit('voice-state-update', {
         roomId: effectiveRoomId,
         userId: currentUserId,
         isMuted: nextMuted,
-        isDeafened: nextDeafened
+        isDeafened: nextDeafened,
       });
 
       updateCallAudioState({ isMuted: nextMuted, isDeafened: nextDeafened });
@@ -964,7 +1052,7 @@ export const CallStage = ({
     setIsDeafened(nextDeafened);
 
     // 1. Mute or unmute all remote audio elements
-    remoteAudioElementsRef.current.forEach(audio => {
+    remoteAudioElementsRef.current.forEach((audio) => {
       audio.muted = nextDeafened;
     });
 
@@ -981,20 +1069,24 @@ export const CallStage = ({
       nextMicMuted = true;
       setIsMicMuted(true);
       if (localAudioStreamRef.current) {
-        localAudioStreamRef.current.getAudioTracks().forEach(t => {
+        localAudioStreamRef.current.getAudioTracks().forEach((t) => {
           t.enabled = false;
         });
       }
     }
 
     const currentUserId = userRef.current?.id;
-    setParticipants(prev => prev.map(p => p.id === currentUserId ? { ...p, isMuted: nextMicMuted, isDeafened: nextDeafened } : p));
+    setParticipants((prev) =>
+      prev.map((p) =>
+        p.id === currentUserId ? { ...p, isMuted: nextMicMuted, isDeafened: nextDeafened } : p,
+      ),
+    );
 
     socket?.emit('voice-state-update', {
       roomId: effectiveRoomId,
       userId: currentUserId,
       isMuted: nextMicMuted,
-      isDeafened: nextDeafened
+      isDeafened: nextDeafened,
     });
 
     updateCallAudioState({ isMuted: nextMicMuted, isDeafened: nextDeafened });
@@ -1032,7 +1124,7 @@ export const CallStage = ({
 
     if (isCameraOn) {
       if (localCameraStreamRef.current) {
-        localCameraStreamRef.current.getTracks().forEach(t => t.stop());
+        localCameraStreamRef.current.getTracks().forEach((t) => t.stop());
         localCameraStreamRef.current = null;
       }
       setLocalCameraStream(null);
@@ -1049,17 +1141,19 @@ export const CallStage = ({
         sendOfferToPeer(targetSocketId);
       }
 
-      setParticipants(prev => prev.map(p => p.id === currentUserId ? { ...p, isCameraOn: false } : p));
+      setParticipants((prev) =>
+        prev.map((p) => (p.id === currentUserId ? { ...p, isCameraOn: false } : p)),
+      );
       socket?.emit('voice-state-update', {
         roomId: effectiveRoomId,
         userId: currentUserId,
-        isCameraOn: false
+        isCameraOn: false,
       });
     } else {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
-          audio: false
+          audio: false,
         });
         localCameraStreamRef.current = stream;
         setLocalCameraStream(stream);
@@ -1074,13 +1168,15 @@ export const CallStage = ({
           } catch (_) {}
         }
 
-        setParticipants(prev => prev.map(p => p.id === currentUserId ? { ...p, isCameraOn: true } : p));
+        setParticipants((prev) =>
+          prev.map((p) => (p.id === currentUserId ? { ...p, isCameraOn: true } : p)),
+        );
         socket?.emit('voice-state-update', {
           roomId: effectiveRoomId,
           userId: currentUserId,
           isCameraOn: true,
           cameraTrackId: camTrack.id,
-          cameraStreamId: stream.id
+          cameraStreamId: stream.id,
         });
       } catch (err) {
         toast({ title: 'Aviso', message: 'Não foi possível aceder à câmara.', type: 'error' });
@@ -1093,7 +1189,7 @@ export const CallStage = ({
     const currentUserId = userRef.current?.id;
 
     if (localScreenStreamRef.current) {
-      localScreenStreamRef.current.getTracks().forEach(t => t.stop());
+      localScreenStreamRef.current.getTracks().forEach((t) => t.stop());
       localScreenStreamRef.current = null;
     }
     setLocalScreenStream(null);
@@ -1102,25 +1198,31 @@ export const CallStage = ({
     for (const [targetSocketId, pc] of peerConnectionsRef.current.entries()) {
       const sender = screenSendersRef.current.get(targetSocketId);
       if (sender) {
-        try { pc.removeTrack(sender); } catch (_) {}
+        try {
+          pc.removeTrack(sender);
+        } catch (_) {}
         screenSendersRef.current.delete(targetSocketId);
       }
       const audioSender = screenAudioSendersRef.current.get(targetSocketId);
       if (audioSender) {
-        try { pc.removeTrack(audioSender); } catch (_) {}
+        try {
+          pc.removeTrack(audioSender);
+        } catch (_) {}
         screenAudioSendersRef.current.delete(targetSocketId);
       }
       sendOfferToPeer(targetSocketId);
     }
 
-    setParticipants(prev => prev.map(p => p.id === currentUserId ? { ...p, isScreenSharing: false } : p));
+    setParticipants((prev) =>
+      prev.map((p) => (p.id === currentUserId ? { ...p, isScreenSharing: false } : p)),
+    );
     socket?.emit('voice-state-update', {
       roomId: effectiveRoomId,
       userId: currentUserId,
-      isScreenSharing: false
+      isScreenSharing: false,
     });
 
-    setSelectedScreenUserId(current => current === currentUserId ? null : current);
+    setSelectedScreenUserId((current) => (current === currentUserId ? null : current));
   }, [effectiveRoomId, sendOfferToPeer, socket]);
 
   // Controls: Toggle Screen Share
@@ -1134,9 +1236,9 @@ export const CallStage = ({
         const stream = await navigator.mediaDevices.getDisplayMedia({
           video: {
             cursor: 'always',
-            displaySurface: 'monitor'
+            displaySurface: 'monitor',
           },
-          audio: true
+          audio: true,
         });
 
         localScreenStreamRef.current = stream;
@@ -1164,19 +1266,21 @@ export const CallStage = ({
           } catch (_) {}
         }
 
-        setParticipants(prev => prev.map(p => p.id === currentUserId ? { ...p, isScreenSharing: true } : p));
+        setParticipants((prev) =>
+          prev.map((p) => (p.id === currentUserId ? { ...p, isScreenSharing: true } : p)),
+        );
         socket?.emit('voice-state-update', {
           roomId: effectiveRoomId,
           userId: currentUserId,
           isScreenSharing: true,
           screenTrackId: screenTrack.id,
-          screenStreamId: stream.id
+          screenStreamId: stream.id,
         });
 
         toast({
           title: 'Partilha Iniciada',
           message: 'O seu ecrã está a ser transmitido para a sala.',
-          type: 'success'
+          type: 'success',
         });
       } catch (err) {
         if (err.name !== 'NotAllowedError') {
@@ -1200,10 +1304,10 @@ export const CallStage = ({
       id: `call-msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       sender: userRef.current?.name || 'Eu',
       content: chatInput.trim(),
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
-    setChatMessages(prev => (prev.some(m => m.id === newMsg.id) ? prev : [...prev, newMsg]));
+    setChatMessages((prev) => (prev.some((m) => m.id === newMsg.id) ? prev : [...prev, newMsg]));
     socket?.emit('voice-chat-message', { roomId: effectiveRoomId, message: newMsg });
     setChatInput('');
   };
@@ -1226,10 +1330,10 @@ export const CallStage = ({
       userId: userRef.current?.id,
       userName: `${userRef.current?.name} (Você)`,
       isSelf: true,
-      stream: localScreenStream
+      stream: localScreenStream,
     });
   }
-  participants.forEach(p => {
+  participants.forEach((p) => {
     if (p.id !== userRef.current?.id && p.isScreenSharing) {
       const stream = remoteScreenStreams[p.id];
       if (stream) {
@@ -1237,7 +1341,7 @@ export const CallStage = ({
           userId: p.id,
           userName: p.name,
           isSelf: false,
-          stream
+          stream,
         });
       }
     }
@@ -1249,7 +1353,7 @@ export const CallStage = ({
       if (!selectedScreenUserId) {
         setSelectedScreenUserId(activeScreenShares[0].userId);
       } else if (selectedScreenUserId !== 'none') {
-        const stillActive = activeScreenShares.some(s => s.userId === selectedScreenUserId);
+        const stillActive = activeScreenShares.some((s) => s.userId === selectedScreenUserId);
         if (!stillActive) {
           setSelectedScreenUserId(activeScreenShares[0].userId);
         }
@@ -1259,7 +1363,7 @@ export const CallStage = ({
     }
   }, [activeScreenShares.length, selectedScreenUserId]);
 
-  const currentScreenShare = activeScreenShares.find(s => s.userId === selectedScreenUserId);
+  const currentScreenShare = activeScreenShares.find((s) => s.userId === selectedScreenUserId);
   const spotlightStream = currentScreenShare?.stream || null;
   const isViewingScreen = spotlightStream && selectedScreenUserId !== 'none';
 
@@ -1267,60 +1371,53 @@ export const CallStage = ({
     <div
       ref={containerRef}
       data-call-stage="true"
-      className={
-        isMobile || isModal
-          ? "fixed inset-0 z-[9999] flex h-[100dvh] w-full flex-col overflow-hidden bg-slate-100 font-sans text-slate-900 dark:bg-[#090a0f] dark:text-slate-100 select-none"
-          : "relative inset-auto z-auto flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-slate-100 font-sans text-slate-900 dark:bg-[#090a0f] dark:text-slate-100"
-      }
+      className={isMobile || isModal ? 'call-stage-panel' : 'call-stage-panel-2'}
     >
       {/* Audio Autoplay Unblock Banner */}
       {autoplayBlocked && (
-        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 bg-blue-600 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-xl flex items-center gap-3 animate-fade-in">
-          <Volume2 className="w-4 h-4" />
+        <div className="call-stage-panel-3">
+          <Volume2 className="call-stage-volume2" />
           <span>O áudio foi pausado pelo navegador.</span>
-          <button
-            onClick={handleUnblockAudio}
-            className="bg-white text-blue-600 px-3 py-1 rounded-lg text-xs font-bold hover:bg-slate-100 cursor-pointer transition-colors"
-          >
+          <button onClick={handleUnblockAudio} className="call-stage-button">
             Ativar Áudio
           </button>
         </div>
       )}
 
       {/* Header */}
-      <header className="min-h-14 px-2 sm:px-5 border-b border-slate-200 dark:border-white/5 bg-white/90 dark:bg-[#090a0f]/90 backdrop-blur-md flex items-center justify-between gap-2 z-20 shrink-0 pt-[env(safe-area-inset-top)] sm:pt-0">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <h2 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white tracking-tight truncate max-w-[calc(100vw-190px)] sm:max-w-md">
-              {roomName}
-            </h2>
+      <header className="call-stage-header">
+        <div className="call-stage-panel-4">
+          <div className="call-stage-panel-5">
+            <span className="call-stage-label" />
+            <h2 className="call-stage-heading">{roomName}</h2>
           </div>
           {roomType === 'stage' && (
-            <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-              <Radio className="w-3 h-3 animate-pulse" />
+            <span className="call-stage-label-2">
+              <Radio className="call-stage-radio" />
               Palco Principal
             </span>
           )}
         </div>
 
-        <div className="flex shrink-0 items-center gap-1 sm:gap-2.5">
-          <div className="hidden min-[360px]:block text-[10px] sm:text-xs font-mono text-slate-600 dark:text-slate-400 bg-slate-200/60 dark:bg-white/5 px-2 sm:px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/5">
-            {formatTime(callDuration)}
-          </div>
+        <div className="call-stage-panel-6">
+          <div className="call-stage-panel-7">{formatTime(callDuration)}</div>
 
-          <div className="flex items-center gap-1 text-[10px] sm:text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-200/60 dark:bg-white/5 px-1.5 sm:px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/5">
-            <Users className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+          <div className="call-stage-panel-8">
+            <Users className="call-stage-users" />
             <span>{participants.length}</span>
           </div>
 
           <button
             onClick={toggleFullscreen}
-            className="hidden min-[360px]:inline-flex p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5 transition-colors cursor-pointer"
+            className="call-stage-button-2"
             title="Ecrã inteiro"
             aria-label="Alternar ecrã inteiro"
           >
-            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            {isFullscreen ? (
+              <Minimize2 className="call-stage-volume2" />
+            ) : (
+              <Maximize2 className="call-stage-volume2" />
+            )}
           </button>
 
           {/* Quick Leave Button for Mobile in Header */}
@@ -1330,11 +1427,11 @@ export const CallStage = ({
               soundEffects.playLeaveCall();
               onDisconnect?.();
             }}
-            className="sm:hidden min-h-[34px] px-2.5 py-1 rounded-xl bg-rose-600/15 text-rose-600 dark:text-rose-400 hover:bg-rose-600/25 transition-colors flex items-center gap-1 text-xs font-bold shrink-0 cursor-pointer touch-manipulation active:scale-95 border border-rose-500/20"
+            className="call-stage-button-3"
             title="Sair da chamada"
             aria-label="Sair da chamada"
           >
-            <PhoneOff className="w-3.5 h-3.5" />
+            <PhoneOff className="call-stage-phone-off" />
             <span>Sair</span>
           </button>
         </div>
@@ -1342,71 +1439,81 @@ export const CallStage = ({
 
       {/* Active Screen Shares Bar */}
       {activeScreenShares.length > 0 && (
-        <div className="px-5 py-2 bg-slate-200/70 dark:bg-black/40 border-b border-slate-200 dark:border-white/5 flex items-center justify-between gap-3 z-20 shrink-0 overflow-x-auto">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1.5 shrink-0 mr-1">
-              <Monitor className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
+        <div className="call-stage-panel-9">
+          <div className="call-stage-panel-5">
+            <span className="call-stage-label-3">
+              <Monitor className="call-stage-monitor" />
               <span>Transmissões:</span>
             </span>
 
-            {activeScreenShares.map(share => (
+            {activeScreenShares.map((share) => (
               <button
                 key={share.userId}
                 onClick={() => setSelectedScreenUserId(share.userId)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shrink-0 ${
+                className={`call-stage-button-4 ${
                   selectedScreenUserId === share.userId
-                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
-                    : 'bg-white dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white border border-slate-300 dark:border-white/5'
+                    ? 'call-stage-button-5'
+                    : 'call-stage-button-6'
                 }`}
               >
-                <Monitor className="w-3.5 h-3.5" />
+                <Monitor className="call-stage-phone-off" />
                 <span>{share.userName}</span>
-                {selectedScreenUserId === share.userId && <Check className="w-3 h-3 ml-0.5" />}
+                {selectedScreenUserId === share.userId && <Check className="call-stage-check" />}
               </button>
             ))}
           </div>
 
           <button
-            onClick={() => setSelectedScreenUserId(prev => prev === 'none' ? (activeScreenShares[0]?.userId || null) : 'none')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shrink-0 border ${
-              selectedScreenUserId === 'none'
-                ? 'bg-blue-600 text-white border-blue-500 shadow-sm shadow-blue-500/20'
-                : 'bg-white dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border-slate-300 dark:border-white/5'
+            onClick={() =>
+              setSelectedScreenUserId((prev) =>
+                prev === 'none' ? activeScreenShares[0]?.userId || null : 'none',
+              )
+            }
+            className={`call-stage-button-7 ${
+              selectedScreenUserId === 'none' ? 'call-stage-button-8' : 'call-stage-button-9'
             }`}
           >
-            <LayoutGrid className="w-3.5 h-3.5" />
+            <LayoutGrid className="call-stage-phone-off" />
             <span>{selectedScreenUserId === 'none' ? 'Ver Ecrã' : 'Ver Grelha'}</span>
           </button>
         </div>
       )}
 
       {/* Stage Body */}
-      <main className="relative flex min-h-0 flex-1 overflow-hidden">
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto custom-scrollbar p-2 sm:p-6">
+      <main className="call-stage-main">
+        <div className="call-stage-panel-10 custom-scrollbar">
           {/* Spotlight View for Screen Share */}
           {isViewingScreen ? (
-            <div className="flex-1 flex flex-col gap-3 min-h-0">
-              <div className="flex-1 rounded-2xl overflow-hidden bg-black border border-slate-300 dark:border-white/10 relative shadow-2xl flex items-center justify-center">
+            <div className="call-stage-panel-11">
+              <div className="call-stage-panel-12">
                 <VideoPlayer stream={spotlightStream} isContain={true} />
-                <div className="absolute top-3 left-3 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 text-xs font-semibold text-white flex items-center gap-2 shadow-lg">
-                  <Monitor className="w-3.5 h-3.5 text-blue-400" />
-                  <span>{currentScreenShare?.isSelf ? 'O seu ecrã partilhado' : `Ecrã de ${currentScreenShare?.userName}`}</span>
+                <div className="call-stage-panel-13">
+                  <Monitor className="call-stage-monitor-2" />
+                  <span>
+                    {currentScreenShare?.isSelf
+                      ? 'O seu ecrã partilhado'
+                      : `Ecrã de ${currentScreenShare?.userName}`}
+                  </span>
                 </div>
 
-                <div className="absolute top-3 right-3 flex items-center gap-2">
+                <div className="call-stage-panel-14">
                   <button
-                    onClick={() => setIsScreenMaximized(prev => !prev)}
-                    className="bg-black/75 hover:bg-black/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 text-xs font-semibold text-slate-200 hover:text-white flex items-center gap-1.5 transition-all cursor-pointer shadow-lg"
+                    onClick={() => setIsScreenMaximized((prev) => !prev)}
+                    className="call-stage-button-10"
                     title={isScreenMaximized ? 'Restaurar visualização' : 'Ecrã inteiro'}
                   >
-                    {isScreenMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+                    {isScreenMaximized ? (
+                      <Minimize2 className="call-stage-phone-off" />
+                    ) : (
+                      <Maximize2 className="call-stage-phone-off" />
+                    )}
                     <span>{isScreenMaximized ? 'Restaurar' : 'Ecrã Inteiro'}</span>
                   </button>
                   <button
                     onClick={() => setSelectedScreenUserId('none')}
-                    className="bg-black/75 hover:bg-black/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 text-xs font-semibold text-slate-200 hover:text-white flex items-center gap-1.5 transition-all cursor-pointer shadow-lg"
+                    className="call-stage-button-10"
                   >
-                    <LayoutGrid className="w-3.5 h-3.5" />
+                    <LayoutGrid className="call-stage-phone-off" />
                     <span>Grelha</span>
                   </button>
                 </div>
@@ -1414,48 +1521,36 @@ export const CallStage = ({
 
               {/* Participants Strip Below Screen Share */}
               {!isScreenMaximized && (
-                <div className="h-16 sm:h-20 flex items-center gap-2.5 overflow-x-auto py-1 shrink-0">
-                  {participants.map(p => {
+                <div className="call-stage-panel-15">
+                  {participants.map((p) => {
                     const isSelf = p.isSelf || p.socketId === socket?.id;
                     const camStream = isSelf ? localCameraStream : remoteCameraStreams[p.id];
                     const hasCamera = !!camStream && (isSelf ? isCameraOn : p.isCameraOn);
 
                     return hasCamera ? (
-                      <div
-                        key={p.socketId || p.id}
-                        className="h-full aspect-video rounded-xl bg-slate-900 dark:bg-zinc-900 border border-slate-300 dark:border-white/10 overflow-hidden relative shrink-0 flex items-center justify-center shadow-xs"
-                      >
+                      <div key={p.socketId || p.id} className="call-stage-panel-16">
                         <VideoPlayer stream={camStream} isMirrored={isSelf} />
-                        <div className="absolute bottom-1 left-1 right-1 flex items-center justify-between text-[10px] font-semibold bg-black/70 backdrop-blur-xs px-1.5 py-0.5 rounded-md text-white pointer-events-none">
-                          <span className="truncate max-w-[70px]">{p.name}</span>
-                          {p.isMuted && <MicOff className="w-2.5 h-2.5 text-rose-400 shrink-0" />}
+                        <div className="call-stage-panel-17 backdrop-blur-xs">
+                          <span className="call-stage-label-4">{p.name}</span>
+                          {p.isMuted && <MicOff className="call-stage-mic-off" />}
                         </div>
                       </div>
                     ) : (
-                      <div
-                        key={p.socketId || p.id}
-                        className="h-12 px-3 rounded-full bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 border border-slate-200 dark:border-white/5 flex items-center gap-2.5 shrink-0 transition-colors shadow-xs"
-                      >
-                        <Avatar
-                          src={p.avatarUrl}
-                          name={p.name}
-                          size="sm"
-                        />
-                        <div className="flex flex-col min-w-0">
-                          <div className="flex items-center gap-1">
-                            <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 max-w-[100px] truncate">{p.name}</span>
-                            {p.isSpeaking && (
-                              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-                            )}
+                      <div key={p.socketId || p.id} className="call-stage-panel-18">
+                        <Avatar src={p.avatarUrl} name={p.name} size="sm" />
+                        <div className="call-stage-panel-19">
+                          <div className="call-stage-panel-20">
+                            <span className="call-stage-label-5">{p.name}</span>
+                            {p.isSpeaking && <span className="call-stage-label-6" />}
                           </div>
                           {p.isDeafened && (
-                            <span className="text-[10px] text-rose-500 dark:text-rose-400 flex items-center gap-0.5 font-medium">
-                              <HeadphoneOff className="w-2.5 h-2.5" /> Ensurdecido
+                            <span className="call-stage-label-7">
+                              <HeadphoneOff className="call-stage-headphone-off" /> Ensurdecido
                             </span>
                           )}
                           {p.isMuted && !p.isDeafened && (
-                            <span className="text-[10px] text-rose-500 dark:text-rose-400 flex items-center gap-0.5 font-medium">
-                              <MicOff className="w-2.5 h-2.5" /> Silenciado
+                            <span className="call-stage-label-7">
+                              <MicOff className="call-stage-headphone-off" /> Silenciado
                             </span>
                           )}
                         </div>
@@ -1467,14 +1562,20 @@ export const CallStage = ({
             </div>
           ) : (
             /* Grid View */
-            <div className={`grid gap-4 flex-1 w-full max-w-6xl mx-auto items-center justify-center ${
-              participants.length === 1 ? 'grid-cols-1 max-w-2xl' :
-              participants.length === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-4xl' :
-              participants.length <= 4 ? 'grid-cols-2 max-w-5xl' :
-              participants.length <= 6 ? 'grid-cols-2 md:grid-cols-3 max-w-6xl' :
-              'grid-cols-2 md:grid-cols-4 max-w-6xl'
-            }`}>
-              {participants.map(p => {
+            <div
+              className={`call-stage-panel-21 ${
+                participants.length === 1
+                  ? 'call-stage-panel-22'
+                  : participants.length === 2
+                    ? 'call-stage-panel-23'
+                    : participants.length <= 4
+                      ? 'call-stage-panel-24'
+                      : participants.length <= 6
+                        ? 'call-stage-panel-25'
+                        : 'call-stage-panel-26'
+              }`}
+            >
+              {participants.map((p) => {
                 const isSelf = p.isSelf || p.socketId === socket?.id;
                 const camStream = isSelf ? localCameraStream : remoteCameraStreams[p.id];
                 const hasCamera = !!camStream && (isSelf ? isCameraOn : p.isCameraOn);
@@ -1482,33 +1583,33 @@ export const CallStage = ({
                 return (
                   <div
                     key={p.socketId || p.id}
-                    className={`aspect-video w-full rounded-2xl overflow-hidden relative flex flex-col items-center justify-center bg-white dark:bg-zinc-900/90 border transition-all duration-200 shadow-sm dark:shadow-none ${
-                      p.isSpeaking ? 'border-emerald-500/80 ring-2 ring-emerald-500/30 shadow-lg shadow-emerald-500/10' : 'border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20'
+                    className={`call-stage-panel-27 ${
+                      p.isSpeaking ? 'call-stage-panel-28' : 'call-stage-panel-29'
                     }`}
                   >
                     {hasCamera ? (
                       <VideoPlayer stream={camStream} isMirrored={isSelf} />
                     ) : (
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="relative">
+                      <div className="call-stage-panel-30">
+                        <div className="call-stage-panel-31">
                           <Avatar
                             src={p.avatarUrl}
                             name={p.name}
                             size="xl"
-                            className="ring-4 ring-slate-200 dark:ring-white/10"
+                            className="call-stage-avatar"
                           />
                           {p.role === 'ADMIN' && (
-                            <span className="absolute -top-1 -right-1 p-1 rounded-full bg-amber-500 text-white shadow-xs">
-                              <ShieldCheck className="w-3 h-3" />
+                            <span className="call-stage-label-8">
+                              <ShieldCheck className="call-stage-shield-check" />
                             </span>
                           )}
                           {p.role === 'CREATOR' && (
-                            <span className="absolute -top-1 -right-1 p-1 rounded-full bg-blue-600 text-white shadow-xs">
-                              <Crown className="w-3 h-3" />
+                            <span className="call-stage-label-9">
+                              <Crown className="call-stage-shield-check" />
                             </span>
                           )}
                         </div>
-                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 tracking-tight">{p.name}</span>
+                        <span className="call-stage-label-10">{p.name}</span>
                       </div>
                     )}
 
@@ -1516,33 +1617,37 @@ export const CallStage = ({
                     {p.isScreenSharing && (
                       <button
                         onClick={() => setSelectedScreenUserId(p.id)}
-                        className="absolute top-3 left-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-lg flex items-center gap-1.5 transition-all cursor-pointer animate-pulse"
+                        className="call-stage-button-11"
                         title="Ver ecrã partilhado"
                       >
-                        <Monitor className="w-3.5 h-3.5" />
+                        <Monitor className="call-stage-phone-off" />
                         <span>Ver Ecrã</span>
                       </button>
                     )}
 
                     {/* Participant Name & Status Badge */}
-                    <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between pointer-events-none">
-                      <div className="bg-white/90 dark:bg-black/75 backdrop-blur-md px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-900 dark:text-white flex items-center gap-1.5 border border-slate-200 dark:border-white/10 shadow-xs">
-                        <span className="truncate max-w-[140px]">{p.name}</span>
-                        {p.isSpeaking && (
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                        )}
+                    <div className="call-stage-panel-32">
+                      <div className="call-stage-panel-33">
+                        <span className="call-stage-label-11">{p.name}</span>
+                        {p.isSpeaking && <span className="call-stage-label" />}
                       </div>
 
-                      <div className="flex items-center gap-1.5">
+                      <div className="call-stage-panel-34">
                         {p.isDeafened && (
-                          <div className="p-1.5 rounded-lg backdrop-blur-md border shadow-xs bg-rose-500 text-white border-rose-400/30" title="Ensurdecido">
-                            <HeadphoneOff className="w-3.5 h-3.5" />
+                          <div className="call-stage-panel-35" title="Ensurdecido">
+                            <HeadphoneOff className="call-stage-phone-off" />
                           </div>
                         )}
-                        <div className={`p-1.5 rounded-lg backdrop-blur-md border shadow-xs ${
-                          p.isMuted ? 'bg-rose-500 text-white border-rose-400/30' : 'bg-white/90 dark:bg-black/60 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/10'
-                        }`}>
-                          {p.isMuted ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5 text-emerald-500" />}
+                        <div
+                          className={`call-stage-panel-36 ${
+                            p.isMuted ? 'call-stage-panel-37' : 'call-stage-panel-38'
+                          }`}
+                        >
+                          {p.isMuted ? (
+                            <MicOff className="call-stage-phone-off" />
+                          ) : (
+                            <Mic className="call-stage-mic" />
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1555,68 +1660,76 @@ export const CallStage = ({
 
         {/* Side Drawer: Chat or Participants */}
         {sideDrawer !== 'none' && (
-          <aside className="fixed inset-0 sm:static sm:w-80 border-l border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-950 flex flex-col shrink-0 animate-fade-in z-50 sm:z-20 shadow-2xl">
-            <div className="min-h-14 px-3 sm:px-4 border-b border-slate-200 dark:border-white/10 flex items-center justify-between gap-2 shrink-0 pt-[env(safe-area-inset-top)] sm:pt-0">
-              <div className="flex items-center gap-2 min-w-0">
+          <aside className="call-stage-sidebar">
+            <div className="call-stage-panel-39">
+              <div className="call-stage-panel-40">
                 <button
                   type="button"
                   onClick={() => setSideDrawer('none')}
-                  className="p-2 -ml-1 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer flex items-center gap-1 text-xs font-bold shrink-0 touch-manipulation"
+                  className="call-stage-button-12"
                   aria-label="Voltar para a chamada"
                   title="Voltar para a chamada"
                 >
-                  <X className="w-5 h-5" />
-                  <span className="hidden min-[360px]:inline">Voltar</span>
+                  <X className="call-stage-x" />
+                  <span className="call-stage-label-12">Voltar</span>
                 </button>
-                <h3 className="text-xs font-bold text-slate-800 dark:text-slate-300 uppercase tracking-wider truncate">
-                  {sideDrawer === 'chat' ? 'Chat da Chamada' : `Participantes (${participants.length})`}
+                <h3 className="call-stage-subheading">
+                  {sideDrawer === 'chat'
+                    ? 'Chat da Chamada'
+                    : `Participantes (${participants.length})`}
                 </h3>
               </div>
 
-              <div className="flex items-center gap-1.5 shrink-0">
+              <div className="call-stage-panel-41">
                 {/* Quick Mic in Drawer Header */}
                 <button
                   type="button"
                   onClick={toggleMic}
-                  className={`min-w-[36px] min-h-[36px] p-2 rounded-xl text-xs font-bold flex items-center justify-center transition-all cursor-pointer touch-manipulation active:scale-95 ${
-                    isMicMuted
-                      ? 'bg-rose-600 text-white shadow-sm shadow-rose-600/30'
-                      : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-200'
+                  className={`call-stage-button-13 ${
+                    isMicMuted ? 'call-stage-button-14' : 'call-stage-button-15'
                   }`}
                   title={isMicMuted ? 'Ativar Microfone' : 'Silenciar'}
                   aria-label={isMicMuted ? 'Ativar Microfone' : 'Silenciar'}
                 >
-                  {isMicMuted ? <MicOff className="w-4 h-4 text-white" /> : <Mic className="w-4 h-4 text-emerald-500" />}
+                  {isMicMuted ? (
+                    <MicOff className="call-stage-mic-off-2" />
+                  ) : (
+                    <Mic className="call-stage-mic-2" />
+                  )}
                 </button>
 
                 {/* Quick Deafen in Drawer Header */}
                 <button
                   type="button"
                   onClick={toggleDeafen}
-                  className={`min-w-[36px] min-h-[36px] p-2 rounded-xl text-xs font-bold flex items-center justify-center transition-all cursor-pointer touch-manipulation active:scale-95 ${
-                    isDeafened
-                      ? 'bg-rose-600 text-white shadow-sm shadow-rose-600/30'
-                      : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-200'
+                  className={`call-stage-button-13 ${
+                    isDeafened ? 'call-stage-button-14' : 'call-stage-button-15'
                   }`}
                   title={isDeafened ? 'Desativar Ensurdecer' : 'Ensurdecer'}
                   aria-label={isDeafened ? 'Desativar Ensurdecer' : 'Ensurdecer'}
                 >
-                  {isDeafened ? <HeadphoneOff className="w-4 h-4 text-white" /> : <Headphones className="w-4 h-4 text-slate-600 dark:text-slate-300" />}
+                  {isDeafened ? (
+                    <HeadphoneOff className="call-stage-mic-off-2" />
+                  ) : (
+                    <Headphones className="call-stage-headphones" />
+                  )}
                 </button>
 
                 {/* Quick Camera in Drawer Header */}
                 <button
                   type="button"
                   onClick={toggleCamera}
-                  className={`min-w-[36px] min-h-[36px] p-2 rounded-xl text-xs font-bold flex items-center justify-center transition-all cursor-pointer touch-manipulation active:scale-95 ${
-                    isCameraOn
-                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/30'
-                      : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-200'
+                  className={`call-stage-button-13 ${
+                    isCameraOn ? 'call-stage-button-16' : 'call-stage-button-15'
                   }`}
                   title={isCameraOn ? 'Desligar Câmara' : 'Ligar Câmara'}
                   aria-label={isCameraOn ? 'Desligar Câmara' : 'Ligar Câmara'}
                 >
-                  {isCameraOn ? <Video className="w-4 h-4 text-white" /> : <VideoOff className="w-4 h-4 text-slate-400" />}
+                  {isCameraOn ? (
+                    <Video className="call-stage-mic-off-2" />
+                  ) : (
+                    <VideoOff className="call-stage-video-off" />
+                  )}
                 </button>
 
                 {/* Quick Leave in Drawer Header */}
@@ -1626,68 +1739,77 @@ export const CallStage = ({
                     soundEffects.playLeaveCall();
                     onDisconnect?.();
                   }}
-                  className="min-h-[36px] px-2.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold flex items-center gap-1 cursor-pointer touch-manipulation shadow-sm shadow-rose-600/20 active:scale-95"
+                  className="call-stage-button-17"
                   title="Sair da chamada"
                   aria-label="Sair da chamada"
                 >
-                  <PhoneOff className="w-4 h-4" />
-                  <span className="hidden min-[400px]:inline">Sair</span>
+                  <PhoneOff className="call-stage-volume2" />
+                  <span className="call-stage-label-13">Sair</span>
                 </button>
               </div>
             </div>
 
             {sideDrawer === 'chat' ? (
-              <div className="flex-1 flex flex-col overflow-hidden">
-                <div className="flex-1 p-4 space-y-3 overflow-y-auto custom-scrollbar">
-                  {chatMessages.map(msg => (
-                    <div key={msg.id} className={`text-xs ${msg.isSystem ? 'text-slate-500 dark:text-slate-400 italic text-center py-1' : ''}`}>
+              <div className="call-stage-panel-42">
+                <div className="call-stage-panel-43 custom-scrollbar">
+                  {chatMessages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`call-stage-panel-44 ${msg.isSystem ? 'call-stage-panel-45' : ''}`}
+                    >
                       {!msg.isSystem && (
-                        <div className="flex items-baseline justify-between mb-0.5">
-                          <span className="font-bold text-blue-600 dark:text-blue-400">{msg.sender}</span>
-                          <span className="text-[10px] text-slate-400 dark:text-slate-500">{msg.time}</span>
+                        <div className="call-stage-panel-46">
+                          <span className="call-stage-label-14">{msg.sender}</span>
+                          <span className="call-stage-label-15">{msg.time}</span>
                         </div>
                       )}
-                      <p className={`rounded-xl p-2.5 ${msg.isSystem ? 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400' : 'bg-slate-100 dark:bg-zinc-900 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-white/5'}`}>
+                      <p
+                        className={`call-stage-description ${msg.isSystem ? 'call-stage-description-2' : 'call-stage-description-3'}`}
+                      >
                         {msg.content}
                       </p>
                     </div>
                   ))}
                   <div ref={chatMessagesEndRef} />
                 </div>
-                <form onSubmit={handleSendChatMessage} className="p-3 border-t border-slate-200 dark:border-white/10 flex gap-2 pb-[max(0.75rem,calc(env(safe-area-inset-bottom)+0.5rem))] bg-white dark:bg-zinc-950">
+                <form onSubmit={handleSendChatMessage} className="call-stage-form">
                   <input
                     type="text"
                     value={chatInput}
-                    onChange={e => setChatInput(e.target.value)}
+                    onChange={(e) => setChatInput(e.target.value)}
                     placeholder="Enviar mensagem..."
-                    className="flex-1 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+                    className="call-stage-field"
                   />
                   <button
                     type="submit"
-                    className="min-w-[42px] min-h-[42px] p-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white cursor-pointer transition-colors shadow-sm shrink-0 flex items-center justify-center touch-manipulation active:scale-95"
+                    className="call-stage-button-18"
                     title="Enviar"
                     aria-label="Enviar mensagem"
                   >
-                    <Send className="w-4 h-4" />
+                    <Send className="call-stage-volume2" />
                   </button>
                 </form>
               </div>
             ) : (
-              <div className="flex-1 p-3 space-y-2 overflow-y-auto custom-scrollbar pb-[max(1rem,calc(env(safe-area-inset-bottom)+1rem))]">
-                {participants.map(p => (
-                  <div key={p.socketId || p.id} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200 dark:border-white/5">
-                    <div className="flex items-center gap-2.5">
+              <div className="call-stage-panel-47 custom-scrollbar">
+                {participants.map((p) => (
+                  <div key={p.socketId || p.id} className="call-stage-panel-48">
+                    <div className="call-stage-panel-49">
                       <Avatar src={p.avatarUrl} name={p.name} size="sm" />
                       <div>
-                        <p className="text-xs font-semibold text-slate-900 dark:text-white">{p.name}</p>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400 capitalize">{formatRole(p.role)}</p>
+                        <p className="call-stage-description-4">{p.name}</p>
+                        <p className="call-stage-description-5">{formatRole(p.role)}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5 text-slate-400">
-                      {p.isDeafened && <HeadphoneOff className="w-3.5 h-3.5 text-rose-500" />}
-                      {p.isMuted ? <MicOff className="w-3.5 h-3.5 text-rose-500" /> : <Mic className="w-3.5 h-3.5 text-emerald-500" />}
-                      {p.isCameraOn && <Video className="w-3.5 h-3.5 text-blue-500" />}
-                      {p.isScreenSharing && <Monitor className="w-3.5 h-3.5 text-blue-500" />}
+                    <div className="call-stage-panel-50">
+                      {p.isDeafened && <HeadphoneOff className="call-stage-headphone-off-2" />}
+                      {p.isMuted ? (
+                        <MicOff className="call-stage-headphone-off-2" />
+                      ) : (
+                        <Mic className="call-stage-mic" />
+                      )}
+                      {p.isCameraOn && <Video className="call-stage-video-5" />}
+                      {p.isScreenSharing && <Monitor className="call-stage-video-5" />}
                     </div>
                   </div>
                 ))}
@@ -1698,107 +1820,113 @@ export const CallStage = ({
       </main>
 
       {/* Control Bar Footer */}
-      <footer className="shrink-0 border-t border-slate-200/80 bg-white/95 px-2 pb-[max(0.85rem,calc(env(safe-area-inset-bottom)+0.5rem))] pt-2 dark:border-white/10 dark:bg-[#090a0f]/95 backdrop-blur-xl sm:px-6 sm:py-3.5 pointer-events-auto z-30">
-        <div className="mx-auto flex w-full max-w-lg items-center justify-between sm:justify-center gap-1.5 sm:gap-3 rounded-2xl border border-slate-200/80 bg-slate-100/90 px-2.5 py-1.5 shadow-lg backdrop-blur-xl dark:border-white/10 dark:bg-zinc-900/90 sm:px-4 sm:py-2">
+      <footer className="call-stage-footer">
+        <div className="call-stage-panel-51">
           {/* Mic */}
           <button
             type="button"
             onClick={toggleMic}
-            className={`min-w-[44px] min-h-[44px] sm:min-w-[48px] sm:min-h-[48px] p-2.5 sm:p-3 rounded-xl font-bold flex items-center justify-center transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 ${
-              isMicMuted
-                ? 'bg-rose-600 text-white hover:bg-rose-500 shadow-md shadow-rose-600/30'
-                : 'bg-white dark:bg-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-white/15 hover:text-slate-900 dark:hover:text-white border border-slate-200/60 dark:border-white/5'
+            className={`call-stage-button-19 ${
+              isMicMuted ? 'call-stage-button-20' : 'call-stage-button-21'
             }`}
             title={isMicMuted ? 'Ativar Microfone' : 'Silenciar Microfone'}
             aria-label={isMicMuted ? 'Ativar Microfone' : 'Silenciar Microfone'}
           >
-            {isMicMuted ? <MicOff className="w-5 h-5 text-white" /> : <Mic className="w-5 h-5 text-emerald-500" />}
+            {isMicMuted ? (
+              <MicOff className="call-stage-mic-off-3" />
+            ) : (
+              <Mic className="call-stage-mic-3" />
+            )}
           </button>
 
           {/* Deafen (Ensurdecer) */}
           <button
             type="button"
             onClick={toggleDeafen}
-            className={`min-w-[44px] min-h-[44px] sm:min-w-[48px] sm:min-h-[48px] p-2.5 sm:p-3 rounded-xl font-bold flex items-center justify-center transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 ${
-              isDeafened
-                ? 'bg-rose-600 text-white hover:bg-rose-500 shadow-md shadow-rose-600/30'
-                : 'bg-white dark:bg-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-white/15 hover:text-slate-900 dark:hover:text-white border border-slate-200/60 dark:border-white/5'
+            className={`call-stage-button-19 ${
+              isDeafened ? 'call-stage-button-20' : 'call-stage-button-21'
             }`}
-            title={isDeafened ? 'Desativar Ensurdecer (Ouvir Chamada)' : 'Ensurdecer (Desativar Áudio da Chamada)'}
+            title={
+              isDeafened
+                ? 'Desativar Ensurdecer (Ouvir Chamada)'
+                : 'Ensurdecer (Desativar Áudio da Chamada)'
+            }
             aria-label={isDeafened ? 'Desativar Ensurdecer' : 'Ensurdecer'}
           >
-            {isDeafened ? <HeadphoneOff className="w-5 h-5 text-white" /> : <Headphones className="w-5 h-5 text-slate-600 dark:text-slate-300" />}
+            {isDeafened ? (
+              <HeadphoneOff className="call-stage-mic-off-3" />
+            ) : (
+              <Headphones className="call-stage-headphones-2" />
+            )}
           </button>
 
           {/* Camera */}
           <button
             type="button"
             onClick={toggleCamera}
-            className={`min-w-[44px] min-h-[44px] sm:min-w-[48px] sm:min-h-[48px] p-2.5 sm:p-3 rounded-xl font-bold flex items-center justify-center transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 ${
-              isCameraOn
-                ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-md shadow-blue-600/30'
-                : 'bg-white dark:bg-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-white/15 hover:text-slate-900 dark:hover:text-white border border-slate-200/60 dark:border-white/5'
+            className={`call-stage-button-19 ${
+              isCameraOn ? 'call-stage-button-22' : 'call-stage-button-21'
             }`}
             title={isCameraOn ? 'Desligar Câmara' : 'Ligar Câmara'}
             aria-label={isCameraOn ? 'Desligar Câmara' : 'Ligar Câmara'}
           >
-            {isCameraOn ? <Video className="w-5 h-5 text-white" /> : <VideoOff className="w-5 h-5 text-slate-400" />}
+            {isCameraOn ? (
+              <Video className="call-stage-mic-off-3" />
+            ) : (
+              <VideoOff className="call-stage-video-off-2" />
+            )}
           </button>
 
           {/* Screen Share */}
           <button
             type="button"
             onClick={toggleScreenShare}
-            className={`hidden sm:flex min-w-[44px] min-h-[44px] sm:min-w-[48px] sm:min-h-[48px] p-2.5 sm:p-3 rounded-xl font-bold items-center justify-center transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 ${
-              isScreenSharing
-                ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-md shadow-blue-600/30 animate-pulse'
-                : 'bg-white dark:bg-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-white/15 hover:text-slate-900 dark:hover:text-white border border-slate-200/60 dark:border-white/5'
+            className={`call-stage-button-23 ${
+              isScreenSharing ? 'call-stage-button-24' : 'call-stage-button-21'
             }`}
             title={isScreenSharing ? 'Parar Partilha de Ecrã' : 'Partilhar Ecrã'}
             aria-label={isScreenSharing ? 'Parar Partilha de Ecrã' : 'Partilhar Ecrã'}
           >
-            {isScreenSharing ? <MonitorOff className="w-5 h-5 text-white" /> : <Monitor className="w-5 h-5 text-slate-400" />}
+            {isScreenSharing ? (
+              <MonitorOff className="call-stage-mic-off-3" />
+            ) : (
+              <Monitor className="call-stage-video-off-2" />
+            )}
           </button>
 
-          <div className="hidden h-5 w-px bg-slate-200 dark:bg-white/10 sm:block shrink-0" />
+          <div className="call-stage-panel-52" />
 
           {/* Chat Drawer Toggle */}
           <button
             type="button"
-            onClick={() => setSideDrawer(prev => prev === 'chat' ? 'none' : 'chat')}
-            className={`min-w-[44px] min-h-[44px] sm:min-w-[48px] sm:min-h-[48px] p-2.5 sm:p-3 rounded-xl font-bold transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 relative flex items-center justify-center ${
-              sideDrawer === 'chat'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white dark:bg-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/15 hover:text-slate-900 dark:hover:text-white border border-slate-200/60 dark:border-white/5'
+            onClick={() => setSideDrawer((prev) => (prev === 'chat' ? 'none' : 'chat'))}
+            className={`call-stage-button-25 ${
+              sideDrawer === 'chat' ? 'call-stage-button-26' : 'call-stage-button-27'
             }`}
             title="Chat da chamada"
             aria-label="Abrir chat da chamada"
           >
-            <MessageSquare className="w-5 h-5" />
-            {chatMessages.length > 1 && (
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-500 rounded-full ring-2 ring-white dark:ring-zinc-900" />
-            )}
+            <MessageSquare className="call-stage-x" />
+            {chatMessages.length > 1 && <span className="call-stage-label-16" />}
           </button>
 
           {/* Participants Drawer Toggle */}
           <button
             type="button"
-            onClick={() => setSideDrawer(prev => prev === 'participants' ? 'none' : 'participants')}
-            className={`min-w-[44px] min-h-[44px] sm:min-w-[48px] sm:min-h-[48px] p-2.5 sm:p-3 rounded-xl font-bold transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 flex items-center justify-center relative ${
-              sideDrawer === 'participants'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white dark:bg-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/15 hover:text-slate-900 dark:hover:text-white border border-slate-200/60 dark:border-white/5'
+            onClick={() =>
+              setSideDrawer((prev) => (prev === 'participants' ? 'none' : 'participants'))
+            }
+            className={`call-stage-button-28 ${
+              sideDrawer === 'participants' ? 'call-stage-button-26' : 'call-stage-button-27'
             }`}
             title="Participantes"
             aria-label="Ver participantes da chamada"
           >
-            <Users className="w-5 h-5" />
-            <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-slate-700 dark:bg-slate-300 text-white dark:text-slate-900 text-[9px] font-bold flex items-center justify-center">
-              {participants.length}
-            </span>
+            <Users className="call-stage-x" />
+            <span className="call-stage-label-17">{participants.length}</span>
           </button>
 
-          <div className="hidden h-5 w-px bg-slate-200 dark:bg-white/10 sm:block shrink-0" />
+          <div className="call-stage-panel-52" />
 
           {/* Leave Call */}
           <button
@@ -1807,12 +1935,12 @@ export const CallStage = ({
               soundEffects.playLeaveCall();
               onDisconnect?.();
             }}
-            className="min-h-[44px] min-w-[44px] sm:min-h-[48px] px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer touch-manipulation active:scale-95 shadow-md shadow-rose-600/30 transition-all shrink-0"
+            className="call-stage-button-29"
             title="Sair da chamada"
             aria-label="Sair da chamada"
           >
-            <PhoneOff className="w-5 h-5 shrink-0" />
-            <span className="hidden min-[380px]:inline">Sair</span>
+            <PhoneOff className="call-stage-phone-off-2" />
+            <span className="call-stage-label-18">Sair</span>
           </button>
         </div>
       </footer>

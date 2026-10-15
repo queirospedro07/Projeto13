@@ -1,3 +1,4 @@
+import './GlobalSearch.css';
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, BookOpen, User, X, ArrowRight, Loader2, MessageSquare } from 'lucide-react';
@@ -39,11 +40,17 @@ export const GlobalSearch = ({ onClose } = {}) => {
       try {
         const [coursesRes, usersRes] = await Promise.allSettled([
           api.getCourses({ search: query.trim() }),
-          api.searchSocialUsers(query.trim())
+          api.searchSocialUsers(query.trim()),
         ]);
 
-        const foundCourses = coursesRes.status === 'fulfilled' && Array.isArray(coursesRes.value) ? coursesRes.value.slice(0, 4) : [];
-        const foundUsers = usersRes.status === 'fulfilled' && Array.isArray(usersRes.value) ? usersRes.value.slice(0, 4) : [];
+        const foundCourses =
+          coursesRes.status === 'fulfilled' && Array.isArray(coursesRes.value)
+            ? coursesRes.value.slice(0, 4)
+            : [];
+        const foundUsers =
+          usersRes.status === 'fulfilled' && Array.isArray(usersRes.value)
+            ? usersRes.value.slice(0, 4)
+            : [];
 
         setCourses(foundCourses);
         setUsers(foundUsers);
@@ -84,9 +91,9 @@ export const GlobalSearch = ({ onClose } = {}) => {
   const hasResults = courses.length > 0 || users.length > 0;
 
   return (
-    <div ref={containerRef} className="relative w-full max-w-md">
-      <form onSubmit={handleSubmit} className="relative w-full">
-        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+    <div ref={containerRef} className="global-search-panel">
+      <form onSubmit={handleSubmit} className="global-search-form">
+        <Search className="global-search-search" />
         <input
           type="text"
           placeholder="Pesquisar cursos e pessoas..."
@@ -95,7 +102,7 @@ export const GlobalSearch = ({ onClose } = {}) => {
             if (query.trim() && hasResults) setIsOpen(true);
           }}
           onChange={(e) => setQuery(e.target.value)}
-          className="w-full bg-slate-100/90 dark:bg-[#121214] border border-slate-200/90 dark:border-neutral-800 hover:border-blue-500/50 dark:hover:border-blue-500/50 focus:border-blue-600 dark:focus:border-blue-500 rounded-2xl pl-10 pr-9 py-2 text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-medium"
+          className="global-search-field"
         />
         {query && (
           <button
@@ -104,55 +111,64 @@ export const GlobalSearch = ({ onClose } = {}) => {
               setQuery('');
               setIsOpen(false);
             }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
+            className="global-search-button"
           >
-            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
+            {loading ? (
+              <Loader2 className="global-search-loader2" />
+            ) : (
+              <X className="global-search-x" />
+            )}
           </button>
         )}
       </form>
 
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#11131a] border border-slate-200 dark:border-neutral-800 rounded-2xl shadow-xl overflow-hidden z-50 animate-fade-in max-h-[420px] overflow-y-auto">
+        <div className="global-search-panel-2">
           {!hasResults && !loading && (
-            <div className="p-4 text-center text-xs text-slate-500 dark:text-zinc-400">
-              Nenhum resultado encontrado para "{query}"
-            </div>
+            <div className="global-search-panel-3">Nenhum resultado encontrado para "{query}"</div>
           )}
 
           {courses.length > 0 && (
-            <div className="p-2 border-b border-slate-100 dark:border-neutral-800/80">
-              <div className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 flex items-center gap-1.5">
-                <BookOpen className="w-3.5 h-3.5 text-blue-500" />
+            <div className="global-search-panel-4">
+              <div className="global-search-panel-5">
+                <BookOpen className="global-search-book-open" />
                 <span>Cursos</span>
               </div>
-              <div className="space-y-1">
+              <div className="global-search-panel-6">
                 {courses.map((course) => (
                   <button
                     key={course.id || course.slug}
                     type="button"
                     onClick={() => handleSelectCourse(course)}
-                    className="w-full p-2 rounded-xl flex items-center gap-3 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer group"
+                    className="global-search-button-2 ui-group"
                   >
-                    <div className="w-9 h-9 rounded-lg overflow-hidden bg-slate-100 dark:bg-neutral-800 shrink-0 border border-slate-200/60 dark:border-neutral-700">
+                    <div className="global-search-panel-7">
                       {course.thumbnailUrl ? (
-                        <img src={course.thumbnailUrl} alt={course.title} className="w-full h-full object-cover" />
+                        <img
+                          src={course.thumbnailUrl}
+                          alt={course.title}
+                          className="global-search-image"
+                        />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-slate-400">
-                          <BookOpen className="w-4 h-4" />
+                        <div className="global-search-panel-8">
+                          <BookOpen className="global-search-book-open-2" />
                         </div>
                       )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400">
-                        {course.title}
-                      </p>
-                      <p className="text-[11px] text-slate-500 dark:text-zinc-400 truncate">
-                        {course.category} • {course.difficulty === 'Beginner' ? 'Iniciante' : course.difficulty === 'Intermediate' ? 'Intermédio' : course.difficulty === 'Advanced' ? 'Avançado' : (course.difficulty || 'Geral')}
+                    <div className="global-search-panel-9">
+                      <p className="global-search-description">{course.title}</p>
+                      <p className="global-search-description-2">
+                        {course.category} •{' '}
+                        {course.difficulty === 'Beginner'
+                          ? 'Iniciante'
+                          : course.difficulty === 'Intermediate'
+                            ? 'Intermédio'
+                            : course.difficulty === 'Advanced'
+                              ? 'Avançado'
+                              : course.difficulty || 'Geral'}
                       </p>
                     </div>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 shrink-0">
-                      {formatCoursePrice(course)}
-                    </span>
+                    <span className="global-search-label">{formatCoursePrice(course)}</span>
                   </button>
                 ))}
               </div>
@@ -160,30 +176,33 @@ export const GlobalSearch = ({ onClose } = {}) => {
           )}
 
           {users.length > 0 && (
-            <div className="p-2">
-              <div className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-indigo-500" />
+            <div className="global-search-panel-10">
+              <div className="global-search-panel-5">
+                <User className="global-search-user" />
                 <span>Pessoas</span>
               </div>
-              <div className="space-y-1">
+              <div className="global-search-panel-6">
                 {users.map((u) => (
                   <div
                     key={u.id || u.username}
                     onClick={() => handleSelectUser(u)}
-                    className="w-full p-2 rounded-xl flex items-center justify-between gap-3 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer group"
+                    className="global-search-panel-11 ui-group"
                   >
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div className="global-search-panel-12">
                       <Avatar src={u.avatarUrl} name={u.name} role={u.role} size="sm" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
-                          {u.name}
-                        </p>
-                        <p className="text-[11px] text-slate-500 dark:text-zinc-400 truncate">
-                          @{u.username} • {u.role === 'CREATOR' ? 'Formador' : u.role === 'ADMIN' ? 'Administrador' : 'Estudante'}
+                      <div className="global-search-panel-9">
+                        <p className="global-search-description-3">{u.name}</p>
+                        <p className="global-search-description-2">
+                          @{u.username} •{' '}
+                          {u.role === 'CREATOR'
+                            ? 'Formador'
+                            : u.role === 'ADMIN'
+                              ? 'Administrador'
+                              : 'Estudante'}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="global-search-panel-13">
                       <button
                         type="button"
                         onClick={(e) => {
@@ -193,12 +212,12 @@ export const GlobalSearch = ({ onClose } = {}) => {
                           onClose?.();
                           navigate(`/messages?userId=${u.id}`, { state: { peer: u } });
                         }}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors"
+                        className="global-search-button-3"
                         title="Enviar mensagem direta"
                       >
-                        <MessageSquare className="w-3.5 h-3.5" />
+                        <MessageSquare className="global-search-x" />
                       </button>
-                      <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-500 group-hover:translate-x-0.5 transition-all" />
+                      <ArrowRight className="global-search-arrow-right" />
                     </div>
                   </div>
                 ))}
@@ -207,12 +226,8 @@ export const GlobalSearch = ({ onClose } = {}) => {
           )}
 
           {hasResults && (
-            <div className="p-2 border-t border-slate-100 dark:border-neutral-800 bg-slate-50/50 dark:bg-neutral-900/40 text-center">
-              <button
-                type="button"
-                onClick={handleSubmit}
-                className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
-              >
+            <div className="global-search-panel-14">
+              <button type="button" onClick={handleSubmit} className="global-search-button-4">
                 Ver todos os resultados para "{query}" →
               </button>
             </div>

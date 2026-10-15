@@ -1,8 +1,11 @@
+import { socketUser, broadcastPresence } from './security.js';
+import { canAccessSpace } from '../services/courseAccess.js';
 import { queryOne } from '../database/connection.js';
 import { canAccessChannel } from '../middleware/channelAccess.js';
 
 const onlineUsers = new Map();
 const voiceRooms = new Map();
+const directCalls = new Map();
 
 function canModerateVoiceRoom(user, roomId) {
   if (!user?.id || !roomId) return false;
@@ -13,12 +16,15 @@ function canModerateVoiceRoom(user, roomId) {
      FROM canais c
      JOIN espacos s ON s.id = c.id_espaco
      WHERE c.id = ?`,
-    [roomId]
+    [roomId],
   );
   const spaceId = channel?.spaceId || roomId;
   if (channel?.ownerId === user.id) return true;
 
-  const spaceOwner = queryOne('SELECT id FROM espacos WHERE id = ? AND id_proprietario = ?', [spaceId, user.id]);
+  const spaceOwner = queryOne('SELECT id FROM espacos WHERE id = ? AND id_proprietario = ?', [
+    spaceId,
+    user.id,
+  ]);
   if (spaceOwner) return true;
 
   const courseOwnerOrCollab = queryOne(
@@ -26,26 +32,158 @@ function canModerateVoiceRoom(user, roomId) {
      LEFT JOIN colaboradores_curso cc ON cc.id_curso = c.id
      WHERE (c.id_espaco = ? OR c.id = ?) AND (c.id_criador = ? OR cc.id_utilizador = ?)
      LIMIT 1`,
-    [spaceId, roomId, user.id, user.id]
+    [spaceId, roomId, user.id, user.id],
   );
   return Boolean(courseOwnerOrCollab);
 }
 
 export function setupSocketIO(io) {
-  io.on('connection', socket => {
-    const authUser = socket.data?.user || null;
+  io.on('connection', (socket) => {
+    if (!socket.data?.user) return socket.disconnect(true);
+    let packetCount = 0,
+      packetWindow = Date.now();
+    const joinedVoice = (roomId) => Boolean(voiceRooms.get(roomId)?.has(socket.id));
+    const roomIdentifier = (value) =>
+      typeof value === 'string' && value.length <= 180 && /^[a-zA-Z0-9_-]+$/.test(value);
+    socket.use((packet, next) => {
+      try {
+        if (Date.now() - packetWindow > 10000) {
+          packetCount = 0;
+          packetWindow = Date.now();
+        }
+        if (++packetCount > 250)
+          return next(new Error('Demasiados eventos. Aguarde alguns segundos.'));
+        for (const [id, call] of directCalls)
+          if (Date.now() - call.created > 600000 && !voiceRooms.has(id)) directCalls.delete(id);
+        const actor = socketUser(socket);
+        socket.data.user = actor;
+        const [event, data] = packet;
+        if (['send-message', 'direct-message', 'reaction-updated'].includes(event))
+          return next(new Error('Envie mensagens pela API autenticada.'));
+        if (['join-channel', 'leave-channel'].includes(event)) {
+          if (!roomIdentifier(data) || !canAccessChannel(actor, data))
+            return next(new Error('Sem acesso ao canal.'));
+          return next();
+        }
+        if (!data || typeof data !== 'object' || Array.isArray(data))
+          return next(new Error('Evento inválido.'));
+        if (
+          ['typing', 'stop-typing'].includes(event) &&
+          (!socket.rooms.has('channel_' + data.channelId) ||
+            !canAccessChannel(actor, data.channelId))
+        )
+          return next(new Error('Sem acesso ao canal.'));
+        if (event === 'direct-call-start') {
+          if (
+            !roomIdentifier(data.roomId) ||
+            typeof data.targetUserId !== 'string' ||
+            data.targetUserId === actor.id
+          )
+            return next(new Error('Chamada inválida.'));
+          const receiver = queryOne('SELECT id FROM users WHERE id = ? AND isSuspended = 0', [
+            data.targetUserId,
+          ]);
+          if (!receiver) return next(new Error('Destinatário indisponível.'));
+          const previous = directCalls.get(data.roomId);
+          if (previous && (previous.caller !== actor.id || previous.receiver !== receiver.id))
+            return next(new Error('Sala indisponível.'));
+          if (
+            [...directCalls.values()].filter(
+              (call) => call.caller === actor.id && Date.now() - call.created < 600000,
+            ).length >= 3
+          )
+            return next(new Error('Já existem chamadas em curso.'));
+          directCalls.set(data.roomId, {
+            caller: actor.id,
+            receiver: receiver.id,
+            created: Date.now(),
+          });
+        } else if (event.startsWith('direct-call-')) {
+          const call = directCalls.get(data.roomId);
+          if (
+            !call ||
+            ![call.caller, call.receiver].includes(actor.id) ||
+            (event !== 'direct-call-ended' && actor.id !== call.receiver)
+          )
+            return next(new Error('Sem acesso à chamada.'));
+          data.callerId = call.caller;
+          data.targetUserId = actor.id === call.caller ? call.receiver : call.caller;
+          if (['direct-call-rejected', 'direct-call-ended'].includes(event)) {
+            directCalls.delete(data.roomId);
+            io.in('voice_' + data.roomId).socketsLeave('voice_' + data.roomId);
+            voiceRooms.delete(data.roomId);
+          }
+        }
+        if (event === 'join-voice-room') {
+          if (!roomIdentifier(data.roomId)) return next(new Error('Sala inválida.'));
+          const call = directCalls.get(data.roomId);
+          const directAccess =
+            call &&
+            Date.now() - call.created < 600000 &&
+            [call.caller, call.receiver].includes(actor.id);
+          if (
+            !directAccess &&
+            !canAccessChannel(actor, data.roomId) &&
+            !canAccessSpace(actor, data.roomId)
+          )
+            return next(new Error('Sem acesso à sala.'));
+        } else if (event.startsWith('voice-signal-')) {
+          const sharesRoom = [...voiceRooms.values()].some(
+            (room) => room.has(socket.id) && room.has(data.targetSocketId),
+          );
+          if (!sharesRoom) return next(new Error('O destinatário não pertence à sua sala.'));
+        } else if (
+          (event.startsWith('voice-') || event === 'leave-voice-room') &&
+          !joinedVoice(data.roomId)
+        )
+          return next(new Error('Entre na sala antes de enviar eventos.'));
+        if (event === 'voice-chat-message') {
+          if (
+            typeof data.message?.content !== 'string' ||
+            !data.message.content.trim() ||
+            data.message.content.length > 4000
+          )
+            return next(new Error('Mensagem inválida.'));
+          data.message = {
+            id: data.message.id,
+            sender: actor.name,
+            content: data.message.content.trim(),
+            time: new Date().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+          };
+        }
+        Object.assign(data, {
+          userId: actor.id,
+          username: actor.username,
+          user: actor,
+          caller: actor,
+          callerUser: actor,
+          responderUser: actor,
+          acceptor: actor,
+          rejector: actor,
+        });
+        next();
+      } catch {
+        next(new Error('Evento não autorizado.'));
+      }
+    });
+    socket.on('error', () =>
+      socket.emit('operation-error', {
+        message: 'Operação não autorizada ou temporariamente limitada.',
+      }),
+    );
+    const authUser = socket.data.user;
     if (authUser?.id) {
       onlineUsers.set(authUser.id, {
         userId: authUser.id,
         username: authUser.username,
         status: 'online',
-        socketId: socket.id
+        socketId: socket.id,
       });
       socket.join(`user_${authUser.id}`);
-      io.emit('presence-update', Array.from(onlineUsers.values()));
+      broadcastPresence(io);
     }
 
-    socket.on('user-connected', userData => {
+    socket.on('user-connected', (userData) => {
       const effectiveUserId = socket.data?.user?.id || userData?.userId;
       const effectiveUsername = socket.data?.user?.username || userData?.username;
       if (effectiveUserId) {
@@ -53,85 +191,34 @@ export function setupSocketIO(io) {
           userId: effectiveUserId,
           username: effectiveUsername,
           status: 'online',
-          socketId: socket.id
+          socketId: socket.id,
         });
         socket.join(`user_${effectiveUserId}`);
-        io.emit('presence-update', Array.from(onlineUsers.values()));
+        broadcastPresence(io);
       }
     });
-    socket.on('join-channel', channelId => {
+    socket.on('join-channel', (channelId) => {
       if (socket.data?.user && !canAccessChannel(socket.data.user, channelId)) {
         return;
       }
       socket.join(`channel_${channelId}`);
     });
-    socket.on('leave-channel', channelId => {
+    socket.on('leave-channel', (channelId) => {
       socket.leave(`channel_${channelId}`);
     });
-    socket.on('typing', ({
-      channelId,
-      username
-    }) => {
+    socket.on('typing', ({ channelId, username }) => {
       socket.to(`channel_${channelId}`).emit('user-typing', {
         channelId,
-        username: socket.data?.user?.username || username
+        username: socket.data?.user?.username || username,
       });
     });
-    socket.on('stop-typing', ({
-      channelId,
-      username
-    }) => {
+    socket.on('stop-typing', ({ channelId, username }) => {
       socket.to(`channel_${channelId}`).emit('user-stop-typing', {
         channelId,
-        username: socket.data?.user?.username || username
+        username: socket.data?.user?.username || username,
       });
     });
-    socket.on('send-message', messageData => {
-      if (messageData.channelId) {
-        if (socket.data?.user && !canAccessChannel(socket.data.user, messageData.channelId)) {
-          return;
-        }
-        io.to(`channel_${messageData.channelId}`).emit('new-message', messageData);
-      } else {
-        const targetId = messageData.recipientId || messageData.receiverId;
-        const senderId = socket.data?.user?.id || messageData.senderId;
-        if (targetId) {
-          io.to(`user_${targetId}`).emit('direct-message', messageData);
-          io.to(`user_${targetId}`).emit('new-direct-message', messageData);
-        }
-        if (senderId) {
-          io.to(`user_${senderId}`).emit('direct-message', messageData);
-          io.to(`user_${senderId}`).emit('new-direct-message', messageData);
-        }
-      }
-    });
-    socket.on('direct-message', messageData => {
-      const targetId = messageData.recipientId || messageData.receiverId;
-      const senderId = socket.data?.user?.id || messageData.senderId;
-      if (targetId) {
-        io.to(`user_${targetId}`).emit('direct-message', messageData);
-        io.to(`user_${targetId}`).emit('new-direct-message', messageData);
-      }
-      if (senderId) {
-        io.to(`user_${senderId}`).emit('direct-message', messageData);
-        io.to(`user_${senderId}`).emit('new-direct-message', messageData);
-      }
-    });
-    socket.on('reaction-updated', ({
-      channelId,
-      reactionData
-    }) => {
-      if (channelId) {
-        io.to(`channel_${channelId}`).emit('reaction-changed', reactionData);
-      }
-    });
-    socket.on('join-voice-room', ({
-      roomId,
-      user,
-      isMuted,
-      isDeafened,
-      isCameraOn
-    }) => {
+    socket.on('join-voice-room', ({ roomId, user, isMuted, isDeafened, isCameraOn }) => {
       if (!roomId || !user) return;
       for (const [prevRoomId, prevRoom] of voiceRooms.entries()) {
         if (prevRoom.has(socket.id)) {
@@ -140,7 +227,7 @@ export function setupSocketIO(io) {
           socket.leave(`voice_${prevRoomId}`);
           socket.to(`voice_${prevRoomId}`).emit('user-left-voice', {
             userId: prevUser?.user?.id || user.id,
-            socketId: socket.id
+            socketId: socket.id,
           });
           if (prevRoom.size === 0) {
             voiceRooms.delete(prevRoomId);
@@ -152,7 +239,7 @@ export function setupSocketIO(io) {
         voiceRooms.set(roomId, new Map());
       }
       const roomMap = voiceRooms.get(roomId);
-      const existingParticipants = Array.from(roomMap.values()).map(p => ({
+      const existingParticipants = Array.from(roomMap.values()).map((p) => ({
         user: p.user,
         socketId: p.socketId,
         isMuted: p.isMuted,
@@ -163,7 +250,7 @@ export function setupSocketIO(io) {
         screenTrackId: p.screenTrackId,
         cameraStreamId: p.cameraStreamId,
         screenStreamId: p.screenStreamId,
-        bannerUrl: p.user?.bannerUrl
+        bannerUrl: p.user?.bannerUrl,
       }));
       socket.emit('voice-room-existing-users', existingParticipants);
       roomMap.set(socket.id, {
@@ -178,20 +265,17 @@ export function setupSocketIO(io) {
         screenTrackId: null,
         cameraStreamId: null,
         screenStreamId: null,
-        bannerUrl: user?.bannerUrl
+        bannerUrl: user?.bannerUrl,
       });
       socket.to(`voice_${roomId}`).emit('user-joined-voice', {
         user,
         socketId: socket.id,
         isMuted: isMuted !== undefined ? Boolean(isMuted) : false,
         isDeafened: isDeafened !== undefined ? Boolean(isDeafened) : false,
-        isCameraOn: isCameraOn !== undefined ? Boolean(isCameraOn) : false
+        isCameraOn: isCameraOn !== undefined ? Boolean(isCameraOn) : false,
       });
     });
-    socket.on('leave-voice-room', ({
-      roomId,
-      userId
-    }) => {
+    socket.on('leave-voice-room', ({ roomId, userId }) => {
       socket.leave(`voice_${roomId}`);
       const room = voiceRooms.get(roomId);
       if (room) {
@@ -200,36 +284,14 @@ export function setupSocketIO(io) {
       }
       socket.to(`voice_${roomId}`).emit('user-left-voice', {
         userId,
-        socketId: socket.id
+        socketId: socket.id,
       });
     });
-    socket.on('voice-state-update', ({
-      roomId,
-      userId,
-      isMuted,
-      isDeafened,
-      isCameraOn,
-      isScreenSharing,
-      cameraTrackId,
-      screenTrackId,
-      cameraStreamId,
-      screenStreamId
-    }) => {
-      const room = voiceRooms.get(roomId);
-      if (room && room.has(socket.id)) {
-        const current = room.get(socket.id);
-        if (isMuted !== undefined) current.isMuted = isMuted;
-        if (isDeafened !== undefined) current.isDeafened = isDeafened;
-        if (isCameraOn !== undefined) current.isCameraOn = isCameraOn;
-        if (isScreenSharing !== undefined) current.isScreenSharing = isScreenSharing;
-        if (cameraTrackId !== undefined) current.cameraTrackId = cameraTrackId;
-        if (screenTrackId !== undefined) current.screenTrackId = screenTrackId;
-        if (cameraStreamId !== undefined) current.cameraStreamId = cameraStreamId;
-        if (screenStreamId !== undefined) current.screenStreamId = screenStreamId;
-      }
-      socket.to(`voice_${roomId}`).emit('user-voice-state-changed', {
+    socket.on(
+      'voice-state-update',
+      ({
+        roomId,
         userId,
-        socketId: socket.id,
         isMuted,
         isDeafened,
         isCameraOn,
@@ -237,97 +299,102 @@ export function setupSocketIO(io) {
         cameraTrackId,
         screenTrackId,
         cameraStreamId,
-        screenStreamId
-      });
-    });
-    socket.on('voice-speaking-state', ({
-      roomId,
-      userId,
-      isSpeaking
-    }) => {
+        screenStreamId,
+      }) => {
+        const room = voiceRooms.get(roomId);
+        if (room && room.has(socket.id)) {
+          const current = room.get(socket.id);
+          if (isMuted !== undefined) current.isMuted = isMuted;
+          if (isDeafened !== undefined) current.isDeafened = isDeafened;
+          if (isCameraOn !== undefined) current.isCameraOn = isCameraOn;
+          if (isScreenSharing !== undefined) current.isScreenSharing = isScreenSharing;
+          if (cameraTrackId !== undefined) current.cameraTrackId = cameraTrackId;
+          if (screenTrackId !== undefined) current.screenTrackId = screenTrackId;
+          if (cameraStreamId !== undefined) current.cameraStreamId = cameraStreamId;
+          if (screenStreamId !== undefined) current.screenStreamId = screenStreamId;
+        }
+        socket.to(`voice_${roomId}`).emit('user-voice-state-changed', {
+          userId,
+          socketId: socket.id,
+          isMuted,
+          isDeafened,
+          isCameraOn,
+          isScreenSharing,
+          cameraTrackId,
+          screenTrackId,
+          cameraStreamId,
+          screenStreamId,
+        });
+      },
+    );
+    socket.on('voice-speaking-state', ({ roomId, userId, isSpeaking }) => {
       socket.to(`voice_${roomId}`).emit('user-voice-speaking-changed', {
         userId,
         socketId: socket.id,
-        isSpeaking
+        isSpeaking,
       });
     });
-    socket.on('voice-signal-offer', payload => {
+    socket.on('voice-signal-offer', (payload) => {
       io.to(payload.targetSocketId).emit('voice-signal-offer', {
         ...payload,
-        callerSocketId: socket.id
+        callerSocketId: socket.id,
       });
     });
-    socket.on('voice-signal-answer', payload => {
+    socket.on('voice-signal-answer', (payload) => {
       io.to(payload.targetSocketId).emit('voice-signal-answer', {
         ...payload,
-        responderSocketId: socket.id
+        responderSocketId: socket.id,
       });
     });
-    socket.on('voice-signal-ice', ({
-      targetSocketId,
-      candidate
-    }) => {
+    socket.on('voice-signal-ice', ({ targetSocketId, candidate }) => {
       io.to(targetSocketId).emit('voice-signal-ice', {
         candidate,
-        fromSocketId: socket.id
+        fromSocketId: socket.id,
       });
     });
 
-    socket.on('voice-chat-message', ({
-      roomId,
-      message
-    }) => {
+    socket.on('voice-chat-message', ({ roomId, message }) => {
       socket.to(`voice_${roomId}`).emit('voice-chat-message', message);
     });
-    socket.on('voice-set-room-mode', ({
-      roomId,
-      mode
-    }) => {
+    socket.on('voice-set-room-mode', ({ roomId, mode }) => {
       if (socket.data?.user && !canModerateVoiceRoom(socket.data.user, roomId)) return;
       io.to(`voice_${roomId}`).emit('voice-room-mode-changed', {
         roomId,
-        mode
+        mode,
       });
     });
-    socket.on('voice-update-permissions', ({
-      roomId,
-      targetUserId,
-      canSpeak,
-      canShareScreen
-    }) => {
+    socket.on('voice-update-permissions', ({ roomId, targetUserId, canSpeak, canShareScreen }) => {
       if (socket.data?.user && !canModerateVoiceRoom(socket.data.user, roomId)) return;
       io.to(`voice_${roomId}`).emit('voice-permissions-updated', {
         targetUserId,
         canSpeak,
-        canShareScreen
+        canShareScreen,
       });
     });
-    socket.on('voice-speaker-request', ({
-      roomId,
-      user
-    }) => {
+    socket.on('voice-speaker-request', ({ roomId, user }) => {
       socket.to(`voice_${roomId}`).emit('voice-speaker-request', {
-        user
+        user,
       });
     });
-    socket.on('voice-speaker-decision', ({
-      roomId,
-      targetUserId,
-      approved
-    }) => {
+    socket.on('voice-speaker-decision', ({ roomId, targetUserId, approved }) => {
       if (socket.data?.user && !canModerateVoiceRoom(socket.data.user, roomId)) return;
       io.to(`voice_${roomId}`).emit('voice-speaker-decision', {
         targetUserId,
-        approved
+        approved,
       });
     });
-    socket.on('voice-kick-user', ({
-      roomId,
-      targetUserId
-    }) => {
+    socket.on('voice-kick-user', ({ roomId, targetUserId }) => {
       if (socket.data?.user && !canModerateVoiceRoom(socket.data.user, roomId)) return;
+      const participants = voiceRooms.get(roomId);
+      if (participants)
+        for (const [targetSocketId, participant] of participants) {
+          if (participant.user.id === targetUserId) {
+            participants.delete(targetSocketId);
+            io.sockets.sockets.get(targetSocketId)?.leave('voice_' + roomId);
+          }
+        }
       io.to(`voice_${roomId}`).emit('voice-user-kicked', {
-        targetUserId
+        targetUserId,
       });
     });
 
@@ -336,7 +403,7 @@ export function setupSocketIO(io) {
       if (!targetUserId || !caller) return;
       io.to(`user_${targetUserId}`).emit('direct-call-incoming', {
         caller,
-        roomId
+        roomId,
       });
     });
 
@@ -344,7 +411,7 @@ export function setupSocketIO(io) {
       if (!callerId) return;
       io.to(`user_${callerId}`).emit('direct-call-accepted', {
         roomId,
-        acceptor
+        acceptor,
       });
     });
 
@@ -352,25 +419,27 @@ export function setupSocketIO(io) {
       if (!callerId) return;
       io.to(`user_${callerId}`).emit('direct-call-rejected', {
         roomId,
-        rejector
+        rejector,
       });
     });
 
     socket.on('direct-call-ended', ({ targetUserId, roomId }) => {
       if (!targetUserId) return;
       io.to(`user_${targetUserId}`).emit('direct-call-ended', {
-        roomId
+        roomId,
       });
     });
 
     socket.on('disconnect', () => {
+      for (const [roomId, call] of directCalls)
+        if (Date.now() - call.created > 600000) directCalls.delete(roomId);
       for (const [roomId, room] of voiceRooms.entries()) {
         const participant = room.get(socket.id);
         if (participant) {
           room.delete(socket.id);
           socket.to(`voice_${roomId}`).emit('user-left-voice', {
             userId: participant.user?.id,
-            socketId: socket.id
+            socketId: socket.id,
           });
           if (room.size === 0) voiceRooms.delete(roomId);
         }
@@ -381,7 +450,7 @@ export function setupSocketIO(io) {
           break;
         }
       }
-      io.emit('presence-update', Array.from(onlineUsers.values()));
+      broadcastPresence(io);
     });
   });
 }

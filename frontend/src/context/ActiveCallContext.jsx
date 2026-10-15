@@ -35,7 +35,7 @@ export const ActiveCallProvider = ({ children }) => {
     contextTitle = 'Conferência NEXO',
     courseId = null,
     spaceId = null,
-    returnUrl = ''
+    returnUrl = '',
   }) => {
     const callData = {
       roomId,
@@ -44,7 +44,7 @@ export const ActiveCallProvider = ({ children }) => {
       courseId,
       spaceId,
       returnUrl,
-      startedAt: Date.now()
+      startedAt: Date.now(),
     };
     setActiveCall(callData);
     try {
@@ -70,16 +70,20 @@ export const ActiveCallProvider = ({ children }) => {
     if (activeCall) {
       window.dispatchEvent(new CustomEvent('nexo_call_toggle_mic'));
     } else {
-      setIsMicMuted(prev => {
+      setIsMicMuted((prev) => {
         const next = !prev;
-        try { localStorage.setItem('nexo_mic_muted', String(next)); } catch {}
+        try {
+          localStorage.setItem('nexo_mic_muted', String(next));
+        } catch {}
         if (next) {
           soundEffects.playMute();
         } else {
           soundEffects.playUnmute();
           // Desmutar enquanto ensurdecido desativa também o ensurdecimento
           setIsDeafened(false);
-          try { localStorage.setItem('nexo_deafened', 'false'); } catch {}
+          try {
+            localStorage.setItem('nexo_deafened', 'false');
+          } catch {}
         }
         return next;
       });
@@ -90,14 +94,18 @@ export const ActiveCallProvider = ({ children }) => {
     if (activeCall) {
       window.dispatchEvent(new CustomEvent('nexo_call_toggle_deafen'));
     } else {
-      setIsDeafened(prev => {
+      setIsDeafened((prev) => {
         const next = !prev;
-        try { localStorage.setItem('nexo_deafened', String(next)); } catch {}
+        try {
+          localStorage.setItem('nexo_deafened', String(next));
+        } catch {}
         if (next) {
           soundEffects.playDeafen();
           // Ao ficar ensurdecido, o microfone desliga-se automaticamente também!
           setIsMicMuted(true);
-          try { localStorage.setItem('nexo_mic_muted', 'true'); } catch {}
+          try {
+            localStorage.setItem('nexo_mic_muted', 'true');
+          } catch {}
         } else {
           soundEffects.playUndeafen();
         }
@@ -110,12 +118,16 @@ export const ActiveCallProvider = ({ children }) => {
     if (isMuted !== undefined) {
       const val = Boolean(isMuted);
       setIsMicMuted(val);
-      try { localStorage.setItem('nexo_mic_muted', String(val)); } catch {}
+      try {
+        localStorage.setItem('nexo_mic_muted', String(val));
+      } catch {}
     }
     if (deafened !== undefined) {
       const val = Boolean(deafened);
       setIsDeafened(val);
-      try { localStorage.setItem('nexo_deafened', String(val)); } catch {}
+      try {
+        localStorage.setItem('nexo_deafened', String(val));
+      } catch {}
     }
   }, []);
 
@@ -132,20 +144,22 @@ export const ActiveCallProvider = ({ children }) => {
   }, []);
 
   return (
-    <ActiveCallContext.Provider value={{
-      activeCall,
-      startCall,
-      endCall,
-      leaveCall,
-      setActiveCall,
-      isMicMuted,
-      setIsMicMuted,
-      isDeafened,
-      setIsDeafened,
-      toggleMic,
-      toggleDeafen,
-      updateCallAudioState
-    }}>
+    <ActiveCallContext.Provider
+      value={{
+        activeCall,
+        startCall,
+        endCall,
+        leaveCall,
+        setActiveCall,
+        isMicMuted,
+        setIsMicMuted,
+        isDeafened,
+        setIsDeafened,
+        toggleMic,
+        toggleDeafen,
+        updateCallAudioState,
+      }}
+    >
       {children}
     </ActiveCallContext.Provider>
   );
@@ -153,20 +167,22 @@ export const ActiveCallProvider = ({ children }) => {
 
 export const useActiveCall = () => {
   const context = useContext(ActiveCallContext);
-  return context || {
-    activeCall: null,
-    startCall: () => {},
-    endCall: () => {},
-    leaveCall: () => {},
-    setActiveCall: () => {},
-    isMicMuted: false,
-    setIsMicMuted: () => {},
-    isDeafened: false,
-    setIsDeafened: () => {},
-    toggleMic: () => {},
-    toggleDeafen: () => {},
-    updateCallAudioState: () => {}
-  };
+  return (
+    context || {
+      activeCall: null,
+      startCall: () => {},
+      endCall: () => {},
+      leaveCall: () => {},
+      setActiveCall: () => {},
+      isMicMuted: false,
+      setIsMicMuted: () => {},
+      isDeafened: false,
+      setIsDeafened: () => {},
+      toggleMic: () => {},
+      toggleDeafen: () => {},
+      updateCallAudioState: () => {},
+    }
+  );
 };
 
 export default ActiveCallContext;

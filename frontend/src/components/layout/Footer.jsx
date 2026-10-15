@@ -1,3 +1,4 @@
+import './Footer.css';
 import React, { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Github } from 'lucide-react';
@@ -82,16 +83,19 @@ export default function Footer() {
       }
     };
 
-    const observer = new IntersectionObserver(([entry]) => {
-      isIntersecting = entry.isIntersecting;
-      if (isIntersecting && trailRef.current.length > 0 && !isRunning) {
-        isRunning = true;
-        animFrameRef.current = requestAnimationFrame(animate);
-      } else if (!isIntersecting && isRunning) {
-        isRunning = false;
-        if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-      }
-    }, { threshold: 0.01 });
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isIntersecting = entry.isIntersecting;
+        if (isIntersecting && trailRef.current.length > 0 && !isRunning) {
+          isRunning = true;
+          animFrameRef.current = requestAnimationFrame(animate);
+        } else if (!isIntersecting && isRunning) {
+          isRunning = false;
+          if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+        }
+      },
+      { threshold: 0.01 },
+    );
 
     observer.observe(footer);
 
@@ -120,71 +124,59 @@ export default function Footer() {
 
   return (
     <>
-      <footer
-        ref={footerRef}
-        onMouseMove={handleMouseMove}
-        className="relative bg-white dark:bg-[#050608] border-t border-slate-200 dark:border-neutral-900 font-sans transition-colors overflow-hidden pb-0 select-none group"
-      >
+      <footer ref={footerRef} onMouseMove={handleMouseMove} className="footer-footer ui-group">
         {/* Subtle Ambient Background Gradient */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[900px] h-[450px] bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.08),transparent_70%)] dark:bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.18),transparent_70%)] blur-3xl" />
+        <div className="footer-panel">
+          <div className="footer-panel-2" />
         </div>
 
         {/* Real-Time Interactive Fluid Pace-Style Cursor Trail Canvas */}
-        <canvas
-          ref={canvasRef}
-          className="pointer-events-none absolute inset-0 w-full h-full mix-blend-multiply dark:mix-blend-screen z-0"
-        />
+        <canvas ref={canvasRef} className="footer-canvas" />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 pt-12 md:pt-16 pb-8 relative z-10">
-          
+        <div className="footer-panel-3">
           {/* Main Grid */}
-          <div className="flex flex-col lg:flex-row justify-between items-start gap-10 lg:gap-16">
-            
+          <div className="footer-panel-4">
             {/* Brand & Description */}
-            <div className="space-y-4 max-w-sm">
+            <div className="footer-panel-5">
               <Logo size="lg" to="/" />
-              <p className="text-slate-600 dark:text-neutral-400 text-sm leading-relaxed">
-                Plataforma aberta de excelência para formação prática, mentorias WebRTC em tempo real e certificação verificada.
+              <p className="footer-description">
+                Cursos práticos, uma comunidade para trocar ideias e certificados de conclusão.
               </p>
             </div>
 
             {/* Navigation Links - 3 columns */}
-            <div className="w-full lg:w-auto grid grid-cols-2 sm:grid-cols-3 gap-8 sm:gap-12 md:gap-16 text-sm">
-              
+            <div className="footer-panel-6">
               {/* Column 1: Áreas de Estudo */}
-              <div className="space-y-3">
-                <span className="font-bold text-xs uppercase tracking-wider text-slate-900 dark:text-white block">
-                  Áreas de Estudo
-                </span>
-                <ul className="space-y-2.5 text-slate-600 dark:text-neutral-400">
+              <div className="footer-panel-7">
+                <span className="footer-label">Áreas de Estudo</span>
+                <ul className="footer-list">
                   <li>
-                    <Link to="/explore" className="hover:text-blue-600 dark:hover:text-white transition-colors">
+                    <Link to="/explore" className="footer-link">
                       Catálogo Geral
                     </Link>
                   </li>
                   <li>
-                    <Link to="/explore?category=Negócios" className="hover:text-blue-600 dark:hover:text-white transition-colors">
+                    <Link to="/explore?category=Negócios" className="footer-link">
                       Negócios & Gestão
                     </Link>
                   </li>
                   <li>
-                    <Link to="/explore?category=Marketing" className="hover:text-blue-600 dark:hover:text-white transition-colors">
+                    <Link to="/explore?category=Marketing" className="footer-link">
                       Marketing & Vendas
                     </Link>
                   </li>
                   <li>
-                    <Link to="/explore?category=Línguas" className="hover:text-blue-600 dark:hover:text-white transition-colors">
+                    <Link to="/explore?category=Línguas" className="footer-link">
                       Línguas & Idiomas
                     </Link>
                   </li>
                   <li>
-                    <Link to="/explore?category=Programação" className="hover:text-blue-600 dark:hover:text-white transition-colors">
+                    <Link to="/explore?category=Programação" className="footer-link">
                       Tecnologia & Web
                     </Link>
                   </li>
                   <li>
-                    <Link to="/explore?category=Design" className="hover:text-blue-600 dark:hover:text-white transition-colors">
+                    <Link to="/explore?category=Design" className="footer-link">
                       Design & Artes
                     </Link>
                   </li>
@@ -192,38 +184,36 @@ export default function Footer() {
               </div>
 
               {/* Column 2: Plataforma */}
-              <div className="space-y-3">
-                <span className="font-bold text-xs uppercase tracking-wider text-slate-900 dark:text-white block">
-                  Plataforma
-                </span>
-                <ul className="space-y-2.5 text-slate-600 dark:text-neutral-400">
+              <div className="footer-panel-7">
+                <span className="footer-label">Plataforma</span>
+                <ul className="footer-list">
                   <li>
-                    <Link to="/" className="hover:text-blue-600 dark:hover:text-white transition-colors font-medium">
-                      Página de Demonstração
+                    <Link to="/" className="footer-link-2">
+                      Início
                     </Link>
                   </li>
                   <li>
-                    <Link to="/dashboard" className="hover:text-blue-600 dark:hover:text-white transition-colors">
+                    <Link to="/dashboard" className="footer-link">
                       Painel do Aluno
                     </Link>
                   </li>
                   <li>
-                    <Link to="/creator" className="hover:text-blue-600 dark:hover:text-white transition-colors">
+                    <Link to="/creator" className="footer-link">
                       Estúdio do Formador
                     </Link>
                   </li>
                   <li>
-                    <Link to="/community" className="hover:text-blue-600 dark:hover:text-white transition-colors">
-                      Salas de Mentoria WebRTC
+                    <Link to="/community" className="footer-link">
+                      Comunidade e salas de estudo
                     </Link>
                   </li>
                   <li>
-                    <Link to="/library" className="hover:text-blue-600 dark:hover:text-white transition-colors">
-                      Certificados & Diplomas
+                    <Link to="/library" className="footer-link">
+                      Certificados de conclusão
                     </Link>
                   </li>
                   <li>
-                    <Link to="/help" className="hover:text-blue-600 dark:hover:text-white transition-colors font-medium">
+                    <Link to="/help" className="footer-link-2">
                       Dúvidas & Suporte
                     </Link>
                   </li>
@@ -231,18 +221,16 @@ export default function Footer() {
               </div>
 
               {/* Column 3: Comunidade & Inquéritos */}
-              <div className="space-y-3 col-span-2 sm:col-span-1">
-                <span className="font-bold text-xs uppercase tracking-wider text-slate-900 dark:text-white block">
-                  Comunidade & Moderação
-                </span>
-                <ul className="space-y-2.5 text-slate-600 dark:text-neutral-400">
+              <div className="footer-panel-8">
+                <span className="footer-label">Comunidade & Moderação</span>
+                <ul className="footer-list">
                   <li>
-                    <Link to="/creator/apply" className="hover:text-blue-600 dark:hover:text-white transition-colors font-medium">
+                    <Link to="/creator/apply" className="footer-link-2">
                       Candidatura a Formador
                     </Link>
                   </li>
                   <li>
-                    <Link to="/login" className="hover:text-blue-600 dark:hover:text-white transition-colors">
+                    <Link to="/login" className="footer-link">
                       Iniciar Sessão
                     </Link>
                   </li>
@@ -251,46 +239,41 @@ export default function Footer() {
                       href="https://github.com/queirospedro7"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hover:text-blue-600 dark:hover:text-white transition-colors inline-flex items-center gap-1.5"
+                      className="footer-link-3"
                     >
-                      <Github className="w-4 h-4" />
+                      <Github className="footer-github" />
                       <span>GitHub</span>
                     </a>
                   </li>
                 </ul>
               </div>
-
             </div>
-
           </div>
 
           {/* Bottom Bar: Copyright & Terms */}
-          <div className="mt-12 pt-6 border-t border-slate-200 dark:border-neutral-900 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 text-xs text-slate-500 dark:text-neutral-500">
+          <div className="footer-panel-9">
             <span>© {currentYear} NEXO. Todos os direitos reservados.</span>
-            <div className="flex items-center gap-4">
-              <Link to="/terms" className="hover:text-slate-800 dark:hover:text-neutral-300 transition-colors">
+            <div className="footer-panel-10">
+              <Link to="/terms" className="footer-link-4">
                 Termos de Utilização
               </Link>
               <span>•</span>
-              <Link to="/privacy" className="hover:text-slate-800 dark:hover:text-neutral-300 transition-colors">
+              <Link to="/privacy" className="footer-link-4">
                 Política de Privacidade
               </Link>
               <span>•</span>
-              <Link to="/help" className="hover:text-slate-800 dark:hover:text-neutral-300 transition-colors">
+              <Link to="/help" className="footer-link-4">
                 Dúvidas & FAQ
               </Link>
               <span>•</span>
               <span>Portugal</span>
             </div>
           </div>
-
         </div>
 
         {/* Giant Monumental Wordmark NEXO: Pure Black in Light Mode (#000000), Pure White in Dark Mode */}
-        <div className="w-full overflow-hidden leading-none select-none relative mt-2 z-10 pointer-events-none">
-          <div className="font-display font-black text-[clamp(3.75rem,22vw,28rem)] leading-[0.65] tracking-[-0.06em] sm:tracking-[-0.08em] text-center uppercase whitespace-nowrap text-black dark:text-white translate-y-[15%]">
-            NEXO
-          </div>
+        <div className="footer-panel-11">
+          <div className="footer-panel-12">NEXO</div>
         </div>
       </footer>
     </>

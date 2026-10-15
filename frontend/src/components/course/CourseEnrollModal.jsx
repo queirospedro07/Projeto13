@@ -1,16 +1,17 @@
+import './CourseEnrollModal.css';
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { 
-  X, 
-  CheckCircle2, 
-  ExternalLink, 
-  GraduationCap, 
-  Award, 
-  Clock, 
-  Play, 
+import {
+  X,
+  CheckCircle2,
+  ExternalLink,
+  GraduationCap,
+  Award,
+  Clock,
+  Play,
   ArrowRight,
-  ShieldCheck
+  ShieldCheck,
 } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
@@ -24,22 +25,17 @@ export const CourseEnrollModal = ({
   onClose,
   course,
   onEnrollSuccess,
-  isSpace = false
+  isSpace = false,
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [isPaidConfirmation, setIsPaidConfirmation] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  useEffect(() => {
-    setIsPaidConfirmation(false);
-  }, [isOpen, course?.id]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -60,7 +56,10 @@ export const CourseEnrollModal = ({
   const isFree = course.isFree || Number(course.price || 0) <= 0;
   const isAlreadyEnrolled = Boolean(course.isEnrolled || course.isMember);
   const courseTitle = course.title || course.name || 'Curso';
-  const bannerImage = course.bannerUrl || course.thumbnailUrl || 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200&auto=format&fit=crop&q=80';
+  const bannerImage =
+    course.bannerUrl ||
+    course.thumbnailUrl ||
+    'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200&auto=format&fit=crop&q=80';
   const creator = course.creator || course.owner;
   const courseIdentifier = course.slug || course.id;
 
@@ -80,25 +79,30 @@ export const CourseEnrollModal = ({
       toast({
         title: 'Sessão Necessária',
         message: 'Por favor inicie sessão ou crie conta para se inscrever.',
-        type: 'info'
+        type: 'info',
       });
       onClose();
       navigate('/login');
       return;
     }
 
-    if (!isFree && !isPaidConfirmation) {
+    if (!isFree) {
       toast({
-        title: 'Confirmação necessária',
-        message: 'Confirme a compra para prosseguir com a aquisição do curso.',
-        type: 'info'
+        title: 'Inscrições por confirmar',
+        message:
+          'Os pagamentos online ainda não estão disponíveis. Contacte o formador para saber como obter acesso.',
+        type: 'info',
       });
       return;
     }
 
     setIsSubmitting(true);
     try {
-      if (isSpace && !String(course.id).startsWith('course-') && !String(course.id).startsWith('demo-course-')) {
+      if (
+        isSpace &&
+        !String(course.id).startsWith('course-') &&
+        !String(course.id).startsWith('demo-course-')
+      ) {
         await api.joinSpace(course.id);
       } else {
         await api.enrollCourse(course.id);
@@ -107,7 +111,7 @@ export const CourseEnrollModal = ({
       toast({
         title: 'Matrícula Confirmada!',
         message: `Já faz parte do curso "${courseTitle}". Bons estudos!`,
-        type: 'success'
+        type: 'success',
       });
       onClose();
       if (onEnrollSuccess) {
@@ -119,7 +123,7 @@ export const CourseEnrollModal = ({
       toast({
         title: 'Erro na Inscrição',
         message: err.message || 'Não foi possível confirmar a matrícula. Tente novamente.',
-        type: 'error'
+        type: 'error',
       });
     } finally {
       setIsSubmitting(false);
@@ -127,64 +131,64 @@ export const CourseEnrollModal = ({
   };
 
   const modalContent = (
-    <div className="fixed inset-0 z-[9999] overflow-y-auto" style={{ isolation: 'isolate' }}>
+    <div className="course-enroll-modal-panel dialog-layer">
       {/* Fixed solid dark backdrop */}
-      <div 
-        className="fixed inset-0 bg-black/80 dark:bg-black/90 transition-opacity" 
-        onClick={onClose} 
-        aria-hidden="true"
-      />
+      <div className="course-enroll-modal-panel-2" onClick={onClose} aria-hidden="true" />
 
       {/* Centering container allowing natural full scroll without bottom cutoff */}
-      <div className="flex min-h-full items-center justify-center p-4 sm:p-6 text-center">
-        <div 
-          className="relative w-full max-w-xl bg-white dark:bg-[#0d0f14] border border-slate-200 dark:border-neutral-800 rounded-2xl shadow-2xl overflow-hidden z-10 animate-fade-in my-6 text-slate-900 dark:text-white text-left max-h-[88vh] flex flex-col"
-          onClick={(e) => e.stopPropagation()}
-        >
+      <div className="course-enroll-modal-panel-3">
+        <div className="course-enroll-modal-panel-4" onClick={(e) => e.stopPropagation()}>
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-20 p-2 rounded-xl bg-black/60 hover:bg-black/80 text-white transition-colors cursor-pointer"
+            className="course-enroll-modal-button"
             title="Fechar"
             aria-label="Fechar"
           >
-            <X className="w-4 h-4" />
+            <X className="course-enroll-modal-x" />
           </button>
 
           {/* Course Banner Header */}
-          <div className="relative h-48 sm:h-52 w-full bg-slate-900 overflow-hidden shrink-0">
-            <img 
-              src={bannerImage} 
-              alt={courseTitle} 
-              className="w-full h-full object-cover opacity-90"
-              style={{ objectPosition: course.bannerPosition || course.thumbnailPosition || 'center' }}
+          <div className="course-enroll-modal-panel-5">
+            <img
+              src={bannerImage}
+              alt={courseTitle}
+              className="course-enroll-modal-image course-enroll-modal-dynamic-1"
+              style={{
+                '--course-enroll-modal-object-position':
+                  course.bannerPosition || course.thumbnailPosition || 'center',
+              }}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-            
+            <div className="course-enroll-modal-panel-6" />
+
             {/* Top badges */}
-            <div className="absolute top-4 left-4 flex items-center gap-2">
+            <div className="course-enroll-modal-panel-7">
               {course.category && (
-                <span className="px-3 py-1 rounded-lg bg-black/70 border border-white/10 text-xs font-bold text-white flex items-center gap-1.5">
-                  <GraduationCap className="w-3.5 h-3.5 text-blue-400" />
+                <span className="course-enroll-modal-label">
+                  <GraduationCap className="course-enroll-modal-graduation-cap" />
                   {formatCategory(course.category)}
                 </span>
               )}
-              <span className="px-3 py-1 rounded-lg bg-emerald-600 text-white text-xs font-extrabold uppercase tracking-wider">
-                {isAlreadyEnrolled ? 'Já estou no curso' : isFree ? '100% Gratuito' : 'Compra Segura'}
+              <span className="course-enroll-modal-label-2">
+                {isAlreadyEnrolled
+                  ? 'Já estou no curso'
+                  : isFree
+                    ? '100% Gratuito'
+                    : 'Compra Segura'}
               </span>
             </div>
 
             {/* Banner bottom info */}
-            <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div className="course-enroll-modal-panel-8">
+              <div className="course-enroll-modal-panel-9">
                 <Avatar src={creator?.avatarUrl} name={creator?.name || 'Instrutor'} size="sm" />
-                <span className="text-xs font-bold text-white drop-shadow-sm">
+                <span className="course-enroll-modal-label-3">
                   {creator?.name || 'Instrutor Certificado'}
                 </span>
               </div>
               {course.durationHours && (
-                <span className="text-xs font-semibold text-white/90 flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-slate-300" />
+                <span className="course-enroll-modal-label-4">
+                  <Clock className="course-enroll-modal-clock" />
                   {course.durationHours}h de conteúdo
                 </span>
               )}
@@ -192,107 +196,85 @@ export const CourseEnrollModal = ({
           </div>
 
           {/* Content Body */}
-          <div className="p-6 sm:p-7 flex flex-col gap-6 overflow-y-auto custom-scrollbar flex-1">
+          <div className="course-enroll-modal-panel-10 custom-scrollbar">
             <div>
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-xl sm:text-2xl font-extrabold text-slate-950 dark:text-white tracking-tight leading-snug">
-                  {courseTitle}
-                </h2>
-                <div className="rounded-xl bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 px-3 py-1.5 text-right">
-                  <div className="text-[10px] uppercase tracking-[0.14em] text-slate-500 dark:text-zinc-400 font-bold">Preço</div>
-                  <div className="text-lg font-black text-slate-950 dark:text-white">{formatCoursePrice(course)}</div>
+              <div className="course-enroll-modal-panel-11">
+                <h2 className="course-enroll-modal-heading">{courseTitle}</h2>
+                <div className="course-enroll-modal-panel-12">
+                  <div className="course-enroll-modal-panel-13">Preço</div>
+                  <div className="course-enroll-modal-panel-14">{formatCoursePrice(course)}</div>
                 </div>
               </div>
               {course.description && (
-                <p className="text-sm text-slate-600 dark:text-neutral-400 mt-2 line-clamp-2 leading-relaxed">
-                  {course.description}
-                </p>
+                <p className="course-enroll-modal-description">{course.description}</p>
               )}
             </div>
 
             {/* Value Highlights */}
-            <div className="grid grid-cols-2 gap-3 p-4 rounded-xl bg-slate-50 dark:bg-[#13151b] border border-slate-100 dark:border-neutral-800">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-                  <Play className="w-4 h-4" />
+            <div className="course-enroll-modal-panel-15">
+              <div className="course-enroll-modal-panel-16">
+                <div className="course-enroll-modal-panel-17">
+                  <Play className="course-enroll-modal-x" />
                 </div>
                 <div>
-                  <p className="text-[11px] text-slate-500 dark:text-neutral-400 font-medium">Aulas em Vídeo</p>
-                  <p className="text-xs font-bold text-slate-900 dark:text-white">Acesso Vitalício</p>
+                  <p className="course-enroll-modal-description-2">Aulas em Vídeo</p>
+                  <p className="course-enroll-modal-description-3">Acesso Vitalício</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
-                  <Award className="w-4 h-4" />
+              <div className="course-enroll-modal-panel-16">
+                <div className="course-enroll-modal-panel-18">
+                  <Award className="course-enroll-modal-x" />
                 </div>
                 <div>
-                  <p className="text-[11px] text-slate-500 dark:text-neutral-400 font-medium">Certificado Oficial</p>
-                  <p className="text-xs font-bold text-slate-900 dark:text-white">Ao Concluir</p>
+                  <p className="course-enroll-modal-description-2">Certificado Oficial</p>
+                  <p className="course-enroll-modal-description-3">Ao Concluir</p>
                 </div>
               </div>
             </div>
 
             {!isFree && !isAlreadyEnrolled && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/20 p-3.5">
-                <div className="flex items-start gap-3">
-                  <div className="mt-0.5 rounded-lg bg-amber-100 dark:bg-amber-900/50 p-1.5 text-amber-700 dark:text-amber-300">
-                    <ShieldCheck className="w-4 h-4" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs font-black uppercase tracking-[0.12em] text-amber-700 dark:text-amber-300">
-                      Confirmação final da compra
-                    </p>
-                    <p className="mt-1 text-sm text-slate-700 dark:text-zinc-200">
-                      Vai pagar <span className="font-bold">{formatCoursePrice(course)}</span> e receber acesso imediato ao curso.
-                    </p>
-                  </div>
-                </div>
-
-                <label className="mt-3 flex items-start gap-2 text-sm text-slate-700 dark:text-zinc-200 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isPaidConfirmation}
-                    onChange={(e) => setIsPaidConfirmation(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
-                  />
-                  <span>
-                    Confirmo que desejo adquirir este curso por <span className="font-bold">{formatCoursePrice(course)}</span>.
-                  </span>
-                </label>
+              <div className="course-enroll-modal-panel-19">
+                <p className="course-enroll-modal-description-4">Inscrições mediante confirmação</p>
+                <p className="course-enroll-modal-description-5">
+                  Os pagamentos online ainda não estão disponíveis. Consulte o perfil do formador
+                  para obter informações sobre o acesso.
+                </p>
+                {creator?.username && (
+                  <a href={`/profile/${creator.username}`}>Ver perfil do formador</a>
+                )}
               </div>
             )}
 
-            {/* What you get list */}
-            <div className="space-y-2 text-xs">
-              <p className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px]">
+            <div className="course-enroll-modal-panel-23">
+              <p className="course-enroll-modal-description-6">
                 O que está incluído na sua inscrição:
               </p>
-              <div className="flex items-center gap-2.5 text-slate-700 dark:text-neutral-300">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+              <div className="course-enroll-modal-panel-24">
+                <CheckCircle2 className="course-enroll-modal-check-circle2" />
                 <span>Acesso imediato a todos os módulos e aulas práticas</span>
               </div>
-              <div className="flex items-center gap-2.5 text-slate-700 dark:text-neutral-300">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+              <div className="course-enroll-modal-panel-24">
+                <CheckCircle2 className="course-enroll-modal-check-circle2" />
                 <span>Sessões de mentoria e esclarecimento de dúvidas</span>
               </div>
-              <div className="flex items-center gap-2.5 text-slate-700 dark:text-neutral-300">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+              <div className="course-enroll-modal-panel-24">
+                <CheckCircle2 className="course-enroll-modal-check-circle2" />
                 <span>Certificado digital verificado de conclusão do curso</span>
               </div>
             </div>
 
             {/* Modal Actions */}
-            <div className="pt-2 flex flex-col-reverse sm:flex-row items-center gap-3">
+            <div className="course-enroll-modal-panel-25">
               {/* View Course Full Page Button */}
               <Button
                 type="button"
                 variant="secondary"
                 size="md"
                 onClick={handleGoToDetails}
-                className="w-full sm:w-auto flex-1 font-semibold border-slate-300 dark:border-neutral-800 text-slate-700 dark:text-neutral-200 hover:bg-slate-100 dark:hover:bg-neutral-900 justify-center cursor-pointer"
+                className="course-enroll-modal-button-2"
               >
-                <ExternalLink className="w-4 h-4 mr-2 text-slate-500 dark:text-neutral-400" />
+                <ExternalLink className="course-enroll-modal-external-link" />
                 Ver Página do Curso
               </Button>
 
@@ -302,20 +284,20 @@ export const CourseEnrollModal = ({
                 variant="primary"
                 size="md"
                 isLoading={isSubmitting}
-                disabled={!isAlreadyEnrolled && !isFree && !isPaidConfirmation}
+                disabled={!isAlreadyEnrolled && !isFree}
                 onClick={handleConfirmEnroll}
-                className={`w-full sm:w-auto flex-1 font-bold text-white shadow-lg justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                className={`course-enroll-modal-button-3 ${
                   isAlreadyEnrolled
-                    ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/25'
-                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-600/25'
+                    ? 'course-enroll-modal-button-4'
+                    : 'course-enroll-modal-button-5'
                 }`}
               >
                 {isAlreadyEnrolled
                   ? 'Já estou no curso • Ir para as Aulas'
                   : isFree
-                  ? 'Confirmar Entrada Gratuita'
-                  : `Confirmar compra • ${formatCoursePrice(course)}`}
-                <ArrowRight className="w-4 h-4 ml-2" />
+                    ? 'Confirmar Entrada Gratuita'
+                    : 'Inscrição indisponível'}
+                <ArrowRight className="course-enroll-modal-arrow-right" />
               </Button>
             </div>
           </div>

@@ -1,3 +1,4 @@
+import './ApplyCreator.css';
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -23,7 +24,7 @@ import {
   Check,
   Award,
   FileText,
-  UserCheck
+  UserCheck,
 } from 'lucide-react';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
@@ -33,19 +34,49 @@ import { useAuth } from '../../../context/AuthContext';
 import { api } from '../../../services/api';
 
 const EXPERTISE_OPTIONS = [
-  { id: 'web', label: 'Engenharia Web & Full-Stack', desc: 'React, Node.js, TypeScript, Next.js, APIs', icon: Code2 },
-  { id: 'ai', label: 'Inteligência Artificial & Dados', desc: 'LLMs, Python, Machine Learning, Análise de Dados', icon: Cpu },
-  { id: 'security', label: 'Cibersegurança & Red Team', desc: 'Pentesting, Ethical Hacking, DevSecOps, Auditoria', icon: Shield },
-  { id: 'cloud', label: 'Cloud Computing & DevOps', desc: 'AWS, Docker, Kubernetes, CI/CD, Terraform', icon: Cloud },
-  { id: 'design', label: 'UI/UX Design & Produto', desc: 'Figma, Sistemas de Design, Prototipagem, Usabilidade', icon: Palette },
-  { id: 'business', label: 'Finanças, Negócios & Web3', desc: 'Gestão Tecnológica, Blockchain, Smart Contracts', icon: Coins }
+  {
+    id: 'web',
+    label: 'Engenharia Web & Full-Stack',
+    desc: 'React, Node.js, TypeScript, Next.js, APIs',
+    icon: Code2,
+  },
+  {
+    id: 'ai',
+    label: 'Inteligência Artificial & Dados',
+    desc: 'LLMs, Python, Machine Learning, Análise de Dados',
+    icon: Cpu,
+  },
+  {
+    id: 'security',
+    label: 'Cibersegurança & Red Team',
+    desc: 'Pentesting, Ethical Hacking, DevSecOps, Auditoria',
+    icon: Shield,
+  },
+  {
+    id: 'cloud',
+    label: 'Cloud Computing & DevOps',
+    desc: 'AWS, Docker, Kubernetes, CI/CD, Terraform',
+    icon: Cloud,
+  },
+  {
+    id: 'design',
+    label: 'UI/UX Design & Produto',
+    desc: 'Figma, Sistemas de Design, Prototipagem, Usabilidade',
+    icon: Palette,
+  },
+  {
+    id: 'business',
+    label: 'Finanças, Negócios & Web3',
+    desc: 'Gestão Tecnológica, Blockchain, Smart Contracts',
+    icon: Coins,
+  },
 ];
 
 const EXPERIENCE_LEVELS = [
   { value: 2, label: '1 a 2 Anos', badge: 'Início de Carreira' },
   { value: 4, label: '3 a 5 Anos', badge: 'Recomendado' },
   { value: 8, label: '6 a 10 Anos', badge: 'Sénior / Especialista' },
-  { value: 12, label: 'Mais de 10 Anos', badge: 'Veterano da Indústria' }
+  { value: 12, label: 'Mais de 10 Anos', badge: 'Veterano da Indústria' },
 ];
 
 export const ApplyCreator = () => {
@@ -67,7 +98,7 @@ export const ApplyCreator = () => {
     motivation: '',
     proposedCourses: '',
     sampleVideoUrl: '',
-    agreedTerms: false
+    agreedTerms: false,
   });
 
   const fetchStatus = async () => {
@@ -77,7 +108,7 @@ export const ApplyCreator = () => {
         setApplication(res.application);
         // Pre-fill form with prior data if rejected so user can rectify easily
         if (res.application.status === 'REJECTED') {
-          setFormData(prev => ({
+          setFormData((prev) => ({
             ...prev,
             fullName: res.application.fullName || prev.fullName,
             bio: res.application.bio || prev.bio,
@@ -103,36 +134,57 @@ export const ApplyCreator = () => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({ 
-      ...prev, 
-      [name]: type === 'checkbox' ? checked : value 
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
   const validateStep = (step) => {
     if (step === 1) {
       if (!formData.fullName.trim() || formData.fullName.trim().length < 3) {
-        toast({ title: 'Nome Obrigatório', message: 'Indique o seu nome completo com pelo menos 3 caracteres.', type: 'error' });
+        toast({
+          title: 'Nome Obrigatório',
+          message: 'Indique o seu nome completo com pelo menos 3 caracteres.',
+          type: 'error',
+        });
         return false;
       }
       if (!formData.bio.trim() || formData.bio.trim().length < 20) {
-        toast({ title: 'Biografia Curta', message: 'Descreva resumidamente o seu percurso profissional (mínimo 20 caracteres).', type: 'error' });
+        toast({
+          title: 'Biografia Curta',
+          message: 'Descreva resumidamente o seu percurso profissional (mínimo 20 caracteres).',
+          type: 'error',
+        });
         return false;
       }
     }
     if (step === 2) {
       if (!formData.expertise.trim()) {
-        toast({ title: 'Área Obrigatória', message: 'Selecione ou indique a sua área principal de especialização.', type: 'error' });
+        toast({
+          title: 'Área Obrigatória',
+          message: 'Selecione ou indique a sua área principal de especialização.',
+          type: 'error',
+        });
         return false;
       }
     }
     if (step === 3) {
       if (!formData.motivation.trim() || formData.motivation.trim().length < 20) {
-        toast({ title: 'Motivação Obrigatória', message: 'Partilhe a sua motivação para lecionar no NEXO (mínimo 20 caracteres).', type: 'error' });
+        toast({
+          title: 'Motivação Obrigatória',
+          message: 'Partilhe a sua motivação para lecionar no NEXO (mínimo 20 caracteres).',
+          type: 'error',
+        });
         return false;
       }
       if (!formData.proposedCourses.trim() || formData.proposedCourses.trim().length < 30) {
-        toast({ title: 'Proposta Incompleta', message: 'Apresente os detalhes da proposta pedagógica (título do curso e tópicos previstos).', type: 'error' });
+        toast({
+          title: 'Proposta Incompleta',
+          message:
+            'Apresente os detalhes da proposta pedagógica (título do curso e tópicos previstos).',
+          type: 'error',
+        });
         return false;
       }
     }
@@ -141,13 +193,13 @@ export const ApplyCreator = () => {
 
   const nextStep = () => {
     if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(4, prev + 1));
+      setCurrentStep((prev) => Math.min(4, prev + 1));
       window.scrollTo({ top: 120, behavior: 'smooth' });
     }
   };
 
   const prevStep = () => {
-    setCurrentStep(prev => Math.max(1, prev - 1));
+    setCurrentStep((prev) => Math.max(1, prev - 1));
     window.scrollTo({ top: 120, behavior: 'smooth' });
   };
 
@@ -158,7 +210,8 @@ export const ApplyCreator = () => {
     if (!formData.agreedTerms) {
       toast({
         title: 'Termo Pedagógico',
-        message: 'Por favor, assinale o compromisso de rigor pedagógico e ética da plataforma NEXO.',
+        message:
+          'Por favor, assinale o compromisso de rigor pedagógico e ética da plataforma NEXO.',
         type: 'error',
       });
       return;
@@ -169,7 +222,9 @@ export const ApplyCreator = () => {
       const res = await api.applyCreator(formData);
       toast({
         title: 'Inquérito Submetido!',
-        message: res.message || 'O seu inquérito foi submetido com sucesso para análise do Conselho Pedagógico.',
+        message:
+          res.message ||
+          'O seu inquérito foi submetido com sucesso para análise do Conselho Pedagógico.',
         type: 'success',
       });
       setApplication(res.application);
@@ -187,9 +242,9 @@ export const ApplyCreator = () => {
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3">
-        <div className="w-9 h-9 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" />
-        <span className="text-xs font-mono text-slate-400">A carregar inquérito de candidatura...</span>
+      <div className="apply-creator-panel">
+        <div className="apply-creator-panel-2" />
+        <span className="apply-creator-label">A carregar inquérito de candidatura...</span>
       </div>
     );
   }
@@ -197,24 +252,25 @@ export const ApplyCreator = () => {
   // Se já é Formador ou Administrador
   if (user?.role === 'CREATOR' || user?.role === 'ADMIN') {
     return (
-      <div className="max-w-3xl mx-auto py-16 px-4 sm:px-6 animate-fade-in">
-        <Card className="p-8 sm:p-12 text-center flex flex-col items-center rounded-2xl border-slate-200 dark:border-neutral-800 bg-white dark:bg-black shadow-xl">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-5 border border-emerald-500/20">
-            <UserCheck className="w-8 h-8" />
+      <div className="apply-creator-panel-3">
+        <Card className="apply-creator-card">
+          <div className="apply-creator-panel-4">
+            <UserCheck className="apply-creator-user-check" />
           </div>
-          <Badge size="md" variant="primary" className="mb-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+          <Badge size="md" variant="primary" className="apply-creator-badge">
             Estatuto Ativo
           </Badge>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mb-3 tracking-tight">
-            Já possui estatuto de {user?.role === 'ADMIN' ? 'Administrador' : 'Formador NEXO'}
+          <h2 className="apply-creator-heading">
+            Já possui estatuto de {user?.role === 'ADMIN' ? 'Administrador e Formador' : 'Formador NEXO'}
           </h2>
-          <p className="text-sm text-slate-600 dark:text-neutral-400 max-w-lg mb-8 leading-relaxed">
-            A sua conta tem permissões completas de publicação de módulos, criação de salas de mentoria WebRTC e emissão de certificados oficiais.
+          <p className="apply-creator-description">
+            A sua conta tem permissões completas de publicação de módulos, criação de salas de
+            mentoria WebRTC e emissão de certificados oficiais.
           </p>
           <Link to="/creator">
-            <Button variant="primary" size="lg" className="font-bold bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200">
+            <Button variant="primary" size="lg" className="apply-creator-button">
               Aceder ao Painel do Criador
-              <ArrowRight className="w-4 h-4 ml-2" />
+              <ArrowRight className="apply-creator-arrow-right" />
             </Button>
           </Link>
         </Card>
@@ -225,95 +281,87 @@ export const ApplyCreator = () => {
   // Se tem candidatura PENDENTE (Timeline Corporativa de Moderação)
   if (application && application.status === 'PENDING') {
     return (
-      <div className="max-w-3xl mx-auto py-12 px-4 sm:px-6 animate-fade-in">
-        <div className="bg-white dark:bg-black border border-slate-200 dark:border-neutral-800 rounded-3xl p-8 sm:p-10 shadow-2xl">
-          <div className="flex items-center gap-3 mb-6 pb-6 border-b border-slate-100 dark:border-neutral-900">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center justify-center shrink-0">
-              <Clock className="w-6 h-6" />
+      <div className="apply-creator-panel-5">
+        <div className="apply-creator-panel-6">
+          <div className="apply-creator-panel-7">
+            <div className="apply-creator-panel-8">
+              <Clock className="apply-creator-clock" />
             </div>
             <div>
-              <span className="px-2.5 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[10px] font-black uppercase tracking-wider">
-                Em Análise do Conselho Pedagógico
-              </span>
-              <h2 className="text-xl sm:text-2xl font-black text-slate-950 dark:text-white mt-1">
-                Inquérito Submetido com Sucesso
-              </h2>
+              <span className="apply-creator-label-2">Em Análise do Conselho Pedagógico</span>
+              <h2 className="apply-creator-heading-2">Inquérito Submetido com Sucesso</h2>
             </div>
           </div>
 
-          <p className="text-sm text-slate-600 dark:text-neutral-300 leading-relaxed mb-8">
-            O seu inquérito foi registado na plataforma. O Conselho Pedagógico da NEXO analisa a proposta metodológica, os tópicos dos cursos e os materiais de apresentação antes de libertar o acesso ao estúdio de publicação.
+          <p className="apply-creator-description-2">
+            O seu inquérito foi registado na plataforma. O Conselho Pedagógico da NEXO analisa a
+            proposta metodológica, os tópicos dos cursos e os materiais de apresentação antes de
+            libertar o acesso ao estúdio de publicação.
           </p>
 
           {/* Corporate 3-Step Process Timeline */}
-          <div className="relative border-l-2 border-slate-200 dark:border-neutral-800 ml-4 space-y-8 mb-8">
+          <div className="apply-creator-panel-9">
             {/* Step 1 */}
-            <div className="relative pl-6">
-              <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-emerald-500 ring-4 ring-white dark:ring-black flex items-center justify-center text-white">
-                <Check className="w-2.5 h-2.5 stroke-[3]" />
+            <div className="apply-creator-panel-10">
+              <div className="apply-creator-panel-11">
+                <Check className="apply-creator-check" />
               </div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                1. Submissão Concluída
-              </h4>
-              <p className="text-sm font-semibold text-slate-900 dark:text-white mt-0.5">
-                Inquérito e materiais enviados
-              </p>
-              <span className="text-xs text-slate-400 font-mono">
-                {new Date(application.createdAt || Date.now()).toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' })}
+              <h4 className="apply-creator-caption">1. Submissão Concluída</h4>
+              <p className="apply-creator-description-3">Inquérito e materiais enviados</p>
+              <span className="apply-creator-label-3">
+                {new Date(application.createdAt || Date.now()).toLocaleDateString('pt-PT', {
+                  day: '2-digit',
+                  month: 'long',
+                  year: 'numeric',
+                })}
               </span>
             </div>
 
             {/* Step 2 */}
-            <div className="relative pl-6">
-              <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-amber-500 ring-4 ring-white dark:ring-black animate-pulse" />
-              <h4 className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                2. Moderação Pedagógica em Curso
-              </h4>
-              <p className="text-sm font-semibold text-slate-900 dark:text-white mt-0.5">
+            <div className="apply-creator-panel-10">
+              <div className="apply-creator-panel-12" />
+              <h4 className="apply-creator-caption-2">2. Moderação Pedagógica em Curso</h4>
+              <p className="apply-creator-description-3">
                 Avaliação de qualidade curricular e didática
               </p>
-              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+              <p className="apply-creator-description-4">
                 Tempo médio de homologação: 24 a 48 horas úteis.
               </p>
             </div>
 
             {/* Step 3 */}
-            <div className="relative pl-6">
-              <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-slate-300 dark:bg-neutral-800 ring-4 ring-white dark:ring-black" />
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500">
-                3. Ativação do Estúdio de Criador
-              </h4>
-              <p className="text-sm font-semibold text-slate-600 dark:text-neutral-400 mt-0.5">
+            <div className="apply-creator-panel-10">
+              <div className="apply-creator-panel-13" />
+              <h4 className="apply-creator-caption-3">3. Ativação do Estúdio de Criador</h4>
+              <p className="apply-creator-description-5">
                 Libertação do painel de cursos, salas WebRTC e remuneração
               </p>
             </div>
           </div>
 
           {/* Submission Recap Summary Box */}
-          <div className="bg-slate-50 dark:bg-neutral-950 p-5 rounded-2xl border border-slate-200 dark:border-neutral-800/80 space-y-3 text-xs mb-8">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-neutral-800">
-              <span className="text-slate-500 dark:text-neutral-400">Candidato:</span>
-              <span className="font-bold text-slate-900 dark:text-white">{application.fullName}</span>
+          <div className="apply-creator-panel-14">
+            <div className="apply-creator-panel-15">
+              <span className="apply-creator-label-4">Candidato:</span>
+              <span className="apply-creator-label-5">{application.fullName}</span>
             </div>
-            <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-neutral-800">
-              <span className="text-slate-500 dark:text-neutral-400">Área de Especialização:</span>
-              <span className="font-bold text-blue-600 dark:text-blue-400">{application.expertise}</span>
+            <div className="apply-creator-panel-15">
+              <span className="apply-creator-label-4">Área de Especialização:</span>
+              <span className="apply-creator-label-6">{application.expertise}</span>
             </div>
-            <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-neutral-800">
-              <span className="text-slate-500 dark:text-neutral-400">Experiência Indicada:</span>
-              <span className="font-bold text-slate-900 dark:text-white">{application.experienceYears} Anos</span>
+            <div className="apply-creator-panel-15">
+              <span className="apply-creator-label-4">Experiência Indicada:</span>
+              <span className="apply-creator-label-5">{application.experienceYears} Anos</span>
             </div>
             <div>
-              <span className="text-slate-500 dark:text-neutral-400 block mb-1">Cursos Previstos:</span>
-              <p className="font-medium text-slate-800 dark:text-neutral-200 line-clamp-3 leading-relaxed">
-                {application.proposedCourses}
-              </p>
+              <span className="apply-creator-label-7">Cursos Previstos:</span>
+              <p className="apply-creator-description-6">{application.proposedCourses}</p>
             </div>
           </div>
 
-          <div className="text-center">
+          <div className="apply-creator-panel-16">
             <Link to="/dashboard">
-              <Button variant="secondary" size="md" className="font-semibold">
+              <Button variant="secondary" size="md" className="apply-creator-button-2">
                 Voltar ao Painel do Aluno
               </Button>
             </Link>
@@ -325,35 +373,34 @@ export const ApplyCreator = () => {
 
   // Formulário Oficial Multi-Step
   return (
-    <div className="max-w-4xl mx-auto py-10 px-4 sm:px-6 animate-fade-in">
+    <div className="apply-creator-panel-17">
       {/* Header */}
-      <div className="text-center max-w-2xl mx-auto mb-10">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase tracking-wider mb-3">
-          <Sparkles className="w-3.5 h-3.5" />
+      <div className="apply-creator-panel-18">
+        <div className="apply-creator-panel-19">
+          <Sparkles className="apply-creator-sparkles" />
           <span>Programa Oficial de Formadores NEXO</span>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-950 dark:text-white leading-tight">
-          Inquérito de Candidatura a Criador
-        </h1>
-        <p className="text-sm text-slate-600 dark:text-neutral-400 mt-2 leading-relaxed">
-          Submeta o seu perfil e proposta de cursos para validação. Junte-se a uma rede de especialistas que ensinam tecnologia com rigor e prática em tempo real.
+        <h1 className="apply-creator-title">Inquérito de Candidatura a Criador</h1>
+        <p className="apply-creator-description-7">
+          Submeta o seu perfil e proposta de cursos para validação. Junte-se a uma rede de
+          especialistas que ensinam tecnologia com rigor e prática em tempo real.
         </p>
       </div>
 
       {/* Rejection Notice with Rectification action */}
       {application?.status === 'REJECTED' && (
-        <div className="mb-8 p-5 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-start gap-4">
-          <div className="w-10 h-10 rounded-xl bg-red-500/20 text-red-500 flex items-center justify-center shrink-0 mt-0.5">
-            <AlertCircle className="w-5 h-5" />
+        <div className="apply-creator-panel-20">
+          <div className="apply-creator-panel-21">
+            <AlertCircle className="apply-creator-alert-circle" />
           </div>
           <div>
-            <h4 className="font-bold text-sm text-red-600 dark:text-red-400">
-              Candidatura Anterior Necessita de Ajustes
-            </h4>
-            <p className="text-xs text-slate-700 dark:text-neutral-300 mt-1 leading-relaxed">
-              <strong>Parecer da Administração:</strong> {application.adminFeedback || 'Ajuste a ementa dos cursos propostos e reenvie o inquérito para nova apreciação.'}
+            <h4 className="apply-creator-caption-4">Candidatura Anterior Necessita de Ajustes</h4>
+            <p className="apply-creator-description-8">
+              <strong>Parecer da Administração:</strong>{' '}
+              {application.adminFeedback ||
+                'Ajuste a ementa dos cursos propostos e reenvie o inquérito para nova apreciação.'}
             </p>
-            <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-2">
+            <p className="apply-creator-description-9">
               Os seus dados anteriores foram recuperados abaixo para facilitar a retificação.
             </p>
           </div>
@@ -361,13 +408,13 @@ export const ApplyCreator = () => {
       )}
 
       {/* Stepper Navigation Bar */}
-      <div className="mb-10 bg-white dark:bg-black border border-slate-200 dark:border-neutral-800 rounded-2xl p-4 shadow-sm">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="apply-creator-panel-22">
+        <div className="apply-creator-panel-23">
           {[
             { step: 1, title: 'Identificação', desc: 'Dados Pessoais' },
             { step: 2, title: 'Especialidade', desc: 'Domínio Técnico' },
             { step: 3, title: 'Pedagogia', desc: 'Proposta de Cursos' },
-            { step: 4, title: 'Revisão', desc: 'Materiais & Envio' }
+            { step: 4, title: 'Revisão', desc: 'Materiais & Envio' },
           ].map((s) => {
             const isActive = currentStep === s.step;
             const isCompleted = currentStep > s.step;
@@ -379,32 +426,32 @@ export const ApplyCreator = () => {
                   if (s.step < currentStep) setCurrentStep(s.step);
                 }}
                 disabled={s.step > currentStep}
-                className={`flex items-center gap-3 p-2.5 rounded-xl text-left transition-all ${
+                className={`apply-creator-button-3 ${
                   isActive
-                    ? 'bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60'
+                    ? 'apply-creator-button-4'
                     : isCompleted
-                    ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-neutral-900'
-                    : 'opacity-50 cursor-not-allowed'
+                      ? 'apply-creator-button-5'
+                      : 'apply-creator-button-6'
                 }`}
               >
                 <div
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 transition-colors ${
+                  className={`apply-creator-panel-24 ${
                     isCompleted
-                      ? 'bg-emerald-500 text-white'
+                      ? 'apply-creator-panel-25'
                       : isActive
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : 'bg-slate-200 dark:bg-neutral-800 text-slate-600 dark:text-neutral-400'
+                        ? 'apply-creator-panel-26'
+                        : 'apply-creator-panel-27'
                   }`}
                 >
-                  {isCompleted ? <Check className="w-4 h-4 stroke-[3]" /> : s.step}
+                  {isCompleted ? <Check className="apply-creator-check-2" /> : s.step}
                 </div>
-                <div className="min-w-0 hidden xs:block">
-                  <p className={`text-xs font-bold truncate ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-900 dark:text-white'}`}>
+                <div className="apply-creator-panel-28">
+                  <p
+                    className={`apply-creator-description-10 ${isActive ? 'apply-creator-description-11' : 'apply-creator-description-12'}`}
+                  >
                     {s.title}
                   </p>
-                  <p className="text-[11px] text-slate-400 dark:text-neutral-500 truncate">
-                    {s.desc}
-                  </p>
+                  <p className="apply-creator-description-13">{s.desc}</p>
                 </div>
               </button>
             );
@@ -413,26 +460,24 @@ export const ApplyCreator = () => {
       </div>
 
       {/* Wizard Form Card */}
-      <Card className="p-6 sm:p-10 border border-slate-200 dark:border-neutral-800 rounded-3xl bg-white dark:bg-black shadow-xl">
+      <Card className="apply-creator-card-2">
         <form onSubmit={handleSubmit}>
-          
           {/* STEP 1: IDENTIFICAÇÃO & PERFIL */}
           {currentStep === 1 && (
-            <div className="space-y-6 animate-fade-in">
-              <div className="border-b border-slate-100 dark:border-neutral-900 pb-4">
-                <h3 className="text-xl font-extrabold text-slate-950 dark:text-white">
+            <div className="apply-creator-panel-29">
+              <div className="apply-creator-panel-30">
+                <h3 className="apply-creator-subheading">
                   Passo 1: Identificação & Perfil Profissional
                 </h3>
-                <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
-                  Estes dados serão utilizados para compor a ficha técnica de formador na plataforma.
+                <p className="apply-creator-description-14">
+                  Estes dados serão utilizados para compor a ficha técnica de formador na
+                  plataforma.
                 </p>
               </div>
 
-              <div className="space-y-4">
+              <div className="apply-creator-panel-31">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-neutral-300 mb-2">
-                    Nome Completo Profissional *
-                  </label>
+                  <label className="apply-creator-field-label">Nome Completo Profissional *</label>
                   <input
                     type="text"
                     name="fullName"
@@ -440,12 +485,12 @@ export const ApplyCreator = () => {
                     value={formData.fullName}
                     onChange={handleChange}
                     placeholder="Ex.: Engenheiro Pedro Silva"
-                    className="w-full bg-slate-50 dark:bg-neutral-900/60 border border-slate-300 dark:border-neutral-800 focus:border-blue-600 focus:bg-white dark:focus:bg-neutral-900 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none transition-all"
+                    className="apply-creator-field"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-neutral-300 mb-2">
+                  <label className="apply-creator-field-label">
                     Biografia Executiva & Trajetória *
                   </label>
                   <textarea
@@ -455,16 +500,16 @@ export const ApplyCreator = () => {
                     value={formData.bio}
                     onChange={handleChange}
                     placeholder="Resuma a sua formação académica, certificações, empresas onde trabalhou ou projetos de engenharia de destaque."
-                    className="w-full bg-slate-50 dark:bg-neutral-900/60 border border-slate-300 dark:border-neutral-800 focus:border-blue-600 focus:bg-white dark:focus:bg-neutral-900 rounded-xl p-4 text-sm text-slate-900 dark:text-white focus:outline-none transition-all leading-relaxed"
+                    className="apply-creator-textarea"
                   />
-                  <div className="flex justify-between items-center text-[11px] text-slate-400 mt-1">
+                  <div className="apply-creator-panel-32">
                     <span>Mínimo recomendado: 20 caracteres</span>
                     <span>{formData.bio.length} caracteres</span>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-neutral-300 mb-2">
+                  <label className="apply-creator-field-label">
                     Portfólio Oficial / LinkedIn / GitHub
                   </label>
                   <input
@@ -473,24 +518,24 @@ export const ApplyCreator = () => {
                     value={formData.portfolioUrl}
                     onChange={handleChange}
                     placeholder="https://linkedin.com/in/seunome ou https://github.com/seunome"
-                    className="w-full bg-slate-50 dark:bg-neutral-900/60 border border-slate-300 dark:border-neutral-800 focus:border-blue-600 focus:bg-white dark:focus:bg-neutral-900 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none transition-all font-mono text-xs"
+                    className="apply-creator-field-2"
                   />
-                  <span className="text-[11px] text-slate-400 dark:text-neutral-500 mt-1 block">
+                  <span className="apply-creator-label-8">
                     Facilita a validação do seu histórico de código e experiência pelo Conselho.
                   </span>
                 </div>
               </div>
 
-              <div className="pt-6 border-t border-slate-100 dark:border-neutral-900 flex justify-end">
+              <div className="apply-creator-panel-33">
                 <Button
                   type="button"
                   variant="primary"
                   size="md"
                   onClick={nextStep}
-                  className="font-bold px-6 bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+                  className="apply-creator-button-7"
                 >
                   Seguinte: Especialidade Técnica
-                  <ArrowRight className="w-4 h-4 ml-2" />
+                  <ArrowRight className="apply-creator-arrow-right" />
                 </Button>
               </div>
             </div>
@@ -498,22 +543,20 @@ export const ApplyCreator = () => {
 
           {/* STEP 2: ESPECIALIDADE & ANOS DE EXPERIÊNCIA */}
           {currentStep === 2 && (
-            <div className="space-y-6 animate-fade-in">
-              <div className="border-b border-slate-100 dark:border-neutral-900 pb-4">
-                <h3 className="text-xl font-extrabold text-slate-950 dark:text-white">
+            <div className="apply-creator-panel-29">
+              <div className="apply-creator-panel-30">
+                <h3 className="apply-creator-subheading">
                   Passo 2: Domínio Técnico & Anos de Carreira
                 </h3>
-                <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
+                <p className="apply-creator-description-14">
                   Selecione o ecossistema principal em que pretende lecionar e estruturar cursos.
                 </p>
               </div>
 
               {/* Visual Category Selection Grid */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-neutral-300 mb-3">
-                  Área de Ensino *
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label className="apply-creator-field-label-2">Área de Ensino *</label>
+                <div className="apply-creator-panel-34">
                   {EXPERTISE_OPTIONS.map((opt) => {
                     const isSelected = formData.expertise === opt.label;
                     const Icon = opt.icon;
@@ -521,19 +564,19 @@ export const ApplyCreator = () => {
                       <button
                         key={opt.id}
                         type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, expertise: opt.label }))}
-                        className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-3.5 ${
-                          isSelected
-                            ? 'bg-blue-500/10 border-blue-500 text-slate-950 dark:text-white shadow-sm ring-1 ring-blue-500'
-                            : 'bg-slate-50 dark:bg-neutral-900/50 border-slate-200 dark:border-neutral-800 text-slate-700 dark:text-neutral-300 hover:border-slate-300 dark:hover:border-neutral-700'
+                        onClick={() => setFormData((prev) => ({ ...prev, expertise: opt.label }))}
+                        className={`apply-creator-button-8 ${
+                          isSelected ? 'apply-creator-button-9' : 'apply-creator-button-10'
                         }`}
                       >
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-200 dark:bg-neutral-800 text-slate-600 dark:text-neutral-400'}`}>
-                          <Icon className="w-5 h-5" />
+                        <div
+                          className={`apply-creator-panel-35 ${isSelected ? 'apply-creator-panel-36' : 'apply-creator-panel-27'}`}
+                        >
+                          <Icon className="apply-creator-alert-circle" />
                         </div>
-                        <div className="min-w-0">
-                          <p className="font-bold text-sm leading-tight">{opt.label}</p>
-                          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 leading-snug">{opt.desc}</p>
+                        <div className="apply-creator-panel-37">
+                          <p className="apply-creator-description-15">{opt.label}</p>
+                          <p className="apply-creator-description-16">{opt.desc}</p>
                         </div>
                       </button>
                     );
@@ -543,39 +586,51 @@ export const ApplyCreator = () => {
 
               {/* Experience Level Pill Selector */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-neutral-300 mb-3">
+                <label className="apply-creator-field-label-2">
                   Tempo de Experiência Prática no Mercado *
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="apply-creator-panel-38">
                   {EXPERIENCE_LEVELS.map((lvl) => {
                     const isSelected = Number(formData.experienceYears) === lvl.value;
                     return (
                       <button
                         key={lvl.value}
                         type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, experienceYears: lvl.value }))}
-                        className={`p-3.5 rounded-2xl border text-center transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-white dark:bg-neutral-900 border-blue-500 text-blue-600 dark:text-blue-400 font-extrabold shadow-md ring-1 ring-blue-500'
-                            : 'bg-slate-50 dark:bg-neutral-950 border-slate-200 dark:border-neutral-800 text-slate-700 dark:text-neutral-400 hover:bg-slate-100'
+                        onClick={() =>
+                          setFormData((prev) => ({ ...prev, experienceYears: lvl.value }))
+                        }
+                        className={`apply-creator-button-11 ${
+                          isSelected ? 'apply-creator-button-12' : 'apply-creator-button-13'
                         }`}
                       >
-                        <div className="text-sm font-bold">{lvl.label}</div>
-                        <span className="text-[10px] opacity-75 mt-0.5 block">{lvl.badge}</span>
+                        <div className="apply-creator-panel-39">{lvl.label}</div>
+                        <span className="apply-creator-label-9">{lvl.badge}</span>
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              <div className="pt-6 border-t border-slate-100 dark:border-neutral-900 flex justify-between">
-                <Button type="button" variant="secondary" size="md" onClick={prevStep} className="font-semibold">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
+              <div className="apply-creator-panel-40">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="md"
+                  onClick={prevStep}
+                  className="apply-creator-button-2"
+                >
+                  <ArrowLeft className="apply-creator-arrow-left" />
                   Anterior
                 </Button>
-                <Button type="button" variant="primary" size="md" onClick={nextStep} className="font-bold px-6 bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200">
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="md"
+                  onClick={nextStep}
+                  className="apply-creator-button-7"
+                >
                   Seguinte: Proposta Curricular
-                  <ArrowRight className="w-4 h-4 ml-2" />
+                  <ArrowRight className="apply-creator-arrow-right" />
                 </Button>
               </div>
             </div>
@@ -583,19 +638,19 @@ export const ApplyCreator = () => {
 
           {/* STEP 3: PROPOSTA PEDAGÓGICA & CURSOS */}
           {currentStep === 3 && (
-            <div className="space-y-6 animate-fade-in">
-              <div className="border-b border-slate-100 dark:border-neutral-900 pb-4">
-                <h3 className="text-xl font-extrabold text-slate-950 dark:text-white">
+            <div className="apply-creator-panel-29">
+              <div className="apply-creator-panel-30">
+                <h3 className="apply-creator-subheading">
                   Passo 3: Proposta Pedagógica & Estrutura de Aulas
                 </h3>
-                <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
+                <p className="apply-creator-description-14">
                   Defina a metodologia de ensino e o primeiro curso prático que planeia lecionar.
                 </p>
               </div>
 
-              <div className="space-y-4">
+              <div className="apply-creator-panel-31">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-neutral-300 mb-2">
+                  <label className="apply-creator-field-label">
                     Metodologia & Motivação: Porque quer ensinar no NEXO? *
                   </label>
                   <textarea
@@ -606,13 +661,15 @@ export const ApplyCreator = () => {
                     value={formData.motivation}
                     onChange={handleChange}
                     placeholder="Explique como pretende estruturar os desafios práticos, o acompanhamento em salas ao vivo e a metodologia 'aprender fazendo'."
-                    className="w-full bg-slate-50 dark:bg-neutral-900/60 border border-slate-300 dark:border-neutral-800 focus:border-blue-600 focus:bg-white dark:focus:bg-neutral-900 rounded-xl p-4 text-sm text-slate-900 dark:text-white focus:outline-none transition-all leading-relaxed"
+                    className="apply-creator-textarea"
                   />
-                  <p className="mt-1 text-right text-[11px] text-slate-400">{formData.motivation.trim().length}/20 caracteres mínimos</p>
+                  <p className="apply-creator-description-17">
+                    {formData.motivation.trim().length}/20 caracteres mínimos
+                  </p>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-neutral-300 mb-2">
+                  <label className="apply-creator-field-label">
                     Proposta Detalhada do Primeiro Curso (Ementa & Módulos) *
                   </label>
                   <textarea
@@ -629,23 +686,38 @@ export const ApplyCreator = () => {
    - Módulo 1: Arquitetura de Comunicação em Tempo Real
    - Módulo 2: Implementação de Salas WebRTC P2P e SFU
    - Módulo 3: Projeto Prático de Fim de Curso e Certificação`}
-                    className="w-full bg-slate-50 dark:bg-neutral-900/60 border border-slate-300 dark:border-neutral-800 focus:border-blue-600 focus:bg-white dark:focus:bg-neutral-900 rounded-xl p-4 text-xs font-mono text-slate-900 dark:text-white focus:outline-none transition-all leading-relaxed"
+                    className="apply-creator-textarea-2"
                   />
-                  <span className="text-[11px] text-slate-400 dark:text-neutral-500 mt-1 block">
-                    Uma ementa clara com módulos bem definidos acelera a homologação direta pelo Administrador.
+                  <span className="apply-creator-label-8">
+                    Uma ementa clara com módulos bem definidos acelera a homologação direta pelo
+                    Administrador.
                   </span>
-                  <p className="mt-1 text-right text-[11px] text-slate-400">{formData.proposedCourses.trim().length}/30 caracteres mínimos</p>
+                  <p className="apply-creator-description-17">
+                    {formData.proposedCourses.trim().length}/30 caracteres mínimos
+                  </p>
                 </div>
               </div>
 
-              <div className="pt-6 border-t border-slate-100 dark:border-neutral-900 flex justify-between">
-                <Button type="button" variant="secondary" size="md" onClick={prevStep} className="font-semibold">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
+              <div className="apply-creator-panel-40">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="md"
+                  onClick={prevStep}
+                  className="apply-creator-button-2"
+                >
+                  <ArrowLeft className="apply-creator-arrow-left" />
                   Anterior
                 </Button>
-                <Button type="button" variant="primary" size="md" onClick={nextStep} className="font-bold px-6 bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200">
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="md"
+                  onClick={nextStep}
+                  className="apply-creator-button-7"
+                >
                   Seguinte: Materiais & Revisão
-                  <ArrowRight className="w-4 h-4 ml-2" />
+                  <ArrowRight className="apply-creator-arrow-right" />
                 </Button>
               </div>
             </div>
@@ -653,19 +725,19 @@ export const ApplyCreator = () => {
 
           {/* STEP 4: VÍDEO PILOTO, REVISÃO & SUBMISSÃO */}
           {currentStep === 4 && (
-            <div className="space-y-6 animate-fade-in">
-              <div className="border-b border-slate-100 dark:border-neutral-900 pb-4">
-                <h3 className="text-xl font-extrabold text-slate-950 dark:text-white">
+            <div className="apply-creator-panel-29">
+              <div className="apply-creator-panel-30">
+                <h3 className="apply-creator-subheading">
                   Passo 4: Materiais Piloto, Compromisso & Submissão
                 </h3>
-                <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
+                <p className="apply-creator-description-14">
                   Reveja os dados submetidos e confirme o termo de compromisso pedagógico.
                 </p>
               </div>
 
-              <div className="space-y-5">
+              <div className="apply-creator-panel-41">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-neutral-300 mb-2">
+                  <label className="apply-creator-field-label">
                     Vídeo Piloto ou Gravação Demonstrativa (Opcional)
                   </label>
                   <input
@@ -674,79 +746,84 @@ export const ApplyCreator = () => {
                     value={formData.sampleVideoUrl}
                     onChange={handleChange}
                     placeholder="URL de Loom, YouTube (não listado), Vimeo ou Google Drive"
-                    className="w-full bg-slate-50 dark:bg-neutral-900/60 border border-slate-300 dark:border-neutral-800 focus:border-blue-600 focus:bg-white dark:focus:bg-neutral-900 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none transition-all font-mono text-xs"
+                    className="apply-creator-field-2"
                   />
-                  <span className="text-[11px] text-slate-400 dark:text-neutral-500 mt-1 block">
-                    Um vídeo de 3 minutos a demonstrar a sua dicção e capacidade explicativa confere prioridade máxima na aprovação.
+                  <span className="apply-creator-label-8">
+                    Um vídeo de 3 minutos a demonstrar a sua dicção e capacidade explicativa confere
+                    prioridade máxima na aprovação.
                   </span>
                 </div>
 
                 {/* Consolidated Review Box */}
-                <div className="p-5 rounded-2xl bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 space-y-4 text-xs">
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500 mb-1">
-                    Resumo do Inquérito a Enviar
+                <div className="apply-creator-panel-42">
+                  <div className="apply-creator-panel-43">Resumo do Inquérito a Enviar</div>
+                  <div className="apply-creator-panel-44">
+                    <span className="apply-creator-label-4">Nome:</span>
+                    <span className="apply-creator-label-5">{formData.fullName}</span>
                   </div>
-                  <div className="flex justify-between border-b border-slate-200/60 dark:border-neutral-800/80 pb-2">
-                    <span className="text-slate-500 dark:text-neutral-400">Nome:</span>
-                    <span className="font-bold text-slate-900 dark:text-white">{formData.fullName}</span>
+                  <div className="apply-creator-panel-44">
+                    <span className="apply-creator-label-4">Área:</span>
+                    <span className="apply-creator-label-6">{formData.expertise}</span>
                   </div>
-                  <div className="flex justify-between border-b border-slate-200/60 dark:border-neutral-800/80 pb-2">
-                    <span className="text-slate-500 dark:text-neutral-400">Área:</span>
-                    <span className="font-bold text-blue-600 dark:text-blue-400">{formData.expertise}</span>
-                  </div>
-                  <div className="flex justify-between border-b border-slate-200/60 dark:border-neutral-800/80 pb-2">
-                    <span className="text-slate-500 dark:text-neutral-400">Experiência:</span>
-                    <span className="font-bold text-slate-900 dark:text-white">{formData.experienceYears} Anos</span>
+                  <div className="apply-creator-panel-44">
+                    <span className="apply-creator-label-4">Experiência:</span>
+                    <span className="apply-creator-label-5">{formData.experienceYears} Anos</span>
                   </div>
                   <div>
-                    <span className="text-slate-500 dark:text-neutral-400 block mb-1">Perfil profissional:</span>
-                    <p className="whitespace-pre-wrap leading-relaxed text-slate-800 dark:text-neutral-200">{formData.bio}</p>
+                    <span className="apply-creator-label-7">Perfil profissional:</span>
+                    <p className="apply-creator-description-18">{formData.bio}</p>
                   </div>
                   <div>
-                    <span className="text-slate-500 dark:text-neutral-400 block mb-1">Motivação e metodologia:</span>
-                    <p className="whitespace-pre-wrap leading-relaxed text-slate-800 dark:text-neutral-200">{formData.motivation}</p>
+                    <span className="apply-creator-label-7">Motivação e metodologia:</span>
+                    <p className="apply-creator-description-18">{formData.motivation}</p>
                   </div>
                   <div>
-                    <span className="text-slate-500 dark:text-neutral-400 block mb-1">Ementa e módulos propostos:</span>
-                    <p className="max-h-40 overflow-y-auto whitespace-pre-wrap font-medium text-slate-800 dark:text-neutral-200 leading-relaxed">
-                      {formData.proposedCourses}
-                    </p>
+                    <span className="apply-creator-label-7">Ementa e módulos propostos:</span>
+                    <p className="apply-creator-description-19">{formData.proposedCourses}</p>
                   </div>
                   {formData.portfolioUrl && (
-                    <div className="break-all">
-                      <span className="text-slate-500 dark:text-neutral-400">Portfólio: </span>
-                      <span className="font-medium text-blue-600 dark:text-blue-400">{formData.portfolioUrl}</span>
+                    <div className="apply-creator-panel-45">
+                      <span className="apply-creator-label-4">Portfólio: </span>
+                      <span className="apply-creator-label-10">{formData.portfolioUrl}</span>
                     </div>
                   )}
                   {formData.sampleVideoUrl && (
-                    <div className="break-all">
-                      <span className="text-slate-500 dark:text-neutral-400">Vídeo demonstrativo: </span>
-                      <span className="font-medium text-blue-600 dark:text-blue-400">{formData.sampleVideoUrl}</span>
+                    <div className="apply-creator-panel-45">
+                      <span className="apply-creator-label-4">Vídeo demonstrativo: </span>
+                      <span className="apply-creator-label-10">{formData.sampleVideoUrl}</span>
                     </div>
                   )}
                 </div>
 
                 {/* Code of Ethics Agreement */}
-                <label className="flex items-start gap-3 p-4 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-900/40 cursor-pointer">
+                <label className="apply-creator-field-label-3">
                   <input
                     type="checkbox"
                     name="agreedTerms"
                     checked={formData.agreedTerms}
                     onChange={handleChange}
-                    className="mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    className="apply-creator-field-3"
                   />
-                  <div className="text-xs text-slate-700 dark:text-neutral-300 leading-relaxed">
-                    <strong className="text-slate-900 dark:text-white block mb-0.5">
+                  <div className="apply-creator-panel-46">
+                    <strong className="apply-creator-strong">
                       Compromisso de Excelência Pedagógica NEXO
                     </strong>
-                    Comprometo-me a fornecer conteúdos técnicos rigorosos, respeitar a propriedade intelectual, manter conduta ética e prestar suporte atempado aos alunos nos canais da turma.
+                    Comprometo-me a fornecer conteúdos técnicos rigorosos, respeitar a propriedade
+                    intelectual, manter conduta ética e prestar suporte atempado aos alunos nos
+                    canais da turma.
                   </div>
                 </label>
               </div>
 
-              <div className="pt-6 border-t border-slate-100 dark:border-neutral-900 flex justify-between items-center">
-                <Button type="button" variant="secondary" size="md" onClick={prevStep} className="font-semibold">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
+              <div className="apply-creator-panel-47">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="md"
+                  onClick={prevStep}
+                  className="apply-creator-button-2"
+                >
+                  <ArrowLeft className="apply-creator-arrow-left" />
                   Anterior
                 </Button>
                 <Button
@@ -754,15 +831,14 @@ export const ApplyCreator = () => {
                   variant="primary"
                   size="md"
                   disabled={submitting}
-                  className="font-extrabold px-8 bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200 shadow-xl cursor-pointer"
+                  className="apply-creator-button-14"
                 >
                   {submitting ? 'A Submeter Inquérito...' : 'Submeter Inquérito Oficial'}
-                  <Send className="w-4 h-4 ml-2" />
+                  <Send className="apply-creator-arrow-right" />
                 </Button>
               </div>
             </div>
           )}
-
         </form>
       </Card>
     </div>

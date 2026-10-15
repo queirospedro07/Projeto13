@@ -50,10 +50,7 @@ echo.
 echo   Frontend : http://localhost:5173
 echo   Backend  : http://localhost:5000
 echo.
-echo   Contas de teste (password: password123)
-echo     Aluno    : aluno@nexo.pt
-echo     Formador : mariana@nexo.pt
-echo     Admin    : admin@nexo.pt
+echo   Sem contas predefinidas. Consulte README.md para criar o administrador.
 echo ===================================================
 echo.
 pause

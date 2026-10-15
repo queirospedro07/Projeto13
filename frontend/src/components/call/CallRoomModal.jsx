@@ -1,3 +1,4 @@
+import './CallRoomModal.css';
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { CallStage } from './CallStage';
@@ -10,7 +11,7 @@ export const CallRoomModal = ({
   onClose,
   initialParticipants = [],
   initialMuted = false,
-  initialCameraOn = false
+  initialCameraOn = false,
 }) => {
   const [mounted, setMounted] = useState(false);
 
@@ -30,7 +31,7 @@ export const CallRoomModal = ({
   if (!isOpen || !mounted) return null;
 
   const modalContent = (
-    <div className="fixed inset-0 z-[9999] bg-slate-950/95 dark:bg-black flex flex-col animate-fade-in" style={{ isolation: 'isolate' }}>
+    <div className="call-room-modal-panel dialog-layer">
       <CallStage
         key={roomId || roomName}
         roomName={roomName}

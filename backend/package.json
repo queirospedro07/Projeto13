@@ -1,17 +1,21 @@
 {
   "name": "nexo-server",
   "version": "1.0.0",
-  "description": "NEXO backend API and Socket.IO server with high-performance direct SQL queries",
+  "description": "NEXO: API de cursos, avaliações e comunidade com SQLite e Socket.IO",
   "main": "src/server.js",
   "scripts": {
     "start": "node --experimental-sqlite src/server.js",
     "dev": "node --experimental-sqlite --watch src/server.js",
     "test": "node --test tests/**/*.test.js",
     "migrate": "node --experimental-sqlite src/database/migrate.js",
-    "seed": "node --experimental-sqlite src/database/seed.js"
+    "seed": "node --experimental-sqlite src/database/seed.js",
+    "backup": "node --experimental-sqlite scripts/backup.js",
+    "admin:create": "node --experimental-sqlite scripts/create-admin.js",
+    "lint": "node scripts/check.js",
+    "check": "npm run lint && npm test"
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.16.0"
   },
   "keywords": [
     "nexo",
@@ -32,8 +36,10 @@
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.2",
     "nodemailer": "^10.0.13",
-    "pg": "^8.23.0",
     "socket.io": "^4.8.1"
   },
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "socket.io-client": "^4.8.4"
+  }
 }

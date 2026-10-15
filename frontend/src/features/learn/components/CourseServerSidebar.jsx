@@ -1,6 +1,19 @@
+import './CourseServerSidebar.css';
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Hash, Video, Play, CheckCircle2, HelpCircle, FileCode2, Plus, Settings, Sparkles, X, BookOpen } from 'lucide-react';
+import {
+  Hash,
+  Video,
+  Play,
+  CheckCircle2,
+  HelpCircle,
+  FileCode2,
+  Plus,
+  Settings,
+  Sparkles,
+  X,
+  BookOpen,
+} from 'lucide-react';
 export const CourseServerSidebar = ({
   courseTitle,
   courseId,
@@ -22,113 +35,130 @@ export const CourseServerSidebar = ({
   onSelectQuiz,
   onSelectDocuments,
   onOpenCreateChannel,
-  onOpenEditChannel
+  onOpenEditChannel,
 }) => {
-  return <aside className="w-72 h-full bg-white dark:bg-[#090a0f] border-r border-slate-200 dark:border-[#222636] flex flex-col justify-between shrink-0 select-none shadow-xs">
-      <div className="flex flex-col min-h-0 overflow-y-auto custom-scrollbar">
-        
-        <div className="h-16 px-4 border-b border-slate-200 dark:border-[#222636] bg-white dark:bg-[#090a0f] flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-slate-900 dark:bg-blue-600 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-xs">
+  return (
+    <aside className="course-server-sidebar-sidebar">
+      <div className="course-server-sidebar-panel custom-scrollbar">
+        <div className="course-server-sidebar-panel-2">
+          <div className="course-server-sidebar-panel-3">
+            <div className="course-server-sidebar-panel-4">
               {courseTitle ? courseTitle.substring(0, 2).toUpperCase() : 'NX'}
             </div>
-            <div className="min-w-0">
-              <h2 className="font-bold text-slate-900 dark:text-white text-sm truncate leading-tight">
-                {courseTitle}
-              </h2>
-              <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium">
-                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <div className="course-server-sidebar-panel-5">
+              <h2 className="course-server-sidebar-heading">{courseTitle}</h2>
+              <div className="course-server-sidebar-panel-6">
+                <span className="course-server-sidebar-label"></span>
                 <span>Servidor do Espaço</span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="course-server-sidebar-panel-7">
             {courseId && (
               <Link
                 to={`/courses/${courseId}`}
-                className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-[#171a24] text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
+                className="course-server-sidebar-link"
                 title="Ver detalhes do curso e currículo completo"
                 aria-label="Ver detalhes do curso"
               >
-                <BookOpen className="w-4 h-4" />
+                <BookOpen className="course-server-sidebar-book-open" />
               </Link>
             )}
-            {isCreatorOrAdmin && <button onClick={() => onOpenCreateChannel('text')} className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-[#171a24] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer" title="Criar novo canal no espaço" aria-label="Criar canal">
-                <Plus className="w-4 h-4" />
-              </button>}
+            {isCreatorOrAdmin && (
+              <button
+                onClick={() => onOpenCreateChannel('text')}
+                className="course-server-sidebar-button"
+                title="Criar novo canal no espaço"
+                aria-label="Criar canal"
+              >
+                <Plus className="course-server-sidebar-book-open" />
+              </button>
+            )}
             {onCloseMobile && (
-              <button onClick={onCloseMobile} className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-[#171a24] text-slate-400 hover:text-slate-900 dark:hover:text-white md:hidden transition-colors cursor-pointer" title="Fechar menu">
-                <X className="w-4 h-4" />
+              <button
+                onClick={onCloseMobile}
+                className="course-server-sidebar-button-2"
+                title="Fechar menu"
+              >
+                <X className="course-server-sidebar-book-open" />
               </button>
             )}
           </div>
         </div>
 
-        
-        <div className="p-3 flex flex-col gap-5">
-          
+        <div className="course-server-sidebar-panel-8">
           {(() => {
-            const voiceChannels = customChannels.filter(c => c.type === 'voice' || c.isVoice);
+            const voiceChannels = customChannels.filter((c) => c.type === 'voice' || c.isVoice);
             if (voiceChannels.length === 0 && !isCreatorOrAdmin) return null;
             return (
               <div>
-                <div className="px-2 pb-1.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  <span className="flex items-center gap-1.5">
-                    <Video className="w-3.5 h-3.5" />
+                <div className="course-server-sidebar-panel-9">
+                  <span className="course-server-sidebar-label-2">
+                    <Video className="course-server-sidebar-video" />
                     Salas ao Vivo & Voz
                   </span>
                   {isCreatorOrAdmin && (
                     <button
                       onClick={() => onOpenCreateChannel('voice')}
-                      className="hover:text-slate-900 dark:hover:text-white text-xs font-bold p-1 rounded-md hover:bg-slate-100 dark:hover:bg-[#171a24] cursor-pointer"
+                      className="course-server-sidebar-button-3"
                       title="Criar sala de voz"
                       aria-label="Criar sala de voz"
                     >
-                      <Plus className="w-3.5 h-3.5" />
+                      <Plus className="course-server-sidebar-video" />
                     </button>
                   )}
                 </div>
                 {voiceChannels.length === 0 ? (
-                  <p className="px-3 py-1.5 text-xs text-slate-400 dark:text-slate-500 italic">Nenhuma sala de voz ativa.</p>
+                  <p className="course-server-sidebar-description">Nenhuma sala de voz ativa.</p>
                 ) : (
-                  <div className="flex flex-col gap-1">
-                    {voiceChannels.map(ch => {
+                  <div className="course-server-sidebar-panel-10">
+                    {voiceChannels.map((ch) => {
                       const roomName = ch.name;
-                      const isActive = Boolean(inLiveRoom) && activeView === 'live-room' && liveRoomName === roomName;
+                      const isActive =
+                        Boolean(inLiveRoom) &&
+                        activeView === 'live-room' &&
+                        liveRoomName === roomName;
                       return (
-                        <div key={ch.id || roomName} className="group/item flex items-center">
+                        <div
+                          key={ch.id || roomName}
+                          className="course-server-sidebar-panel-11 group/item"
+                        >
                           <button
                             onClick={() => onSelectLiveRoom(roomName)}
-                            className={`flex-1 flex items-center justify-between px-3 py-2 rounded-xl text-sm text-left transition-all cursor-pointer min-w-0 ${
+                            className={`course-server-sidebar-button-4 ${
                               isActive
-                                ? 'bg-slate-900 dark:bg-blue-600 text-white font-medium shadow-xs'
-                                : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#171a24] font-normal'
+                                ? 'course-server-sidebar-button-5'
+                                : 'course-server-sidebar-button-6'
                             }`}
                           >
-                            <div className="flex items-center gap-2.5 truncate">
-                              <Video className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
-                              <span className="truncate">{roomName}</span>
+                            <div className="course-server-sidebar-panel-12">
+                              <Video
+                                className={`course-server-sidebar-video-2 ${isActive ? 'course-server-sidebar-video-3' : 'course-server-sidebar-video-4'}`}
+                              />
+                              <span className="course-server-sidebar-label-3">{roomName}</span>
                             </div>
                             <span
-                              className={`text-[11px] font-medium px-2 py-0.5 rounded-md shrink-0 ml-1 ${
-                                isActive ? 'bg-slate-800 dark:bg-blue-700 text-white' : 'bg-slate-100 dark:bg-[#171a24] text-slate-600 dark:text-slate-400'
+                              className={`course-server-sidebar-label-4 ${
+                                isActive
+                                  ? 'course-server-sidebar-label-5'
+                                  : 'course-server-sidebar-label-6'
                               }`}
                             >
                               {isActive ? 'Ativo' : 'Entrar'}
                             </span>
                           </button>
                           {isCreatorOrAdmin && onOpenEditChannel && (
-                            <div className="opacity-0 group-hover/item:opacity-100 transition-opacity flex items-center pr-1">
+                            <div className="course-server-sidebar-panel-13">
                               <button
-                                onClick={e => {
+                                onClick={(e) => {
                                   e.stopPropagation();
                                   onOpenEditChannel(ch);
                                 }}
-                                className="p-1.5 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#171a24] rounded-lg transition-colors cursor-pointer"
+                                className="course-server-sidebar-button-7"
                                 title="Editar canal"
                               >
-                                <Settings className="w-3.5 h-3.5" />
+                                <Settings className="course-server-sidebar-video" />
                               </button>
                             </div>
                           )}
@@ -141,92 +171,126 @@ export const CourseServerSidebar = ({
             );
           })()}
 
-          
           <div>
-            <div className="px-2 pb-1.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            <div className="course-server-sidebar-panel-9">
               <span>Canais de Conversa</span>
-              {isCreatorOrAdmin && <button onClick={() => onOpenCreateChannel('text')} className="hover:text-slate-900 dark:hover:text-white text-xs font-bold p-1 rounded-md hover:bg-slate-100 dark:hover:bg-[#171a24] cursor-pointer" title="Criar canal" aria-label="Criar canal">
-                  <Plus className="w-3.5 h-3.5" />
-                </button>}
+              {isCreatorOrAdmin && (
+                <button
+                  onClick={() => onOpenCreateChannel('text')}
+                  className="course-server-sidebar-button-3"
+                  title="Criar canal"
+                  aria-label="Criar canal"
+                >
+                  <Plus className="course-server-sidebar-video" />
+                </button>
+              )}
             </div>
-            <div className="flex flex-col gap-1">
-              {customChannels.filter(c => c.type !== 'voice').map(ch => {
-              const isSelected = activeView === 'channel' && currentTextChannel?.id === ch.id;
-              return <div key={ch.id} className="group/item flex items-center">
-                      <button onClick={() => onSelectChannel(ch)} className={`flex-1 flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-left transition-all cursor-pointer min-w-0 ${isSelected ? 'bg-slate-900 dark:bg-blue-600 text-white font-medium shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#171a24] font-normal'}`}>
-                        {ch.type === 'qa' ? <HelpCircle className={`w-4 h-4 shrink-0 ${isSelected ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} /> : ch.type === 'showcase' ? <Sparkles className={`w-4 h-4 shrink-0 ${isSelected ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} /> : <Hash className={`w-4 h-4 shrink-0 ${isSelected ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />}
-                        <span className="truncate">{ch.name}</span>
+            <div className="course-server-sidebar-panel-10">
+              {customChannels
+                .filter((c) => c.type !== 'voice')
+                .map((ch) => {
+                  const isSelected = activeView === 'channel' && currentTextChannel?.id === ch.id;
+                  return (
+                    <div key={ch.id} className="course-server-sidebar-panel-11 group/item">
+                      <button
+                        onClick={() => onSelectChannel(ch)}
+                        className={`course-server-sidebar-button-8 ${isSelected ? 'course-server-sidebar-button-5' : 'course-server-sidebar-button-9'}`}
+                      >
+                        {ch.type === 'qa' ? (
+                          <HelpCircle
+                            className={`course-server-sidebar-video-2 ${isSelected ? 'course-server-sidebar-video-3' : 'course-server-sidebar-video-4'}`}
+                          />
+                        ) : ch.type === 'showcase' ? (
+                          <Sparkles
+                            className={`course-server-sidebar-video-2 ${isSelected ? 'course-server-sidebar-video-3' : 'course-server-sidebar-video-4'}`}
+                          />
+                        ) : (
+                          <Hash
+                            className={`course-server-sidebar-video-2 ${isSelected ? 'course-server-sidebar-video-3' : 'course-server-sidebar-hash'}`}
+                          />
+                        )}
+                        <span className="course-server-sidebar-label-3">{ch.name}</span>
                       </button>
 
-                      {isCreatorOrAdmin && <div className="opacity-0 group-hover/item:opacity-100 transition-opacity flex items-center pr-1">
-                          <button onClick={e => {
-                    e.stopPropagation();
-                    onOpenEditChannel(ch);
-                  }} className="p-1.5 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#171a24] rounded-lg transition-colors cursor-pointer" title="Editar canal">
-                            <Settings className="w-3.5 h-3.5" />
+                      {isCreatorOrAdmin && (
+                        <div className="course-server-sidebar-panel-13">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenEditChannel(ch);
+                            }}
+                            className="course-server-sidebar-button-7"
+                            title="Editar canal"
+                          >
+                            <Settings className="course-server-sidebar-video" />
                           </button>
-                        </div>}
-                    </div>;
-            })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
             </div>
           </div>
 
-          
           <div>
-            <div className="px-2 pb-1.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            <div className="course-server-sidebar-panel-9">
               <span>Aulas & Módulos</span>
               {isCreatorOrAdmin && courseId && (
                 <Link
                   to={`/creator/courses/${courseId}/edit?step=3`}
-                  className="hover:text-indigo-600 dark:hover:text-indigo-400 text-[11px] font-bold p-1 rounded-md hover:bg-slate-100 dark:hover:bg-[#171a24] flex items-center gap-1 cursor-pointer text-slate-500 dark:text-slate-400 transition-colors"
+                  className="course-server-sidebar-link-2"
                   title="Gerir e adicionar aulas"
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  <Plus className="course-server-sidebar-video" />
                   <span>Adicionar</span>
                 </Link>
               )}
             </div>
             {modules.length === 0 ? (
-              <div className="p-3 text-center rounded-xl bg-slate-50 dark:bg-[#12141c] border border-dashed border-slate-200 dark:border-[#222636] my-1">
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Nenhuma aula criada.</p>
+              <div className="course-server-sidebar-panel-14">
+                <p className="course-server-sidebar-description-2">Nenhuma aula criada.</p>
                 {isCreatorOrAdmin && courseId && (
                   <Link to={`/creator/courses/${courseId}/edit?step=3`}>
-                    <button className="mt-2 px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-500 transition-colors cursor-pointer">
-                      + Criar Aulas
-                    </button>
+                    <button className="course-server-sidebar-button-10">+ Criar Aulas</button>
                   </Link>
                 )}
               </div>
             ) : (
-              <div className="flex flex-col gap-3">
+              <div className="course-server-sidebar-panel-15">
                 {modules.map((mod, mIdx) => (
-                  <div key={mod.id} className="flex flex-col gap-1">
-                    <div className="px-2 py-1 text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider truncate">
+                  <div key={mod.id} className="course-server-sidebar-panel-10">
+                    <div className="course-server-sidebar-panel-16">
                       Módulo {mIdx + 1}: {mod.title}
                     </div>
 
-                    {mod.lessons?.map(les => {
+                    {mod.lessons?.map((les) => {
                       const isSelected = activeView === 'lesson' && currentLessonId === les.id;
                       const isCompleted = completedLessonIds.has(les.id);
                       return (
                         <button
                           key={les.id}
                           onClick={() => onSelectLesson(les)}
-                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-sm transition-all cursor-pointer ${
+                          className={`course-server-sidebar-button-11 ${
                             isSelected
-                              ? 'bg-slate-900 dark:bg-blue-600 text-white font-medium shadow-xs'
-                              : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#171a24] font-normal'
+                              ? 'course-server-sidebar-button-5'
+                              : 'course-server-sidebar-button-6'
                           }`}
                         >
-                          <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="course-server-sidebar-panel-17">
                             {isCompleted ? (
-                              <CheckCircle2 className={`w-4 h-4 shrink-0 ${isSelected ? 'text-emerald-400' : 'text-emerald-600 dark:text-emerald-400'}`} />
+                              <CheckCircle2
+                                className={`course-server-sidebar-video-2 ${isSelected ? 'course-server-sidebar-check-circle2' : 'course-server-sidebar-check-circle2-2'}`}
+                              />
                             ) : (
-                              <Play className={`w-4 h-4 shrink-0 ${isSelected ? 'text-slate-300' : 'text-slate-400 dark:text-slate-500'}`} />
+                              <Play
+                                className={`course-server-sidebar-video-2 ${isSelected ? 'course-server-sidebar-play' : 'course-server-sidebar-hash'}`}
+                              />
                             )}
-                            <span className="truncate">{les.title}</span>
+                            <span className="course-server-sidebar-label-3">{les.title}</span>
                           </div>
-                          <span className={`text-xs font-mono shrink-0 ml-2 ${isSelected ? 'text-slate-300' : 'text-slate-400 dark:text-slate-500'}`}>
+                          <span
+                            className={`course-server-sidebar-label-7 ${isSelected ? 'course-server-sidebar-play' : 'course-server-sidebar-hash'}`}
+                          >
                             {les.type === 'quiz' ? 'Quiz' : `${les.durationMin || 15}m`}
                           </span>
                         </button>
@@ -238,35 +302,42 @@ export const CourseServerSidebar = ({
             )}
           </div>
 
-          
           <div>
-            <div className="px-2 pb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Avaliações & Desafios
-            </div>
-            <button onClick={onSelectQuiz} className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm text-left transition-all cursor-pointer ${activeView === 'quiz' ? 'bg-slate-900 dark:bg-blue-600 text-white font-medium shadow-xs' : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#171a24] font-normal'}`}>
-              <div className="flex items-center gap-2.5 truncate">
-                <HelpCircle className={`w-4 h-4 ${activeView === 'quiz' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+            <div className="course-server-sidebar-panel-18">Avaliações & Desafios</div>
+            <button
+              onClick={onSelectQuiz}
+              className={`course-server-sidebar-button-12 ${activeView === 'quiz' ? 'course-server-sidebar-button-5' : 'course-server-sidebar-button-13'}`}
+            >
+              <div className="course-server-sidebar-panel-12">
+                <HelpCircle
+                  className={`course-server-sidebar-book-open ${activeView === 'quiz' ? 'course-server-sidebar-video-3' : 'course-server-sidebar-video-4'}`}
+                />
                 <span>Avaliação do Módulo</span>
               </div>
             </button>
           </div>
 
-          
           <div>
-            <div className="px-2 pb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Documentos & Recursos
-            </div>
-            <button onClick={onSelectDocuments} className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm text-left transition-all cursor-pointer ${activeView === 'documents' ? 'bg-slate-900 dark:bg-blue-600 text-white font-medium shadow-xs' : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#171a24] font-normal'}`}>
-              <div className="flex items-center gap-2.5 truncate">
-                <FileCode2 className={`w-4 h-4 ${activeView === 'documents' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+            <div className="course-server-sidebar-panel-18">Documentos & Recursos</div>
+            <button
+              onClick={onSelectDocuments}
+              className={`course-server-sidebar-button-12 ${activeView === 'documents' ? 'course-server-sidebar-button-5' : 'course-server-sidebar-button-13'}`}
+            >
+              <div className="course-server-sidebar-panel-12">
+                <FileCode2
+                  className={`course-server-sidebar-book-open ${activeView === 'documents' ? 'course-server-sidebar-video-3' : 'course-server-sidebar-video-4'}`}
+                />
                 <span>PDFs & Código-Fonte</span>
               </div>
-              <span className={`text-xs font-medium px-2 py-0.5 rounded-md ${activeView === 'documents' ? 'bg-slate-800 dark:bg-blue-700 text-white' : 'bg-slate-100 dark:bg-[#171a24] text-slate-600 dark:text-slate-400'}`}>
+              <span
+                className={`course-server-sidebar-label-8 ${activeView === 'documents' ? 'course-server-sidebar-label-5' : 'course-server-sidebar-label-6'}`}
+              >
                 {resourcesCount}
               </span>
             </button>
           </div>
         </div>
       </div>
-    </aside>;
+    </aside>
+  );
 };

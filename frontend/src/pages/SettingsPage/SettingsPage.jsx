@@ -1,3 +1,4 @@
+import './SettingsPage.css';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -15,7 +16,7 @@ import {
   Globe,
   MessageSquare,
   Users,
-  Bell
+  Bell,
 } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -73,8 +74,12 @@ export const SettingsPage = () => {
     if (user?.id) {
       setDmPermission(localStorage.getItem(`nexo_dm_permission_${user.id}`) || 'FRIENDS_ONLY');
       setRequireMessageRequest(localStorage.getItem(`nexo_msg_request_${user.id}`) !== 'false');
-      setFriendsListVisibility(localStorage.getItem(`nexo_friends_visibility_${user.id}`) || 'FRIENDS');
-      setOnlineStatusVisibility(localStorage.getItem(`nexo_online_visibility_${user.id}`) || 'PUBLIC');
+      setFriendsListVisibility(
+        localStorage.getItem(`nexo_friends_visibility_${user.id}`) || 'FRIENDS',
+      );
+      setOnlineStatusVisibility(
+        localStorage.getItem(`nexo_online_visibility_${user.id}`) || 'PUBLIC',
+      );
       setShowReadReceipts(localStorage.getItem(`nexo_read_receipts_${user.id}`) !== 'false');
       setEmailNotifs(localStorage.getItem(`nexo_notif_email_${user.id}`) !== 'false');
       setCourseUpdates(localStorage.getItem(`nexo_notif_course_${user.id}`) !== 'false');
@@ -99,19 +104,19 @@ export const SettingsPage = () => {
         showLocation,
         showSocials,
         showStats,
-        showCourses
+        showCourses,
       });
       await refreshUser();
       toast({
         title: 'Privacidade Atualizada',
         message: 'A visibilidade dos elementos do seu perfil foi guardada com sucesso.',
-        type: 'success'
+        type: 'success',
       });
     } catch (err) {
       toast({
         title: 'Erro ao guardar',
         message: err.message || 'Não foi possível guardar as definições de visibilidade.',
-        type: 'error'
+        type: 'error',
       });
     } finally {
       setIsSavingPrivacy(false);
@@ -130,14 +135,15 @@ export const SettingsPage = () => {
       }
       toast({
         title: 'Permissões Guardadas',
-        message: 'As suas definições de mensagens, recibos de leitura e privacidade de contactos foram atualizadas.',
-        type: 'success'
+        message:
+          'As suas definições de mensagens, recibos de leitura e privacidade de contactos foram atualizadas.',
+        type: 'success',
       });
     } catch (_) {
       toast({
         title: 'Erro',
         message: 'Falha ao guardar preferências locais.',
-        type: 'error'
+        type: 'error',
       });
     } finally {
       setIsSavingMessaging(false);
@@ -153,144 +159,124 @@ export const SettingsPage = () => {
     toast({
       title: 'Notificações Atualizadas',
       message: 'As suas preferências de notificações foram atualizadas com sucesso.',
-      type: 'success'
+      type: 'success',
     });
   };
 
   return (
-    <div className="max-w-4xl mx-auto flex flex-col gap-8 animate-fade-in pb-16">
-      
-      <div className="pb-4 border-b border-slate-200 dark:border-neutral-800">
-        <div className="flex items-center gap-2 mb-2">
+    <div className="settings-page-panel">
+      <div className="settings-page-panel-2">
+        <div className="settings-page-panel-3">
           <Badge size="md" variant="primary">
             Definições
           </Badge>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-          Definições da Conta
-        </h1>
-        <p className="text-base text-slate-600 dark:text-neutral-400 mt-1">
+        <h1 className="settings-page-title">Definições da Conta</h1>
+        <p className="settings-page-description">
           Gira as suas preferências visuais, permissões de mensagens, privacidade e sessão.
         </p>
       </div>
 
       {/* 1. Aparência & Tema */}
-      <Card className="p-5 sm:p-8 border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#0b0c0e] shadow-xs">
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Aparência & Tema</h3>
-        <p className="text-sm text-slate-500 dark:text-neutral-400 mb-6">
+      <Card className="settings-page-card">
+        <h3 className="settings-page-subheading">Aparência & Tema</h3>
+        <p className="settings-page-description-2">
           Escolha o modo de apresentação visual da plataforma.
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="settings-page-panel-4">
           <button
             onClick={() => setTheme('light')}
-            className={`p-5 rounded-xl border text-left flex flex-col justify-between h-28 transition-all cursor-pointer ${
-              theme === 'light'
-                ? 'border-blue-600 bg-blue-50/50 dark:bg-neutral-900 shadow-xs ring-2 ring-blue-500/20'
-                : 'border-slate-200 dark:border-neutral-800 bg-white dark:bg-black hover:bg-slate-50 dark:hover:bg-neutral-900'
+            className={`settings-page-button ${
+              theme === 'light' ? 'settings-page-button-2' : 'settings-page-button-3'
             }`}
           >
-            <div className="flex items-center justify-between">
-              <Sun className="w-5 h-5 text-amber-500" />
-              {theme === 'light' && <Check className="w-5 h-5 text-blue-600 dark:text-blue-400" />}
+            <div className="settings-page-panel-5">
+              <Sun className="settings-page-sun" />
+              {theme === 'light' && <Check className="settings-page-check" />}
             </div>
             <div>
-              <p className="font-bold text-slate-900 dark:text-white text-sm">
-                Modo Claro (Padrão)
-              </p>
-              <p className="text-xs text-slate-500 dark:text-neutral-400">
-                Fundo branco puro & alto contraste
-              </p>
+              <p className="settings-page-description-3">Modo Claro (Padrão)</p>
+              <p className="settings-page-description-4">Fundo branco puro & alto contraste</p>
             </div>
           </button>
 
           <button
             onClick={() => setTheme('dark')}
-            className={`p-5 rounded-xl border text-left flex flex-col justify-between h-28 transition-all cursor-pointer ${
-              theme === 'dark'
-                ? 'border-blue-600 bg-blue-50/50 dark:bg-neutral-900 shadow-xs ring-2 ring-blue-500/20'
-                : 'border-slate-200 dark:border-neutral-800 bg-white dark:bg-black hover:bg-slate-50 dark:hover:bg-neutral-900'
+            className={`settings-page-button ${
+              theme === 'dark' ? 'settings-page-button-2' : 'settings-page-button-3'
             }`}
           >
-            <div className="flex items-center justify-between">
-              <Moon className="w-5 h-5 text-slate-600 dark:text-blue-400" />
-              {theme === 'dark' && <Check className="w-5 h-5 text-blue-600 dark:text-blue-400" />}
+            <div className="settings-page-panel-5">
+              <Moon className="settings-page-moon" />
+              {theme === 'dark' && <Check className="settings-page-check" />}
             </div>
             <div>
-              <p className="font-bold text-slate-900 dark:text-white text-sm">
-                Modo Escuro (Preto OLED)
-              </p>
-              <p className="text-xs text-slate-500 dark:text-neutral-400">
-                Preto puro (#000000) & alto contraste
-              </p>
+              <p className="settings-page-description-3">Modo Escuro (Preto OLED)</p>
+              <p className="settings-page-description-4">Preto puro (#000000) & alto contraste</p>
             </div>
           </button>
 
           <button
             onClick={() => setTheme('system')}
-            className={`p-5 rounded-xl border text-left flex flex-col justify-between h-28 transition-all cursor-pointer ${
-              theme === 'system'
-                ? 'border-blue-600 bg-blue-50/50 dark:bg-neutral-900 shadow-xs ring-2 ring-blue-500/20'
-                : 'border-slate-200 dark:border-neutral-800 bg-white dark:bg-black hover:bg-slate-50 dark:hover:bg-neutral-900'
+            className={`settings-page-button ${
+              theme === 'system' ? 'settings-page-button-2' : 'settings-page-button-3'
             }`}
           >
-            <div className="flex items-center justify-between">
-              <Monitor className="w-5 h-5 text-slate-600 dark:text-neutral-300" />
-              {theme === 'system' && <Check className="w-5 h-5 text-blue-600 dark:text-blue-400" />}
+            <div className="settings-page-panel-5">
+              <Monitor className="settings-page-monitor" />
+              {theme === 'system' && <Check className="settings-page-check" />}
             </div>
             <div>
-              <p className="font-bold text-slate-900 dark:text-white text-sm">
-                Sincronizado com o Sistema
-              </p>
-              <p className="text-xs text-slate-500 dark:text-neutral-400">
-                Segue as preferências do sistema
-              </p>
+              <p className="settings-page-description-3">Sincronizado com o Sistema</p>
+              <p className="settings-page-description-4">Segue as preferências do sistema</p>
             </div>
           </button>
         </div>
       </Card>
 
       {/* 2. Permissões de Contacto & Mensagens Diretas (DMs) */}
-      <Card className="p-5 sm:p-8 flex flex-col gap-6 border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#0b0c0e] shadow-xs">
-        <div className="pb-4 border-b border-slate-100 dark:border-neutral-800">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+      <Card className="settings-page-card-2">
+        <div className="settings-page-panel-6">
+          <h3 className="settings-page-subheading-2">
+            <MessageSquare className="settings-page-check" />
             <span>Permissões de Contacto & Mensagens Diretas (DMs)</span>
           </h3>
-          <p className="text-sm text-slate-500 dark:text-neutral-400 mt-0.5">
-            Defina quem tem autorização para lhe enviar mensagens diretas e como funcionam os pedidos de conversa.
+          <p className="settings-page-description-5">
+            Defina quem tem autorização para lhe enviar mensagens diretas e como funcionam os
+            pedidos de conversa.
           </p>
         </div>
 
-        <div className="flex flex-col gap-6">
+        <div className="settings-page-panel-7">
           {/* Quem pode enviar DMs */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="pr-4 max-w-lg">
-              <label htmlFor="dm-permission" className="text-sm font-bold text-slate-900 dark:text-white block">
+          <div className="settings-page-panel-8">
+            <div className="settings-page-panel-9">
+              <label htmlFor="dm-permission" className="settings-page-field-label">
                 Quem me pode enviar Mensagens Diretas
               </label>
-              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
+              <p className="settings-page-description-6">
                 Controlo restrito para evitar mensagens indesejadas de desconhecidos.
               </p>
             </div>
 
-            <div className="relative shrink-0 w-full sm:w-72">
+            <div className="settings-page-panel-10">
               <Select
                 id="dm-permission"
                 value={dmPermission}
-                onChange={e => setDmPermission(e.target.value)}
-                className="w-full appearance-none bg-slate-50 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-700 text-slate-900 dark:text-white text-xs font-bold rounded-xl px-3.5 py-2.5 pr-9 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all cursor-pointer shadow-xs"
+                onChange={(e) => setDmPermission(e.target.value)}
+                className="settings-page-select"
               >
-                <option value="FRIENDS_ONLY" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white py-1">
+                <option value="FRIENDS_ONLY" className="settings-page-option">
                   Apenas Amigos e Conexões Aceites
                 </option>
-                <option value="CLASSMATES" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white py-1">
+                <option value="CLASSMATES" className="settings-page-option">
                   Amigos, Colegas de Curso e Formadores
                 </option>
-                <option value="ALL" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white py-1">
+                <option value="ALL" className="settings-page-option">
                   Todos os utilizadores registados
                 </option>
-                <option value="NONE" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white py-1">
+                <option value="NONE" className="settings-page-option">
                   Ninguém (Desativar DMs privadas)
                 </option>
               </Select>
@@ -298,49 +284,51 @@ export const SettingsPage = () => {
           </div>
 
           {/* Modo Pedido de Mensagem */}
-          <div className="flex items-start justify-between gap-4 pt-4 border-t border-slate-100 dark:border-neutral-800">
-            <div className="pr-4">
-              <label htmlFor="req-msg-toggle" className="text-sm font-bold text-slate-900 dark:text-white block cursor-pointer">
+          <div className="settings-page-panel-11">
+            <div className="settings-page-panel-12">
+              <label htmlFor="req-msg-toggle" className="settings-page-field-label-2">
                 Exigir Pedido Prévio para não-amigos
               </label>
-              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-                Quando ativado, os utilizadores que não estão na sua lista de amigos devem enviar primeiro uma solicitação de conversa. Apenas após aceitar o pedido é que as mensagens diretas são entregues na sua caixa principal.
+              <p className="settings-page-description-6">
+                Quando ativado, os utilizadores que não estão na sua lista de amigos devem enviar
+                primeiro uma solicitação de conversa. Apenas após aceitar o pedido é que as
+                mensagens diretas são entregues na sua caixa principal.
               </p>
             </div>
             <input
               id="req-msg-toggle"
               type="checkbox"
               checked={requireMessageRequest}
-              onChange={e => setRequireMessageRequest(e.target.checked)}
-              className="w-5 h-5 accent-blue-600 rounded cursor-pointer shrink-0 mt-1"
+              onChange={(e) => setRequireMessageRequest(e.target.checked)}
+              className="settings-page-field"
             />
           </div>
 
           {/* Visibilidade da Lista de Amigos */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-slate-100 dark:border-neutral-800">
-            <div className="pr-4 max-w-lg">
-              <label htmlFor="friends-vis" className="text-sm font-bold text-slate-900 dark:text-white block">
+          <div className="settings-page-panel-13">
+            <div className="settings-page-panel-9">
+              <label htmlFor="friends-vis" className="settings-page-field-label">
                 Visibilidade da Lista de Amigos e Conexões
               </label>
-              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
+              <p className="settings-page-description-6">
                 Quem pode visualizar os seus amigos e colegas conectados no seu perfil.
               </p>
             </div>
 
-            <div className="relative shrink-0 w-full sm:w-72">
+            <div className="settings-page-panel-10">
               <Select
                 id="friends-vis"
                 value={friendsListVisibility}
-                onChange={e => setFriendsListVisibility(e.target.value)}
-                className="w-full appearance-none bg-slate-50 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-700 text-slate-900 dark:text-white text-xs font-bold rounded-xl px-3.5 py-2.5 pr-9 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all cursor-pointer shadow-xs"
+                onChange={(e) => setFriendsListVisibility(e.target.value)}
+                className="settings-page-select"
               >
-                <option value="PUBLIC" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white py-1">
+                <option value="PUBLIC" className="settings-page-option">
                   Público (Todos os utilizadores)
                 </option>
-                <option value="FRIENDS" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white py-1">
+                <option value="FRIENDS" className="settings-page-option">
                   Apenas os Meus Amigos
                 </option>
-                <option value="PRIVATE" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white py-1">
+                <option value="PRIVATE" className="settings-page-option">
                   Privado (Apenas eu)
                 </option>
               </Select>
@@ -348,30 +336,30 @@ export const SettingsPage = () => {
           </div>
 
           {/* Estado de Presença / Atividade */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-slate-100 dark:border-neutral-800">
-            <div className="pr-4 max-w-lg">
-              <label htmlFor="online-vis" className="text-sm font-bold text-slate-900 dark:text-white block">
+          <div className="settings-page-panel-13">
+            <div className="settings-page-panel-9">
+              <label htmlFor="online-vis" className="settings-page-field-label">
                 Estado de Presença (Online / Atividade)
               </label>
-              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
+              <p className="settings-page-description-6">
                 Mostrar quando se encontra online na plataforma e em chamadas de mentoria.
               </p>
             </div>
 
-            <div className="relative shrink-0 w-full sm:w-72">
+            <div className="settings-page-panel-10">
               <Select
                 id="online-vis"
                 value={onlineStatusVisibility}
-                onChange={e => setOnlineStatusVisibility(e.target.value)}
-                className="w-full appearance-none bg-slate-50 dark:bg-neutral-900 border border-slate-300 dark:border-neutral-700 text-slate-900 dark:text-white text-xs font-bold rounded-xl px-3.5 py-2.5 pr-9 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all cursor-pointer shadow-xs"
+                onChange={(e) => setOnlineStatusVisibility(e.target.value)}
+                className="settings-page-select"
               >
-                <option value="PUBLIC" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white py-1">
+                <option value="PUBLIC" className="settings-page-option">
                   Mostrar a Todos (Online)
                 </option>
-                <option value="FRIENDS" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white py-1">
+                <option value="FRIENDS" className="settings-page-option">
                   Apenas para Amigos
                 </option>
-                <option value="HIDDEN" className="bg-white dark:bg-neutral-900 text-slate-900 dark:text-white py-1">
+                <option value="HIDDEN" className="settings-page-option">
                   Invisível / Ocultar Sempre
                 </option>
               </Select>
@@ -379,21 +367,22 @@ export const SettingsPage = () => {
           </div>
 
           {/* Recibos de Leitura ("Dar Vista") */}
-          <div className="flex items-start justify-between gap-4 pt-4 border-t border-slate-100 dark:border-neutral-800">
-            <div className="pr-4">
-              <label htmlFor="read-receipts-toggle" className="text-sm font-bold text-slate-900 dark:text-white block cursor-pointer">
+          <div className="settings-page-panel-11">
+            <div className="settings-page-panel-12">
+              <label htmlFor="read-receipts-toggle" className="settings-page-field-label-2">
                 Recibos de Leitura (&quot;Dar Vista&quot;)
               </label>
-              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-                Permitir que os seus contactos vejam quando leu as mensagens deles (duplo visto azul e hora de visualização) e ver quando as suas mensagens foram vistas.
+              <p className="settings-page-description-6">
+                Permitir que os seus contactos vejam quando leu as mensagens deles (duplo visto azul
+                e hora de visualização) e ver quando as suas mensagens foram vistas.
               </p>
             </div>
             <input
               id="read-receipts-toggle"
               type="checkbox"
               checked={showReadReceipts}
-              onChange={e => setShowReadReceipts(e.target.checked)}
-              className="w-5 h-5 accent-blue-600 rounded cursor-pointer shrink-0 mt-1"
+              onChange={(e) => setShowReadReceipts(e.target.checked)}
+              className="settings-page-field"
             />
           </div>
         </div>
@@ -403,124 +392,124 @@ export const SettingsPage = () => {
           isLoading={isSavingMessaging}
           variant="primary"
           size="md"
-          className="self-stretch sm:self-end mt-2 font-bold shadow-md shadow-blue-500/20"
+          className="settings-page-button-4"
         >
           Guardar Permissões de Mensagens
         </Button>
       </Card>
 
       {/* 3. Privacidade e Visibilidade do Perfil */}
-      <Card className="p-5 sm:p-8 flex flex-col gap-6 border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#0b0c0e] shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100 dark:border-neutral-800">
+      <Card className="settings-page-card-2">
+        <div className="settings-page-panel-14">
           <div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <h3 className="settings-page-subheading-2">
+              <ShieldCheck className="settings-page-check" />
               <span>Privacidade & Elementos do Perfil</span>
             </h3>
-            <p className="text-sm text-slate-500 dark:text-neutral-400 mt-0.5">
-              Escolha exatamente o que os outros utilizadores podem ver na sua página pública de perfil.
+            <p className="settings-page-description-5">
+              Escolha exatamente o que os outros utilizadores podem ver na sua página pública de
+              perfil.
             </p>
           </div>
-          <Link to={`/profile/${user?.username || user?.id}`} className="shrink-0">
-            <Button variant="outline" size="sm" leftIcon={<Eye className="w-4 h-4" />} className="text-xs font-bold">
+          <Link to={`/profile/${user?.username || user?.id}`} className="settings-page-link">
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<Eye className="settings-page-eye" />}
+              className="settings-page-button-5"
+            >
               Ver Meu Perfil
             </Button>
           </Link>
         </div>
 
-        <div className="flex flex-col gap-4 divide-y divide-slate-100 dark:divide-neutral-800">
-          
+        <div className="settings-page-panel-15">
           {/* Perfil Público Geral */}
-          <div className="flex items-center justify-between pt-2">
-            <div className="pr-4">
-              <p className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                <Globe className="w-4 h-4 text-blue-500" />
+          <div className="settings-page-panel-16">
+            <div className="settings-page-panel-12">
+              <p className="settings-page-description-7">
+                <Globe className="settings-page-globe" />
                 <span>Perfil Público Aberto</span>
               </p>
-              <p className="text-xs text-slate-500 dark:text-neutral-400">
-                Se desativado, o seu perfil ficará privado e invisível para visitantes externos e outros alunos.
+              <p className="settings-page-description-4">
+                Se desativado, o seu perfil ficará privado e invisível para visitantes externos e
+                outros alunos.
               </p>
             </div>
             <input
               type="checkbox"
               checked={isPublic}
-              onChange={e => setIsPublic(e.target.checked)}
-              className="w-5 h-5 accent-blue-600 rounded cursor-pointer shrink-0"
+              onChange={(e) => setIsPublic(e.target.checked)}
+              className="settings-page-field-2"
             />
           </div>
 
           {/* Biografia */}
-          <div className="flex items-center justify-between pt-4">
-            <div className="pr-4">
-              <p className="text-sm font-bold text-slate-900 dark:text-white">
-                Mostrar Biografia e Apresentação
-              </p>
-              <p className="text-xs text-slate-500 dark:text-neutral-400">
+          <div className="settings-page-panel-17">
+            <div className="settings-page-panel-12">
+              <p className="settings-page-description-8">Mostrar Biografia e Apresentação</p>
+              <p className="settings-page-description-4">
                 Exibir o texto da sua apresentação pessoal no cabeçalho do perfil.
               </p>
             </div>
             <input
               type="checkbox"
               checked={showBio}
-              onChange={e => setShowBio(e.target.checked)}
-              className="w-5 h-5 accent-blue-600 rounded cursor-pointer shrink-0"
+              onChange={(e) => setShowBio(e.target.checked)}
+              className="settings-page-field-2"
             />
           </div>
 
           {/* Localização */}
-          <div className="flex items-center justify-between pt-4">
-            <div className="pr-4">
-              <p className="text-sm font-bold text-slate-900 dark:text-white">
-                Mostrar Localização / Cidade
-              </p>
-              <p className="text-xs text-slate-500 dark:text-neutral-400">
+          <div className="settings-page-panel-17">
+            <div className="settings-page-panel-12">
+              <p className="settings-page-description-8">Mostrar Localização / Cidade</p>
+              <p className="settings-page-description-4">
                 Exibir a cidade ou país configurado no perfil.
               </p>
             </div>
             <input
               type="checkbox"
               checked={showLocation}
-              onChange={e => setShowLocation(e.target.checked)}
-              className="w-5 h-5 accent-blue-600 rounded cursor-pointer shrink-0"
+              onChange={(e) => setShowLocation(e.target.checked)}
+              className="settings-page-field-2"
             />
           </div>
 
           {/* Redes Sociais */}
-          <div className="flex items-center justify-between pt-4">
-            <div className="pr-4">
-              <p className="text-sm font-bold text-slate-900 dark:text-white">
-                Mostrar Redes Sociais & Links Externos
-              </p>
-              <p className="text-xs text-slate-500 dark:text-neutral-400">
+          <div className="settings-page-panel-17">
+            <div className="settings-page-panel-12">
+              <p className="settings-page-description-8">Mostrar Redes Sociais & Links Externos</p>
+              <p className="settings-page-description-4">
                 Exibir botões de ligação para GitHub, LinkedIn, Twitter/X e Website pessoal.
               </p>
             </div>
             <input
               type="checkbox"
               checked={showSocials}
-              onChange={e => setShowSocials(e.target.checked)}
-              className="w-5 h-5 accent-blue-600 rounded cursor-pointer shrink-0"
+              onChange={(e) => setShowSocials(e.target.checked)}
+              className="settings-page-field-2"
             />
           </div>
 
           {/* Cursos Matriculados */}
-          <div className="flex items-center justify-between pt-4">
-            <div className="pr-4">
-              <p className="text-sm font-bold text-slate-900 dark:text-white">
+          <div className="settings-page-panel-17">
+            <div className="settings-page-panel-12">
+              <p className="settings-page-description-8">
                 Mostrar Cursos e Certificados Concluídos
               </p>
-              <p className="text-xs text-slate-500 dark:text-neutral-400">
-                Permitir que outros membros vejam a lista de formações em que participou e certificados oficiais.
+              <p className="settings-page-description-4">
+                Permitir que outros membros vejam a lista de formações em que participou e
+                certificados oficiais.
               </p>
             </div>
             <input
               type="checkbox"
               checked={showCourses}
-              onChange={e => setShowCourses(e.target.checked)}
-              className="w-5 h-5 accent-blue-600 rounded cursor-pointer shrink-0"
+              onChange={(e) => setShowCourses(e.target.checked)}
+              className="settings-page-field-2"
             />
           </div>
-
         </div>
 
         <Button
@@ -528,73 +517,67 @@ export const SettingsPage = () => {
           isLoading={isSavingPrivacy}
           variant="primary"
           size="md"
-          className="self-stretch sm:self-end mt-2 font-bold shadow-md shadow-blue-500/20"
+          className="settings-page-button-4"
         >
           Guardar Visibilidade do Perfil
         </Button>
       </Card>
 
       {/* 4. Notificações */}
-      <Card className="p-5 sm:p-8 flex flex-col gap-6 border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#0b0c0e] shadow-xs">
+      <Card className="settings-page-card-2">
         <div>
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
-            <Bell className="w-5 h-5 text-blue-500" />
+          <h3 className="settings-page-subheading-3">
+            <Bell className="settings-page-bell" />
             <span>Notificações & Alertas</span>
           </h3>
-          <p className="text-sm text-slate-500 dark:text-neutral-400">
+          <p className="settings-page-description-9">
             Escolha quais os alertas que deseja receber na plataforma e por email.
           </p>
         </div>
 
-        <div className="flex flex-col gap-4 divide-y divide-slate-100 dark:divide-neutral-800">
-          <div className="flex items-center justify-between pt-4">
+        <div className="settings-page-panel-15">
+          <div className="settings-page-panel-17">
             <div>
-              <p className="text-sm font-bold text-slate-900 dark:text-white">
-                Novidades & Aulas nos Meus Cursos
-              </p>
-              <p className="text-xs text-slate-500 dark:text-neutral-400">
+              <p className="settings-page-description-8">Novidades & Aulas nos Meus Cursos</p>
+              <p className="settings-page-description-4">
                 Quando os formadores publicam novas aulas, materiais ou avisos importantes.
               </p>
             </div>
             <input
               type="checkbox"
               checked={courseUpdates}
-              onChange={e => setCourseUpdates(e.target.checked)}
-              className="w-5 h-5 accent-blue-600 rounded cursor-pointer"
+              onChange={(e) => setCourseUpdates(e.target.checked)}
+              className="settings-page-field-3"
             />
           </div>
 
-          <div className="flex items-center justify-between pt-4">
+          <div className="settings-page-panel-17">
             <div>
-              <p className="text-sm font-bold text-slate-900 dark:text-white">
-                Menções na Comunidade & Chat
-              </p>
-              <p className="text-xs text-slate-500 dark:text-neutral-400">
+              <p className="settings-page-description-8">Menções na Comunidade & Chat</p>
+              <p className="settings-page-description-4">
                 Quando alguém o menciona diretamente (@) ou responde a uma mensagem sua.
               </p>
             </div>
             <input
               type="checkbox"
               checked={chatMentions}
-              onChange={e => setChatMentions(e.target.checked)}
-              className="w-5 h-5 accent-blue-600 rounded cursor-pointer"
+              onChange={(e) => setChatMentions(e.target.checked)}
+              className="settings-page-field-3"
             />
           </div>
 
-          <div className="flex items-center justify-between pt-4">
+          <div className="settings-page-panel-17">
             <div>
-              <p className="text-sm font-bold text-slate-900 dark:text-white">
-                Resumo Semanal de Progresso
-              </p>
-              <p className="text-xs text-slate-500 dark:text-neutral-400">
+              <p className="settings-page-description-8">Resumo Semanal de Progresso</p>
+              <p className="settings-page-description-4">
                 Resumo semanal das aulas concluídas e estado das sequências de estudo.
               </p>
             </div>
             <input
               type="checkbox"
               checked={emailNotifs}
-              onChange={e => setEmailNotifs(e.target.checked)}
-              className="w-5 h-5 accent-blue-600 rounded cursor-pointer"
+              onChange={(e) => setEmailNotifs(e.target.checked)}
+              className="settings-page-field-3"
             />
           </div>
         </div>
@@ -603,7 +586,7 @@ export const SettingsPage = () => {
           onClick={handleSavePreferences}
           variant="primary"
           size="md"
-          className="self-stretch sm:self-end mt-2 font-bold shadow-md shadow-blue-500/20"
+          className="settings-page-button-4"
         >
           Guardar Notificações
         </Button>
@@ -611,32 +594,35 @@ export const SettingsPage = () => {
 
       {/* 5. Candidatura a Formador */}
       {user?.role !== 'CREATOR' && user?.role !== 'ADMIN' && (
-        <Card className="p-5 sm:p-8 flex flex-col gap-6 border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#0b0c0e] shadow-xs">
+        <Card className="settings-page-card-2">
           <div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
-              Programa de Formadores
-            </h3>
-            <p className="text-sm text-slate-500 dark:text-neutral-400">
-              Partilhe o seu conhecimento prático com a comunidade e publique os seus próprios cursos.
+            <h3 className="settings-page-subheading">Programa de Formadores</h3>
+            <p className="settings-page-description-9">
+              Partilhe o seu conhecimento prático com a comunidade e publique os seus próprios
+              cursos.
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-200/50 dark:border-indigo-800/40">
-                <Sparkles className="w-5 h-5" />
+          <div className="settings-page-panel-18">
+            <div className="settings-page-panel-19">
+              <div className="settings-page-panel-20">
+                <Sparkles className="settings-page-sparkles" />
               </div>
               <div>
-                <p className="text-sm font-bold text-slate-900 dark:text-white">
-                  Candidatura a Formador
-                </p>
-                <p className="text-xs text-slate-500 dark:text-neutral-400 max-w-lg mt-0.5">
-                  Crie e publique cursos na plataforma, com suporte para módulos em vídeo, questionários práticos e salas de mentoria para as suas turmas.
+                <p className="settings-page-description-8">Candidatura a Formador</p>
+                <p className="settings-page-description-10">
+                  Crie e publique cursos na plataforma, com suporte para módulos em vídeo,
+                  questionários práticos e salas de mentoria para as suas turmas.
                 </p>
               </div>
             </div>
-            <Link to="/creator/apply" className="shrink-0 self-start sm:self-center">
-              <Button variant="secondary" size="sm" rightIcon={<ArrowRight className="w-3.5 h-3.5" />} className="font-semibold text-xs">
+            <Link to="/creator/apply" className="settings-page-link-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                rightIcon={<ArrowRight className="settings-page-arrow-right" />}
+                className="settings-page-button-6"
+              >
                 Candidatar
               </Button>
             </Link>
@@ -645,19 +631,25 @@ export const SettingsPage = () => {
       )}
 
       {/* 6. Gestão de Sessão */}
-      <Card className="p-5 sm:p-7 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#0b0c0e] shadow-xs">
+      <Card className="settings-page-card-3">
         <div>
-          <h4 className="text-base font-bold text-slate-900 dark:text-white">Gestão de Sessão</h4>
-          <p className="text-sm text-slate-500 dark:text-neutral-400 mt-0.5">
-            Sessão iniciada como {user?.email} ({user?.role === 'CREATOR' ? 'Formador' : user?.role === 'ADMIN' ? 'Administrador' : 'Aluno'})
+          <h4 className="settings-page-caption">Gestão de Sessão</h4>
+          <p className="settings-page-description-5">
+            Sessão iniciada como {user?.email} (
+            {user?.role === 'CREATOR'
+              ? 'Formador'
+              : user?.role === 'ADMIN'
+                ? 'Administrador & Formador'
+                : 'Aluno'}
+            )
           </p>
         </div>
         <Button
           onClick={logout}
           variant="secondary"
           size="md"
-          leftIcon={<LogOut className="w-4 h-4 text-red-600" />}
-          className="w-full sm:w-auto font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 hover:border-red-200 dark:border-neutral-800 dark:hover:border-red-900"
+          leftIcon={<LogOut className="settings-page-log-out" />}
+          className="settings-page-button-7"
         >
           Terminar Sessão
         </Button>
