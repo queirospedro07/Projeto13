@@ -1,0 +1,4 @@
+const dotenv = require('dotenv');
+dotenv.config({
+  path: require('node:path').resolve(__dirname, '../../.env'),
+});

@@ -1,10 +1,4 @@
-import { queryOne, execute } from '../database/connection.js';
-
-export const PROFILE_SOCIAL_SCHEMA = `CREATE TABLE IF NOT EXISTS ligacoes_sociais_perfil (
-  id_utilizador TEXT PRIMARY KEY REFERENCES utilizadores(id) ON DELETE CASCADE,
-  ligacoes TEXT NOT NULL DEFAULT '{}'
-);`;
-
+const { queryOne, execute } = require('../database/connection.js');
 const SUPPORTED = new Set([
   'website',
   'github',
@@ -17,8 +11,7 @@ const SUPPORTED = new Set([
   'discord',
   'facebook',
 ]);
-
-export function validateSocialLinks(input) {
+function validateSocialLinks(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input))
     throw new Error('As redes sociais devem ser um objeto.');
   const result = {};
@@ -47,22 +40,24 @@ export function validateSocialLinks(input) {
   }
   return result;
 }
-
-export function getProfileSocialLinks(userId) {
-  const row = queryOne('SELECT ligacoes FROM ligacoes_sociais_perfil WHERE id_utilizador = ?', [
-    userId,
-  ]);
+async function getProfileSocialLinks(userId) {
+  const row = await queryOne(
+    'SELECT ligacoes FROM ligacoes_sociais_perfil WHERE id_utilizador = $1',
+    [userId],
+  );
   try {
     return row ? validateSocialLinks(JSON.parse(row.ligacoes)) : {};
   } catch {
     return {};
   }
 }
-
-export function saveProfileSocialLinks(userId, links) {
-  execute(
-    `INSERT INTO ligacoes_sociais_perfil (id_utilizador, ligacoes) VALUES (?, ?)
+async function saveProfileSocialLinks(userId, links) {
+  await execute(
+    `INSERT INTO ligacoes_sociais_perfil (id_utilizador, ligacoes) VALUES ($1, $2)
     ON CONFLICT (id_utilizador) DO UPDATE SET ligacoes = excluded.ligacoes`,
     [userId, JSON.stringify(links)],
   );
 }
+exports.validateSocialLinks = validateSocialLinks;
+exports.getProfileSocialLinks = getProfileSocialLinks;
+exports.saveProfileSocialLinks = saveProfileSocialLinks;

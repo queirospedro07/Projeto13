@@ -1,55 +1,66 @@
-import { queryOne, queryAll } from '../database/connection.js';
-
-export function canManageCourse(user, course) {
+const { asyncSome } = require('../utils/asyncCollections.js');
+const { queryOne, queryAll } = require('../database/connection.js');
+async function canManageCourse(user, course) {
   if (!user?.id || !course) return false;
   return (
     user.role === 'ADMIN' ||
     user.id === course.creatorId ||
     Boolean(
-      queryOne('SELECT id FROM colaboradores_curso WHERE id_curso = ? AND id_utilizador = ?', [
-        course.id,
-        user.id,
-      ]),
+      await queryOne(
+        'SELECT id FROM colaboradores_curso WHERE id_curso = $1 AND id_utilizador = $2',
+        [course.id, user.id],
+      ),
     )
   );
 }
-
-export function canStudyCourse(user, course) {
+async function canStudyCourse(user, course) {
   if (!user?.id || !course) return false;
-  if (canManageCourse(user, course)) return true;
+  if (await canManageCourse(user, course)) return true;
   return Boolean(
-    queryOne('SELECT id FROM enrollments WHERE courseId = ? AND userId = ?', [course.id, user.id]),
+    await queryOne('SELECT id FROM enrollments WHERE "courseId" = $1 AND "userId" = $2', [
+      course.id,
+      user.id,
+    ]),
   );
 }
-
-export function lessonWithCourse(lessonId) {
-  return queryOne(
-    `SELECT l.*, m.courseId FROM lessons l JOIN course_modules m ON m.id = l.moduleId WHERE l.id = ?`,
+async function lessonWithCourse(lessonId) {
+  return await queryOne(
+    'SELECT l.*, m."courseId" FROM lessons l JOIN course_modules m ON m.id = l."moduleId" WHERE l.id = $1',
     [lessonId],
   );
 }
-
-export function canAccessSpace(user, spaceId) {
+async function canAccessSpace(user, spaceId) {
   if (!user?.id) return false;
-  const space = queryOne('SELECT id, ownerId, isPrivate FROM spaces WHERE id = ?', [spaceId]);
+  const space = await queryOne('SELECT id, "ownerId", "isPrivate" FROM spaces WHERE id = $1', [
+    spaceId,
+  ]);
   if (!space) return false;
   if (user.role === 'ADMIN' || user.id === space.ownerId) return true;
-  const courses = queryAll('SELECT * FROM courses WHERE spaceId = ?', [space.id]);
-  if (courses.length) return courses.some((course) => canStudyCourse(user, course));
+  const courses = await queryAll('SELECT * FROM courses WHERE "spaceId" = $1', [space.id]);
+  if (courses.length)
+    return await asyncSome(courses, async (course) => await canStudyCourse(user, course));
   return Boolean(
-    queryOne('SELECT id FROM memberships WHERE spaceId = ? AND userId = ?', [space.id, user.id]),
+    await queryOne('SELECT id FROM memberships WHERE "spaceId" = $1 AND "userId" = $2', [
+      space.id,
+      user.id,
+    ]),
   );
 }
-
-export function canModerateSpace(user, spaceId) {
+async function canModerateSpace(user, spaceId) {
   if (!user?.id) return false;
-  const space = queryOne('SELECT ownerId FROM spaces WHERE id = ?', [spaceId]);
+  const space = await queryOne('SELECT "ownerId" FROM spaces WHERE id = $1', [spaceId]);
   if (!space) return false;
   return (
     user.role === 'ADMIN' ||
     user.id === space.ownerId ||
-    queryAll('SELECT * FROM courses WHERE spaceId = ?', [spaceId]).some((course) =>
-      canManageCourse(user, course),
-    )
+    (await asyncSome(
+      await queryAll('SELECT * FROM courses WHERE "spaceId" = $1', [spaceId]),
+      async (course) => await canManageCourse(user, course),
+    ))
   );
 }
+exports.canManageCourse = canManageCourse;
+exports.canStudyCourse = canStudyCourse;
+exports.lessonWithCourse = lessonWithCourse;
+exports.canAccessSpace = canAccessSpace;
+exports.canModerateSpace = canModerateSpace;

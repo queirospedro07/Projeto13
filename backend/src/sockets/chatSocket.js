@@ -1,43 +1,37 @@
-import { socketUser, broadcastPresence } from './security.js';
-import { canAccessSpace } from '../services/courseAccess.js';
-import { queryOne } from '../database/connection.js';
-import { canAccessChannel } from '../middleware/channelAccess.js';
-
+const { socketUser, broadcastPresence } = require('./security.js');
+const { canAccessSpace } = require('../services/courseAccess.js');
+const { queryOne } = require('../database/connection.js');
+const { canAccessChannel } = require('../middleware/channelAccess.js');
 const onlineUsers = new Map();
 const voiceRooms = new Map();
 const directCalls = new Map();
-
-function canModerateVoiceRoom(user, roomId) {
+async function canModerateVoiceRoom(user, roomId) {
   if (!user?.id || !roomId) return false;
   if (user.role === 'ADMIN') return true;
-
-  const channel = queryOne(
-    `SELECT c.id_espaco AS spaceId, s.id_proprietario AS ownerId
+  const channel = await queryOne(
+    `SELECT c.id_espaco AS "spaceId", s.id_proprietario AS "ownerId"
      FROM canais c
      JOIN espacos s ON s.id = c.id_espaco
-     WHERE c.id = ?`,
+     WHERE c.id = $1`,
     [roomId],
   );
   const spaceId = channel?.spaceId || roomId;
   if (channel?.ownerId === user.id) return true;
-
-  const spaceOwner = queryOne('SELECT id FROM espacos WHERE id = ? AND id_proprietario = ?', [
-    spaceId,
-    user.id,
-  ]);
+  const spaceOwner = await queryOne(
+    'SELECT id FROM espacos WHERE id = $1 AND id_proprietario = $2',
+    [spaceId, user.id],
+  );
   if (spaceOwner) return true;
-
-  const courseOwnerOrCollab = queryOne(
+  const courseOwnerOrCollab = await queryOne(
     `SELECT c.id FROM cursos c
      LEFT JOIN colaboradores_curso cc ON cc.id_curso = c.id
-     WHERE (c.id_espaco = ? OR c.id = ?) AND (c.id_criador = ? OR cc.id_utilizador = ?)
+     WHERE (c.id_espaco = $1 OR c.id = $2) AND (c.id_criador = $3 OR cc.id_utilizador = $4)
      LIMIT 1`,
     [spaceId, roomId, user.id, user.id],
   );
   return Boolean(courseOwnerOrCollab);
 }
-
-export function setupSocketIO(io) {
+function setupSocketIO(io) {
   io.on('connection', (socket) => {
     if (!socket.data?.user) return socket.disconnect(true);
     let packetCount = 0,
@@ -45,7 +39,7 @@ export function setupSocketIO(io) {
     const joinedVoice = (roomId) => Boolean(voiceRooms.get(roomId)?.has(socket.id));
     const roomIdentifier = (value) =>
       typeof value === 'string' && value.length <= 180 && /^[a-zA-Z0-9_-]+$/.test(value);
-    socket.use((packet, next) => {
+    socket.use(async (packet, next) => {
       try {
         if (Date.now() - packetWindow > 10000) {
           packetCount = 0;
@@ -55,13 +49,13 @@ export function setupSocketIO(io) {
           return next(new Error('Demasiados eventos. Aguarde alguns segundos.'));
         for (const [id, call] of directCalls)
           if (Date.now() - call.created > 600000 && !voiceRooms.has(id)) directCalls.delete(id);
-        const actor = socketUser(socket);
+        const actor = await socketUser(socket);
         socket.data.user = actor;
         const [event, data] = packet;
         if (['send-message', 'direct-message', 'reaction-updated'].includes(event))
           return next(new Error('Envie mensagens pela API autenticada.'));
         if (['join-channel', 'leave-channel'].includes(event)) {
-          if (!roomIdentifier(data) || !canAccessChannel(actor, data))
+          if (!roomIdentifier(data) || !(await canAccessChannel(actor, data)))
             return next(new Error('Sem acesso ao canal.'));
           return next();
         }
@@ -70,7 +64,7 @@ export function setupSocketIO(io) {
         if (
           ['typing', 'stop-typing'].includes(event) &&
           (!socket.rooms.has('channel_' + data.channelId) ||
-            !canAccessChannel(actor, data.channelId))
+            !(await canAccessChannel(actor, data.channelId)))
         )
           return next(new Error('Sem acesso ao canal.'));
         if (event === 'direct-call-start') {
@@ -80,9 +74,10 @@ export function setupSocketIO(io) {
             data.targetUserId === actor.id
           )
             return next(new Error('Chamada inválida.'));
-          const receiver = queryOne('SELECT id FROM users WHERE id = ? AND isSuspended = 0', [
-            data.targetUserId,
-          ]);
+          const receiver = await queryOne(
+            'SELECT id FROM users WHERE id = $1 AND "isSuspended" = 0',
+            [data.targetUserId],
+          );
           if (!receiver) return next(new Error('Destinatário indisponível.'));
           const previous = directCalls.get(data.roomId);
           if (previous && (previous.caller !== actor.id || previous.receiver !== receiver.id))
@@ -123,8 +118,8 @@ export function setupSocketIO(io) {
             [call.caller, call.receiver].includes(actor.id);
           if (
             !directAccess &&
-            !canAccessChannel(actor, data.roomId) &&
-            !canAccessSpace(actor, data.roomId)
+            !(await canAccessChannel(actor, data.roomId)) &&
+            !(await canAccessSpace(actor, data.roomId))
           )
             return next(new Error('Sem acesso à sala.'));
         } else if (event.startsWith('voice-signal-')) {
@@ -148,7 +143,10 @@ export function setupSocketIO(io) {
             id: data.message.id,
             sender: actor.name,
             content: data.message.content.trim(),
-            time: new Date().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+            time: new Date().toLocaleTimeString('pt-PT', {
+              hour: '2-digit',
+              minute: '2-digit',
+            }),
           };
         }
         Object.assign(data, {
@@ -182,7 +180,6 @@ export function setupSocketIO(io) {
       socket.join(`user_${authUser.id}`);
       broadcastPresence(io);
     }
-
     socket.on('user-connected', (userData) => {
       const effectiveUserId = socket.data?.user?.id || userData?.userId;
       const effectiveUsername = socket.data?.user?.username || userData?.username;
@@ -197,8 +194,8 @@ export function setupSocketIO(io) {
         broadcastPresence(io);
       }
     });
-    socket.on('join-channel', (channelId) => {
-      if (socket.data?.user && !canAccessChannel(socket.data.user, channelId)) {
+    socket.on('join-channel', async (channelId) => {
+      if (socket.data?.user && !(await canAccessChannel(socket.data.user, channelId))) {
         return;
       }
       socket.join(`channel_${channelId}`);
@@ -352,39 +349,41 @@ export function setupSocketIO(io) {
         fromSocketId: socket.id,
       });
     });
-
     socket.on('voice-chat-message', ({ roomId, message }) => {
       socket.to(`voice_${roomId}`).emit('voice-chat-message', message);
     });
-    socket.on('voice-set-room-mode', ({ roomId, mode }) => {
-      if (socket.data?.user && !canModerateVoiceRoom(socket.data.user, roomId)) return;
+    socket.on('voice-set-room-mode', async ({ roomId, mode }) => {
+      if (socket.data?.user && !(await canModerateVoiceRoom(socket.data.user, roomId))) return;
       io.to(`voice_${roomId}`).emit('voice-room-mode-changed', {
         roomId,
         mode,
       });
     });
-    socket.on('voice-update-permissions', ({ roomId, targetUserId, canSpeak, canShareScreen }) => {
-      if (socket.data?.user && !canModerateVoiceRoom(socket.data.user, roomId)) return;
-      io.to(`voice_${roomId}`).emit('voice-permissions-updated', {
-        targetUserId,
-        canSpeak,
-        canShareScreen,
-      });
-    });
+    socket.on(
+      'voice-update-permissions',
+      async ({ roomId, targetUserId, canSpeak, canShareScreen }) => {
+        if (socket.data?.user && !(await canModerateVoiceRoom(socket.data.user, roomId))) return;
+        io.to(`voice_${roomId}`).emit('voice-permissions-updated', {
+          targetUserId,
+          canSpeak,
+          canShareScreen,
+        });
+      },
+    );
     socket.on('voice-speaker-request', ({ roomId, user }) => {
       socket.to(`voice_${roomId}`).emit('voice-speaker-request', {
         user,
       });
     });
-    socket.on('voice-speaker-decision', ({ roomId, targetUserId, approved }) => {
-      if (socket.data?.user && !canModerateVoiceRoom(socket.data.user, roomId)) return;
+    socket.on('voice-speaker-decision', async ({ roomId, targetUserId, approved }) => {
+      if (socket.data?.user && !(await canModerateVoiceRoom(socket.data.user, roomId))) return;
       io.to(`voice_${roomId}`).emit('voice-speaker-decision', {
         targetUserId,
         approved,
       });
     });
-    socket.on('voice-kick-user', ({ roomId, targetUserId }) => {
-      if (socket.data?.user && !canModerateVoiceRoom(socket.data.user, roomId)) return;
+    socket.on('voice-kick-user', async ({ roomId, targetUserId }) => {
+      if (socket.data?.user && !(await canModerateVoiceRoom(socket.data.user, roomId))) return;
       const participants = voiceRooms.get(roomId);
       if (participants)
         for (const [targetSocketId, participant] of participants) {
@@ -406,7 +405,6 @@ export function setupSocketIO(io) {
         roomId,
       });
     });
-
     socket.on('direct-call-accepted', ({ callerId, roomId, acceptor }) => {
       if (!callerId) return;
       io.to(`user_${callerId}`).emit('direct-call-accepted', {
@@ -414,7 +412,6 @@ export function setupSocketIO(io) {
         acceptor,
       });
     });
-
     socket.on('direct-call-rejected', ({ callerId, roomId, rejector }) => {
       if (!callerId) return;
       io.to(`user_${callerId}`).emit('direct-call-rejected', {
@@ -422,14 +419,12 @@ export function setupSocketIO(io) {
         rejector,
       });
     });
-
     socket.on('direct-call-ended', ({ targetUserId, roomId }) => {
       if (!targetUserId) return;
       io.to(`user_${targetUserId}`).emit('direct-call-ended', {
         roomId,
       });
     });
-
     socket.on('disconnect', () => {
       for (const [roomId, call] of directCalls)
         if (Date.now() - call.created > 600000) directCalls.delete(roomId);
@@ -454,3 +449,4 @@ export function setupSocketIO(io) {
     });
   });
 }
+exports.setupSocketIO = setupSocketIO;

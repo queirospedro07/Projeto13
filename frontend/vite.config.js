@@ -50,14 +50,13 @@ export default defineConfig(({ mode }) => {
               /node_modules\/(react|react-dom|scheduler|react-router|react-router-dom)\//.test(id)
             )
               return 'vendor-react';
-            if (/node_modules\/(framer-motion|motion-dom|motion-utils)\//.test(id))
-              return 'vendor-motion';
           },
         },
       },
     },
     server: {
       port: 5173,
+      strictPort: true,
       proxy: {
         '/api': { target: 'http://localhost:5000', changeOrigin: true },
         '/socket.io': { target: 'http://localhost:5000', ws: true },

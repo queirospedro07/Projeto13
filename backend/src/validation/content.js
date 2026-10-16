@@ -1,6 +1,8 @@
-export function isSafeImage(value, { allowEmpty = true } = {}) {
+function isSafeImage(value, { allowEmpty = true } = {}) {
   if (typeof value !== 'string') return false;
   if (!value) return allowEmpty;
+  // Reject control characters in image URLs.
+  // eslint-disable-next-line no-control-regex
   if (value.length > 2800000 || /[\u0000-\u001f]/.test(value)) return false;
   if (value.startsWith('data:')) {
     const match = /^data:image\/(png|jpeg|webp);base64,([a-z\d+/]+={0,2})$/i.exec(value);
@@ -25,7 +27,7 @@ export function isSafeImage(value, { allowEmpty = true } = {}) {
     return false;
   }
 }
-export function isSafeBanner(value) {
+function isSafeBanner(value) {
   return (
     isSafeImage(value) ||
     (typeof value === 'string' &&
@@ -34,26 +36,32 @@ export function isSafeBanner(value) {
         /^(rgb|hsl)a?\([\d\s.,%/+-]+\)$/i.test(value)))
   );
 }
-export function validateCourseBody(req, res, next) {
+function validateCourseBody(req, res, next) {
   const body = req.body || {};
   if (
     body.title !== undefined &&
     (typeof body.title !== 'string' || body.title.trim().length < 2 || body.title.length > 160)
   )
-    return res.status(400).json({ error: 'O título deve ter entre 2 e 160 caracteres.' });
+    return res.status(400).json({
+      error: 'O título deve ter entre 2 e 160 caracteres.',
+    });
   if (
     body.description !== undefined &&
     (typeof body.description !== 'string' || body.description.length > 20000)
   )
-    return res.status(400).json({ error: 'Descrição inválida (limite de 20 000 caracteres).' });
+    return res.status(400).json({
+      error: 'Descrição inválida (limite de 20 000 caracteres).',
+    });
   for (const key of ['isFree', 'isPublished', 'allowStudentScreenShare', 'allowStudentCamera'])
     if (body[key] !== undefined && ![true, false, 0, 1].includes(body[key]))
-      return res.status(400).json({ error: 'Opção de curso inválida.' });
+      return res.status(400).json({
+        error: 'Opção de curso inválida.',
+      });
   for (const key of ['thumbnailUrl', 'bannerUrl'])
     if (body[key] !== undefined && !isSafeImage(body[key]))
-      return res
-        .status(400)
-        .json({ error: 'Imagem de curso inválida. Use JPG, PNG ou WebP, ou um link http/https.' });
+      return res.status(400).json({
+        error: 'Imagem de curso inválida. Use JPG, PNG ou WebP, ou um link http/https.',
+      });
   if (
     body.price !== undefined &&
     (typeof body.price !== 'number' ||
@@ -61,7 +69,9 @@ export function validateCourseBody(req, res, next) {
       body.price < 0 ||
       body.price > 100000)
   )
-    return res.status(400).json({ error: 'Preço inválido.' });
+    return res.status(400).json({
+      error: 'Preço inválido.',
+    });
   if (
     body.modules !== undefined &&
     (!Array.isArray(body.modules) ||
@@ -82,7 +92,9 @@ export function validateCourseBody(req, res, next) {
     'bannerPosition',
   ]) {
     if (body[key] !== undefined && (typeof body[key] !== 'string' || body[key].length > 160))
-      return res.status(400).json({ error: 'Dados de curso inválidos.' });
+      return res.status(400).json({
+        error: 'Dados de curso inválidos.',
+      });
   }
   for (const key of ['learningOutcomes', 'requirements'])
     if (
@@ -144,23 +156,30 @@ export function validateCourseBody(req, res, next) {
         (channel) => !channel || typeof channel.name !== 'string' || channel.name.length > 80,
       ))
   )
-    return res.status(400).json({ error: 'Canais inválidos.' });
+    return res.status(400).json({
+      error: 'Canais inválidos.',
+    });
   if (body.documents !== undefined) {
     if (!Array.isArray(body.documents) || body.documents.length > 20)
-      return res.status(400).json({ error: 'Use até 20 documentos por curso.' });
+      return res.status(400).json({
+        error: 'Use até 20 documentos por curso.',
+      });
     let total = 0;
     for (const document of body.documents) {
       const value = document?.url || document?.data;
-      if (typeof value !== 'string') return res.status(400).json({ error: 'Documento inválido.' });
+      if (typeof value !== 'string')
+        return res.status(400).json({
+          error: 'Documento inválido.',
+        });
       if (safeUrl(value)) continue;
       const match =
         /^data:(application\/pdf|image\/(png|jpeg|webp)|text\/plain);base64,([a-z\d+/]+={0,2})$/i.exec(
           value,
         );
       if (!match)
-        return res
-          .status(400)
-          .json({ error: 'Use PDF, TXT, JPG, PNG ou WebP, ou uma ligação http/https.' });
+        return res.status(400).json({
+          error: 'Use PDF, TXT, JPG, PNG ou WebP, ou uma ligação http/https.',
+        });
       const bytes = Buffer.from(match[3], 'base64');
       total += bytes.length;
       if (
@@ -169,10 +188,13 @@ export function validateCourseBody(req, res, next) {
         (match[1] === 'application/pdf' && bytes.toString('ascii', 0, 5) !== '%PDF-') ||
         (match[2] && !isSafeImage(value))
       )
-        return res
-          .status(400)
-          .json({ error: 'Use ficheiros válidos até 2 MB e 4 MB de documentos no total.' });
+        return res.status(400).json({
+          error: 'Use ficheiros válidos até 2 MB e 4 MB de documentos no total.',
+        });
     }
   }
   return next();
 }
+exports.isSafeImage = isSafeImage;
+exports.isSafeBanner = isSafeBanner;
+exports.validateCourseBody = validateCourseBody;

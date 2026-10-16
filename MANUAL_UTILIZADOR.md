@@ -28,7 +28,7 @@ No painel, **Avaliações por rever** reúne questionários e projetos. A nota e
 
 ## Suporte e administração
 
-Em **Ajuda e Suporte**, abra um pedido com assunto e descrição do problema. Os pedidos e as respostas ficam no final da página. Não inclua palavras-passe. Administradores podem consultar e responder aos pedidos nessa mesma secção.
+Em **Ajuda e Suporte**, consulte as perguntas frequentes, filtre por tema ou pesquise uma dúvida. O separador **Guia de utilização** explica como estudar, personalizar o perfil e gerir cursos.
 
 O painel administrativo permite analisar candidaturas, aprovar cursos, gerir utilizadores e consultar denúncias. Uma denúncia pode ser enviada a partir de outro perfil autenticado. A suspensão de uma conta bloqueia o seu acesso à API e aos novos eventos de comunicação.
 

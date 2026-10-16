@@ -1,51 +1,35 @@
-# Publicação e operação
+# Publicação
 
-## Modelo suportado
+A API utiliza PostgreSQL. Configure uma instância PostgreSQL e disponibilize a ligação em `DATABASE_URL`. O Compose incluído serve para desenvolvimento local; não expõe a base de dados fora de `127.0.0.1`.
 
-Esta versão usa um único processo Node.js com SQLite num disco persistente. Não existe suporte funcional a PostgreSQL; `DATABASE_URL` configurado provoca um erro explícito em vez de uma mudança silenciosa de base de dados. Para múltiplas instâncias é necessária uma migração de persistência e coordenação de Socket.IO, que não está implementada.
+## Configuração
 
-O ficheiro `render.yaml` descreve um serviço com disco persistente. A sua aplicação no fornecedor pode ter custos; não foi executada qualquer publicação nesta revisão. O plano gratuito com sistema de ficheiros efémero não deve alojar esta base SQLite. Ver [discos persistentes do Render](https://render.com/docs/disks).
+Use `backend/.env.production.example` como referência. São necessários `NODE_ENV=production`, `DATABASE_URL`, `JWT_SECRET` aleatório com pelo menos 32 caracteres e os domínios HTTPS em `CLIENT_URL` e `FRONTEND_URL`. Use `PGSSL=true` quando a ligação ao PostgreSQL exigir SSL; a verificação de certificados mantém-se ativa. Configure `TRUST_PROXY_HOPS` apenas de acordo com o proxy utilizado.
 
-## Backend
+Os dados não dependem do sistema de ficheiros do serviço web. `DATA_DIRECTORY` serve para operações locais, incluindo exportação de backups. Transfira os backups para armazenamento privado durável. Conserve o segredo JWT entre publicações e limite as permissões das credenciais PostgreSQL.
 
-- Node.js >=22.16, instalação `npm ci`, arranque `npm start` dentro de `backend`.
-- `NODE_ENV=production`.
-- `DATABASE_PATH=/var/data/nexo.db` no disco persistente; nunca numa pasta temporária do build.
-- `JWT_SECRET` aleatório com pelo menos 32 caracteres. A aplicação recusa os valores de exemplo em produção.
-- `CLIENT_URL` e `FRONTEND_URL`: domínio HTTPS exato da interface. Sem `*`. A recuperação de conta usa `FRONTEND_URL`.
-- `TRUST_PROXY_HOPS`: número de proxies de confiança entre o cliente e o Node, apenas quando aplicável. O exemplo Render usa 1; confirme a topologia real.
-- `ENABLE_DEMO_LOGIN=false` e `SEED_DEMO_DATA=false`.
-- `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` para recuperação por email. Sem SMTP não existe envio de recuperação em produção.
-- Verificação de disponibilidade em `/api/health`.
+O ficheiro `render.yaml` descreve a API e exige que a ligação PostgreSQL seja indicada no fornecedor. Não foi executada qualquer publicação.
 
-Crie o primeiro administrador com `npm run admin:create` e variáveis `ADMIN_EMAIL`, `ADMIN_USERNAME`, `ADMIN_NAME`, `ADMIN_PASSWORD` num terminal privado. Não há administrador automático nem reposição da suspensão no arranque.
+## API
+
+```powershell
+npm --prefix backend ci
+npm --prefix backend run migrate
+npm --prefix backend start
+```
+
+O arranque verifica as migrações versionadas sem apagar dados. `/api/health` verifica também a ligação PostgreSQL e devolve HTTP 503 quando a base está indisponível. Para múltiplas instâncias, Socket.IO e as salas de chamadas necessitam de coordenação partilhada; a configuração atual utiliza um processo da API.
 
 ## Frontend
 
-Na Vercel, escolha `frontend` como diretório raiz; `npm ci` e `npm run build`; saída `dist`. Configure antes do build:
+Configure `VITE_API_URL` com o URL da API terminado em `/api` e `VITE_SOCKET_URL` com a origem do Socket.IO. Execute `npm --prefix frontend ci` e `npm --prefix frontend run build`. Publique `frontend/dist` num serviço que encaminhe rotas SPA para `index.html`.
 
-```text
-VITE_API_URL=https://api.exemplo.pt/api
-VITE_SOCKET_URL=https://api.exemplo.pt
-```
+A política de conteúdo da compilação é gerada a partir das origens configuradas. Os vídeos externos e as chamadas exigem permissões apropriadas do navegador. Redes restritas podem exigir TURN.
 
-Os valores `VITE_*` são públicos e nunca devem conter segredos. Se alterar os domínios, reconstrua a interface. O build injeta uma política de conteúdo com os destinos de comunicação configurados; `vercel.json` acrescenta cabeçalhos para impedir enquadramento, sniffing de conteúdo e acesso desnecessário à localização. Se usar outro alojamento, replique esses cabeçalhos e o encaminhamento das rotas para `index.html`.
+## Backups e restauro
 
-As chamadas precisam de HTTPS, permissão de microfone/câmara concedida pelo utilizador e conectividade entre participantes. STUN está configurado. TURN autenticado deve ser integrado antes de prometer chamadas em redes empresariais ou móveis restritas. Não coloque credenciais TURN permanentes na interface.
+`npm --prefix backend run backup` exporta um snapshot consistente. O comando `npm --prefix backend run restore -- caminho/backup.json` restaura apenas para uma base vazia e recusa substituir dados existentes. Teste a recuperação num ambiente separado antes de depender do backup.
 
-## Atualizações, backup e recuperação
+## Limites funcionais
 
-1. Execute os testes e gere o frontend antes de publicar.
-2. Faça `npm run backup` no backend e transfira o ficheiro produzido para armazenamento externo protegido.
-3. Pare o serviço antes de substituir a base numa restauração. Conserve a base anterior e os ficheiros WAL/SHM até confirmar que não há conexões abertas.
-4. Restaure uma cópia num caminho separado, aponte `DATABASE_PATH` para ela e valide login, cursos, mensagens e avaliações antes de voltar a servir tráfego.
-5. O arranque cria apenas objetos ausentes e acrescenta a versão de sessão; não elimina tabelas. Bases com tabelas inglesas legadas são recusadas e precisam de uma migração explícita com backup. Não existe migração automática de dados históricos de PostgreSQL.
-
-Não se efetuou conversão nem limpeza da base de dados existente do utilizador. Contas de demonstração que já existissem devem ser identificadas e removidas pelo responsável antes de expor um serviço público.
-
-## Serviços que exigem configuração própria
-
-- Pagamentos e faturação: não integrados. Inscrições pagas diretas são bloqueadas; há concessão manual de acesso para acordos externos.
-- Armazenamento de ficheiros: não há serviço de anexos no chat. Imagens de perfil são limitadas a JPG/PNG/WebP e redimensionadas pelo editor; recursos pedagógicos aceitam ligações e PDF/TXT/imagens limitados a 2 MB por ficheiro e 4 MB por curso.
-- SMTP: configurar e testar com uma caixa de correio autorizada.
-- TURN e monitorização: definir para o ambiente final; nunca foram ativados serviços externos nesta revisão.
+Os pagamentos existentes são simulações, sem cobranças. Para vender cursos, substitua o fluxo de demonstração por uma integração com confirmação de pagamento no servidor. O envio de recuperação de conta requer SMTP. As contas demo com credenciais conhecidas não devem ser publicadas.

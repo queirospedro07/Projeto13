@@ -1,11 +1,11 @@
-import bcrypt from 'bcryptjs';
-
+const { asyncForEach } = require('../utils/asyncCollections.js');
+const { queryOne, execute, transaction } = require('./connection.js');
+const bcrypt = require('bcryptjs');
 const DEMO_PASSWORD = 'nexoDemo2026!';
-
 const demoUsers = [
   {
     id: 'demo-creator-sofia',
-    email: 'sofia.almeida@nexo.pt',
+    email: 'sofia.almeida@example.test',
     username: 'sofia.almeida',
     name: 'Sofia Almeida',
     role: 'CREATOR',
@@ -17,7 +17,7 @@ const demoUsers = [
   },
   {
     id: 'demo-creator-miguel',
-    email: 'miguel.ferreira@nexo.pt',
+    email: 'miguel.ferreira@example.test',
     username: 'miguel.ferreira',
     name: 'Miguel Ferreira',
     role: 'CREATOR',
@@ -29,7 +29,7 @@ const demoUsers = [
   },
   {
     id: 'demo-student-marta',
-    email: 'marta.lopes@nexo.pt',
+    email: 'marta.lopes@example.test',
     username: 'marta.lopes',
     name: 'Marta Lopes',
     role: 'STUDENT',
@@ -41,7 +41,7 @@ const demoUsers = [
   },
   {
     id: 'demo-student-diogo',
-    email: 'diogo.costa@nexo.pt',
+    email: 'diogo.costa@example.test',
     username: 'diogo.costa',
     name: 'Diogo Costa',
     role: 'STUDENT',
@@ -53,7 +53,7 @@ const demoUsers = [
   },
   {
     id: 'demo-student-beatriz',
-    email: 'beatriz.martins@nexo.pt',
+    email: 'beatriz.martins@example.test',
     username: 'beatriz.martins',
     name: 'Beatriz Martins',
     role: 'STUDENT',
@@ -65,7 +65,7 @@ const demoUsers = [
   },
   {
     id: 'demo-student-joao',
-    email: 'joao.neves@nexo.pt',
+    email: 'joao.neves@example.test',
     username: 'joao.neves',
     name: 'João Neves',
     role: 'STUDENT',
@@ -77,7 +77,7 @@ const demoUsers = [
   },
   {
     id: 'demo-student-ines',
-    email: 'ines.carvalho@nexo.pt',
+    email: 'ines.carvalho@example.test',
     username: 'ines.carvalho',
     name: 'Inês Carvalho',
     role: 'STUDENT',
@@ -89,7 +89,7 @@ const demoUsers = [
   },
   {
     id: 'demo-student-rafael',
-    email: 'rafael.moreira@nexo.pt',
+    email: 'rafael.moreira@example.test',
     username: 'rafael.moreira',
     name: 'Rafael Moreira',
     role: 'STUDENT',
@@ -100,7 +100,6 @@ const demoUsers = [
     headline: 'Estudante de Engenharia de Software',
   },
 ];
-
 const demoCourses = [
   {
     id: 'demo-course-html-css',
@@ -197,8 +196,8 @@ const demoCourses = [
     thumbnailUrl:
       'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=900&auto=format&fit=crop&q=80',
     durationHours: 3.0,
-    price: 0,
-    isFree: 1,
+    price: 29,
+    isFree: 0,
     featured: 0,
     module: 'Consultas e relações em SQL',
     lessons: [
@@ -207,27 +206,34 @@ const demoCourses = [
     ],
   },
 ];
-
-export function seedDemoShowcaseData(db) {
+async function seedDemoShowcaseData({ teacherId } = {}) {
+  if (process.env.NODE_ENV === 'production')
+    throw new Error('Demonstração indisponível em produção.');
+  if (
+    teacherId &&
+    !(await queryOne(
+      "SELECT id FROM utilizadores WHERE id = $1 AND papel IN ('ADMIN', 'CREATOR')",
+      [teacherId],
+    ))
+  )
+    throw new Error('O responsável pelos cursos tem de ser formador ou administrador.');
   const now = new Date().toISOString();
-  const passwordHash = bcrypt.hashSync(DEMO_PASSWORD, 10);
-
-  db.exec('BEGIN');
-  try {
-    const insertUser = db.prepare(`
-      INSERT OR IGNORE INTO utilizadores (id, email, nome_utilizador, hash_palavra_passe, nome, papel, url_avatar, biografia, localizacao, meta_diaria_minutos, minutos_hoje, minutos_totais, esta_suspenso, criado_em, atualizado_em)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 45, 0, 0, 0, ?, ?)
-    `);
-    const insertProfile = db.prepare(`
-      INSERT OR IGNORE INTO perfis (id, id_utilizador, titulo_perfil, e_publico, mostrar_classificacao, preferencia_tema)
-      VALUES (?, ?, ?, 1, 1, 'light')
-    `);
-    const updateDemoAvatar = db.prepare(
-      'UPDATE utilizadores SET url_avatar = ?, atualizado_em = ? WHERE id = ?',
-    );
-
-    demoUsers.forEach((user) => {
-      insertUser.run(
+  const passwordHash = bcrypt.hashSync(DEMO_PASSWORD, 12);
+  return await transaction(async () => {
+    const insertUser = async (...params) =>
+      await execute(
+        `INSERT INTO utilizadores (id, email, nome_utilizador, hash_palavra_passe, nome, papel, url_avatar, biografia, localizacao, meta_diaria_minutos, minutos_hoje, minutos_totais, esta_suspenso, criado_em, atualizado_em)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 45, 0, 0, 0, $10, $11) ON CONFLICT DO NOTHING`,
+        params,
+      );
+    const insertProfile = async (...params) =>
+      await execute(
+        `INSERT INTO perfis (id, id_utilizador, titulo_perfil, e_publico, mostrar_classificacao, preferencia_tema)
+      VALUES ($1, $2, $3, 1, 1, 'light') ON CONFLICT DO NOTHING`,
+        params,
+      );
+    await asyncForEach(demoUsers, async (user) => {
+      await insertUser(
         user.id,
         user.email,
         user.username,
@@ -240,32 +246,33 @@ export function seedDemoShowcaseData(db) {
         now,
         now,
       );
-      updateDemoAvatar.run(user.avatarUrl, now, user.id);
-      insertProfile.run(`prof-${user.id}`, user.id, user.headline);
+      await insertProfile(`prof-${user.id}`, user.id, user.headline);
     });
-
-    db.prepare(
-      `
-      INSERT OR IGNORE INTO categorias (id, nome, slug, descricao, icone)
-      VALUES ('cat-data-demo', 'Dados & Bases de Dados', 'data', 'Consultas, modelação e gestão de bases de dados.', 'Database')
-    `,
-    ).run();
-
-    const insertCourse = db.prepare(`
-      INSERT OR IGNORE INTO cursos (id, titulo, slug, descricao, categoria, dificuldade, url_miniatura, url_banner, preco, e_gratuito, e_publicado, estado_aprovacao, destaque, duracao_horas, idioma, id_criador, id_espaco, criado_em, atualizado_em)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'APPROVED', ?, ?, 'Português', ?, NULL, ?, ?)
-    `);
-    const insertModule = db.prepare(`
-      INSERT OR IGNORE INTO modulos_curso (id, id_curso, titulo, descricao, indice_ordem)
-      VALUES (?, ?, ?, ?, 0)
-    `);
-    const insertLesson = db.prepare(`
-      INSERT OR IGNORE INTO aulas (id, id_modulo, titulo, tipo, conteudo, url_video, duracao_minutos, indice_ordem, recompensa_xp)
-      VALUES (?, ?, ?, 'video', ?, ?, ?, ?, 25)
-    `);
-
-    demoCourses.forEach((course) => {
-      insertCourse.run(
+    await execute(
+      `INSERT INTO categorias (id, nome, slug, descricao, icone)
+      VALUES ('cat-data-demo', 'Dados & Bases de Dados', 'data', 'Consultas, modelação e gestão de bases de dados.', 'Database') ON CONFLICT DO NOTHING`,
+      [],
+    );
+    const insertCourse = async (...params) =>
+      await execute(
+        `INSERT INTO cursos (id, titulo, slug, descricao, categoria, dificuldade, url_miniatura, url_banner, preco, e_gratuito, e_publicado, estado_aprovacao, destaque, duracao_horas, idioma, id_criador, id_espaco, criado_em, atualizado_em)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 1, 'APPROVED', $11, $12, 'Português', $13, NULL, $14, $15) ON CONFLICT DO NOTHING`,
+        params,
+      );
+    const insertModule = async (...params) =>
+      await execute(
+        `INSERT INTO modulos_curso (id, id_curso, titulo, descricao, indice_ordem)
+      VALUES ($1, $2, $3, $4, 0) ON CONFLICT DO NOTHING`,
+        params,
+      );
+    const insertLesson = async (...params) =>
+      await execute(
+        `INSERT INTO aulas (id, id_modulo, titulo, tipo, conteudo, url_video, duracao_minutos, indice_ordem, recompensa_xp)
+      VALUES ($1, $2, $3, 'video', $4, $5, $6, $7, 25) ON CONFLICT DO NOTHING`,
+        params,
+      );
+    await asyncForEach(demoCourses, async (course) => {
+      await insertCourse(
         course.id,
         course.title,
         course.slug,
@@ -278,14 +285,14 @@ export function seedDemoShowcaseData(db) {
         course.isFree,
         course.featured,
         course.durationHours,
-        course.creatorId,
+        teacherId && course.id === 'demo-course-html-css' ? teacherId : course.creatorId,
         now,
         now,
       );
       const moduleId = `${course.id}-module-1`;
-      insertModule.run(moduleId, course.id, course.module, course.description);
-      course.lessons.forEach(([title, youtubeId, durationMin], index) => {
-        insertLesson.run(
+      await insertModule(moduleId, course.id, course.module, course.description);
+      await asyncForEach(course.lessons, async ([title, youtubeId, durationMin], index) => {
+        await insertLesson(
           `${course.id}-lesson-${index + 1}`,
           moduleId,
           title,
@@ -296,24 +303,12 @@ export function seedDemoShowcaseData(db) {
         );
       });
     });
-
-    const defaultVideoLessons = [
-      ['les-1', 'https://www.youtube.com/watch?v=w7ejDZ8SWv8'],
-      ['les-2', 'https://www.youtube.com/watch?v=bMknfKXIFA8'],
-      ['les-design-1', 'https://www.youtube.com/watch?v=FTFaQWZBqQ8'],
-      ['les-ai-1', 'https://www.youtube.com/watch?v=ad79nYk2keg'],
-    ];
-    const updateDefaultVideo = db.prepare(`
-      UPDATE aulas SET url_video = ? WHERE id = ? AND url_video LIKE '%mov_bbb.mp4'
-    `);
-    defaultVideoLessons.forEach(([lessonId, videoUrl]) =>
-      updateDefaultVideo.run(videoUrl, lessonId),
-    );
-
-    const insertEnrollment = db.prepare(`
-      INSERT OR IGNORE INTO inscricoes (id, id_utilizador, id_curso, inscrito_em, percentagem_progresso, id_ultima_aula)
-      VALUES (?, ?, ?, ?, ?, NULL)
-    `);
+    const insertEnrollment = async (...params) =>
+      await execute(
+        `INSERT INTO inscricoes (id, id_utilizador, id_curso, inscrito_em, percentagem_progresso, id_ultima_aula)
+      VALUES ($1, $2, $3, $4, $5, NULL) ON CONFLICT DO NOTHING`,
+        params,
+      );
     const demoEnrollments = [
       ['marta', 'demo-course-html-css'],
       ['diogo', 'demo-course-javascript'],
@@ -324,8 +319,8 @@ export function seedDemoShowcaseData(db) {
       ['marta', 'demo-course-git'],
       ['diogo', 'demo-course-sql'],
     ];
-    demoEnrollments.forEach(([student, courseId], index) => {
-      insertEnrollment.run(
+    await asyncForEach(demoEnrollments, async ([student, courseId], index) => {
+      await insertEnrollment(
         `demo-enrollment-${index + 1}`,
         `demo-student-${student}`,
         courseId,
@@ -333,10 +328,6 @@ export function seedDemoShowcaseData(db) {
         index % 2 ? 24 : 0,
       );
     });
-
-    db.exec('COMMIT');
-  } catch (error) {
-    db.exec('ROLLBACK');
-    throw error;
-  }
+  });
 }
+exports.seedDemoShowcaseData = seedDemoShowcaseData;

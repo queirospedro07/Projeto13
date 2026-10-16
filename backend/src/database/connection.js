@@ -1,82 +1,106 @@
-import path from 'node:path';
-import fs from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import dotenv from 'dotenv';
-import { DatabaseSync } from 'node:sqlite';
-dotenv.config({ path: fileURLToPath(new URL('../../.env', import.meta.url)) });
-let sqliteDb = null;
-export function getDatabasePath() {
-  const configured = process.env.DATABASE_PATH;
-  if (process.env.NODE_ENV === 'production' && !configured)
-    throw new Error(
-      'Configure DATABASE_PATH num volume persistente antes de arrancar em produção.',
-    );
-  const root = fileURLToPath(new URL('../../', import.meta.url));
-  return path.resolve(root, configured || 'data/nexo.db');
+require('../config/environment.js');
+const { AsyncLocalStorage } = require('node:async_hooks');
+const pg = require('pg');
+pg.types.setTypeParser(20, (value) => Number(value));
+pg.types.setTypeParser(1700, (value) => Number(value));
+let pool;
+const transactionContext = new AsyncLocalStorage();
+function getPool() {
+  if (pool) return pool;
+  if (!process.env.DATABASE_URL)
+    throw new Error('Configure DATABASE_URL com a ligação PostgreSQL.');
+  const schema = process.env.DATABASE_SCHEMA || 'public';
+  if (!/^[a-z_][a-z0-9_]*$/.test(schema)) throw new Error('DATABASE_SCHEMA inválido.');
+  pool = new pg.Pool({
+    connectionString: process.env.DATABASE_URL,
+    max: 10,
+    connectionTimeoutMillis: 10000,
+    idleTimeoutMillis: 30000,
+    options: `-c search_path=${schema},public`,
+    ...(process.env.PGSSL === 'true'
+      ? {
+          ssl: {
+            rejectUnauthorized: true,
+          },
+        }
+      : {}),
+  });
+  pool.on('error', (error) => console.error('Ligação PostgreSQL:', error.message));
+  return pool;
 }
-function ensureSqliteDb() {
-  if (sqliteDb) return sqliteDb;
-  if (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('nexo_desativado'))
-    throw new Error(
-      'Esta versão usa SQLite. Remova DATABASE_URL e configure DATABASE_PATH; não é feito fallback nem migração automática de dados PostgreSQL.',
-    );
-  const dbPath = getDatabasePath();
-  fs.mkdirSync(path.dirname(dbPath), { recursive: true });
-  sqliteDb = new DatabaseSync(dbPath);
-  sqliteDb.exec('PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000;');
-  return sqliteDb;
+async function query(sql, params = []) {
+  const client = transactionContext.getStore()?.client || getPool();
+  return client.query(sql, params);
 }
-export async function connectDB() {
-  const db = ensureSqliteDb();
-  const { initializeSchemaAndSeed } = await import('./init.js');
-  initializeSchemaAndSeed(db);
-  return { db };
+async function queryOne(sql, params = []) {
+  return (await query(sql, params)).rows[0];
 }
-const sqlForSqlite = (sql) => sql.replace(/\$\d+/g, '?');
-export function queryOne(sql, params = []) {
-  return ensureSqliteDb()
-    .prepare(sqlForSqlite(sql))
-    .get(...params);
+async function queryAll(sql, params = []) {
+  return (await query(sql, params)).rows;
 }
-export function queryAll(sql, params = []) {
-  return ensureSqliteDb()
-    .prepare(sqlForSqlite(sql))
-    .all(...params);
+async function execute(sql, params = []) {
+  const result = await query(sql, params);
+  return {
+    changes: result.rowCount,
+    rowCount: result.rowCount,
+  };
 }
-export function execute(sql, params = []) {
-  return ensureSqliteDb()
-    .prepare(sqlForSqlite(sql))
-    .run(...params);
-}
-export async function query(sql, params = []) {
-  if (/^\s*(SELECT|PRAGMA)/i.test(sql)) {
-    const rows = queryAll(sql, params);
-    return { rows, rowCount: rows.length };
+async function transaction(callback) {
+  const current = transactionContext.getStore();
+  if (current) {
+    const savepoint = `nested_${++current.sequence}`;
+    await current.client.query(`SAVEPOINT ${savepoint}`);
+    try {
+      const result = await callback();
+      await current.client.query(`RELEASE SAVEPOINT ${savepoint}`);
+      return result;
+    } catch (error) {
+      await current.client.query(`ROLLBACK TO SAVEPOINT ${savepoint}`);
+      throw error;
+    }
   }
-  const info = execute(sql, params);
-  return { rows: [], rowCount: Number(info.changes) };
-}
-let transactionDepth = 0;
-export function transaction(fn) {
-  const db = ensureSqliteDb(),
-    outer = transactionDepth === 0,
-    savepoint = `sp_${transactionDepth}`;
-  transactionDepth++;
-  let started = false;
+  const client = await getPool().connect();
   try {
-    db.exec(outer ? 'BEGIN IMMEDIATE' : `SAVEPOINT ${savepoint}`);
-    started = true;
-    const result = fn();
-    if (result && typeof result.then === 'function')
-      throw new Error('As transações SQLite devem usar operações síncronas.');
-    db.exec(outer ? 'COMMIT' : `RELEASE SAVEPOINT ${savepoint}`);
+    await client.query('BEGIN');
+    const result = await transactionContext.run(
+      {
+        client,
+        sequence: 0,
+      },
+      callback,
+    );
+    await client.query('COMMIT');
     return result;
   } catch (error) {
-    if (started) db.exec(outer ? 'ROLLBACK' : `ROLLBACK TO SAVEPOINT ${savepoint}`);
-    if (started && !outer) db.exec(`RELEASE SAVEPOINT ${savepoint}`);
+    await client.query('ROLLBACK');
     throw error;
   } finally {
-    transactionDepth--;
+    client.release();
   }
 }
-export { sqliteDb as db };
+async function lockTransaction(resource) {
+  const current = transactionContext.getStore();
+  if (!current) throw new Error('O bloqueio exige uma transação ativa.');
+  await current.client.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [resource]);
+}
+async function closeDatabase() {
+  if (pool) {
+    await pool.end();
+    pool = undefined;
+  }
+}
+async function connectDB() {
+  await getPool().query('SELECT 1');
+  const { runMigrations } = require('./schema.js');
+  await runMigrations();
+  return getPool();
+}
+exports.getPool = getPool;
+exports.query = query;
+exports.queryOne = queryOne;
+exports.queryAll = queryAll;
+exports.execute = execute;
+exports.transaction = transaction;
+exports.lockTransaction = lockTransaction;
+exports.closeDatabase = closeDatabase;
+exports.connectDB = connectDB;

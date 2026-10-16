@@ -1,51 +1,41 @@
-import bcrypt from 'bcryptjs';
-import { queryOne, queryAll, execute, transaction } from '../database/connection.js';
-
-export const User = {
-  findByEmail(email) {
-    return queryOne(
-      `
-      SELECT id, email, nome_utilizador AS username,
-             nome AS name, papel AS role, url_avatar AS avatarUrl, biografia AS bio,
-             localizacao AS location, meta_diaria_minutos AS dailyGoalMinutes, minutos_hoje AS minutesToday,
-             minutos_totais AS totalMinutes, esta_suspenso AS isSuspended,
-             criado_em AS createdAt, atualizado_em AS updatedAt
+const bcrypt = require('bcryptjs');
+const { queryOne, queryAll, execute, transaction } = require('../database/connection.js');
+const User = {
+  async findByEmail(email) {
+    return await queryOne(
+      `SELECT id, email, nome_utilizador AS username,
+             nome AS name, papel AS role, url_avatar AS "avatarUrl", biografia AS bio,
+             localizacao AS location, meta_diaria_minutos AS "dailyGoalMinutes", minutos_hoje AS "minutesToday",
+             minutos_totais AS "totalMinutes", esta_suspenso AS "isSuspended",
+             criado_em AS "createdAt", atualizado_em AS "updatedAt"
       FROM utilizadores
-      WHERE LOWER(email) = ?
-    `,
+      WHERE LOWER(email) = $1`,
       [email.toLowerCase().trim()],
     );
   },
-
-  findByUsername(username) {
-    return queryOne(
-      `
-      SELECT id, email, nome_utilizador AS username,
-             nome AS name, papel AS role, url_avatar AS avatarUrl, biografia AS bio,
-             localizacao AS location, meta_diaria_minutos AS dailyGoalMinutes, minutos_hoje AS minutesToday,
-             minutos_totais AS totalMinutes, esta_suspenso AS isSuspended,
-             criado_em AS createdAt, atualizado_em AS updatedAt
+  async findByUsername(username) {
+    return await queryOne(
+      `SELECT id, email, nome_utilizador AS username,
+             nome AS name, papel AS role, url_avatar AS "avatarUrl", biografia AS bio,
+             localizacao AS location, meta_diaria_minutos AS "dailyGoalMinutes", minutos_hoje AS "minutesToday",
+             minutos_totais AS "totalMinutes", esta_suspenso AS "isSuspended",
+             criado_em AS "createdAt", atualizado_em AS "updatedAt"
       FROM utilizadores
-      WHERE LOWER(nome_utilizador) = ?
-    `,
+      WHERE LOWER(nome_utilizador) = $1`,
       [username.toLowerCase().trim()],
     );
   },
-
-  findById(id) {
-    return queryOne(
-      `
-      SELECT id, nome AS name, nome_utilizador AS username, email, papel AS role,
-             url_avatar AS avatarUrl, biografia AS bio, localizacao AS location,
-             esta_suspenso AS isSuspended,
-             criado_em AS createdAt
+  async findById(id) {
+    return await queryOne(
+      `SELECT id, nome AS name, nome_utilizador AS username, email, papel AS role,
+             url_avatar AS "avatarUrl", biografia AS bio, localizacao AS location,
+             esta_suspenso AS "isSuspended",
+             criado_em AS "createdAt"
       FROM utilizadores
-      WHERE id = ?
-    `,
+      WHERE id = $1`,
       [id],
     );
   },
-
   async create({
     name,
     username,
@@ -63,11 +53,10 @@ export const User = {
     const selectedAvatarUrl =
       avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${cleanUsername}`;
     const targetRole = role === 'CREATOR' ? 'CREATOR' : 'STUDENT';
-
-    transaction(() => {
-      execute(
+    await transaction(async () => {
+      await execute(
         `INSERT INTO utilizadores (id, email, nome_utilizador, hash_palavra_passe, nome, papel, url_avatar, biografia, localizacao, meta_diaria_minutos, minutos_hoje, minutos_totais, esta_suspenso, criado_em, atualizado_em)
-         VALUES (?, ?, ?, ?, ?, ?, ?, '', '', 45, 0, 0, 0, ?, ?)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, '', '', 45, 0, 0, 0, $8, $9)`,
         [
           userId,
           cleanEmail,
@@ -81,22 +70,21 @@ export const User = {
         ],
       );
       if (acceptedTerms)
-        execute(
-          'INSERT INTO consentimentos_utilizador(id_utilizador,termos_aceites_em,versao_termos) VALUES(?,?,?)',
+        await execute(
+          'INSERT INTO consentimentos_utilizador(id_utilizador,termos_aceites_em,versao_termos) VALUES($1,$2,$3)',
           [userId, now, '2026-10-15'],
         );
-      execute(
+      await execute(
         `INSERT INTO perfis (id, id_utilizador, titulo_perfil, e_publico, mostrar_classificacao, preferencia_tema)
-         VALUES (?, ?, '', 1, 1, 'light')`,
+         VALUES ($1, $2, '', 1, 1, 'light')`,
         [`prof-${userId}`, userId],
       );
-      execute(
+      await execute(
         `INSERT INTO notificacoes (id, id_utilizador, tipo, titulo, conteudo, ligacao, esta_lida, criado_em)
-         VALUES (?, ?, 'welcome', 'Bem-vindo ao NEXO!', 'Explore o catálogo de cursos e conecte-se com a comunidade.', '/explore', 0, ?)`,
+         VALUES ($1, $2, 'welcome', 'Bem-vindo ao NEXO!', 'Explore o catálogo de cursos e conecte-se com a comunidade.', '/explore', 0, $3)`,
         [`notif-${Date.now()}`, userId, now],
       );
     });
-
     return {
       id: userId,
       name: name.trim(),
@@ -106,12 +94,10 @@ export const User = {
       avatarUrl: selectedAvatarUrl,
     };
   },
-
   async comparePassword(plainPassword, hash) {
     return bcrypt.compare(plainPassword, hash);
   },
-
-  update(id, fields = {}) {
+  async update(id, fields = {}) {
     const COLUMN_MAP = {
       name: 'nome',
       bio: 'biografia',
@@ -125,28 +111,23 @@ export const User = {
     };
     const safeKeys = Object.keys(fields).filter((k) => COLUMN_MAP[k]);
     if (safeKeys.length === 0) return;
-    const setClauses = safeKeys.map((k) => `${COLUMN_MAP[k]} = ?`).join(', ');
+    const setClauses = safeKeys.map((k, index) => `${COLUMN_MAP[k]} = $${index + 1}`).join(', ');
     const values = safeKeys.map((k) => fields[k]);
-    execute(`UPDATE utilizadores SET ${setClauses}, atualizado_em = ? WHERE id = ?`, [
-      ...values,
-      new Date().toISOString(),
-      id,
-    ]);
+    await execute(
+      `UPDATE utilizadores SET ${setClauses}, atualizado_em = $${safeKeys.length + 1} WHERE id = $${safeKeys.length + 2}`,
+      [...values, new Date().toISOString(), id],
+    );
     return this.findById(id);
   },
-
-  listAll(limit = 100, offset = 0) {
-    return queryAll(
-      `
-      SELECT id, nome AS name, nome_utilizador AS username, email, papel AS role,
-             esta_suspenso AS isSuspended, criado_em AS createdAt
+  async listAll(limit = 100, offset = 0) {
+    return await queryAll(
+      `SELECT id, nome AS name, nome_utilizador AS username, email, papel AS role,
+             esta_suspenso AS "isSuspended", criado_em AS "createdAt"
       FROM utilizadores
       ORDER BY criado_em DESC
-      LIMIT ? OFFSET ?
-    `,
+      LIMIT $1 OFFSET $2`,
       [limit, offset],
     );
   },
 };
-
-export default User;
+module.exports = User;

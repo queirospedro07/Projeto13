@@ -1,7 +1,0 @@
-@layer reset, base, ui, components, pages, overrides;
-
-@import './styles/reset.css';
-
-@import './styles/base.css';
-
-@import './styles/shared.css';

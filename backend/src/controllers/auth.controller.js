@@ -1,12 +1,10 @@
-import { getProfileSocialLinks } from '../models/ProfileSocials.js';
-import { validationResult } from 'express-validator';
-import { User } from '../models/User.js';
-import { signJwtToken } from '../middleware/auth.js';
-import { queryOne, execute } from '../database/connection.js';
-
+const Auth = require('../models/Auth.js');
+const { getProfileSocialLinks } = require('../models/ProfileSocials.js');
+const { validationResult } = require('express-validator');
+const User = require('../models/User.js');
+const { signJwtToken } = require('../middleware/auth.js');
 const generateToken = (user) => signJwtToken(user);
-
-export const register = async (req, res) => {
+const register = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({
@@ -15,19 +13,16 @@ export const register = async (req, res) => {
       error: errors.array()[0]?.msg || 'Dados de registo inválidos.',
     });
   }
-
   try {
     const { name, username, email, password, avatarUrl } = req.body;
-
-    const existingEmail = User.findByEmail(email);
+    const existingEmail = await User.findByEmail(email);
     if (existingEmail) {
       return res.status(409).json({
         message: 'Email já registado no sistema.',
         error: 'Email já registado no sistema.',
       });
     }
-
-    const existingUser = User.findByUsername(username);
+    const existingUser = await User.findByUsername(username);
     if (existingUser) {
       return res.status(409).json({
         message: 'Nome de utilizador já se encontra em uso.',
@@ -46,7 +41,6 @@ export const register = async (req, res) => {
       acceptedTerms: true,
     });
     const token = generateToken(newUser);
-
     return res.status(201).json({
       message: 'Utilizador registado com sucesso.',
       token,
@@ -60,8 +54,7 @@ export const register = async (req, res) => {
     });
   }
 };
-
-export const login = async (req, res) => {
+const login = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({
@@ -70,39 +63,28 @@ export const login = async (req, res) => {
       error: errors.array()[0]?.msg || 'Preencha os dados de início de sessão.',
     });
   }
-
   try {
     const loginIdentifier = (typeof req.body.login === 'string' ? req.body.login : req.body.email)
       .trim()
       .toLowerCase();
     if (loginIdentifier.length > 254)
-      return res.status(400).json({ error: 'Email ou nome de utilizador inválido.' });
+      return res.status(400).json({
+        error: 'Email ou nome de utilizador inválido.',
+      });
     const { password } = req.body;
-
-    const user = queryOne(
-      `SELECT id, email, nome_utilizador AS username, hash_palavra_passe AS passwordHash,
-               nome AS name, papel AS role, url_avatar AS avatarUrl, biografia AS bio,
-               localizacao AS location, meta_diaria_minutos AS dailyGoalMinutes, minutos_hoje AS minutesToday,
-               minutos_totais AS totalMinutes, esta_suspenso AS isSuspended, versao_sessao AS authVersion
-        FROM utilizadores
-        WHERE LOWER(email) = ? OR LOWER(nome_utilizador) = ?`,
-      [loginIdentifier, loginIdentifier],
-    );
-
+    const user = await Auth.findUser([loginIdentifier, loginIdentifier]);
     if (!user) {
       return res.status(401).json({
         message: 'Credenciais inválidas. Verifique o email/utilizador e palavra-passe.',
         error: 'Credenciais inválidas. Verifique o email/utilizador e palavra-passe.',
       });
     }
-
     if (Number(user.isSuspended) === 1) {
       return res.status(403).json({
         message: 'Esta conta encontra-se suspensa pela administração.',
         error: 'Esta conta encontra-se suspensa pela administração.',
       });
     }
-
     const isMatch = await User.comparePassword(password, user.passwordHash);
     if (!isMatch) {
       return res.status(401).json({
@@ -110,7 +92,6 @@ export const login = async (req, res) => {
         error: 'Credenciais inválidas. Verifique o email/utilizador e palavra-passe.',
       });
     }
-
     const tokenUser = {
       id: user.id,
       name: user.name,
@@ -120,9 +101,10 @@ export const login = async (req, res) => {
       isAdmin: user.role === 'ADMIN',
       avatarUrl: user.avatarUrl,
     };
-
-    const token = generateToken({ ...tokenUser, authVersion: user.authVersion });
-
+    const token = generateToken({
+      ...tokenUser,
+      authVersion: user.authVersion,
+    });
     return res.json({
       message: 'Sessão iniciada com sucesso.',
       token,
@@ -136,35 +118,16 @@ export const login = async (req, res) => {
     });
   }
 };
-
-export const getMe = async (req, res) => {
+const getMe = async (req, res) => {
   try {
-    const user = queryOne(
-      `SELECT id, email, nome_utilizador AS username, nome AS name, papel AS role,
-              url_avatar AS avatarUrl, biografia AS bio, localizacao AS location,
-              meta_diaria_minutos AS dailyGoalMinutes,
-              minutos_hoje AS minutesToday, minutos_totais AS totalMinutes,
-              esta_suspenso AS isSuspended
-       FROM utilizadores
-       WHERE id = ?`,
-      [req.user.id],
-    );
+    const user = await Auth.findUserById([req.user.id]);
     if (!user) {
-      return res
-        .status(404)
-        .json({ message: 'Utilizador não encontrado.', error: 'Utilizador não encontrado.' });
+      return res.status(404).json({
+        message: 'Utilizador não encontrado.',
+        error: 'Utilizador não encontrado.',
+      });
     }
-
-    const profile =
-      queryOne(
-        `SELECT titulo_perfil AS headline, website, github, linkedin, url_banner AS bannerUrl,
-              e_publico AS isPublic, mostrar_biografia AS showBio, mostrar_localizacao AS showLocation, mostrar_redes_sociais AS showSocials,
-              mostrar_estatisticas AS showStats, mostrar_cursos AS showCourses, preferencia_tema AS themePreference
-       FROM perfis
-       WHERE id_utilizador = ?`,
-        [user.id],
-      ) || {};
-
+    const profile = (await Auth.findPerfisByIdUtilizador([user.id])) || {};
     const safeUser = {
       id: user.id,
       name: user.name,
@@ -179,7 +142,7 @@ export const getMe = async (req, res) => {
       minutesToday: user.minutesToday,
       totalMinutes: user.totalMinutes,
       profile: {
-        socialLinks: getProfileSocialLinks(user.id),
+        socialLinks: await getProfileSocialLinks(user.id),
         headline: profile.headline || '',
         website: profile.website || '',
         github: profile.github || '',
@@ -194,8 +157,10 @@ export const getMe = async (req, res) => {
         themePreference: profile.themePreference || 'light',
       },
     };
-
-    return res.json({ user: safeUser, ...safeUser });
+    return res.json({
+      user: safeUser,
+      ...safeUser,
+    });
   } catch (err) {
     console.error('getMe error:', err);
     return res.status(500).json({
@@ -204,40 +169,31 @@ export const getMe = async (req, res) => {
     });
   }
 };
-
-export const demoLogin = async (req, res) => {
-  if (process.env.NODE_ENV === 'production' || process.env.ENABLE_DEMO_LOGIN === 'false') {
+const demoLogin = async (req, res) => {
+  if (process.env.NODE_ENV !== 'development' || process.env.ENABLE_DEMO_LOGIN !== 'true') {
     return res.status(403).json({
       message: 'Modo de demonstração desativado.',
       error: 'Modo de demonstração desativado.',
     });
   }
-
   const { role = 'student' } = req.params;
   const targetRole = String(role).toUpperCase();
-  if (!['STUDENT', 'CREATOR', 'ADMIN'].includes(targetRole)) {
+  if (!['STUDENT', 'CREATOR'].includes(targetRole)) {
     return res.status(400).json({
       message: 'Perfil de demonstração inválido.',
       error: 'Perfil de demonstração inválido.',
     });
   }
-
-  const user = queryOne(
-    `SELECT id, email, nome_utilizador AS username, nome AS name, papel AS role,
-            url_avatar AS avatarUrl
-     FROM utilizadores
-     WHERE papel = ? AND esta_suspenso = 0
-     LIMIT 1`,
-    [targetRole],
-  );
-
+  const user = await Auth.findUserByPapelAndId([
+    targetRole,
+    targetRole === 'CREATOR' ? 'demo-creator-sofia' : 'demo-student-marta',
+  ]);
   if (!user) {
     return res.status(404).json({
       message: 'Conta de demonstração não encontrada.',
       error: 'Conta de demonstração não encontrada.',
     });
   }
-
   const tokenUser = {
     id: user.id,
     name: user.name,
@@ -246,10 +202,15 @@ export const demoLogin = async (req, res) => {
     role: user.role,
     isAdmin: user.role === 'ADMIN',
     avatarUrl: user.avatarUrl,
+    authVersion: user.authVersion,
   };
-
   const token = generateToken(tokenUser);
-  return res.json({ token, user: tokenUser });
+  return res.json({
+    token,
+    user: tokenUser,
+  });
 };
-
-export default { register, login, getMe, demoLogin };
+exports.register = register;
+exports.login = login;
+exports.getMe = getMe;
+exports.demoLogin = demoLogin;

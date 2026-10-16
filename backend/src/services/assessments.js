@@ -1,7 +1,6 @@
-import { queryOne, queryAll, execute } from '../database/connection.js';
-import { lessonWithCourse } from './courseAccess.js';
-import { randomUUID } from 'node:crypto';
-
+const { queryOne, queryAll, execute } = require('../database/connection.js');
+const { lessonWithCourse } = require('./courseAccess.js');
+const { randomUUID } = require('node:crypto');
 const parse = (value, fallback) => {
   try {
     return typeof value === 'string' ? JSON.parse(value) : value || fallback;
@@ -17,17 +16,21 @@ const normalise = (text) =>
     .replace(/[^a-z0-9\s]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
-
-export function loadAssessment(lessonId) {
-  const lesson = lessonWithCourse(lessonId);
+async function loadAssessment(lessonId) {
+  const lesson = await lessonWithCourse(lessonId);
   if (!lesson || lesson.type !== 'quiz') return null;
-  const stored = queryOne('SELECT * FROM quizzes WHERE lessonId = ?', [lesson.id]);
+  const stored = await queryOne('SELECT * FROM quizzes WHERE "lessonId" = $1', [lesson.id]);
   const content = parse(lesson.content, {});
   let questions = Array.isArray(content.questions) ? content.questions : [];
   if (!questions.length && stored)
-    questions = queryAll('SELECT * FROM quiz_questions WHERE quizId = ? ORDER BY orderIndex', [
-      stored.id,
-    ]).map((q) => ({ ...q, options: parse(q.options, []) }));
+    questions = (
+      await queryAll('SELECT * FROM quiz_questions WHERE "quizId" = $1 ORDER BY "orderIndex"', [
+        stored.id,
+      ])
+    ).map((q) => ({
+      ...q,
+      options: parse(q.options, []),
+    }));
   const formatted = questions.map((q, index) => ({
     ...q,
     id: String(q.id || `q-${index}`),
@@ -55,8 +58,7 @@ export function loadAssessment(lessonId) {
     questions: formatted,
   };
 }
-
-export function publicAssessment(quiz) {
+function publicAssessment(quiz) {
   if (!quiz) return null;
   return {
     id: quiz.id,
@@ -71,12 +73,14 @@ export function publicAssessment(quiz) {
       points: q.points,
       gradingMode: q.gradingMode,
       minWords: q.minWords,
-      options: q.options.map(({ id, text }) => ({ id, text })),
+      options: q.options.map(({ id, text }) => ({
+        id,
+        text,
+      })),
     })),
   };
 }
-
-export function gradeAssessment(quiz, answers) {
+function gradeAssessment(quiz, answers) {
   if (
     !answers ||
     typeof answers !== 'object' ||
@@ -91,7 +95,7 @@ export function gradeAssessment(quiz, answers) {
     pending = 0;
   const results = quiz.questions.map((q) => {
     const answer = answers[q.id];
-    let isCorrect = false;
+    let isCorrect;
     if (q.type === 'open-ended') {
       if (typeof answer !== 'string' || !answer.trim() || answer.length > 5000)
         throw new Error('Responda a todas as perguntas. Use até 5000 caracteres por resposta.');
@@ -143,11 +147,10 @@ export function gradeAssessment(quiz, answers) {
     results,
   };
 }
-
-export function recordAssessment(userId, quiz, answers, result) {
+async function recordAssessment(userId, quiz, answers, result) {
   const id = randomUUID();
-  execute(
-    `INSERT INTO submissoes_questionario (id, id_utilizador, id_aula, respostas, resultado, nota, aprovado, pendente, criado_em) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  await execute(
+    'INSERT INTO submissoes_questionario (id, id_utilizador, id_aula, respostas, resultado, nota, aprovado, pendente, criado_em) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
     [
       id,
       userId,
@@ -162,12 +165,16 @@ export function recordAssessment(userId, quiz, answers, result) {
   );
   return id;
 }
-
-export function hasPassedAssessment(userId, lessonId) {
+async function hasPassedAssessment(userId, lessonId) {
   return Boolean(
-    queryOne(
-      'SELECT id FROM submissoes_questionario WHERE id_utilizador = ? AND id_aula = ? AND aprovado = 1 LIMIT 1',
+    await queryOne(
+      'SELECT id FROM submissoes_questionario WHERE id_utilizador = $1 AND id_aula = $2 AND aprovado = 1 LIMIT 1',
       [userId, lessonId],
     ),
   );
 }
+exports.loadAssessment = loadAssessment;
+exports.publicAssessment = publicAssessment;
+exports.gradeAssessment = gradeAssessment;
+exports.recordAssessment = recordAssessment;
+exports.hasPassedAssessment = hasPassedAssessment;

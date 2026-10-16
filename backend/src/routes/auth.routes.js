@@ -1,14 +1,14 @@
-import { isSafeImage } from '../validation/content.js';
-import { Router } from 'express';
-import { body } from 'express-validator';
-import { register, login, getMe, demoLogin } from '../controllers/auth.controller.js';
-import { protect } from '../middleware/auth.js';
-import legacyAuthRoutes from './auth.js';
-
+const { asyncHandler } = require('../middleware/asyncHandler.js');
+const { isSafeImage } = require('../validation/content.js');
+const { Router } = require('express');
+const { body } = require('express-validator');
+const { register, login, getMe, demoLogin } = require('../controllers/auth.controller.js');
+const { protect } = require('../middleware/auth.js');
+const profileRoutes = require('./profile.routes.js');
 const router = Router();
 
 // Validation chains (express-validator)
-export const registerValidation = [
+const registerValidation = [
   body('acceptedTerms')
     .custom((value) => value === true)
     .withMessage('É necessário aceitar os termos para criar a conta.'),
@@ -16,7 +16,10 @@ export const registerValidation = [
     .trim()
     .notEmpty()
     .withMessage('Nome é obrigatório')
-    .isLength({ min: 2, max: 80 })
+    .isLength({
+      min: 2,
+      max: 80,
+    })
     .withMessage('Nome deve ter entre 2 e 80 caracteres'),
   body('username')
     .trim()
@@ -28,19 +31,23 @@ export const registerValidation = [
   body('password')
     .isString()
     .bail()
-    .isLength({ min: 12 })
+    .isLength({
+      min: 12,
+    })
     .withMessage('A palavra-passe deve ter pelo menos 12 caracteres')
     .custom((value) => Buffer.byteLength(value, 'utf8') <= 72)
     .withMessage('A palavra-passe não pode exceder 72 bytes'),
   body('avatarUrl')
-    .optional({ nullable: true, checkFalsy: true })
+    .optional({
+      nullable: true,
+      checkFalsy: true,
+    })
     .custom((val) => {
       if (!isSafeImage(val)) throw new Error('Escolha uma imagem JPG, PNG ou WebP válida');
       return true;
     }),
 ];
-
-export const loginValidation = [
+const loginValidation = [
   body(['login', 'email']).custom((val, { req }) => {
     if (
       (typeof req.body.login !== 'string' || !req.body.login.trim()) &&
@@ -53,21 +60,25 @@ export const loginValidation = [
   body('password')
     .isString()
     .bail()
-    .isLength({ max: 128 })
+    .isLength({
+      max: 128,
+    })
     .bail()
     .notEmpty()
     .withMessage('Palavra-passe é obrigatória'),
 ];
-
 // Endpoints
-router.post('/register', registerValidation, register);
-router.post('/login', loginValidation, login);
-router.get('/me', protect, getMe);
+router.post('/register', registerValidation, asyncHandler(register));
+router.post('/login', loginValidation, asyncHandler(login));
+router.get('/me', protect, asyncHandler(getMe));
 if (process.env.NODE_ENV === 'development' && process.env.ENABLE_DEMO_LOGIN === 'true') {
-  router.get('/demo/:role?', demoLogin);
+  router.get('/demo/:role?', asyncHandler(demoLogin));
 }
 
-// Mount remaining profile/social endpoints from legacyAuthRoutes seamlessly
-router.use('/', legacyAuthRoutes);
-
-export default router;
+// Mount remaining profile/social endpoints from profileRoutes seamlessly
+router.use('/', profileRoutes);
+exports.registerValidation = registerValidation;
+exports.loginValidation = loginValidation;
+module.exports = router;
+module.exports.registerValidation = registerValidation;
+module.exports.loginValidation = loginValidation;
