@@ -1,0 +1,36 @@
+@layer ui {
+  .page-state {
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: 1rem;
+    min-height: 45vh;
+    margin: 2rem auto;
+    padding: 2rem;
+    max-width: 40rem;
+    text-align: center;
+    color: var(--text-primary);
+  }
+  .page-state > svg {
+    width: 2rem;
+    height: 2rem;
+    color: var(--text-secondary);
+  }
+  .page-state h1 {
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+  .page-state p {
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: var(--text-secondary);
+  }
+  .page-state__spinner {
+    animation: spin 1s linear infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .page-state__spinner {
+      animation: none;
+    }
+  }
+}

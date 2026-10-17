@@ -1,0 +1,32 @@
+@layer components {
+  .payment-history {
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    border-radius: 1rem;
+    color: var(--text-primary);
+  }
+  .payment-history h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+  .payment-history p {
+    margin-top: 0.4rem;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+  }
+  .payment-history ul {
+    list-style: none;
+    margin-top: 1rem;
+    padding: 0;
+  }
+  .payment-history li {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-top: 1px solid var(--border-color);
+    overflow-wrap: anywhere;
+  }
+}

@@ -1,0 +1,99 @@
+@layer components {
+  .payment-simulation {
+    display: grid;
+    gap: 1.5rem;
+    color: var(--text-primary);
+  }
+  .payment-simulation__notice {
+    padding: 0.8rem 1rem;
+    border-radius: 0.75rem;
+    background: color-mix(in srgb, #3b82f6 12%, transparent);
+    font-size: 0.85rem;
+  }
+  .payment-simulation__summary {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .payment-simulation__summary div {
+    flex: 1;
+    min-width: 0;
+  }
+  .payment-simulation__summary h4 {
+    overflow-wrap: anywhere;
+  }
+  .payment-simulation__summary p,
+  .payment-simulation__form > p {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+  }
+  .payment-simulation__form {
+    display: grid;
+    gap: 0.75rem;
+  }
+  .payment-simulation__form label {
+    font-weight: 500;
+  }
+  .payment-simulation__form select {
+    width: 100%;
+    padding: 0.85rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    color: var(--text-primary);
+    background: var(--bg-card);
+    font: inherit;
+  }
+  .payment-simulation__form select:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 3px;
+  }
+  .payment-simulation__form .payment-simulation__error {
+    color: #dc2626;
+  }
+  html.dark .payment-simulation__form .payment-simulation__error {
+    color: #fca5a5;
+  }
+  .payment-simulation__result {
+    display: grid;
+    gap: 1rem;
+    text-align: center;
+    justify-items: center;
+  }
+  .payment-simulation__result > svg {
+    color: #16a34a;
+    width: 40px;
+    height: 40px;
+  }
+  .payment-simulation__result code {
+    overflow-wrap: anywhere;
+  }
+  .payment-simulation__confirmation {
+    display: grid;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+  }
+  .payment-simulation__confirmation > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .payment-simulation__confirmation dt {
+    color: var(--text-secondary);
+  }
+  .payment-simulation__confirmation dd {
+    margin: 0;
+    text-align: right;
+    overflow-wrap: anywhere;
+    min-width: 0;
+  }
+  .payment-simulation__actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+}

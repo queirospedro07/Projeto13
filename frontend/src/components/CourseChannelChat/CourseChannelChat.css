@@ -1,0 +1,1096 @@
+/* Styles for CourseChannelChat. */
+
+@layer components {
+  .course-channel-chat-panel {
+    display: flex;
+    flex: 1 1 0%;
+    animation: fadeIn 0.15s ease-out forwards;
+    overflow: hidden;
+    --nexo-bg-opacity: 1;
+    background-color: rgb(255 255 255 / var(--nexo-bg-opacity, 1));
+  }
+
+  .course-channel-chat-panel:is(.dark *) {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(26 26 26 / var(--nexo-bg-opacity, 1));
+  }
+
+  .course-channel-chat-panel-2 {
+    display: flex;
+    min-width: 0px;
+    flex: 1 1 0%;
+    flex-direction: column;
+    --nexo-bg-opacity: 1;
+    background-color: rgb(255 255 255 / var(--nexo-bg-opacity, 1));
+  }
+
+  .course-channel-chat-panel-2:is(.dark *) {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(26 26 26 / var(--nexo-bg-opacity, 1));
+  }
+
+  .course-channel-chat-panel-3 {
+    margin: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-radius: 1rem;
+    border-width: 1px;
+    border-color: rgb(191 219 254 / 0.8);
+    background-image: linear-gradient(to right, var(--nexo-gradient-stops));
+    --nexo-gradient-from: #eff6ff var(--nexo-gradient-from-position);
+    --nexo-gradient-to: rgb(239 246 255 / 0) var(--nexo-gradient-to-position);
+    --nexo-gradient-stops: var(--nexo-gradient-from), var(--nexo-gradient-to);
+    --nexo-gradient-to: #eef2ff var(--nexo-gradient-to-position);
+    padding: 1rem;
+    --nexo-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+    --nexo-shadow-colored: 0 1px 2px var(--nexo-shadow-color);
+    box-shadow:
+      var(--nexo-ring-offset-shadow, 0 0 #0000), var(--nexo-ring-shadow, 0 0 #0000),
+      var(--nexo-shadow);
+  }
+
+  .course-channel-chat-panel-3:is(.dark *) {
+    border-color: rgb(30 58 138 / 0.4);
+    --nexo-gradient-from: rgb(23 37 84 / 0.2) var(--nexo-gradient-from-position);
+    --nexo-gradient-to: rgb(23 37 84 / 0) var(--nexo-gradient-to-position);
+    --nexo-gradient-stops: var(--nexo-gradient-from), var(--nexo-gradient-to);
+    --nexo-gradient-to: rgb(30 27 75 / 0.2) var(--nexo-gradient-to-position);
+  }
+
+  .course-channel-chat-panel-4 {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .course-channel-chat-panel-5 {
+    display: flex;
+    height: 2.25rem;
+    width: 2.25rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.75rem;
+    --nexo-bg-opacity: 1;
+    background-color: rgb(37 99 235 / var(--nexo-bg-opacity, 1));
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+    --nexo-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --nexo-shadow-colored: 0 1px 2px 0 var(--nexo-shadow-color);
+    box-shadow:
+      var(--nexo-ring-offset-shadow, 0 0 #0000), var(--nexo-ring-shadow, 0 0 #0000),
+      var(--nexo-shadow);
+  }
+
+  .course-channel-chat-sparkles {
+    height: 1rem;
+    width: 1rem;
+  }
+
+  .course-channel-chat-description {
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    --nexo-text-opacity: 1;
+    color: rgb(29 78 216 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-description:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(96 165 250 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-description-2 {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 650;
+    line-height: 1.375;
+    --nexo-text-opacity: 1;
+    color: rgb(28 28 28 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-description-2:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-button {
+    cursor: pointer;
+    white-space: nowrap;
+    border-radius: 0.75rem;
+    border-width: 1px;
+    --nexo-border-opacity: 1;
+    border-color: rgb(191 219 254 / var(--nexo-border-opacity, 1));
+    --nexo-bg-opacity: 1;
+    background-color: rgb(255 255 255 / var(--nexo-bg-opacity, 1));
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 600;
+    --nexo-text-opacity: 1;
+    color: rgb(29 78 216 / var(--nexo-text-opacity, 1));
+    --nexo-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+    --nexo-shadow-colored: 0 1px 2px var(--nexo-shadow-color);
+    box-shadow:
+      var(--nexo-ring-offset-shadow, 0 0 #0000), var(--nexo-ring-shadow, 0 0 #0000),
+      var(--nexo-shadow);
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+
+  .course-channel-chat-button:hover {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(239 246 255 / var(--nexo-bg-opacity, 1));
+  }
+
+  .course-channel-chat-button:is(.dark *) {
+    border-color: rgb(30 58 138 / 0.6);
+    --nexo-bg-opacity: 1;
+    background-color: rgb(26 29 40 / var(--nexo-bg-opacity, 1));
+    --nexo-text-opacity: 1;
+    color: rgb(147 197 253 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-button:hover:is(.dark *) {
+    background-color: rgb(30 58 138 / 0.2);
+  }
+
+  .course-channel-chat-panel-6 {
+    flex: 1 1 0%;
+  }
+
+  .course-channel-chat-panel-6 > :not([hidden]) ~ :not([hidden]) {
+    --nexo-space-y-reverse: 0;
+    margin-top: calc(1.25rem * calc(1 - var(--nexo-space-y-reverse)));
+    margin-bottom: calc(1.25rem * var(--nexo-space-y-reverse));
+  }
+
+  .course-channel-chat-panel-6 {
+    overflow-y: auto;
+    --nexo-bg-opacity: 1;
+    background-color: rgb(255 255 255 / var(--nexo-bg-opacity, 1));
+    padding: 1.5rem;
+  }
+
+  .course-channel-chat-panel-6:is(.dark *) {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(26 26 26 / var(--nexo-bg-opacity, 1));
+  }
+
+  .course-channel-chat-panel-7 {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+    --nexo-text-opacity: 1;
+    color: rgb(150 150 150 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-panel-7:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(115 115 115 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-hash {
+    margin-bottom: 0.75rem;
+    height: 3rem;
+    width: 3rem;
+    stroke-width: 1.5;
+    --nexo-text-opacity: 1;
+    color: rgb(212 212 212 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-hash:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(64 64 64 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-description-3 {
+    font-weight: 600;
+    --nexo-text-opacity: 1;
+    color: rgb(64 64 64 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-description-3:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(212 212 212 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-description-4 {
+    margin-top: 0.25rem;
+    max-width: 24rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    --nexo-text-opacity: 1;
+    color: rgb(150 150 150 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-description-4:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(115 115 115 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-panel-8 {
+    position: relative;
+    display: flex;
+    gap: 0.875rem;
+    border-radius: 1rem;
+    padding: 0.875rem;
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+
+  .course-channel-chat-panel-9 {
+    border-width: 1px;
+    border-color: rgb(167 243 208 / 0.6);
+    background-color: rgb(236 253 245 / 0.5);
+  }
+
+  .course-channel-chat-panel-9:is(.dark *) {
+    border-color: rgb(6 95 70 / 0.4);
+    background-color: rgb(2 44 34 / 0.2);
+  }
+
+  .course-channel-chat-panel-10 {
+    border-width: 1px;
+    border-color: rgb(253 230 138 / 0.6);
+    background-color: rgb(255 251 235 / 0.5);
+  }
+
+  .course-channel-chat-panel-10:is(.dark *) {
+    border-color: rgb(146 64 14 / 0.4);
+    background-color: rgb(69 26 3 / 0.2);
+  }
+
+  .course-channel-chat-panel-11:hover {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(250 250 250 / var(--nexo-bg-opacity, 1));
+  }
+
+  .course-channel-chat-panel-11:hover:is(.dark *) {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(21 23 32 / var(--nexo-bg-opacity, 1));
+  }
+
+  .course-channel-chat-link {
+    flex-shrink: 0;
+    cursor: pointer;
+    transition-property: opacity;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+
+  .course-channel-chat-link:hover {
+    opacity: 0.8;
+  }
+
+  .course-channel-chat-panel-12 {
+    min-width: 0px;
+    flex: 1 1 0%;
+  }
+
+  .course-channel-chat-panel-13 {
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .course-channel-chat-link-2 {
+    cursor: pointer;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    --nexo-text-opacity: 1;
+    color: rgb(28 28 28 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-link-2:hover {
+    text-decoration-line: underline;
+  }
+
+  .course-channel-chat-link-2:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-label {
+    border-radius: 0.375rem;
+    --nexo-bg-opacity: 1;
+    background-color: rgb(219 234 254 / var(--nexo-bg-opacity, 1));
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    padding-top: 0.125rem;
+    padding-bottom: 0.125rem;
+    font-size: 10px;
+    font-weight: 650;
+    text-transform: uppercase;
+    --nexo-text-opacity: 1;
+    color: rgb(30 64 175 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-label:is(.dark *) {
+    background-color: rgb(30 58 138 / 0.4);
+    --nexo-text-opacity: 1;
+    color: rgb(147 197 253 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-label-2 {
+    font-size: 11px;
+    --nexo-text-opacity: 1;
+    color: rgb(150 150 150 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-label-2:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(115 115 115 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-label-3 {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 9999px;
+    --nexo-bg-opacity: 1;
+    background-color: rgb(209 250 229 / var(--nexo-bg-opacity, 1));
+    padding-left: 0.625rem;
+    padding-right: 0.625rem;
+    padding-top: 0.125rem;
+    padding-bottom: 0.125rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 600;
+    --nexo-text-opacity: 1;
+    color: rgb(6 95 70 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-label-3:is(.dark *) {
+    background-color: rgb(2 44 34 / 0.6);
+    --nexo-text-opacity: 1;
+    color: rgb(52 211 153 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-check-circle2 {
+    height: 0.875rem;
+    width: 0.875rem;
+  }
+
+  .course-channel-chat-panel-14 {
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 0.75rem;
+    border-left-width: 2px;
+    --nexo-border-opacity: 1;
+    border-color: rgb(59 130 246 / var(--nexo-border-opacity, 1));
+    --nexo-bg-opacity: 1;
+    background-color: rgb(243 243 243 / var(--nexo-bg-opacity, 1));
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    --nexo-text-opacity: 1;
+    color: rgb(115 115 115 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-panel-14:is(.dark *) {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(26 29 40 / var(--nexo-bg-opacity, 1));
+    --nexo-text-opacity: 1;
+    color: rgb(150 150 150 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-reply {
+    height: 0.75rem;
+    width: 0.75rem;
+    flex-shrink: 0;
+    --nexo-text-opacity: 1;
+    color: rgb(59 130 246 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-label-4 {
+    font-weight: 600;
+  }
+
+  .course-channel-chat-label-5 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .course-channel-chat-description-5 {
+    white-space: pre-line;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    line-height: 1.625;
+    --nexo-text-opacity: 1;
+    color: rgb(41 41 41 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-description-5:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(229 229 229 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-panel-15 {
+    position: absolute;
+    right: 1rem;
+    top: 0.75rem;
+    display: none;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 0.75rem;
+    border-width: 1px;
+    --nexo-border-opacity: 1;
+    border-color: rgb(229 229 229 / var(--nexo-border-opacity, 1));
+    --nexo-bg-opacity: 1;
+    background-color: rgb(255 255 255 / var(--nexo-bg-opacity, 1));
+    padding: 0.25rem;
+    --nexo-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --nexo-shadow-colored: 0 1px 2px 0 var(--nexo-shadow-color);
+    box-shadow:
+      var(--nexo-ring-offset-shadow, 0 0 #0000), var(--nexo-ring-shadow, 0 0 #0000),
+      var(--nexo-shadow);
+  }
+
+  .ui-group:hover .course-channel-chat-panel-15 {
+    display: flex;
+  }
+
+  .course-channel-chat-panel-15:is(.dark *) {
+    --nexo-border-opacity: 1;
+    border-color: rgb(42 46 66 / var(--nexo-border-opacity, 1));
+    --nexo-bg-opacity: 1;
+    background-color: rgb(26 29 40 / var(--nexo-bg-opacity, 1));
+  }
+
+  .course-channel-chat-button-2 {
+    cursor: pointer;
+    border-radius: 0.5rem;
+    padding: 0.375rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    --nexo-text-opacity: 1;
+    color: rgb(115 115 115 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-button-2:hover {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(243 243 243 / var(--nexo-bg-opacity, 1));
+    --nexo-text-opacity: 1;
+    color: rgb(28 28 28 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-button-2:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(150 150 150 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-button-2:hover:is(.dark *) {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(37 41 58 / var(--nexo-bg-opacity, 1));
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-button-3 {
+    cursor: pointer;
+    border-radius: 0.5rem;
+    padding: 0.375rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+
+  .course-channel-chat-button-3:hover {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(236 253 245 / var(--nexo-bg-opacity, 1));
+  }
+
+  .course-channel-chat-button-3:hover:is(.dark *) {
+    background-color: rgb(2 44 34 / 0.3);
+  }
+
+  .course-channel-chat-button-4 {
+    font-weight: 600;
+    --nexo-text-opacity: 1;
+    color: rgb(5 150 105 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-button-5 {
+    --nexo-text-opacity: 1;
+    color: rgb(150 150 150 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-button-5:hover {
+    --nexo-text-opacity: 1;
+    color: rgb(5 150 105 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-button-6 {
+    cursor: pointer;
+    border-radius: 0.5rem;
+    padding: 0.375rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+
+  .course-channel-chat-button-6:hover {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(243 243 243 / var(--nexo-bg-opacity, 1));
+  }
+
+  .course-channel-chat-button-6:hover:is(.dark *) {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(37 41 58 / var(--nexo-bg-opacity, 1));
+  }
+
+  .course-channel-chat-button-7 {
+    --nexo-text-opacity: 1;
+    color: rgb(217 119 6 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-button-8 {
+    --nexo-text-opacity: 1;
+    color: rgb(150 150 150 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-button-8:hover {
+    --nexo-text-opacity: 1;
+    color: rgb(28 28 28 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-button-8:hover:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-panel-16 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top-width: 1px;
+    --nexo-border-opacity: 1;
+    border-color: rgb(219 234 254 / var(--nexo-border-opacity, 1));
+    --nexo-bg-opacity: 1;
+    background-color: rgb(239 246 255 / var(--nexo-bg-opacity, 1));
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    --nexo-text-opacity: 1;
+    color: rgb(30 58 138 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-panel-16:is(.dark *) {
+    border-color: rgb(30 58 138 / 0.4);
+    background-color: rgb(23 37 84 / 0.3);
+    --nexo-text-opacity: 1;
+    color: rgb(147 197 253 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-panel-17 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .course-channel-chat-reply-2 {
+    height: 1rem;
+    width: 1rem;
+    flex-shrink: 0;
+    --nexo-text-opacity: 1;
+    color: rgb(37 99 235 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-button-9 {
+    cursor: pointer;
+    border-radius: 0.375rem;
+    padding: 0.25rem;
+    --nexo-text-opacity: 1;
+    color: rgb(37 99 235 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-button-9:hover {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(219 234 254 / var(--nexo-bg-opacity, 1));
+  }
+
+  .course-channel-chat-button-9:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(96 165 250 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-button-9:hover:is(.dark *) {
+    background-color: rgb(30 58 138 / 0.4);
+  }
+
+  .course-channel-chat-panel-18 {
+    border-top-width: 1px;
+    --nexo-border-opacity: 1;
+    border-color: rgb(229 229 229 / var(--nexo-border-opacity, 1));
+    --nexo-bg-opacity: 1;
+    background-color: rgb(250 250 250 / var(--nexo-bg-opacity, 1));
+    padding: 1rem;
+    text-align: center;
+  }
+
+  .course-channel-chat-panel-18:is(.dark *) {
+    --nexo-border-opacity: 1;
+    border-color: rgb(34 38 54 / var(--nexo-border-opacity, 1));
+    --nexo-bg-opacity: 1;
+    background-color: rgb(18 20 28 / var(--nexo-bg-opacity, 1));
+  }
+
+  .course-channel-chat-panel-19 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 500;
+    --nexo-text-opacity: 1;
+    color: rgb(115 115 115 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-panel-19:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(150 150 150 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-lock {
+    height: 0.875rem;
+    width: 0.875rem;
+    flex-shrink: 0;
+    --nexo-text-opacity: 1;
+    color: rgb(245 158 11 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-panel-20 {
+    border-top-width: 1px;
+    --nexo-border-opacity: 1;
+    border-color: rgb(229 229 229 / var(--nexo-border-opacity, 1));
+    --nexo-bg-opacity: 1;
+    background-color: rgb(255 255 255 / var(--nexo-bg-opacity, 1));
+    padding: 1rem;
+  }
+
+  .course-channel-chat-panel-20:is(.dark *) {
+    --nexo-border-opacity: 1;
+    border-color: rgb(34 38 54 / var(--nexo-border-opacity, 1));
+    --nexo-bg-opacity: 1;
+    background-color: rgb(26 26 26 / var(--nexo-bg-opacity, 1));
+  }
+
+  .course-channel-chat-form {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 1rem;
+    border-width: 1px;
+    --nexo-border-opacity: 1;
+    border-color: rgb(229 229 229 / var(--nexo-border-opacity, 1));
+    --nexo-bg-opacity: 1;
+    background-color: rgb(250 250 250 / var(--nexo-bg-opacity, 1));
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+
+  .course-channel-chat-form:focus-within {
+    --nexo-border-opacity: 1;
+    border-color: rgb(59 130 246 / var(--nexo-border-opacity, 1));
+    --nexo-ring-offset-shadow: var(--nexo-ring-inset) 0 0 0 var(--nexo-ring-offset-width)
+      var(--nexo-ring-offset-color);
+    --nexo-ring-shadow: var(--nexo-ring-inset) 0 0 0 calc(2px + var(--nexo-ring-offset-width))
+      var(--nexo-ring-color);
+    box-shadow:
+      var(--nexo-ring-offset-shadow), var(--nexo-ring-shadow), var(--nexo-shadow, 0 0 #0000);
+    --nexo-ring-opacity: 1;
+    --nexo-ring-color: rgb(219 234 254 / var(--nexo-ring-opacity, 1));
+  }
+
+  .course-channel-chat-form:is(.dark *) {
+    --nexo-border-opacity: 1;
+    border-color: rgb(34 38 54 / var(--nexo-border-opacity, 1));
+    --nexo-bg-opacity: 1;
+    background-color: rgb(21 23 32 / var(--nexo-bg-opacity, 1));
+  }
+
+  .course-channel-chat-form:focus-within:is(.dark *) {
+    --nexo-ring-color: rgb(30 58 138 / 0.3);
+  }
+
+  .course-channel-chat-field {
+    flex: 1 1 0%;
+    background-color: transparent;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    --nexo-text-opacity: 1;
+    color: rgb(28 28 28 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-field::placeholder {
+    --nexo-text-opacity: 1;
+    color: rgb(150 150 150 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-field:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+  }
+
+  .course-channel-chat-field:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-field:is(.dark *)::placeholder {
+    --nexo-text-opacity: 1;
+    color: rgb(115 115 115 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-button-10 {
+    cursor: pointer;
+    border-radius: 0.75rem;
+    --nexo-bg-opacity: 1;
+    background-color: rgb(37 99 235 / var(--nexo-bg-opacity, 1));
+    padding: 0.5rem;
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+    --nexo-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+    --nexo-shadow-colored: 0 1px 2px var(--nexo-shadow-color);
+    box-shadow:
+      var(--nexo-ring-offset-shadow, 0 0 #0000), var(--nexo-ring-shadow, 0 0 #0000),
+      var(--nexo-shadow);
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+
+  .course-channel-chat-button-10:hover {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(29 78 216 / var(--nexo-bg-opacity, 1));
+  }
+
+  .course-channel-chat-button-10:disabled {
+    opacity: 0.4;
+  }
+
+  .course-channel-chat-button-10:hover:disabled {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(37 99 235 / var(--nexo-bg-opacity, 1));
+  }
+
+  .course-channel-chat-sidebar {
+    display: none;
+    width: 16rem;
+    flex-shrink: 0;
+    user-select: none;
+    flex-direction: column;
+    overflow-y: auto;
+    border-left-width: 1px;
+    --nexo-border-opacity: 1;
+    border-color: rgb(229 229 229 / var(--nexo-border-opacity, 1));
+    --nexo-bg-opacity: 1;
+    background-color: rgb(250 250 250 / var(--nexo-bg-opacity, 1));
+    padding: 1rem;
+  }
+
+  .course-channel-chat-sidebar:is(.dark *) {
+    --nexo-border-opacity: 1;
+    border-color: rgb(34 38 54 / var(--nexo-border-opacity, 1));
+    --nexo-bg-opacity: 1;
+    background-color: rgb(18 20 28 / var(--nexo-bg-opacity, 1));
+  }
+
+  @media (min-width: 1024px) {
+    .course-channel-chat-sidebar {
+      display: flex;
+    }
+  }
+
+  .course-channel-chat-panel-21 {
+    margin-bottom: 1.25rem;
+  }
+
+  .course-channel-chat-panel-22 {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    padding-bottom: 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    --nexo-text-opacity: 1;
+    color: rgb(150 150 150 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-panel-22:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(115 115 115 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-link-3 {
+    display: flex;
+    cursor: pointer;
+    align-items: center;
+    gap: 0.625rem;
+    border-radius: 0.75rem;
+    border-width: 1px;
+    --nexo-border-opacity: 1;
+    border-color: rgb(229 229 229 / var(--nexo-border-opacity, 1));
+    --nexo-bg-opacity: 1;
+    background-color: rgb(255 255 255 / var(--nexo-bg-opacity, 1));
+    padding: 0.5rem;
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+
+  .course-channel-chat-link-3:hover {
+    --nexo-border-opacity: 1;
+    border-color: rgb(212 212 212 / var(--nexo-border-opacity, 1));
+  }
+
+  .course-channel-chat-link-3:is(.dark *) {
+    --nexo-border-opacity: 1;
+    border-color: rgb(34 38 54 / var(--nexo-border-opacity, 1));
+    --nexo-bg-opacity: 1;
+    background-color: rgb(23 26 36 / var(--nexo-bg-opacity, 1));
+  }
+
+  .course-channel-chat-link-3:hover:is(.dark *) {
+    --nexo-border-opacity: 1;
+    border-color: rgb(64 64 64 / var(--nexo-border-opacity, 1));
+  }
+
+  .course-channel-chat-panel-23 {
+    min-width: 0px;
+  }
+
+  .course-channel-chat-description-6 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    --nexo-text-opacity: 1;
+    color: rgb(28 28 28 / var(--nexo-text-opacity, 1));
+  }
+
+  .ui-group:hover .course-channel-chat-description-6 {
+    text-decoration-line: underline;
+  }
+
+  .course-channel-chat-description-6:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-description-7 {
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 500;
+    --nexo-text-opacity: 1;
+    color: rgb(37 99 235 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-description-7:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(96 165 250 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-panel-24 {
+    border-radius: 0.75rem;
+    border-width: 1px;
+    --nexo-border-opacity: 1;
+    border-color: rgb(229 229 229 / var(--nexo-border-opacity, 1));
+    --nexo-bg-opacity: 1;
+    background-color: rgb(255 255 255 / var(--nexo-bg-opacity, 1));
+    padding: 0.75rem;
+    text-align: center;
+  }
+
+  .course-channel-chat-panel-24:is(.dark *) {
+    --nexo-border-opacity: 1;
+    border-color: rgb(34 38 54 / var(--nexo-border-opacity, 1));
+    --nexo-bg-opacity: 1;
+    background-color: rgb(23 26 36 / var(--nexo-bg-opacity, 1));
+  }
+
+  .course-channel-chat-description-8 {
+    font-size: 0.75rem;
+    line-height: 1rem;
+    --nexo-text-opacity: 1;
+    color: rgb(115 115 115 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-description-8:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(150 150 150 / var(--nexo-text-opacity, 1));
+  }
+
+  .course-channel-chat-panel-25 {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .course-channel-chat-link-4 {
+    display: flex;
+    cursor: pointer;
+    align-items: center;
+    gap: 0.625rem;
+    border-radius: 0.75rem;
+    padding: 0.5rem;
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+
+  .course-channel-chat-link-4:hover {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(255 255 255 / var(--nexo-bg-opacity, 1));
+  }
+
+  .course-channel-chat-link-4:hover:is(.dark *) {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(23 26 36 / var(--nexo-bg-opacity, 1));
+  }
+
+  .course-channel-chat-description-9 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    --nexo-text-opacity: 1;
+    color: rgb(41 41 41 / var(--nexo-text-opacity, 1));
+  }
+
+  .ui-group:hover .course-channel-chat-description-9 {
+    text-decoration-line: underline;
+  }
+
+  .course-channel-chat-description-9:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(229 229 229 / var(--nexo-text-opacity, 1));
+  }
+}
+
+/* Theme and shared surface adjustments. */
+
+@layer overrides {
+  html.dark .course-channel-chat-panel,
+  html.dark .course-channel-chat-panel-2,
+  html.dark .course-channel-chat-button,
+  html.dark .course-channel-chat-panel-6,
+  html.dark .course-channel-chat-panel-15,
+  html.dark .course-channel-chat-panel-20,
+  html.dark .course-channel-chat-link-3,
+  html.dark .course-channel-chat-panel-24 {
+    background-color: #1a1a1a;
+  }
+
+  html.dark .course-channel-chat-panel-18,
+  html.dark .course-channel-chat-form,
+  html.dark .course-channel-chat-sidebar {
+    background-color: #121212;
+  }
+
+  html.dark .course-channel-chat-panel-14 {
+    background-color: #232323;
+  }
+
+  html.dark .course-channel-chat-panel-15,
+  html.dark .course-channel-chat-panel-18,
+  html.dark .course-channel-chat-panel-20,
+  html.dark .course-channel-chat-form,
+  html.dark .course-channel-chat-sidebar,
+  html.dark .course-channel-chat-link-3,
+  html.dark .course-channel-chat-panel-24 {
+    border-color: #333333;
+  }
+
+  html.dark .course-channel-chat-description-2,
+  html.dark .course-channel-chat-link-2,
+  html.dark .course-channel-chat-field,
+  html.dark .course-channel-chat-description-6,
+  html.dark .course-channel-chat-description-5,
+  html.dark .course-channel-chat-description-9 {
+    color: #ffffff;
+  }
+
+  html.dark .course-channel-chat-description-3 {
+    color: #a1a1aa;
+  }
+
+  html.dark .course-channel-chat-panel-14,
+  html.dark .course-channel-chat-button-2,
+  html.dark .course-channel-chat-panel-19,
+  html.dark .course-channel-chat-description-8,
+  html.dark .course-channel-chat-panel-7,
+  html.dark .course-channel-chat-description-4,
+  html.dark .course-channel-chat-label-2,
+  html.dark .course-channel-chat-button-5,
+  html.dark .course-channel-chat-button-8,
+  html.dark .course-channel-chat-panel-22 {
+    color: #71717a;
+  }
+
+  html.dark .course-channel-chat-panel-11:hover,
+  html.dark .course-channel-chat-button-2:hover,
+  html.dark .course-channel-chat-button-6:hover {
+    background-color: #262626;
+  }
+
+  html.dark .course-channel-chat-link-3:hover {
+    border-color: #454545;
+  }
+
+  html.dark .course-channel-chat-button-2:hover,
+  html.dark .course-channel-chat-button-8:hover {
+    color: #ffffff;
+  }
+
+  html.dark .course-channel-chat-panel-16 {
+    background-color: rgba(30, 58, 138, 0.35);
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+
+  html.dark .course-channel-chat-panel-9 {
+    background-color: rgba(6, 78, 59, 0.35);
+    border-color: rgba(16, 185, 129, 0.3);
+  }
+
+  html.dark .course-channel-chat-panel-10 {
+    background-color: rgba(120, 53, 15, 0.35);
+    border-color: rgba(245, 158, 11, 0.3);
+  }
+}

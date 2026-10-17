@@ -1,0 +1,51 @@
+@layer components {
+  .profile-social-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .profile-social-links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid #e5e5e5;
+    border-radius: 0.75rem;
+    background: #fafafa;
+    color: #525252;
+    font-size: 0.75rem;
+    font-weight: 500;
+    transition:
+      border-color 150ms,
+      color 150ms,
+      background-color 150ms;
+  }
+  .profile-social-links a:hover {
+    color: #1d4ed8;
+    border-color: #bfdbfe;
+    background: #eff6ff;
+  }
+  .profile-social-links svg {
+    width: 1rem;
+    height: 1rem;
+    flex: none;
+  }
+  .profile-social-links .profile-social-link-arrow {
+    width: 0.75rem;
+    height: 0.75rem;
+    opacity: 0.6;
+  }
+  .profile-social-links-compact a {
+    padding: 0.55rem;
+  }
+  .dark .profile-social-links a {
+    background: #202020;
+    border-color: #363636;
+    color: #d4d4d4;
+  }
+  .dark .profile-social-links a:hover {
+    background: #1b2940;
+    border-color: #335687;
+    color: #93c5fd;
+  }
+}
