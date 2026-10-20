@@ -518,7 +518,7 @@
     padding-bottom: 0.625rem;
     padding-left: 2rem;
     padding-right: 1rem;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 0.875rem;
     line-height: 1.25rem;
     --nexo-text-opacity: 1;

@@ -1,5 +1,14 @@
 const { queryOne, execute, queryAll } = require('../database/connection.js');
 const Creator = {
+  sumApprovedRevenueByCreatorId(params = []) {
+    return queryOne(
+      `SELECT COALESCE(SUM(p.montante_centimos), 0) AS "totalRevenueCents"
+       FROM simulacoes_pagamento p
+       JOIN cursos c ON c.id = p.id_curso
+       WHERE c.id_criador = $1 AND p.estado = 'approved'`,
+      params,
+    );
+  },
   findApplicationByUserId(params = []) {
     return queryOne(
       'SELECT * FROM creator_applications WHERE "userId" = $1 ORDER BY "createdAt" DESC LIMIT 1',
@@ -108,6 +117,9 @@ const Creator = {
       params,
     );
   },
+  deleteChannelByIdAndSpaceId(params = []) {
+    return execute('DELETE FROM canais WHERE id = $1 AND id_espaco = $2', params);
+  },
   findCoursesByIdAndCreatorIdAndIdCursoAndIdUtilizador(params = []) {
     return queryOne(
       'SELECT * FROM courses WHERE id = $1 AND ("creatorId" = $2 OR EXISTS (SELECT 1 FROM colaboradores_curso WHERE id_curso = $3 AND id_utilizador = $4))',
@@ -137,9 +149,9 @@ const Creator = {
           modo_chamada_padrao = COALESCE($14, modo_chamada_padrao),
           permitir_partilha_ecra_aluno = $15,
           permitir_camara_aluno = $16,
-          resultados_aprendizagem = $17,
-          requisitos = $18,
-          documentos = $19,
+          resultados_aprendizagem = COALESCE($17, resultados_aprendizagem),
+          requisitos = COALESCE($18, requisitos),
+          documentos = COALESCE($19, documentos),
           atualizado_em = $20
          WHERE id = $21`,
       [...params, preserveApproval],

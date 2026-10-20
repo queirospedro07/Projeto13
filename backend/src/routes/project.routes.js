@@ -1,5 +1,5 @@
 const { Router } = require('express');
-const { authenticate, requireRole } = require('../middleware/auth.js');
+const { authenticate, requireTeaching } = require('../middleware/auth.js');
 const {
   getProjectReviews,
   putProjectReviewsById,
@@ -9,8 +9,8 @@ const {
 const { asyncHandler } = require('../middleware/asyncHandler.js');
 const router = Router();
 router.use(authenticate);
-router.get('/reviews', requireRole('CREATOR', 'ADMIN'), asyncHandler(getProjectReviews));
-router.put('/reviews/:id', requireRole('CREATOR', 'ADMIN'), asyncHandler(putProjectReviewsById));
+router.get('/reviews', requireTeaching, asyncHandler(getProjectReviews));
+router.put('/reviews/:id', requireTeaching, asyncHandler(putProjectReviewsById));
 router.get('/lesson/:id', asyncHandler(getProjectLessonById));
 router.post('/lesson/:id', asyncHandler(postProjectLessonById));
 module.exports = router;

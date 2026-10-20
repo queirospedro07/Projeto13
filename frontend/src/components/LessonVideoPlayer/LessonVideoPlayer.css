@@ -236,7 +236,7 @@
   }
 
   .lesson-video-player-label {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 0.75rem;
     line-height: 1rem;
     --nexo-text-opacity: 1;
@@ -255,7 +255,7 @@
     padding-right: 0.5rem;
     padding-top: 0.25rem;
     padding-bottom: 0.25rem;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 0.75rem;
     line-height: 1rem;
     font-weight: 500;

@@ -1032,7 +1032,7 @@
   }
 
   .library-page-label-9 {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 11px;
     --nexo-text-opacity: 1;
     color: rgb(212 212 216 / var(--nexo-text-opacity, 1));

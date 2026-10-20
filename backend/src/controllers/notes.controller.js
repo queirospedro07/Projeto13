@@ -21,7 +21,7 @@ const getNotesByLessonId = async (req, res) => {
         content: '',
       },
     );
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao obter anotação',
     });
@@ -55,7 +55,7 @@ const postNotesByLessonId = async (req, res) => {
       return Notes.findNoteByUserIdAndLessonId([userId, lessonId]);
     });
     return res.json(note);
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao guardar anotação',
     });
@@ -83,7 +83,7 @@ const getNotes = async (req, res) => {
         },
       })),
     );
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao obter anotações',
     });

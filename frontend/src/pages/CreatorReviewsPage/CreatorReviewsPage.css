@@ -1,0 +1,53 @@
+@layer pages {
+  .creator-reviews-page {
+    max-width: 75rem;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  .creator-reviews-page > header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .creator-reviews-page h1 {
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
+    margin: 0.5rem 0;
+  }
+  .creator-reviews-page p {
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+  .creator-reviews-page > header > a {
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+  }
+  .creator-review-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+  .creator-review-filters label {
+    display: grid;
+    gap: 0.5rem;
+    flex: 1 1 12rem;
+    font-size: 0.875rem;
+  }
+  .creator-review-filters input,
+  .creator-review-filters select {
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+  }
+  @media (max-width: 640px) {
+    .creator-reviews-page {
+      padding: 1rem;
+    }
+  }
+}

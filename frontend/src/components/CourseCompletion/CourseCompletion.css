@@ -1,0 +1,39 @@
+@layer components {
+  .course-completion {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1.25rem;
+    margin: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 1rem;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+  }
+  .course-completion > svg {
+    width: 2rem;
+    height: 2rem;
+    color: #6366f1;
+    flex-shrink: 0;
+  }
+  .course-completion > div {
+    flex: 1 1 15rem;
+  }
+  .course-completion h2 {
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+  .course-completion p {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+  .course-completion__link {
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    background: #4f46e5;
+    color: white;
+    font-weight: 600;
+  }
+}

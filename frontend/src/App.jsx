@@ -25,6 +25,7 @@ const DiscoverSpacesPage = React.lazy(() => import('./pages/DiscoverSpacesPage')
 const SpaceChatPage = React.lazy(() => import('./pages/SpaceChatPage'));
 const LibraryPage = React.lazy(() => import('./pages/LibraryPage'));
 const CreatorDashboardPage = React.lazy(() => import('./pages/CreatorDashboardPage'));
+const CreatorReviewsPage = React.lazy(() => import('./pages/CreatorReviewsPage'));
 const CourseBuilderPage = React.lazy(() => import('./pages/CourseBuilderPage'));
 const CreatorMembersPage = React.lazy(() => import('./pages/CreatorMembersPage'));
 const ApplyCreatorPage = React.lazy(() => import('./pages/ApplyCreatorPage'));
@@ -219,6 +220,14 @@ export const App = () => {
                         }
                       />
 
+                      <Route
+                        path="creator/reviews"
+                        element={
+                          <ProtectedRoute requiredRole="CREATOR">
+                            <CreatorReviewsPage />
+                          </ProtectedRoute>
+                        }
+                      />
                       <Route path="community" element={<Navigate to="/explore" replace />} />
                       <Route path="progress" element={<Navigate to="/library" replace />} />
                       <Route path="achievements" element={<Navigate to="/profile" replace />} />

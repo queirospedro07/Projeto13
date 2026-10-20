@@ -125,7 +125,7 @@
   kbd,
   samp,
   pre {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-feature-settings: normal;
     font-variation-settings: normal;
     font-size: 1em;
@@ -307,7 +307,6 @@
 @layer base {
   :root {
     --font-sans: 'NexoFont', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-mono: ui-monospace, 'Cascadia Code', 'SFMono-Regular', Consolas, monospace;
     --bg-card: #fff;
     --border-color: #e5e5e5;
     --text-primary: #171717;

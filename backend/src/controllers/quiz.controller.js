@@ -10,7 +10,7 @@ const {
   recordAssessment,
 } = require('../services/assessments.js');
 const getQuizReviews = async (req, res) => {
-  const rows = await Quiz.listSubmissoesQuestionario();
+  const rows = await Quiz.listSubmissoesQuestionario([req.user.id, req.user.role === 'ADMIN']);
   return res.json(
     await asyncMap(
       await asyncFilter(
@@ -21,6 +21,8 @@ const getQuizReviews = async (req, res) => {
         id: row.id,
         studentName: row.studentName,
         lessonTitle: row.lessonTitle,
+        courseId: row.courseId,
+        courseTitle: row.courseTitle,
         submittedAt: row.criado_em,
         answers: JSON.parse(row.respostas),
         quiz: publicAssessment(await loadAssessment(row.id_aula)),

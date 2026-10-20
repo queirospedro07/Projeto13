@@ -569,6 +569,7 @@ test(
                 title: 'Aula ' + type,
                 type,
                 content: 'Conteúdo',
+                videoUrl: type === 'video' ? 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' : '',
               })),
             },
           ],
@@ -856,6 +857,15 @@ test(
         });
         status(result, 201);
         assert.equal(result.body.user.role, 'STUDENT');
+        assert.equal(result.body.user.avatarUrl, null);
+        assert.equal(
+          (
+            await db.queryOne('SELECT url_avatar FROM utilizadores WHERE id = $1', [
+              result.body.user.id,
+            ])
+          ).url_avatar,
+          null,
+        );
         assert.ok(
           await db.queryOne(
             'SELECT termos_aceites_em FROM consentimentos_utilizador WHERE id_utilizador=$1',

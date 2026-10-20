@@ -57,29 +57,14 @@
     border-color: rgb(39 39 42 / var(--nexo-border-opacity, 1));
   }
 
-  .avatar-default-icon-sizes-xs {
-    height: 0.625rem;
-    width: 0.625rem;
-  }
-
   .avatar-default-icon-sizes-sm {
     height: 0.875rem;
     width: 0.875rem;
   }
 
-  .avatar-default-icon-sizes-md {
-    height: 1rem;
-    width: 1rem;
-  }
-
   .avatar-default-icon-sizes-lg {
     height: 1.5rem;
     width: 1.5rem;
-  }
-
-  .avatar-default-icon-sizes-xl {
-    height: 2rem;
-    width: 2rem;
   }
 
   .avatar-sizes-xs {
@@ -232,7 +217,7 @@
   }
 
   .avatar-label {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-weight: 450;
     line-height: 1;
   }

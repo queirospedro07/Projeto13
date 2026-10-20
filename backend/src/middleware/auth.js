@@ -59,7 +59,7 @@ const protect = async (req, res, next) => {
       });
     }
     const user = await queryOne(
-      'SELECT id, email, nome_utilizador AS username, nome AS name, papel AS role, esta_suspenso AS "isSuspended", versao_sessao AS "authVersion" FROM utilizadores WHERE id = $1',
+      `SELECT id, email, nome_utilizador AS username, nome AS name, papel AS role, (papel = 'CREATOR' OR (papel = 'ADMIN' AND admin_formador = 1)) AS "isTeacher", esta_suspenso AS "isSuspended", versao_sessao AS "authVersion" FROM utilizadores WHERE id = $1`,
       [payload.id],
     );
     if (!user || Number(payload.version || 0) !== Number(user.authVersion || 0)) {
@@ -80,6 +80,7 @@ const protect = async (req, res, next) => {
       username: user.username,
       name: user.name,
       role: user.role,
+      isTeacher: user.isTeacher,
       isAdmin: user.role === 'ADMIN',
     };
     next();
@@ -102,7 +103,7 @@ const optionalAuth = async (req, res, next) => {
   }
   try {
     const user = await queryOne(
-      'SELECT id, email, nome_utilizador AS username, nome AS name, papel AS role, esta_suspenso AS "isSuspended", versao_sessao AS "authVersion" FROM utilizadores WHERE id = $1',
+      `SELECT id, email, nome_utilizador AS username, nome AS name, papel AS role, (papel = 'CREATOR' OR (papel = 'ADMIN' AND admin_formador = 1)) AS "isTeacher", esta_suspenso AS "isSuspended", versao_sessao AS "authVersion" FROM utilizadores WHERE id = $1`,
       [payload.id],
     );
     if (
@@ -116,6 +117,7 @@ const optionalAuth = async (req, res, next) => {
         username: user.username,
         name: user.name,
         role: user.role,
+        isTeacher: user.isTeacher,
         isAdmin: user.role === 'ADMIN',
       };
     }
@@ -147,3 +149,10 @@ exports.protect = protect;
 exports.authenticate = authenticate;
 exports.optionalAuth = optionalAuth;
 exports.requireRole = requireRole;
+
+const requireTeaching = (req, res, next) => {
+  if (req.user?.role === 'CREATOR' || (req.user?.role === 'ADMIN' && req.user.isTeacher !== false))
+    return next();
+  return res.status(403).json({ error: 'É necessário ter acesso de formador.' });
+};
+exports.requireTeaching = requireTeaching;

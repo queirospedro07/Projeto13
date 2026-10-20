@@ -3,7 +3,7 @@ const Auth = {
   findUser(params = []) {
     return queryOne(
       `SELECT id, email, nome_utilizador AS username, hash_palavra_passe AS "passwordHash",
-               nome AS name, papel AS role, url_avatar AS "avatarUrl", biografia AS bio,
+               nome AS name, papel AS role, (papel = 'CREATOR' OR (papel = 'ADMIN' AND admin_formador = 1)) AS "isTeacher", url_avatar AS "avatarUrl", biografia AS bio,
                localizacao AS location, meta_diaria_minutos AS "dailyGoalMinutes", minutos_hoje AS "minutesToday",
                minutos_totais AS "totalMinutes", esta_suspenso AS "isSuspended", versao_sessao AS "authVersion"
         FROM utilizadores
@@ -13,7 +13,7 @@ const Auth = {
   },
   findUserById(params = []) {
     return queryOne(
-      `SELECT id, email, nome_utilizador AS username, nome AS name, papel AS role,
+      `SELECT id, email, nome_utilizador AS username, nome AS name, papel AS role, (papel = 'CREATOR' OR (papel = 'ADMIN' AND admin_formador = 1)) AS "isTeacher",
               url_avatar AS "avatarUrl", biografia AS bio, localizacao AS location,
               meta_diaria_minutos AS "dailyGoalMinutes",
               minutos_hoje AS "minutesToday", minutos_totais AS "totalMinutes",
@@ -35,7 +35,7 @@ const Auth = {
   },
   findUserByPapelAndId(params = []) {
     return queryOne(
-      `SELECT id, email, nome_utilizador AS username, nome AS name, papel AS role,
+      `SELECT id, email, nome_utilizador AS username, nome AS name, papel AS role, (papel = 'CREATOR' OR (papel = 'ADMIN' AND admin_formador = 1)) AS "isTeacher",
               url_avatar AS "avatarUrl", versao_sessao AS "authVersion"
      FROM utilizadores
        WHERE papel = $1 AND esta_suspenso = 0 AND id = $2

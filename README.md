@@ -13,7 +13,7 @@ Plataforma de cursos e comunidades desenvolvida para Programação Web — CTeSP
 | Tempo real | Socket.IO e WebRTC |
 | Qualidade | ESLint, Prettier e testes de integração com PostgreSQL |
 
-A organização segue o [projeto de referência](https://github.com/queirospedro07/PW-P-LAB-TRABALHO-PRATICO), mantendo as funcionalidades específicas da NEXO. Ver [ARQUITETURA.md](docs/ARQUITETURA.md) e [comparação com a referência](docs/ALINHAMENTO_REFERENCIA.md).
+A organização segue o [projeto de referência](https://github.com/queirospedro07/PW-P-LAB-TRABALHO-PRATICO), mantendo as funcionalidades específicas da NEXO.
 
 ## Executar no Windows
 
@@ -84,16 +84,26 @@ compose.yaml              PostgreSQL local com volume persistente
 
 ## Demonstração e permissões
 
-Consulte [DEMONSTRACAO.md](docs/DEMONSTRACAO.md) para os cinco cursos e oito contas demo.
+A preparação de demonstração acrescenta cinco cursos e oito contas de teste, sem repor os dados existentes.
 
 ```powershell
 npm --prefix backend run seed
 npm --prefix backend run account:promote -- nome_utilizador
 ```
 
-O papel `ADMIN` inclui também as ferramentas de professor. A promoção conserva a palavra-passe e exige novo início de sessão. O arranque normal não cria demos nem promove utilizadores automaticamente.
+Em **Administração → Utilizadores**, é possível atribuir os cargos Aluno, Formador, Administrador ou Administrador e formador. Os administradores existentes conservam os dois acessos. A alteração de cargo conserva os dados e invalida as sessões da conta alterada, exigindo novo início de sessão. Não é possível alterar o próprio cargo. O comando `account:promote` concede os acessos de administrador e formador. O arranque normal não cria demos nem promove utilizadores automaticamente.
+
+Os formadores têm a página **Avaliar trabalhos** em `/creator/reviews`, acessível pelo menu e pelo painel do criador. Podem pesquisar e filtrar por curso/tipo, atribuir notas a questionários e aprovar projetos ou pedir alterações com feedback. A lista inclui apenas os cursos que o utilizador pode gerir.
 
 ## Funcionalidades
+
+### Criação e revisão de cursos
+
+No editor, **Guardar rascunho** conserva o trabalho sem o enviar para publicação. **Enviar para revisão** valida o conteúdo e notifica a administração. O administrador pode rever todas as aulas e recursos, aprovar a publicação ou enviar um feedback com as alterações necessárias.
+
+O formador consulta a decisão no sino de notificações, no painel do criador e no editor do curso. Depois de corrigir, pode voltar a submeter. A edição retira o curso do catálogo até nova aprovação; os alunos já inscritos conservam o acesso. Os pareceres anteriores continuam nas notificações. Alterações simultâneas são detetadas para evitar sobrescrever ou aprovar uma versão desatualizada.
+
+Os cursos podem ter comunidade opcional, com chats e chamadas normais de voz/vídeo. O certificado é automático e verificável após a conclusão dos requisitos. As opções sem implementação de descontos, cupões, medalhas, certificados personalizados e modos especiais de chamada foram retiradas do editor.
 
 Cursos gratuitos e pagos com simulação de pagamento, biblioteca, progresso, notas, avaliações corrigidas no servidor, projetos e certificados verificáveis. Inclui editor de cursos, revisão administrativa, colaboradores, comunidades, mensagens, amigos, chamadas, perfil com privacidade e centro de ajuda com 33 perguntas. Os tickets de suporte foram removidos.
 
@@ -122,4 +132,3 @@ npm --prefix backend run restore -- caminho/do/backup.json
 
 A configuração local já foi migrada para PostgreSQL. A cópia SQLite original foi conservada como arquivo e não é utilizada pela aplicação. Os backups contêm dados privados e devem ser guardados fora do servidor.
 
-[Arquitetura](docs/ARQUITETURA.md) · [Demonstração](docs/DEMONSTRACAO.md) · [Publicação](DEPLOY.md) · [Manual](MANUAL_UTILIZADOR.md)

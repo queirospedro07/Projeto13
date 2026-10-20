@@ -14,7 +14,7 @@ const register = async (req, res) => {
     });
   }
   try {
-    const { name, username, email, password, avatarUrl } = req.body;
+    const { name, username, email, password } = req.body;
     const existingEmail = await User.findByEmail(email);
     if (existingEmail) {
       return res.status(409).json({
@@ -36,7 +36,6 @@ const register = async (req, res) => {
       username,
       email,
       password,
-      avatarUrl,
       role: 'STUDENT',
       acceptedTerms: true,
     });
@@ -98,6 +97,7 @@ const login = async (req, res) => {
       username: user.username,
       email: user.email,
       role: user.role,
+      isTeacher: user.isTeacher,
       isAdmin: user.role === 'ADMIN',
       avatarUrl: user.avatarUrl,
     };
@@ -134,6 +134,7 @@ const getMe = async (req, res) => {
       username: user.username,
       email: user.email,
       role: user.role,
+      isTeacher: user.isTeacher,
       isAdmin: user.role === 'ADMIN',
       avatarUrl: user.avatarUrl,
       bio: user.bio,

@@ -1,5 +1,5 @@
 const { Router } = require('express');
-const { authenticate, requireRole } = require('../middleware/auth.js');
+const { authenticate, requireTeaching } = require('../middleware/auth.js');
 const {
   getQuizReviews,
   putQuizReviewsById,
@@ -8,13 +8,8 @@ const {
 } = require('../controllers/quiz.controller.js');
 const { asyncHandler } = require('../middleware/asyncHandler.js');
 const router = Router();
-router.get('/reviews', authenticate, requireRole('CREATOR', 'ADMIN'), asyncHandler(getQuizReviews));
-router.put(
-  '/reviews/:id',
-  authenticate,
-  requireRole('CREATOR', 'ADMIN'),
-  asyncHandler(putQuizReviewsById),
-);
+router.get('/reviews', authenticate, requireTeaching, asyncHandler(getQuizReviews));
+router.put('/reviews/:id', authenticate, requireTeaching, asyncHandler(putQuizReviewsById));
 router.get('/lesson/:lessonId', authenticate, asyncHandler(getQuizLessonByLessonId));
 router.post('/:quizId/submit', authenticate, asyncHandler(postQuizByQuizIdSubmit));
 module.exports = router;

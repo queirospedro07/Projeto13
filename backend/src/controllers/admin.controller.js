@@ -1,5 +1,7 @@
+const { reviewCourse } = require('../services/coursePublication');
 const Admin = require('../models/Admin.js');
-const { transaction } = require('../database/connection.js');
+const { changeUserRole } = require('../services/userRoles');
+const { transaction, lockTransaction } = require('../database/connection.js');
 const getAdminStats = async (req, res) => {
   try {
     const totalUsers = ((await Admin.countUsers()) || {}).c || 0;
@@ -20,7 +22,7 @@ const getAdminStats = async (req, res) => {
       pendingApplications,
       pendingCourses,
     });
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao carregar estatísticas de administração',
     });
@@ -46,6 +48,15 @@ const getAdminUsers = async (req, res) => {
     });
   }
 };
+const putAdminUserRole = async (req, res) => {
+  const user = await changeUserRole(req.user.id, req.params.id, req.body);
+  req.app
+    .get('io')
+    ?.in('user_' + user.id)
+    .disconnectSockets(true);
+  res.json({ user, message: 'Cargo atualizado. O utilizador deve iniciar sessão novamente.' });
+};
+exports.putAdminUserRole = putAdminUserRole;
 const putAdminUsersByIdSuspend = async (req, res) => {
   try {
     const { id } = req.params;
@@ -73,7 +84,7 @@ const putAdminUsersByIdSuspend = async (req, res) => {
     return res.json({
       isSuspended: newSuspended === 1,
     });
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao alterar estado de suspensão',
     });
@@ -108,7 +119,7 @@ const getAdminCreatorApplications = async (req, res) => {
         },
       })),
     );
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao listar candidaturas a criador',
     });
@@ -124,6 +135,12 @@ const putAdminCreatorApplicationsByIdApprove = async (req, res) => {
       });
     const now = new Date().toISOString();
     await transaction(async () => {
+      await lockTransaction(`creator-application:${id}`);
+      const current = await Admin.findApplicationById([id]);
+      if (!current || current.status !== 'PENDING')
+        throw Object.assign(new Error('Esta candidatura já foi revista. Atualize a lista.'), {
+          status: 409,
+        });
       await Admin.updateCreatorApplicationsByReviewedByAndReviewedAtAndUpdatedAtAndId([
         req.user.id,
         now,
@@ -143,8 +160,8 @@ const putAdminCreatorApplicationsByIdApprove = async (req, res) => {
       status: 'APPROVED',
     });
   } catch (err) {
-    return res.status(500).json({
-      error: 'Falha ao aprovar candidatura',
+    return res.status(err.status || 500).json({
+      error: err.status ? err.message : 'Falha ao aprovar candidatura',
     });
   }
 };
@@ -152,6 +169,8 @@ const putAdminCreatorApplicationsByIdReject = async (req, res) => {
   try {
     const { id } = req.params;
     const { feedback } = req.body;
+    if (typeof feedback !== 'string' || !feedback.trim() || feedback.length > 2000)
+      return res.status(400).json({ error: 'Escreva um feedback entre 1 e 2000 caracteres.' });
     const application = await Admin.findApplicationById([id]);
     if (!application)
       return res.status(404).json({
@@ -161,6 +180,12 @@ const putAdminCreatorApplicationsByIdReject = async (req, res) => {
     const adminFeedback =
       feedback || 'A sua candidatura não cumpre todos os critérios necessários neste momento.';
     await transaction(async () => {
+      await lockTransaction(`creator-application:${id}`);
+      const current = await Admin.findApplicationById([id]);
+      if (!current || current.status !== 'PENDING')
+        throw Object.assign(new Error('Esta candidatura já foi revista. Atualize a lista.'), {
+          status: 409,
+        });
       await Admin.rejectCreatorApplication([adminFeedback, req.user.id, now, now, id]);
       await Admin.insertNotificationsForLookup([
         `notif-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
@@ -175,8 +200,8 @@ const putAdminCreatorApplicationsByIdReject = async (req, res) => {
       status: 'REJECTED',
     });
   } catch (err) {
-    return res.status(500).json({
-      error: 'Falha ao rejeitar candidatura',
+    return res.status(err.status || 500).json({
+      error: err.status ? err.message : 'Falha ao rejeitar candidatura',
     });
   }
 };
@@ -214,7 +239,7 @@ const getAdminCourses = async (req, res) => {
         },
       })),
     );
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao listar cursos para moderação',
     });
@@ -222,68 +247,20 @@ const getAdminCourses = async (req, res) => {
 };
 const putAdminCoursesByIdApprove = async (req, res) => {
   try {
-    const { id } = req.params;
-    const course = await Admin.findCourseById([id]);
-    if (!course)
-      return res.status(404).json({
-        error: 'Curso não encontrado',
-      });
-    const now = new Date().toISOString();
-    await transaction(async () => {
-      await Admin.updateCoursesByReviewedAtAndUpdatedAtAndId([now, now, id]);
-      await Admin.createCourseApprovalNotification([
-        `notif-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-        course.creatorId,
-        `O seu curso "${course.title}" foi aprovado e já está disponível no catálogo.`,
-        `/courses/${course.id}`,
-        now,
-      ]);
-    });
-    return res.json({
-      success: true,
-      message: 'Curso aprovado e publicado com sucesso!',
-      approvalStatus: 'APPROVED',
-    });
-  } catch (err) {
-    return res.status(500).json({
-      error: 'Falha ao aprovar curso',
-    });
+    res.json(await reviewCourse(req.params.id, 'APPROVED', req.body));
+  } catch (error) {
+    res
+      .status(error.status || 500)
+      .json({ error: error.status ? error.message : 'Falha ao aprovar curso.' });
   }
 };
 const putAdminCoursesByIdReject = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { notes } = req.body;
-    const course = await Admin.findCourseById([id]);
-    if (!course)
-      return res.status(404).json({
-        error: 'Curso não encontrado',
-      });
-    const now = new Date().toISOString();
-    const adminNotes = notes || 'O curso requer ajustes antes de ser publicado.';
-    await transaction(async () => {
-      await Admin.updateCoursesByAdminNotesAndReviewedAtAndUpdatedAtAndId([
-        adminNotes,
-        now,
-        now,
-        id,
-      ]);
-      await Admin.createCourseRejectionNotification([
-        `notif-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-        course.creatorId,
-        `O seu curso "${course.title}" precisa de ajustes: ${adminNotes}`,
-        now,
-      ]);
-    });
-    return res.json({
-      success: true,
-      message: 'Curso marcado como rejeitado.',
-      approvalStatus: 'REJECTED',
-    });
-  } catch (err) {
-    return res.status(500).json({
-      error: 'Falha ao rejeitar curso',
-    });
+    res.json(await reviewCourse(req.params.id, 'REJECTED', req.body));
+  } catch (error) {
+    res
+      .status(error.status || 500)
+      .json({ error: error.status ? error.message : 'Falha ao pedir alterações.' });
   }
 };
 const getAdminReports = async (req, res) => res.json(await Admin.listDenuncias());

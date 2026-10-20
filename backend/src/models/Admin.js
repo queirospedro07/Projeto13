@@ -32,7 +32,7 @@ const Admin = {
   },
   countUsersForGetAdminUsers(params = []) {
     return queryAll(
-      `SELECT id, name, username, email, role, "avatarUrl", "isSuspended", "createdAt",
+      `SELECT id, name, username, email, role, "isTeacher", "avatarUrl", "isSuspended", "createdAt",
              (SELECT COUNT(*) FROM enrollments WHERE "userId" = users.id) as "enrollmentsCount",
              (SELECT COUNT(*) FROM courses WHERE "creatorId" = users.id) as "createdCoursesCount"
       FROM users

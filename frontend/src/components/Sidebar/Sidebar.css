@@ -653,7 +653,7 @@
 
   .sidebar-label-16 {
     flex-shrink: 0;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 9px;
     font-weight: 600;
     text-transform: uppercase;
@@ -690,7 +690,7 @@
   }
 
   .sidebar-label-17 {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 9px;
     font-weight: 600;
     --nexo-text-opacity: 1;

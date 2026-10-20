@@ -149,7 +149,7 @@ const postSocialFriendsAcceptByFriendshipId = async (req, res) => {
       message: 'Amizade aceite com sucesso!',
       status: 'ACCEPTED',
     });
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao aceitar amizade',
     });
@@ -174,7 +174,7 @@ const postSocialFriendsRejectByFriendshipId = async (req, res) => {
     return res.json({
       message: 'Pedido removido com sucesso.',
     });
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao rejeitar pedido',
     });
@@ -193,7 +193,7 @@ const deleteSocialFriendsRemoveByTargetUserId = async (req, res) => {
     return res.json({
       message: 'Amigo removido com sucesso.',
     });
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao remover amigo',
     });
@@ -243,7 +243,7 @@ const postSocialFollowByTargetUserId = async (req, res) => {
       message: 'A seguir utilizador!',
       isFollowing: true,
     });
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao seguir utilizador',
     });
@@ -258,7 +258,7 @@ const postSocialUnfollowByTargetUserId = async (req, res) => {
       message: 'Deixou de seguir o utilizador.',
       isFollowing: false,
     });
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao deixar de seguir',
     });
@@ -272,7 +272,7 @@ const getSocialFollowersByUserId = async (req, res) => {
       followers,
       count: followers.length,
     });
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao obter seguidores',
     });
@@ -286,7 +286,7 @@ const getSocialFollowingByUserId = async (req, res) => {
       following,
       count: following.length,
     });
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao obter lista de a seguir',
     });
@@ -319,7 +319,7 @@ const getSocialStatusByTargetUserId = async (req, res) => {
       followingCount,
       friendsCount,
     });
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao verificar estado social',
     });
@@ -340,7 +340,7 @@ const getSocialUsersSearch = async (req, res) => {
       ? await Social.listUsersByNameAndUsername([userId, searchTerm, searchTerm])
       : await Social.listUsersByNameAndUsernameForGetSocialUsersSearch([searchTerm, searchTerm]);
     return res.json(users);
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao pesquisar utilizadores',
     });

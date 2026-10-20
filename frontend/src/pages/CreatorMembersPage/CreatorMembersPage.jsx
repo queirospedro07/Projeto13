@@ -1,3 +1,4 @@
+import { PageState } from '../../components/PageState';
 import './CreatorMembersPage.css';
 import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
@@ -35,11 +36,11 @@ export const CreatorMembersPage = () => {
   const [removingCollabId, setRemovingCollabId] = useState(null);
 
   // Student details modal
-  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [loadError, setLoadError] = useState(false);
   const [deletingMemberId, setDeletingMemberId] = useState(null);
   const { toast } = useToast();
   useEffect(() => {
-    if (isAddCollabModalOpen || selectedStudent) {
+    if (isAddCollabModalOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -47,25 +48,22 @@ export const CreatorMembersPage = () => {
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isAddCollabModalOpen, selectedStudent]);
+  }, [isAddCollabModalOpen]);
   const loadData = async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       const [membersData, coursesData] = await Promise.all([
-        api
-          .get('/creator/members')
-          .then(({ data }) => data)
-          .catch(() => []),
-        api
-          .get('/creator/courses')
-          .then(({ data }) => data)
-          .catch(() => []),
+        api.get('/creator/members').then(({ data }) => data),
+        api.get('/creator/courses').then(({ data }) => data),
       ]);
       setMembers(membersData || []);
       setCourses(coursesData || []);
       if (coursesData && coursesData.length > 0 && !selectedCollabCourseId) {
         setSelectedCollabCourseId(coursesData[0].id);
       }
+    } catch {
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -216,6 +214,14 @@ export const CreatorMembersPage = () => {
       setDeletingMemberId(null);
     }
   };
+  if (loadError)
+    return (
+      <PageState
+        title="Não foi possível carregar os alunos"
+        message="Os dados continuam guardados. Tente novamente."
+        onRetry={loadData}
+      />
+    );
   return (
     <div className="creator-members-panel">
       {/* Header */}

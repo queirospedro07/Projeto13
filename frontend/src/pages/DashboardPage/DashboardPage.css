@@ -275,7 +275,7 @@
   }
 
   .dashboard-label-4 {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 0.875rem;
     line-height: 1.25rem;
     font-weight: 600;
@@ -1160,7 +1160,7 @@
   }
 
   .dashboard-label-7 {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
   }
 
   .dashboard-progress-bar-2 {

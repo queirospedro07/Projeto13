@@ -402,7 +402,7 @@ export const DiscoverSpacesPage = () => {
                           onClick={() => setEnrollingCourse(space)}
                           className="discover-spaces-button-10"
                         >
-                          <span>{isFree ? 'Entrar no Curso' : 'Inscrever'}</span>
+                          <span>{isFree ? 'Inscrever-me gratuitamente' : 'Comprar curso'}</span>
                           <ArrowRight className="discover-spaces-arrow-right" />
                         </button>
                       )}

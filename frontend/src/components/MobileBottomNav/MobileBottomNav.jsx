@@ -1,3 +1,4 @@
+import { canTeach } from '../../utils/permissions';
 import './MobileBottomNav.css';
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
@@ -45,7 +46,7 @@ export const MobileBottomNav = () => {
     });
     return () => observer.disconnect();
   }, []);
-  const isCreator = user?.role === 'CREATOR' || user?.role === 'ADMIN';
+  const isCreator = canTeach(user);
   const isAdmin = user?.role === 'ADMIN';
   const fetchUnread = () => {
     if (user) {

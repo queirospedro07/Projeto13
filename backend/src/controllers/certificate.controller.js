@@ -29,7 +29,7 @@ const getCertificateVerifyByCertificateId = async (req, res) => {
         durationHours: cert.course_durationHours,
       },
     });
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao verificar credencial de certificado',
     });
@@ -48,7 +48,7 @@ const getCertificateMy = async (req, res) => {
         },
       })),
     );
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao carregar certificados',
     });

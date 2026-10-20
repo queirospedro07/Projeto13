@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { resolveCourseAccessState } from '../src/controllers/course.controller.js';
-test('resolveCourseAccessState only marks enrolled when there is a real enrollment or ownership', () => {
+test('resolveCourseAccessState separates enrollment from management access', () => {
   const noEnrollment = resolveCourseAccessState({
     user: {
       id: 'user-1',
@@ -26,8 +26,9 @@ test('resolveCourseAccessState only marks enrolled when there is a real enrollme
     enrollmentRow: null,
   });
   assert.equal(isCreator.isCreator, true);
-  assert.equal(isCreator.isEnrolled, true);
-  assert.equal(isCreator.userProgress, 100);
+  assert.equal(isCreator.isEnrolled, false);
+  assert.equal(isCreator.canAccess, true);
+  assert.equal(isCreator.userProgress, 0);
   const hasEnrollment = resolveCourseAccessState({
     user: {
       id: 'user-1',
@@ -56,6 +57,18 @@ test('resolveCourseAccessState only marks enrolled when there is a real enrollme
     isCollaborator: true,
   });
   assert.equal(isCollaborator.isCreator, true);
-  assert.equal(isCollaborator.isEnrolled, true);
-  assert.equal(isCollaborator.userProgress, 100);
+  assert.equal(isCollaborator.isEnrolled, false);
+  assert.equal(isCollaborator.canAccess, true);
+  assert.equal(isCollaborator.userProgress, 0);
+});
+
+test('administrator preview does not imply an enrollment or progress', () => {
+  const state = resolveCourseAccessState({
+    user: { id: 'admin', role: 'ADMIN' },
+    course: { creatorId: 'teacher' },
+    enrollmentRow: null,
+  });
+  assert.equal(state.isEnrolled, false);
+  assert.equal(state.canAccess, true);
+  assert.equal(state.userProgress, 0);
 });

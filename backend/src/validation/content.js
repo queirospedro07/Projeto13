@@ -39,6 +39,22 @@ function isSafeBanner(value) {
 function validateCourseBody(req, res, next) {
   const body = req.body || {};
   if (
+    body.durationHours !== undefined &&
+    (typeof body.durationHours !== 'number' ||
+      !Number.isFinite(body.durationHours) ||
+      body.durationHours < 0 ||
+      body.durationHours > 10000)
+  )
+    return res.status(400).json({ error: 'A duração do curso deve estar entre 0 e 10 000 horas.' });
+  if (body.defaultCallMode !== undefined && !['open', 'stage', 'qa'].includes(body.defaultCallMode))
+    return res.status(400).json({ error: 'Modo de chamada inválido.' });
+  if (body.hasCommunity !== undefined && typeof body.hasCommunity !== 'boolean')
+    return res.status(400).json({ error: 'Indique se o curso tem comunidade.' });
+  if (body.hasCommunity === false && body.spaceId)
+    return res
+      .status(400)
+      .json({ error: 'Um curso sem comunidade não pode ter um espaço associado.' });
+  if (
     body.title !== undefined &&
     (typeof body.title !== 'string' || body.title.trim().length < 2 || body.title.length > 160)
   )
@@ -67,10 +83,11 @@ function validateCourseBody(req, res, next) {
     (typeof body.price !== 'number' ||
       !Number.isFinite(body.price) ||
       body.price < 0 ||
+      Math.abs(body.price * 100 - Math.round(body.price * 100)) > 0.000001 ||
       body.price > 100000)
   )
     return res.status(400).json({
-      error: 'Preço inválido.',
+      error: 'Use um preço válido com um máximo de duas casas decimais.',
     });
   if (
     body.modules !== undefined &&
@@ -120,6 +137,17 @@ function validateCourseBody(req, res, next) {
     }
   };
   const lessons = (body.modules || []).flatMap((module) => module.lessons);
+  for (const list of [body.modules || [], lessons, body.channels || []]) {
+    if (!Array.isArray(list)) continue;
+    const ids = list.filter((item) => item?.id !== undefined).map((item) => item.id);
+    if (
+      ids.some((id) => typeof id !== 'string' || id.length > 160) ||
+      new Set(ids).size !== ids.length
+    )
+      return res.status(400).json({
+        error: 'Os identificadores dos módulos, aulas e canais devem ser válidos e únicos.',
+      });
+  }
   if (
     lessons.length > 500 ||
     lessons.some(
@@ -128,6 +156,13 @@ function validateCourseBody(req, res, next) {
         typeof lesson.title !== 'string' ||
         lesson.title.length > 200 ||
         !['video', 'text', 'article', 'resource', 'quiz', 'project'].includes(lesson.type) ||
+        ['durationMin', 'xpReward'].some(
+          (key) =>
+            lesson[key] !== undefined &&
+            (!Number.isFinite(Number(lesson[key])) ||
+              Number(lesson[key]) < 0 ||
+              Number(lesson[key]) > 10000),
+        ) ||
         (lesson.videoUrl && !safeUrl(lesson.videoUrl)) ||
         JSON.stringify(lesson.content || lesson.richArticle || lesson.customData || '').length >
           100000 ||
@@ -140,7 +175,13 @@ function validateCourseBody(req, res, next) {
                 typeof question.question !== 'string' ||
                 question.question.length > 2000 ||
                 (question.options &&
-                  (!Array.isArray(question.options) || question.options.length > 10)),
+                  (!Array.isArray(question.options) ||
+                    question.options.length > 10 ||
+                    question.options.some((option) =>
+                      typeof option === 'string'
+                        ? option.length > 4000
+                        : !option || typeof option.text !== 'string' || option.text.length > 4000,
+                    ))),
             ))),
     )
   )

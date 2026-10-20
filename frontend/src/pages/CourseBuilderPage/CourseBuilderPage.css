@@ -1,6 +1,45 @@
 /* Styles for CourseBuilderPage. */
 
 @layer pages {
+  .course-community-choice {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    border: 0;
+    padding: 0;
+  }
+  .course-community-choice legend {
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+  }
+  .course-community-choice label {
+    flex: 1 1 15rem;
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    cursor: pointer;
+  }
+  .course-community-choice label:has(input:checked) {
+    border-color: var(--accent-primary, #6366f1);
+    background: var(--bg-secondary);
+  }
+  .course-community-choice label:has(input:disabled) {
+    opacity: 0.6;
+    cursor: default;
+  }
+  .course-community-choice input {
+    margin-right: 0.5rem;
+  }
+  .course-community-choice span {
+    display: block;
+    margin-top: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+  }
+}
+
+@layer pages {
   .course-builder-panel {
     display: flex;
     flex-direction: column;
@@ -344,7 +383,7 @@
     padding-top: 0.125rem;
     padding-bottom: 0.125rem;
     text-align: center;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 0.75rem;
     line-height: 1rem;
     --nexo-text-opacity: 1;
@@ -486,7 +525,7 @@
     padding-right: 0.625rem;
     padding-top: 0.375rem;
     padding-bottom: 0.375rem;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 0.75rem;
     line-height: 1rem;
     --nexo-text-opacity: 1;
@@ -1985,100 +2024,6 @@
     color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
   }
 
-  .course-builder-field-12 {
-    width: 100%;
-    border-radius: 0.75rem;
-    border-width: 1px;
-    --nexo-border-opacity: 1;
-    border-color: rgb(212 212 212 / var(--nexo-border-opacity, 1));
-    --nexo-bg-opacity: 1;
-    background-color: rgb(255 255 255 / var(--nexo-bg-opacity, 1));
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-    font-size: 0.75rem;
-    line-height: 1rem;
-    font-weight: 600;
-    --nexo-text-opacity: 1;
-    color: rgb(5 150 105 / var(--nexo-text-opacity, 1));
-  }
-
-  .course-builder-field-12:focus {
-    outline: 2px solid transparent;
-    outline-offset: 2px;
-  }
-
-  .course-builder-field-12:is(.dark *) {
-    --nexo-border-opacity: 1;
-    border-color: rgb(43 48 68 / var(--nexo-border-opacity, 1));
-    --nexo-bg-opacity: 1;
-    background-color: rgb(24 26 36 / var(--nexo-bg-opacity, 1));
-    --nexo-text-opacity: 1;
-    color: rgb(52 211 153 / var(--nexo-text-opacity, 1));
-  }
-
-  .course-builder-panel-43 {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom-width: 1px;
-    --nexo-border-opacity: 1;
-    border-color: rgb(229 229 229 / var(--nexo-border-opacity, 1));
-    padding-bottom: 0.5rem;
-  }
-
-  .course-builder-panel-43:is(.dark *) {
-    --nexo-border-opacity: 1;
-    border-color: rgb(34 38 54 / var(--nexo-border-opacity, 1));
-  }
-
-  .course-builder-award {
-    height: 1.25rem;
-    width: 1.25rem;
-    --nexo-text-opacity: 1;
-    color: rgb(245 158 11 / var(--nexo-text-opacity, 1));
-  }
-
-  .course-builder-panel-44 {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
-  }
-
-  .course-builder-select-3 {
-    width: 100%;
-    cursor: pointer;
-    border-radius: 0.75rem;
-    border-width: 1px;
-    --nexo-border-opacity: 1;
-    border-color: rgb(212 212 212 / var(--nexo-border-opacity, 1));
-    --nexo-bg-opacity: 1;
-    background-color: rgb(255 255 255 / var(--nexo-bg-opacity, 1));
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-    font-size: 0.75rem;
-    line-height: 1rem;
-    --nexo-text-opacity: 1;
-    color: rgb(28 28 28 / var(--nexo-text-opacity, 1));
-  }
-
-  .course-builder-select-3:focus {
-    outline: 2px solid transparent;
-    outline-offset: 2px;
-  }
-
-  .course-builder-select-3:is(.dark *) {
-    --nexo-border-opacity: 1;
-    border-color: rgb(43 48 68 / var(--nexo-border-opacity, 1));
-    --nexo-bg-opacity: 1;
-    background-color: rgb(24 26 36 / var(--nexo-bg-opacity, 1));
-    --nexo-text-opacity: 1;
-    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
-  }
-
   .course-builder-panel-45 {
     display: flex;
     flex-direction: column;
@@ -2452,82 +2397,6 @@
     background-color: rgb(99 102 241 / var(--nexo-bg-opacity, 1));
   }
 
-  .course-builder-panel-54 {
-    display: flex;
-    width: fit-content;
-    align-items: center;
-    gap: 0.5rem;
-    border-radius: 0.5rem;
-    border-width: 1px;
-    --nexo-border-opacity: 1;
-    border-color: rgb(229 229 229 / var(--nexo-border-opacity, 1));
-    --nexo-bg-opacity: 1;
-    background-color: rgb(255 255 255 / var(--nexo-bg-opacity, 1));
-    padding: 0.375rem;
-    --nexo-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
-    --nexo-shadow-colored: 0 1px 2px var(--nexo-shadow-color);
-    box-shadow:
-      var(--nexo-ring-offset-shadow, 0 0 #0000), var(--nexo-ring-shadow, 0 0 #0000),
-      var(--nexo-shadow);
-  }
-
-  .course-builder-panel-54:is(.dark *) {
-    --nexo-border-opacity: 1;
-    border-color: rgb(34 38 54 / var(--nexo-border-opacity, 1));
-    --nexo-bg-opacity: 1;
-    background-color: rgb(21 23 32 / var(--nexo-bg-opacity, 1));
-  }
-
-  .course-builder-button-27 {
-    display: flex;
-    cursor: pointer;
-    align-items: center;
-    gap: 0.5rem;
-    border-radius: 0.75rem;
-    padding-left: 1rem;
-    padding-right: 1rem;
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-    font-size: 0.75rem;
-    line-height: 1rem;
-    font-weight: 600;
-    transition-property: all;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 150ms;
-  }
-
-  .course-builder-button-28 {
-    --nexo-bg-opacity: 1;
-    background-color: rgb(79 70 229 / var(--nexo-bg-opacity, 1));
-    --nexo-text-opacity: 1;
-    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
-    --nexo-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --nexo-shadow-colored: 0 1px 2px 0 var(--nexo-shadow-color);
-    box-shadow:
-      var(--nexo-ring-offset-shadow, 0 0 #0000), var(--nexo-ring-shadow, 0 0 #0000),
-      var(--nexo-shadow);
-  }
-
-  .course-builder-button-29 {
-    --nexo-text-opacity: 1;
-    color: rgb(82 82 82 / var(--nexo-text-opacity, 1));
-  }
-
-  .course-builder-button-29:hover {
-    --nexo-text-opacity: 1;
-    color: rgb(28 28 28 / var(--nexo-text-opacity, 1));
-  }
-
-  .course-builder-button-29:is(.dark *) {
-    --nexo-text-opacity: 1;
-    color: rgb(161 161 170 / var(--nexo-text-opacity, 1));
-  }
-
-  .course-builder-button-29:hover:is(.dark *) {
-    --nexo-text-opacity: 1;
-    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
-  }
-
   .course-builder-panel-55 {
     display: flex;
     flex-direction: column;
@@ -2898,183 +2767,6 @@
     background-color: rgb(21 23 32 / var(--nexo-bg-opacity, 1));
   }
 
-  .course-builder-panel-59 {
-    border-bottom-width: 1px;
-    --nexo-border-opacity: 1;
-    border-color: rgb(229 229 229 / var(--nexo-border-opacity, 1));
-    padding-bottom: 0.75rem;
-  }
-
-  .course-builder-panel-59:is(.dark *) {
-    --nexo-border-opacity: 1;
-    border-color: rgb(34 38 54 / var(--nexo-border-opacity, 1));
-  }
-
-  .course-builder-panel-60 {
-    display: grid;
-    grid-template-columns: repeat(1, minmax(0, 1fr));
-    gap: 1rem;
-  }
-
-  @media (min-width: 768px) {
-    .course-builder-panel-60 {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-  }
-
-  .course-builder-panel-61 {
-    display: flex;
-    cursor: pointer;
-    flex-direction: column;
-    justify-content: space-between;
-    gap: 0.75rem;
-    border-radius: 0.5rem;
-    border-width: 1px;
-    padding: 1rem;
-    transition-property: all;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 150ms;
-  }
-
-  .course-builder-panel-62 {
-    --nexo-border-opacity: 1;
-    border-color: rgb(79 70 229 / var(--nexo-border-opacity, 1));
-    background-color: rgb(238 242 255 / 0.4);
-    --nexo-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --nexo-shadow-colored:
-      0 4px 6px -1px var(--nexo-shadow-color), 0 2px 4px -2px var(--nexo-shadow-color);
-    box-shadow:
-      var(--nexo-ring-offset-shadow, 0 0 #0000), var(--nexo-ring-shadow, 0 0 #0000),
-      var(--nexo-shadow);
-    --nexo-shadow-color: rgb(79 70 229 / 0.1);
-    --nexo-shadow: var(--nexo-shadow-colored);
-    --nexo-ring-offset-shadow: var(--nexo-ring-inset) 0 0 0 var(--nexo-ring-offset-width)
-      var(--nexo-ring-offset-color);
-    --nexo-ring-shadow: var(--nexo-ring-inset) 0 0 0 calc(2px + var(--nexo-ring-offset-width))
-      var(--nexo-ring-color);
-    box-shadow:
-      var(--nexo-ring-offset-shadow), var(--nexo-ring-shadow), var(--nexo-shadow, 0 0 #0000);
-    --nexo-ring-color: rgb(99 102 241 / 0.2);
-  }
-
-  .course-builder-panel-62:is(.dark *) {
-    --nexo-border-opacity: 1;
-    border-color: rgb(99 102 241 / var(--nexo-border-opacity, 1));
-    background-color: rgb(30 27 75 / 0.2);
-  }
-
-  .course-builder-panel-63 {
-    --nexo-border-opacity: 1;
-    border-color: rgb(229 229 229 / var(--nexo-border-opacity, 1));
-    --nexo-bg-opacity: 1;
-    background-color: rgb(250 250 250 / var(--nexo-bg-opacity, 1));
-  }
-
-  .course-builder-panel-63:hover {
-    --nexo-border-opacity: 1;
-    border-color: rgb(150 150 150 / var(--nexo-border-opacity, 1));
-  }
-
-  .course-builder-panel-63:is(.dark *) {
-    --nexo-border-opacity: 1;
-    border-color: rgb(40 45 62 / var(--nexo-border-opacity, 1));
-    --nexo-bg-opacity: 1;
-    background-color: rgb(24 26 36 / var(--nexo-bg-opacity, 1));
-  }
-
-  .course-builder-course-builder {
-    --nexo-text-opacity: 1;
-    color: rgb(79 70 229 / var(--nexo-text-opacity, 1));
-  }
-
-  .course-builder-course-builder:is(.dark *) {
-    --nexo-text-opacity: 1;
-    color: rgb(129 140 248 / var(--nexo-text-opacity, 1));
-  }
-
-  .course-builder-course-builder-2 {
-    --nexo-text-opacity: 1;
-    color: rgb(115 115 115 / var(--nexo-text-opacity, 1));
-  }
-
-  .course-builder-label-10 {
-    border-radius: 0.25rem;
-    --nexo-bg-opacity: 1;
-    background-color: rgb(229 229 229 / var(--nexo-bg-opacity, 1));
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-    padding-top: 0.125rem;
-    padding-bottom: 0.125rem;
-    font-size: 10px;
-    font-weight: 600;
-    --nexo-text-opacity: 1;
-    color: rgb(64 64 64 / var(--nexo-text-opacity, 1));
-  }
-
-  .course-builder-label-10:is(.dark *) {
-    --nexo-bg-opacity: 1;
-    background-color: rgb(37 42 59 / var(--nexo-bg-opacity, 1));
-    --nexo-text-opacity: 1;
-    color: rgb(212 212 216 / var(--nexo-text-opacity, 1));
-  }
-
-  .course-builder-subheading-2 {
-    font-size: 0.75rem;
-    line-height: 1rem;
-    font-weight: 600;
-    --nexo-text-opacity: 1;
-    color: rgb(28 28 28 / var(--nexo-text-opacity, 1));
-  }
-
-  .course-builder-subheading-2:is(.dark *) {
-    --nexo-text-opacity: 1;
-    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
-  }
-
-  .course-builder-description-9 {
-    font-size: 11px;
-    line-height: 1.625;
-    --nexo-text-opacity: 1;
-    color: rgb(115 115 115 / var(--nexo-text-opacity, 1));
-  }
-
-  .course-builder-description-9:is(.dark *) {
-    --nexo-text-opacity: 1;
-    color: rgb(161 161 170 / var(--nexo-text-opacity, 1));
-  }
-
-  .course-builder-panel-64 {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-top-width: 1px;
-    border-color: rgb(229 229 229 / 0.6);
-    padding-top: 0.5rem;
-    font-size: 11px;
-    font-weight: 600;
-  }
-
-  .course-builder-panel-64:is(.dark *) {
-    --nexo-border-opacity: 1;
-    border-color: rgb(37 42 59 / var(--nexo-border-opacity, 1));
-  }
-
-  .course-builder-label-11 {
-    font-weight: 700;
-    --nexo-text-opacity: 1;
-    color: rgb(79 70 229 / var(--nexo-text-opacity, 1));
-  }
-
-  .course-builder-label-11:is(.dark *) {
-    --nexo-text-opacity: 1;
-    color: rgb(129 140 248 / var(--nexo-text-opacity, 1));
-  }
-
-  .course-builder-label-12 {
-    --nexo-text-opacity: 1;
-    color: rgb(150 150 150 / var(--nexo-text-opacity, 1));
-  }
-
   .course-builder-check-3 {
     height: 1rem;
     width: 1rem;
@@ -3085,100 +2777,6 @@
   .course-builder-check-3:is(.dark *) {
     --nexo-text-opacity: 1;
     color: rgb(129 140 248 / var(--nexo-text-opacity, 1));
-  }
-
-  .course-builder-panel-65 {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    border-radius: 0.5rem;
-    border-width: 1px;
-    --nexo-border-opacity: 1;
-    border-color: rgb(229 229 229 / var(--nexo-border-opacity, 1));
-    --nexo-bg-opacity: 1;
-    background-color: rgb(250 250 250 / var(--nexo-bg-opacity, 1));
-    padding: 1rem;
-  }
-
-  .course-builder-panel-65:is(.dark *) {
-    --nexo-border-opacity: 1;
-    border-color: rgb(40 45 62 / var(--nexo-border-opacity, 1));
-    --nexo-bg-opacity: 1;
-    background-color: rgb(24 26 36 / var(--nexo-bg-opacity, 1));
-  }
-
-  .course-builder-subheading-3 {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.75rem;
-    line-height: 1rem;
-    font-weight: 700;
-    --nexo-text-opacity: 1;
-    color: rgb(28 28 28 / var(--nexo-text-opacity, 1));
-  }
-
-  .course-builder-subheading-3:is(.dark *) {
-    --nexo-text-opacity: 1;
-    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
-  }
-
-  .course-builder-field-label-5 {
-    display: flex;
-    cursor: pointer;
-    align-items: flex-start;
-    gap: 0.75rem;
-    border-radius: 0.75rem;
-    border-width: 1px;
-    --nexo-border-opacity: 1;
-    border-color: rgb(229 229 229 / var(--nexo-border-opacity, 1));
-    --nexo-bg-opacity: 1;
-    background-color: rgb(255 255 255 / var(--nexo-bg-opacity, 1));
-    padding: 0.75rem;
-  }
-
-  .course-builder-field-label-5:is(.dark *) {
-    --nexo-border-opacity: 1;
-    border-color: rgb(43 49 68 / var(--nexo-border-opacity, 1));
-    --nexo-bg-opacity: 1;
-    background-color: rgb(20 22 32 / var(--nexo-bg-opacity, 1));
-  }
-
-  .course-builder-field-17 {
-    margin-top: 0.125rem;
-    border-radius: 0.25rem;
-    --nexo-text-opacity: 1;
-    color: rgb(79 70 229 / var(--nexo-text-opacity, 1));
-  }
-
-  .course-builder-field-17:focus {
-    --nexo-ring-opacity: 1;
-    --nexo-ring-color: rgb(99 102 241 / var(--nexo-ring-opacity, 1));
-  }
-
-  .course-builder-description-10 {
-    font-size: 0.75rem;
-    line-height: 1rem;
-    font-weight: 600;
-    --nexo-text-opacity: 1;
-    color: rgb(28 28 28 / var(--nexo-text-opacity, 1));
-  }
-
-  .course-builder-description-10:is(.dark *) {
-    --nexo-text-opacity: 1;
-    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
-  }
-
-  .course-builder-description-11 {
-    margin-top: 0.125rem;
-    font-size: 11px;
-    --nexo-text-opacity: 1;
-    color: rgb(115 115 115 / var(--nexo-text-opacity, 1));
-  }
-
-  .course-builder-description-11:is(.dark *) {
-    --nexo-text-opacity: 1;
-    color: rgb(161 161 170 / var(--nexo-text-opacity, 1));
   }
 
   .course-builder-panel-66 {
@@ -3870,7 +3468,7 @@
     padding-right: 0.75rem;
     padding-top: 0.375rem;
     padding-bottom: 0.375rem;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 0.75rem;
     line-height: 1rem;
     --nexo-text-opacity: 1;
@@ -4439,20 +4037,6 @@
     color: rgb(52 211 153 / var(--nexo-text-opacity, 1));
   }
 
-  .course-builder-description-18 {
-    font-size: 1rem;
-    line-height: 1.5rem;
-    font-weight: 700;
-    text-transform: capitalize;
-    --nexo-text-opacity: 1;
-    color: rgb(28 28 28 / var(--nexo-text-opacity, 1));
-  }
-
-  .course-builder-description-18:is(.dark *) {
-    --nexo-text-opacity: 1;
-    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
-  }
-
   .course-builder-description-19 {
     font-size: 11px;
     font-weight: 600;
@@ -4608,7 +4192,7 @@
   }
 
   .course-builder-label-23 {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 0.75rem;
     line-height: 1rem;
     font-weight: 600;
@@ -4736,16 +4320,12 @@
   html.dark .course-builder-field-10,
   html.dark .course-builder-card-2,
   html.dark .course-builder-field-11,
-  html.dark .course-builder-field-12,
-  html.dark .course-builder-select-3,
   html.dark .course-builder-field-13,
-  html.dark .course-builder-panel-54,
   html.dark .course-builder-panel-57,
   html.dark .course-builder-field-15,
   html.dark .course-builder-select-4,
   html.dark .course-builder-field-16,
   html.dark .course-builder-card-3,
-  html.dark .course-builder-field-label-5,
   html.dark .course-builder-button-34,
   html.dark .course-builder-panel-67,
   html.dark .course-builder-card-4,
@@ -4775,8 +4355,6 @@
   html.dark .course-builder-button-20,
   html.dark .course-builder-panel-50,
   html.dark .course-builder-panel-56,
-  html.dark .course-builder-panel-63,
-  html.dark .course-builder-panel-65,
   html.dark .course-builder-panel-75,
   html.dark .course-builder-field-21,
   html.dark .course-builder-field-22,
@@ -4801,7 +4379,6 @@
   }
 
   html.dark .course-builder-label-9,
-  html.dark .course-builder-label-10,
   html.dark .course-builder-panel-86,
   html.dark .course-builder-label-22 {
     background-color: #2b2b2b;
@@ -4831,21 +4408,15 @@
   html.dark .course-builder-card-2,
   html.dark .course-builder-panel-38,
   html.dark .course-builder-button-20,
-  html.dark .course-builder-panel-43,
   html.dark .course-builder-panel-45,
   html.dark .course-builder-panel-48,
   html.dark .course-builder-panel-50,
-  html.dark .course-builder-panel-54,
   html.dark .course-builder-panel-55,
   html.dark .course-builder-button-30,
   html.dark .course-builder-panel-56,
   html.dark .course-builder-panel-57,
   html.dark .course-builder-panel-58,
   html.dark .course-builder-card-3,
-  html.dark .course-builder-panel-59,
-  html.dark .course-builder-panel-63,
-  html.dark .course-builder-panel-65,
-  html.dark .course-builder-field-label-5,
   html.dark .course-builder-panel-67,
   html.dark .course-builder-card-4,
   html.dark .course-builder-card-5,
@@ -4870,8 +4441,6 @@
   html.dark .course-builder-field-9,
   html.dark .course-builder-field-10,
   html.dark .course-builder-field-11,
-  html.dark .course-builder-field-12,
-  html.dark .course-builder-select-3,
   html.dark .course-builder-field-13,
   html.dark .course-builder-field-15,
   html.dark .course-builder-select-4,
@@ -4907,15 +4476,11 @@
   html.dark .course-builder-field-10,
   html.dark .course-builder-subheading,
   html.dark .course-builder-field-11,
-  html.dark .course-builder-select-3,
   html.dark .course-builder-field-13,
   html.dark .course-builder-field-14,
   html.dark .course-builder-field-15,
   html.dark .course-builder-select-4,
   html.dark .course-builder-field-16,
-  html.dark .course-builder-subheading-2,
-  html.dark .course-builder-subheading-3,
-  html.dark .course-builder-description-10,
   html.dark .course-builder-subheading-4,
   html.dark .course-builder-field-18,
   html.dark .course-builder-field-20,
@@ -4924,7 +4489,6 @@
   html.dark .course-builder-field-23,
   html.dark .course-builder-heading-2,
   html.dark .course-builder-description-14,
-  html.dark .course-builder-description-18,
   html.dark .course-builder-subheading-5,
   html.dark .course-builder-description-21,
   html.dark .course-builder-label,
@@ -4939,7 +4503,6 @@
   html.dark .course-builder-button-17,
   html.dark .course-builder-field-label-3,
   html.dark .course-builder-button-30,
-  html.dark .course-builder-label-10,
   html.dark .course-builder-button-34,
   html.dark .course-builder-select-5,
   html.dark .course-builder-label-14,
@@ -4950,7 +4513,6 @@
   html.dark .course-builder-description-4,
   html.dark .course-builder-button-14,
   html.dark .course-builder-button-20,
-  html.dark .course-builder-button-29,
   html.dark .course-builder-label-9,
   html.dark .course-builder-field-label-4,
   html.dark .course-builder-label-13 {
@@ -4965,9 +4527,6 @@
   html.dark .course-builder-description-6,
   html.dark .course-builder-label-6,
   html.dark .course-builder-description-7,
-  html.dark .course-builder-course-builder-2,
-  html.dark .course-builder-description-9,
-  html.dark .course-builder-description-11,
   html.dark .course-builder-description-12,
   html.dark .course-builder-field-19,
   html.dark .course-builder-button-38,
@@ -4983,7 +4542,6 @@
   html.dark .course-builder-button-25,
   html.dark .course-builder-hash,
   html.dark .course-builder-button-32,
-  html.dark .course-builder-label-12,
   html.dark .course-builder-button-37,
   html.dark .course-builder-description-13,
   html.dark .course-builder-label-15,
@@ -5012,14 +4570,12 @@
 
   html.dark .course-builder-button-5:hover,
   html.dark .course-builder-field-14:hover,
-  html.dark .course-builder-button-9:hover,
-  html.dark .course-builder-panel-63:hover {
+  html.dark .course-builder-button-9:hover {
     border-color: #454545;
   }
 
   html.dark .course-builder-link:hover,
   html.dark .course-builder-button-14:hover,
-  html.dark .course-builder-button-29:hover,
   html.dark .course-builder-button-32:hover,
   html.dark .course-builder-button-37:hover,
   html.dark .course-builder-button-38:hover,

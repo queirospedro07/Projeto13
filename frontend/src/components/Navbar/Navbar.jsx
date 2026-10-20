@@ -1,4 +1,6 @@
+import { canTeach } from '../../utils/permissions';
 import './Navbar.css';
+import Notifications from '../Notifications/Notifications';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -40,7 +42,7 @@ export const Navbar = () => {
     });
     navigate('/login');
   };
-  const isCreator = user?.role === 'CREATOR' || user?.role === 'ADMIN';
+  const isCreator = canTeach(user);
   const isAdmin = user?.role === 'ADMIN';
   const homeTarget = user ? (isAdmin ? '/admin' : isCreator ? '/creator' : '/dashboard') : '/';
   return (
@@ -100,6 +102,7 @@ export const Navbar = () => {
               </div>
             ) : (
               <div className="navbar-panel-5">
+                <Notifications key={user.id} />
                 {isCreator && (
                   <Link to="/creator/courses/new" className="navbar-link-4">
                     <Plus className="navbar-search" />
@@ -141,7 +144,13 @@ export const Navbar = () => {
                             <span
                               className={`navbar-label ${isAdmin ? 'navbar-label-2' : isCreator ? 'navbar-label-3' : 'navbar-label-4'}`}
                             >
-                              {isAdmin ? 'Admin & Formador' : isCreator ? 'Formador' : 'Aluno'}
+                              {isAdmin
+                                ? isCreator
+                                  ? 'Admin & Formador'
+                                  : 'Administrador'
+                                : isCreator
+                                  ? 'Formador'
+                                  : 'Aluno'}
                             </span>
                           </div>
                         </div>

@@ -1,5 +1,7 @@
+import { publicationLabels } from '../../constants/coursePublication';
 import { PageState } from '../../components/PageState';
-import { ReviewQueue, CourseAccessManager } from '../../components/CreatorTools';
+import { CourseFeedback } from '../../components/CourseFeedback/CourseFeedback';
+import { CourseAccessManager } from '../../components/CreatorTools';
 import './CreatorDashboardPage.css';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
@@ -82,6 +84,12 @@ export const CreatorDashboardPage = () => {
         </div>
 
         <div className="creator-dashboard-panel-3">
+          <Link to="/creator/reviews">
+            <button className="creator-dashboard-button">
+              <BookOpen className="creator-dashboard-users" />
+              <span>Avaliar trabalhos</span>
+            </button>
+          </Link>
           <Link to="/creator/members">
             <button className="creator-dashboard-button">
               <Users className="creator-dashboard-users" />
@@ -103,8 +111,12 @@ export const CreatorDashboardPage = () => {
             <DollarSign className="creator-dashboard-dollar-sign" />
           </div>
           <div>
-            <p className="creator-dashboard-description-2">Pagamentos online</p>
-            <p className="creator-dashboard-description-3">Por configurar</p>
+            <p className="creator-dashboard-description-2">Ganhos totais</p>
+            <p className="creator-dashboard-description-3">
+              {new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(
+                (stats?.totalRevenueCents ?? 0) / 100,
+              )}
+            </p>
           </div>
         </div>
 
@@ -182,7 +194,7 @@ export const CreatorDashboardPage = () => {
                         <span
                           className={`creator-dashboard-label-3 ${course.isPublished ? 'creator-dashboard-label-4' : 'creator-dashboard-label-5'}`}
                         >
-                          {course.isPublished ? 'Publicado' : 'Rascunho'}
+                          {publicationLabels[course.approvalStatus] || 'Rascunho'}
                         </span>
                         <span>•</span>
                         <span>{course._count?.enrollments || 0} alunos inscritos</span>
@@ -191,6 +203,7 @@ export const CreatorDashboardPage = () => {
                           {formatCoursePrice(course)}
                         </span>
                       </div>
+                      <CourseFeedback course={course} />
                     </div>
                   </div>
 
@@ -224,7 +237,7 @@ export const CreatorDashboardPage = () => {
           )}
         </div>
       </div>
-      <ReviewQueue />
+
       <CourseAccessManager />
     </div>
   );

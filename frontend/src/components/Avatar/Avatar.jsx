@@ -2,7 +2,7 @@ import './Avatar.css';
 import { useState, useEffect } from 'react';
 import { classNames } from '../../utils/classNames';
 
-// Role-based fallback icon colours and backgrounds
+// Cores das iniciais por tipo de conta.
 const ROLE_STYLES = {
   ADMIN: {
     bg: 'avatar-role-styles-bg',
@@ -26,61 +26,6 @@ const ROLE_STYLES = {
   },
 };
 
-// Role-based SVG icons (shown instead of initials for known roles when there's no avatar)
-const AdminIcon = ({ className }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-  </svg>
-);
-const CreatorIcon = ({ className }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M12 20h9" />
-    <path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z" />
-  </svg>
-);
-const StudentIcon = ({ className }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-    <path d="M6 12v5c3 3 9 3 12 0v-5" />
-  </svg>
-);
-const DEFAULT_ICON_SIZES = {
-  xs: 'avatar-default-icon-sizes-xs',
-  sm: 'avatar-default-icon-sizes-sm',
-  md: 'avatar-default-icon-sizes-md',
-  lg: 'avatar-default-icon-sizes-lg',
-  xl: 'avatar-default-icon-sizes-xl',
-};
-function RoleIcon({ role, sizeKey }) {
-  const cls = DEFAULT_ICON_SIZES[sizeKey] || DEFAULT_ICON_SIZES.md;
-  if (role === 'ADMIN') return <AdminIcon className={cls} />;
-  if (role === 'CREATOR') return <CreatorIcon className={cls} />;
-  return <StudentIcon className={cls} />;
-}
 export const Avatar = ({
   src,
   name = 'Utilizador',
@@ -122,23 +67,15 @@ export const Avatar = ({
       ? 'avatar-is-square-2'
       : 'avatar-is-square'
     : 'avatar-rounded-class';
-  const initials = (name || 'Utilizador')
-    .split(' ')
-    .filter(Boolean)
-    .map((n) => n[0])
-    .join('')
-    .substring(0, 2)
-    .toUpperCase();
+  const initials = Array.from((name || 'Utilizador').trim())[0]?.toLocaleUpperCase('pt-PT') || 'U';
 
   // Pick role-based style; fall back to default dark
   const normalizedRole = role?.toUpperCase();
   const roleStyle = ROLE_STYLES[normalizedRole] || ROLE_STYLES.default;
 
-  // Use role icon when role is known; initials otherwise
-  const usesRoleIcon = !!normalizedRole && ['ADMIN', 'CREATOR', 'STUDENT'].includes(normalizedRole);
   return (
     <div className={classNames('avatar-panel', roundedClass, className)}>
-      {src && !imgError ? (
+      {src && src !== '/avatar-default.svg' && !imgError ? (
         <img
           src={src}
           alt={name}
@@ -156,11 +93,7 @@ export const Avatar = ({
             sizes[size],
           )}
         >
-          {usesRoleIcon ? (
-            <RoleIcon role={normalizedRole} sizeKey={size} />
-          ) : (
-            <span className="avatar-label">{initials}</span>
-          )}
+          <span className="avatar-label">{initials}</span>
         </div>
       )}
 

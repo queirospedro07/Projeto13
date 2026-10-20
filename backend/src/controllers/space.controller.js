@@ -229,7 +229,7 @@ const postSpaceByIdJoin = async (req, res) => {
     return res.status(201).json({
       message: 'Entrou na comunidade e no curso com sucesso!',
     });
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao entrar na comunidade',
     });

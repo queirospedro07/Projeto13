@@ -101,9 +101,7 @@ async function completeLesson(user, courseIdentifier, lessonId) {
     );
     const now = new Date().toISOString();
     if (!enrollment) {
-      const free =
-        course.isFree === 1 && course.isPublished === 1 && course.approvalStatus === 'APPROVED';
-      if (!free && !(await canManageCourse(user, course)))
+      if (!(await canManageCourse(user, course)))
         throw failure(403, 'Inscreva-se no curso antes de concluir aulas.');
       await execute(
         'INSERT INTO inscricoes (id, id_utilizador, id_curso, inscrito_em, percentagem_progresso) VALUES ($1, $2, $3, $4, 0)',
@@ -141,14 +139,22 @@ async function completeLesson(user, courseIdentifier, lessonId) {
       progressRows.filter((row) => row.completed === 1).map((row) => row.lessonId),
     );
     const completedCount = lessons.filter((row) => done.has(row.id)).length;
-    const percent = lessons.length ? Math.round((completedCount / lessons.length) * 100) : 0;
+    const allCompleted = lessons.length > 0 && completedCount === lessons.length;
+    const percent = allCompleted
+      ? 100
+      : lessons.length
+        ? Math.min(99, Math.round((completedCount / lessons.length) * 100))
+        : 0;
     await execute(
       'UPDATE inscricoes SET percentagem_progresso = $1, concluido_em = $2, id_ultima_aula = $3 WHERE id = $4',
       [percent, percent === 100 ? now : null, lessonId, enrollment.id],
     );
-    if (percent === 100 && (await eligibleForCertificate(user.id, course.id)))
-      await issueCertificate(user.id, course.id);
+    const certificate =
+      allCompleted && (await eligibleForCertificate(user.id, course.id))
+        ? await issueCertificate(user.id, course.id)
+        : null;
     return {
+      certificate,
       enrollment: {
         ...(await queryOne('SELECT * FROM enrollments WHERE id = $1', [enrollment.id])),
         lessonProgresses: progressRows.map((row) => ({

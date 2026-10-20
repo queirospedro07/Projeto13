@@ -10,7 +10,6 @@ import {
 import { Logo } from '../../components/Logo';
 import { SEO } from '../../components/SEO';
 import { useAuth } from '../../context/AuthContext';
-import { DEFAULT_AVATAR_URL } from '../../constants/defaultAvatars';
 export const RegisterPage = () => {
   const { register, user } = useAuth();
   const [name, setName] = useState('');
@@ -47,7 +46,6 @@ export const RegisterPage = () => {
         username,
         email,
         password,
-        avatarUrl: DEFAULT_AVATAR_URL,
         acceptedTerms: acceptTerms,
       });
       navigate('/dashboard');

@@ -1,3 +1,4 @@
+import { canTeach } from '../../utils/permissions';
 import './Sidebar.css';
 import { useState, useEffect, useMemo } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
@@ -40,7 +41,7 @@ export const Sidebar = () => {
   const [pinnedCourseIds, setPinnedCourseIds] = useState([]);
   const [hiddenCourseIds, setHiddenCourseIds] = useState([]);
   const [hideCompleted, setHideCompleted] = useState(false);
-  const isCreator = user?.role === 'CREATOR' || user?.role === 'ADMIN';
+  const isCreator = canTeach(user);
   const isAdmin = user?.role === 'ADMIN';
   const fetchSidebarData = () => {
     if (user) {
@@ -310,6 +311,14 @@ export const Sidebar = () => {
               )}
             </NavLink>
 
+            <NavLink to="/creator/reviews" className={navClass}>
+              {({ isActive }) => (
+                <div className="sidebar-panel-4">
+                  <BookOpen className={iconClass(isActive)} />
+                  {!collapsed && <span className="sidebar-label-2">Avaliar trabalhos</span>}
+                </div>
+              )}
+            </NavLink>
             <NavLink to="/creator/members" className={navClass}>
               {({ isActive }) => (
                 <div className="sidebar-panel-4">

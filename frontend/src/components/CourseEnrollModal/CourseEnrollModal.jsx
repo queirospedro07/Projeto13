@@ -30,7 +30,15 @@ export const CourseEnrollModal = ({
   const { user } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showPayment, setShowPayment] = useState(false);
+  const showPayment = Boolean(
+    isOpen &&
+    user &&
+    course &&
+    !course.isEnrolled &&
+    !course.isMember &&
+    !course.isFree &&
+    Number(course.price) > 0,
+  );
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
@@ -78,10 +86,6 @@ export const CourseEnrollModal = ({
       });
       onClose();
       navigate('/login');
-      return;
-    }
-    if (!isFree) {
-      setShowPayment(true);
       return;
     }
     setIsSubmitting(true);
@@ -222,7 +226,7 @@ export const CourseEnrollModal = ({
 
             {!isFree && !isAlreadyEnrolled && (
               <p className="course-enroll-modal-description-5">
-                Simule um pagamento para experimentar a inscrição. Não existe cobrança real.
+                Confirme o pagamento para obter acesso ao curso.
               </p>
             )}
 
@@ -234,10 +238,12 @@ export const CourseEnrollModal = ({
                 <CheckCircle2 className="course-enroll-modal-check-circle2" />
                 <span>Acesso imediato a todos os módulos e aulas práticas</span>
               </div>
-              <div className="course-enroll-modal-panel-24">
-                <CheckCircle2 className="course-enroll-modal-check-circle2" />
-                <span>Sessões de mentoria e esclarecimento de dúvidas</span>
-              </div>
+              {course.hasCommunity && (
+                <div className="course-enroll-modal-panel-24">
+                  <CheckCircle2 className="course-enroll-modal-check-circle2" />
+                  <span>Sessões de mentoria e esclarecimento de dúvidas</span>
+                </div>
+              )}
               <div className="course-enroll-modal-panel-24">
                 <CheckCircle2 className="course-enroll-modal-check-circle2" />
                 <span>Certificado digital verificado de conclusão do curso</span>
@@ -271,8 +277,8 @@ export const CourseEnrollModal = ({
                 {isAlreadyEnrolled
                   ? 'Já estou no curso • Ir para as Aulas'
                   : isFree
-                    ? 'Confirmar Entrada Gratuita'
-                    : 'Simular pagamento'}
+                    ? 'Inscrever-me gratuitamente'
+                    : 'Comprar curso'}
                 <ArrowRight className="course-enroll-modal-arrow-right" />
               </Button>
             </div>
@@ -285,9 +291,8 @@ export const CourseEnrollModal = ({
     return (
       <PaymentSimulationModal
         course={course}
-        onClose={() => setShowPayment(false)}
+        onClose={onClose}
         onSuccess={() => {
-          setShowPayment(false);
           onClose();
           if (onEnrollSuccess) onEnrollSuccess(course.id);
           else navigate(`/learn/${courseIdentifier}`);

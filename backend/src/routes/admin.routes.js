@@ -4,6 +4,7 @@ const { authenticate, requireRole } = require('../middleware/auth.js');
 const {
   getAdminStats,
   getAdminUsers,
+  putAdminUserRole,
   putAdminUsersByIdSuspend,
   getAdminCreatorApplications,
   putAdminCreatorApplicationsByIdApprove,
@@ -25,6 +26,7 @@ const router = Router();
 router.use(authenticate, requireRole('ADMIN'));
 router.get('/stats', asyncHandler(getAdminStats));
 router.get('/users', asyncHandler(getAdminUsers));
+router.put('/users/:id/role', asyncHandler(putAdminUserRole));
 router.put('/users/:id/suspend', asyncHandler(putAdminUsersByIdSuspend));
 
 // Candidaturas a Criador

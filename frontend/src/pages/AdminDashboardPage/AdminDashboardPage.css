@@ -547,7 +547,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 11px;
     --nexo-text-opacity: 1;
     color: rgb(115 115 115 / var(--nexo-text-opacity, 1));
@@ -942,7 +942,7 @@
   }
 
   .admin-dashboard-label-7 {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 11px;
     --nexo-text-opacity: 1;
     color: rgb(64 64 64 / var(--nexo-text-opacity, 1));
@@ -1081,7 +1081,7 @@
 
   .admin-dashboard-panel-45 {
     margin-top: 0.25rem;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 0.75rem;
     line-height: 1rem;
     --nexo-text-opacity: 1;
@@ -1267,7 +1267,7 @@
   }
 
   .admin-dashboard-panel-50 {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 11px;
     --nexo-text-opacity: 1;
     color: rgb(150 150 150 / var(--nexo-text-opacity, 1));
@@ -1278,7 +1278,7 @@
     padding-bottom: 0.75rem;
     padding-left: 1rem;
     padding-right: 1rem;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     --nexo-text-opacity: 1;
     color: rgb(82 82 82 / var(--nexo-text-opacity, 1));
   }
@@ -1399,7 +1399,7 @@
 
   .admin-dashboard-panel-54 {
     margin-top: 0.25rem;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 0.75rem;
     line-height: 1rem;
     --nexo-text-opacity: 1;
@@ -1496,7 +1496,7 @@
   }
 
   .admin-dashboard-label-10 {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 11px;
     --nexo-text-opacity: 1;
     color: rgb(150 150 150 / var(--nexo-text-opacity, 1));

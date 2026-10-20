@@ -1,8 +1,10 @@
+const { submitCourse, checkVersion } = require('../services/coursePublication');
 const Creator = require('../models/Creator.js');
 const { asyncForEach } = require('../utils/asyncCollections.js');
 const { canManageCourse } = require('../services/courseAccess.js');
 const { randomUUID } = require('node:crypto');
 const { transaction, lockTransaction } = require('../database/connection.js');
+const { ensureCourseCommunity } = require('../services/courseCommunity');
 const getCreatorApplicationStatus = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -12,7 +14,7 @@ const getCreatorApplicationStatus = async (req, res) => {
       hasApplication: !!application,
       application: application || null,
     });
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao obter estado da candidatura',
     });
@@ -47,6 +49,16 @@ const postCreatorApply = async (req, res) => {
         error: 'Nome completo, especialização, motivação e proposta de cursos são obrigatórios.',
       });
     }
+    if (
+      [fullName, bio, expertise, portfolioUrl, motivation, proposedCourses, sampleVideoUrl].some(
+        (value) => value !== undefined && (typeof value !== 'string' || value.length > 10000),
+      ) ||
+      (experienceYears !== undefined &&
+        (!Number.isFinite(Number(experienceYears)) ||
+          Number(experienceYears) < 0 ||
+          Number(experienceYears) > 100))
+    )
+      return res.status(400).json({ error: 'Dados da candidatura inválidos.' });
     const appId = `app-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
     const now = new Date().toISOString();
     await Creator.insertCreatorApplications([
@@ -91,7 +103,9 @@ const getCreatorStats = async (req, res) => {
     const creatorId = req.user.id;
     const courses = await Creator.countCoursesByCreatorId([creatorId, creatorId]);
     const totalStudents = courses.reduce((acc, c) => acc + (c.studentsCount || 0), 0);
-    const totalRevenue = null;
+    const revenue = await Creator.sumApprovedRevenueByCreatorId([creatorId]);
+    const totalRevenueCents = Number(revenue.totalRevenueCents);
+    const totalRevenue = totalRevenueCents / 100;
     const recentEnrollments = await Creator.listRecentEnrollmentsByCreatorId([
       creatorId,
       creatorId,
@@ -106,6 +120,7 @@ const getCreatorStats = async (req, res) => {
     const averageQuizScore = quizRow?.avgScore ? Math.round(Number(quizRow.avgScore)) : 0;
     return res.json({
       totalRevenue,
+      totalRevenueCents,
       totalStudents: totalStudents || 0,
       completionRate,
       averageRating,
@@ -216,6 +231,7 @@ const getCreatorCoursesByCourseId = async (req, res) => {
     }
     return res.json({
       ...course,
+      hasCommunity: Boolean(course.spaceId),
       learningOutcomes: parsedOutcomes,
       requirements: parsedRequirements,
       documents: parsedDocuments,
@@ -225,9 +241,8 @@ const getCreatorCoursesByCourseId = async (req, res) => {
       allowStudentCamera: course.allowStudentCamera === 1,
       modules,
       channels,
-      customRoles: [],
     });
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao carregar curso',
     });
@@ -264,7 +279,6 @@ const putCreatorCoursesByCourseId = async (req, res) => {
       language,
       price,
       isFree,
-      isPublished,
       thumbnailUrl,
       thumbnailPosition,
       bannerUrl,
@@ -298,10 +312,14 @@ const putCreatorCoursesByCourseId = async (req, res) => {
           ? documents
           : JSON.stringify(documents)
         : null;
-    const safeIsPublished =
-      req.user.role !== 'ADMIN' ? 0 : isPublished !== undefined ? (isPublished ? 1 : 0) : null;
+    const safeIsPublished = 0;
     await transaction(async () => {
-      await Creator.updateCourseDetails(req.user.role === 'ADMIN', [
+      await lockTransaction(`course-community:${courseId}`);
+      const current = await Creator.findCoursesById([courseId]);
+      if (!current) throw Object.assign(new Error('Curso não encontrado.'), { status: 404 });
+      checkVersion(current, req.body.expectedUpdatedAt);
+      owned = current;
+      await Creator.updateCourseDetails(false, [
         title && title.trim() ? title.trim() : null,
         description !== undefined ? description.trim() : null,
         category && category.trim() ? category.trim() : null,
@@ -315,15 +333,26 @@ const putCreatorCoursesByCourseId = async (req, res) => {
         bannerUrl !== undefined ? bannerUrl : null,
         bannerPosition || null,
         durationHours !== undefined ? Number(durationHours) : owned.durationHours,
-        defaultCallMode || 'open',
-        allowStudentScreenShare !== undefined ? (allowStudentScreenShare ? 1 : 0) : 1,
-        allowStudentCamera !== undefined ? (allowStudentCamera ? 1 : 0) : 1,
+        defaultCallMode || owned.defaultCallMode || 'open',
+        allowStudentScreenShare !== undefined
+          ? allowStudentScreenShare
+            ? 1
+            : 0
+          : owned.allowStudentScreenShare,
+        allowStudentCamera !== undefined ? (allowStudentCamera ? 1 : 0) : owned.allowStudentCamera,
         outcomesStr,
         requirementsStr,
         documentsStr,
         now,
         courseId,
       ]);
+      if (
+        !owned.spaceId &&
+        req.body.hasCommunity !== false &&
+        (req.body.hasCommunity === true || (Array.isArray(channels) && channels.length > 0))
+      ) {
+        owned.spaceId = await ensureCourseCommunity(req.user, courseId);
+      }
       if (owned?.spaceId && title) {
         await Creator.updateSpacesByNameAndDescriptionAndId([
           title.trim(),
@@ -483,7 +512,13 @@ const putCreatorCoursesByCourseId = async (req, res) => {
           }
         });
       }
-      if (Array.isArray(channels) && owned?.spaceId) {
+      if (req.body.hasCommunity !== false && Array.isArray(channels) && owned?.spaceId) {
+        const existingChannels = await Creator.listChannelsBySpaceId([owned.spaceId]);
+        const retainedIds = new Set(channels.map((channel) => channel.id));
+        for (const channel of existingChannels) {
+          if (!retainedIds.has(channel.id))
+            await Creator.deleteChannelByIdAndSpaceId([channel.id, owned.spaceId]);
+        }
         await asyncForEach(channels, async (ch, chIdx) => {
           const isVoiceChan = ch.type === 'voice' || ch.isVoice ? 1 : 0;
           const chanAccess =
@@ -504,7 +539,7 @@ const putCreatorCoursesByCourseId = async (req, res) => {
               ch.id,
             ]);
           } else {
-            const newChId = ch.id || `ch-${Date.now()}-${chIdx}`;
+            const newChId = randomUUID();
             await Creator.insertChannels([
               newChId,
               owned.spaceId,
@@ -527,10 +562,10 @@ const putCreatorCoursesByCourseId = async (req, res) => {
       id: courseId,
     });
   } catch (err) {
-    console.error('Update course error:', err);
-    return res.status(500).json({
-      error: 'Falha ao atualizar curso',
-    });
+    if (!err.status || err.status >= 500) console.error('Update course error:', err);
+    return res
+      .status(err.status || 500)
+      .json({ error: err.status ? err.message : 'Falha ao atualizar curso' });
   }
 };
 const getCreatorCourses = async (req, res) => {
@@ -545,6 +580,7 @@ const getCreatorCourses = async (req, res) => {
       courses.map((c) => ({
         ...c,
         isFree: c.isFree === 1,
+        isPublished: c.isPublished === 1,
         isOwner: c.isOwner === 1,
         _count: {
           enrollments: c.studentsCount || 0,
@@ -553,7 +589,7 @@ const getCreatorCourses = async (req, res) => {
         },
       })),
     );
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao carregar cursos do criador',
     });
@@ -620,7 +656,6 @@ const postCreatorCourses = async (req, res) => {
       learningOutcomes,
       requirements,
       documents,
-      customRoles,
     } = req.body;
     if (!title || !category) {
       return res.status(400).json({
@@ -661,7 +696,7 @@ const postCreatorCourses = async (req, res) => {
         : JSON.stringify(documents)
       : null;
     await transaction(async () => {
-      if (!resolvedSpaceId) {
+      if (!resolvedSpaceId && req.body.hasCommunity !== false) {
         resolvedSpaceId = randomUUID();
         const spaceSlug = `${slug}-comunidade`;
         await Creator.insertSpaces([
@@ -714,7 +749,7 @@ const postCreatorCourses = async (req, res) => {
       const defCallMode = defaultCallMode || 'open';
       const allowScreen = allowStudentScreenShare !== false ? 1 : 0;
       const allowCam = allowStudentCamera !== false ? 1 : 0;
-      const approvalStatus = req.user.role === 'ADMIN' ? 'APPROVED' : 'DRAFT';
+      const approvalStatus = req.user.role === 'ADMIN' && isPublished ? 'APPROVED' : 'DRAFT';
       const isPub = req.user.role === 'ADMIN' && isPublished ? 1 : 0;
       await Creator.insertCourses([
         courseId,
@@ -1016,7 +1051,7 @@ const deleteCreatorCoursesByCourseIdMembersByUserId = async (req, res) => {
       success: true,
       message: 'Membro removido do curso com sucesso',
     });
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao remover membro',
     });
@@ -1073,31 +1108,18 @@ const postCreatorCoursesByCourseIdEnrollments = async (req, res) => {
 };
 const postCreatorCoursesByCourseIdSubmitReview = async (req, res) => {
   try {
-    const { courseId } = req.params;
-    const creatorId = req.user.id;
-    const course = await Creator.findCoursesById([courseId]);
-    if (course && !(await canManageCourse(req.user, course)))
-      return res.status(403).json({
-        error: 'Sem permissão para submeter este curso.',
-      });
-    if (!course) {
-      return res.status(404).json({
-        error: 'Curso não encontrado ou sem permissão',
-      });
-    }
-    const now = new Date().toISOString();
-    await Creator.updateCoursesBySubmittedForReviewAtAndUpdatedAtAndId([now, now, courseId]);
-    return res.json({
-      message: 'Curso enviado para revisão.',
-      approvalStatus: 'PENDING',
-    });
-  } catch (err) {
-    return res.status(500).json({
-      error: 'Falha ao publicar curso',
-    });
+    res.json(await submitCourse(req.user, req.params.courseId));
+  } catch (error) {
+    res
+      .status(error.status || 500)
+      .json({ error: error.status ? error.message : 'Falha ao enviar curso para revisão.' });
   }
 };
 exports.getCreatorApplicationStatus = getCreatorApplicationStatus;
+exports.postCreatorCourseCommunity = async (req, res) => {
+  const spaceId = await ensureCourseCommunity(req.user, req.params.courseId);
+  res.json({ spaceId });
+};
 exports.postCreatorApply = postCreatorApply;
 exports.getCreatorStats = getCreatorStats;
 exports.getCreatorCoursesByCourseId = getCreatorCoursesByCourseId;

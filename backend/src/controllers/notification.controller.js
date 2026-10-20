@@ -9,7 +9,7 @@ const getNotification = async (req, res) => {
         isRead: n.isRead === 1,
       })),
     );
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao obter notificações',
     });
@@ -22,7 +22,7 @@ const putNotificationReadAll = async (req, res) => {
     return res.json({
       success: true,
     });
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao atualizar notificações',
     });
@@ -36,7 +36,7 @@ const putNotificationByIdRead = async (req, res) => {
     return res.json({
       success: true,
     });
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao marcar notificação como lida',
     });

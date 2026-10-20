@@ -53,27 +53,27 @@ const helpFaq = [
   },
   {
     category: 'Cursos e pagamentos',
-    description: 'Inscrições, biblioteca e pagamentos de demonstração.',
+    description: 'Inscrições, biblioteca e pagamentos.',
     items: [
       {
         q: 'Como me inscrevo num curso gratuito?',
         a: 'Abra a página do curso e confirme a entrada gratuita. Depois de iniciar sessão, a inscrição fica guardada e o curso aparece em Os Meus Cursos.',
       },
       {
-        q: 'Como funciona a simulação de pagamento?',
-        a: 'Num curso pago, abra Simular pagamento, escolha o método fictício e o resultado. Uma aprovação guarda a inscrição e concede acesso. Não é realizada qualquer cobrança real.',
+        q: 'Como pago um curso?',
+        a: 'Num curso pago, clique em Comprar curso, verifique o valor e confirme em Pagar. Após a confirmação, a inscrição fica guardada e pode aceder às aulas.',
       },
       {
-        q: 'Que métodos posso simular?',
-        a: 'O modal disponibiliza cartão de demonstração, MB WAY e Multibanco. Os três métodos são simulações: não introduza números de cartão, códigos de segurança ou dados bancários.',
+        q: 'Preciso de introduzir dados bancários?',
+        a: 'Não. Este projeto escolar confirma o pagamento sem pedir dados bancários e sem efetuar cobranças reais.',
       },
       {
-        q: 'O que acontece se simular um pagamento recusado?',
-        a: 'A tentativa fica no histórico, mas não concede acesso ao curso. Pode voltar a tentar e selecionar um resultado aprovado para testar a inscrição.',
+        q: 'O que acontece se o pagamento for recusado?',
+        a: 'Se o pagamento não for confirmado, a inscrição não é concluída. Verifique a mensagem apresentada e tente novamente.',
       },
       {
-        q: 'Onde consulto as minhas simulações?',
-        a: 'Abra as Definições e consulte Simulações de pagamento. O histórico mostra o curso, o método, o valor, a data e o resultado das suas tentativas.',
+        q: 'Onde consulto os meus pagamentos?',
+        a: 'Abra as Definições e consulte Pagamentos. O histórico mostra o curso, o método, o valor, a data e o estado do pagamento.',
       },
       {
         q: 'O formador pode conceder-me acesso diretamente?',
@@ -151,7 +151,7 @@ const helpFaq = [
       },
       {
         q: 'Como crio e publico um curso?',
-        a: 'No painel do formador, crie o curso, organize os módulos e adicione aulas e materiais. Envie o curso para revisão; a publicação depende da aprovação administrativa.',
+        a: 'No painel do formador, crie o curso e escolha se inclui comunidade. Use Guardar rascunho para continuar mais tarde ou Enviar para revisão quando as aulas estiverem prontas. A decisão e o feedback aparecem no sino de notificações, no painel do criador e no editor do curso. Se forem pedidas alterações, guarde as correções e volte a enviar para revisão. O curso só aparece no catálogo após aprovação.',
       },
       {
         q: 'Posso trabalhar com outro formador?',

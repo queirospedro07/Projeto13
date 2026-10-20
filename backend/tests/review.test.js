@@ -269,6 +269,78 @@ test('concurrent note saves persist one note and do not cross user permissions',
   assert.equal((await request('/notes/lesson', { user: 'other' })).status, 403);
 });
 
+test('viewing a free course does not enroll and completing a lesson requires explicit enrollment', async () => {
+  const now = new Date().toISOString();
+  await db.execute(
+    'INSERT INTO cursos(id,titulo,slug,descricao,categoria,e_gratuito,preco,id_criador,criado_em,atualizado_em) VALUES ($1,$1,$1,$2,$3,1,0,$4,$5,$5)',
+    ['free-preview', 'Free preview', 'custom', 'owner', now],
+  );
+  await db.execute('INSERT INTO modulos_curso(id,id_curso,titulo) VALUES ($1,$2,$3)', [
+    'free-preview-module',
+    'free-preview',
+    'Module',
+  ]);
+  await db.execute('INSERT INTO aulas(id,id_modulo,titulo,tipo,conteudo) VALUES ($1,$2,$3,$4,$5)', [
+    'free-preview-lesson',
+    'free-preview-module',
+    'Lesson',
+    'text',
+    'Content',
+  ]);
+  for (let index = 0; index < 2; index++) {
+    const preview = await request('/courses/free-preview', { user: 'other' });
+    assert.equal(preview.status, 200);
+    assert.equal(preview.body.isEnrolled, false);
+  }
+  for (const user of ['admin', 'owner']) {
+    const preview = await request('/courses/free-preview', { user });
+    assert.equal(preview.status, 200);
+    assert.equal(preview.body.isEnrolled, false);
+    assert.equal(preview.body.isCreator, true);
+    assert.equal(preview.body.userProgress, 0);
+    const catalog = await request('/courses', { user });
+    const course = catalog.body.find((item) => item.id === 'free-preview');
+    assert.equal(course.isEnrolled, false);
+    assert.equal(course.isMember, false);
+  }
+  const count = async () =>
+    (
+      await db.queryOne(
+        'SELECT COUNT(*) AS count FROM inscricoes WHERE id_utilizador = $1 AND id_curso = $2',
+        ['other', 'free-preview'],
+      )
+    ).count;
+  assert.equal(await count(), 0);
+  assert.equal(
+    (
+      await request('/courses/free-preview/lessons/free-preview-lesson/complete', {
+        user: 'other',
+        method: 'POST',
+        body: {},
+      })
+    ).status,
+    403,
+  );
+  assert.equal(await count(), 0);
+  assert.equal(
+    (await request('/courses/free-preview/enroll', { user: 'other', method: 'POST', body: {} }))
+      .status,
+    201,
+  );
+  assert.equal(await count(), 1);
+  assert.equal(
+    (
+      await request('/courses/free-preview/lessons/free-preview-lesson/complete', {
+        user: 'other',
+        method: 'POST',
+        body: {},
+      })
+    ).status,
+    200,
+  );
+  assert.equal((await db.queryOne('SELECT COUNT(*) AS count FROM simulacoes_pagamento')).count, 0);
+});
+
 test('checkout rejects changed prices and repeated purchases after revoked enrollment', async () => {
   const pay = (body) =>
     request('/payments/simulate/paid', {
@@ -287,6 +359,120 @@ test('checkout rejects changed prices and repeated purchases after revoked enrol
   ]);
   assert.equal((await pay({ expectedAmountCents: 1999 })).status, 409);
   assert.equal((await db.queryOne('SELECT COUNT(*) AS count FROM simulacoes_pagamento')).count, 1);
+});
+
+test('creator earnings sum approved historical payments only for their own courses', async () => {
+  const now = new Date().toISOString();
+  const id = 'revenue-teacher';
+  await db.execute(
+    'INSERT INTO utilizadores(id,email,nome_utilizador,hash_palavra_passe,nome,papel,criado_em,atualizado_em) VALUES ($1,$2,$1,$3,$1,$4,$5,$5)',
+    [id, 'revenue@example.test', 'unused', 'CREATOR', now],
+  );
+  const token = signJwtToken({ id, role: 'CREATOR' });
+  const initial = await request('/creator/stats', { token });
+  assert.equal(initial.status, 200);
+  assert.equal(initial.body.totalRevenueCents, 0);
+  await db.execute(
+    'INSERT INTO cursos(id,titulo,slug,descricao,categoria,id_criador,preco,e_gratuito,criado_em,atualizado_em) VALUES ($1,$1,$1,$1,$2,$3,999,0,$4,$4)',
+    ['revenue-course', 'programming', id, now],
+  );
+  for (const [paymentId, buyer, courseId, amount, state] of [
+    ['revenue-one', 'student', 'revenue-course', 1999, 'approved'],
+    ['revenue-two', 'other', 'revenue-course', 251, 'approved'],
+    ['revenue-declined', 'admin', 'revenue-course', 99900, 'declined'],
+    ['revenue-another-teacher', 'admin', 'paid', 1999, 'approved'],
+  ]) {
+    await db.execute(
+      "INSERT INTO simulacoes_pagamento(id,id_utilizador,id_curso,montante_centimos,metodo,estado,criado_em) VALUES ($1,$2,$3,$4,'card',$5,$6)",
+      [paymentId, buyer, courseId, amount, state, now],
+    );
+  }
+  const result = await request('/creator/stats', { token });
+  assert.equal(result.status, 200);
+  assert.equal(result.body.totalRevenueCents, 2250);
+  assert.equal(result.body.totalRevenue, 22.5);
+  assert.equal((await request('/creator/stats', { user: 'student' })).status, 403);
+});
+
+test('courses support optional communities and existing students retain access after activation', async () => {
+  const create = (title, hasCommunity) =>
+    request('/creator/courses', {
+      user: 'owner',
+      method: 'POST',
+      body: {
+        title,
+        category: 'programming',
+        isFree: true,
+        hasCommunity,
+        channels: [
+          { name: 'geral', type: 'text' },
+          { name: 'sala-ao-vivo', type: 'voice' },
+        ],
+      },
+    });
+  const withCommunity = await create('Curso com comunidade', true);
+  assert.equal(withCommunity.status, 201);
+  const withDetails = await request(`/creator/courses/${withCommunity.body.id}`, { user: 'owner' });
+  assert.equal(withDetails.body.hasCommunity, true);
+  assert.equal(withDetails.body.channels.length, 2);
+  const without = await create('Curso sem comunidade', false);
+  assert.equal(without.status, 201);
+  const id = without.body.id;
+  const details = await request(`/creator/courses/${id}`, { user: 'owner' });
+  assert.equal(details.body.hasCommunity, false);
+  assert.equal(details.body.channels.length, 0);
+  await db.execute(
+    'INSERT INTO inscricoes(id,id_utilizador,id_curso,inscrito_em) VALUES($1,$2,$3,$4)',
+    ['community-student', 'student', id, new Date().toISOString()],
+  );
+  const saved = await request(`/creator/courses/${id}`, {
+    user: 'owner',
+    method: 'PUT',
+    body: {
+      hasCommunity: true,
+      channels: [
+        { name: 'discussao', type: 'text' },
+        { name: 'aula-ao-vivo', type: 'voice' },
+      ],
+    },
+  });
+  assert.equal(saved.status, 200);
+  const enabled = await request(`/creator/courses/${id}`, { user: 'owner' });
+  assert.equal(enabled.body.hasCommunity, true);
+  assert.equal(enabled.body.channels.length, 2);
+  assert.ok(
+    await db.queryOne('SELECT id FROM membros_espacos WHERE id_utilizador=$1 AND id_espaco=$2', [
+      'student',
+      enabled.body.spaceId,
+    ]),
+  );
+  const preview = await request(`/courses/${id}`, { user: 'admin' });
+  assert.equal(preview.body.spaceId, enabled.body.spaceId);
+  assert.equal(preview.body.space.channels.length, 2);
+
+  const lazy = await create('Comunidade ativada na sala de aula', false);
+  const route = `/creator/courses/${lazy.body.id}/community`;
+  assert.equal((await request(route, { user: 'student', method: 'POST', body: {} })).status, 403);
+  const outsiderToken = signJwtToken({ id: 'revenue-teacher', role: 'CREATOR' });
+  assert.equal(
+    (await request(route, { token: outsiderToken, method: 'POST', body: {} })).status,
+    403,
+  );
+  const results = await Promise.all([
+    request(route, { user: 'owner', method: 'POST', body: {} }),
+    request(route, { user: 'owner', method: 'POST', body: {} }),
+  ]);
+  assert.ok(results.every((result) => result.status === 200));
+  assert.equal(results[0].body.spaceId, results[1].body.spaceId);
+  for (const type of ['text', 'voice']) {
+    const channel = await request(`/spaces/${results[0].body.spaceId}/channels`, {
+      user: 'owner',
+      method: 'POST',
+      body: { name: `canal-${type}`, type },
+    });
+    assert.equal(channel.status, 201);
+  }
+  assert.equal((await create('Modo inválido', 'false')).status, 400);
 });
 
 test('idle WebSocket sessions disconnect when their JWT expires', { timeout: 5000 }, async () => {

@@ -52,6 +52,10 @@ async function simulatePayment(user, courseId, input = {}) {
         enrollmentId: existing.id,
       };
     const currentAmountCents = Math.round(Number(course.price) * 100);
+    if (currentAmountCents < 1)
+      throw Object.assign(new Error('O preço do curso precisa de ser corrigido pelo formador.'), {
+        status: 409,
+      });
     if (
       await queryOne(
         "SELECT id FROM simulacoes_pagamento WHERE id_utilizador = $1 AND id_curso = $2 AND estado = 'approved'",

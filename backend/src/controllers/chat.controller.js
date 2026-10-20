@@ -180,7 +180,7 @@ const postChatMessagesByMessageIdPin = async (req, res) => {
       messageId,
       isPinned: newPinned === 1,
     });
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao fixar/desafixar mensagem.',
     });

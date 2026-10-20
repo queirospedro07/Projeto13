@@ -2,7 +2,11 @@ const { queryAll, queryOne, execute } = require('../database/connection.js');
 const Project = {
   listSubmissoesProjeto(params = []) {
     return queryAll(
-      'SELECT s.*, u.name AS "studentName", l.title AS "lessonTitle", m."courseId" FROM submissoes_projeto s JOIN users u ON u.id = s.id_utilizador JOIN lessons l ON l.id = s.id_aula JOIN course_modules m ON m.id = l."moduleId" WHERE s.estado = \'SUBMITTED\' ORDER BY s.criado_em LIMIT 200',
+      `SELECT s.*, u.name AS "studentName", l.title AS "lessonTitle", m."courseId", c.title AS "courseTitle"
+       FROM submissoes_projeto s JOIN users u ON u.id=s.id_utilizador JOIN lessons l ON l.id=s.id_aula
+       JOIN course_modules m ON m.id=l."moduleId" JOIN courses c ON c.id=m."courseId"
+       WHERE s.estado = 'SUBMITTED' AND ($2::boolean OR c."creatorId"=$1 OR EXISTS (SELECT 1 FROM colaboradores_curso cc WHERE cc.id_curso=c.id AND cc.id_utilizador=$1))
+       ORDER BY s.criado_em LIMIT 200`,
       params,
     );
   },

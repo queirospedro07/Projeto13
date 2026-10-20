@@ -9,7 +9,7 @@ const {
 } = require('../services/courseAccess.js');
 const { completeLesson } = require('../services/progress.js');
 const getProjectReviews = async (req, res) => {
-  const rows = await Project.listSubmissoesProjeto();
+  const rows = await Project.listSubmissoesProjeto([req.user.id, req.user.role === 'ADMIN']);
   return res.json(
     await asyncFilter(
       rows,
@@ -36,6 +36,8 @@ const putProjectReviewsById = async (req, res) => {
     return res.status(400).json({
       error: 'Avaliação inválida. Inclua um parecer com até 2000 caracteres.',
     });
+  if (req.body.status === 'CHANGES_REQUESTED' && !req.body.feedback.trim())
+    return res.status(400).json({ error: 'Indique as alterações necessárias no feedback.' });
   await transaction(async () => {
     await Project.reviewProjectSubmission([
       req.body.status,

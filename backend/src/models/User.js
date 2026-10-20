@@ -36,22 +36,13 @@ const User = {
       [id],
     );
   },
-  async create({
-    name,
-    username,
-    email,
-    password,
-    avatarUrl,
-    role = 'STUDENT',
-    acceptedTerms = false,
-  }) {
+  async create({ name, username, email, password, role = 'STUDENT', acceptedTerms = false }) {
     const cleanUsername = username.toLowerCase().trim();
     const cleanEmail = email.toLowerCase().trim();
     const passwordHash = await bcrypt.hash(password, 10);
     const userId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
     const now = new Date().toISOString();
-    const selectedAvatarUrl =
-      avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${cleanUsername}`;
+    const selectedAvatarUrl = null;
     const targetRole = role === 'CREATOR' ? 'CREATOR' : 'STUDENT';
     await transaction(async () => {
       await execute(

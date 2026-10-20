@@ -30,9 +30,9 @@ export function PaymentHistory() {
     };
   }, [revision]);
   return (
-    <section className="payment-history" aria-label="Histórico de simulações">
-      <h3>Simulações de pagamento</h3>
-      <p>Histórico de demonstração. Não foram efetuadas cobranças reais.</p>
+    <section className="payment-history" aria-label="Histórico de pagamentos">
+      <h3>Pagamentos</h3>
+      <p>Consulte os pagamentos associados à sua conta.</p>
       {status === 'loading' && <p role="status">A carregar…</p>}
       {status === 'error' && (
         <>
@@ -72,7 +72,7 @@ export function PaymentHistory() {
             ))}
           </ul>
         ) : (
-          <p>Ainda não existem simulações.</p>
+          <p>Ainda não existem pagamentos.</p>
         ))}
     </section>
   );

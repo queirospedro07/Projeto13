@@ -1,3 +1,4 @@
+import { CourseFeedback } from '../../components/CourseFeedback/CourseFeedback';
 import './CourseBuilderPage.css';
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link, useParams, useSearchParams } from 'react-router-dom';
@@ -18,15 +19,10 @@ import {
   LuDollarSign as DollarSign,
   LuChevronDown as ChevronDown,
   LuChevronUp as ChevronUp,
-  LuAward as Award,
-  LuTrophy as Trophy,
-  LuFlame as Flame,
-  LuStar as Star,
   LuShield as Shield,
   LuDownload as Download,
   LuMegaphone as Megaphone,
   LuRadio as Radio,
-  LuFileBadge as FileBadge,
   LuSlidersHorizontal as SlidersHorizontal,
   LuLock as Lock,
   LuCamera as Camera,
@@ -60,7 +56,7 @@ export const QuizLessonEditor = ({ quiz, onChange }) => {
   const handleAddQuestion = (type = 'single') => {
     soundEffects.play('click');
     const newQ = {
-      id: `q-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      id: `q-${crypto.randomUUID()}-${Math.random().toString(36).substr(2, 4)}`,
       question: '',
       type,
       explanation: '',
@@ -156,7 +152,7 @@ export const QuizLessonEditor = ({ quiz, onChange }) => {
     if (!question) return;
     const optCount = question.options.length + 1;
     const newOpt = {
-      id: `opt-${Date.now()}-${optCount}`,
+      id: `opt-${crypto.randomUUID()}-${optCount}`,
       text: `Opção ${optCount}`,
       isCorrect: false,
     };
@@ -569,7 +565,6 @@ export const CourseBuilderPage = () => {
     initialStepParam >= 1 && initialStepParam <= 4 ? initialStepParam : 1,
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isPublished, setIsPublished] = useState(true);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('Programação & Software');
@@ -577,9 +572,6 @@ export const CourseBuilderPage = () => {
   const [language, setLanguage] = useState('Português');
   const [isFree, setIsFree] = useState(true);
   const [price, setPrice] = useState('');
-  const [hasDiscount, setHasDiscount] = useState(false);
-  const [discountPrice, setDiscountPrice] = useState('');
-  const [couponCode, setCouponCode] = useState('');
   const [durationHours, setDurationHours] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [isCompressingThumb, setIsCompressingThumb] = useState(false);
@@ -598,22 +590,8 @@ export const CourseBuilderPage = () => {
   const [documents, setDocuments] = useState([]);
   const [isUploadingDoc, setIsUploadingDoc] = useState(false);
   const docInputRef = useRef(null);
-  const [brandColor, setBrandColor] = useState('indigo');
-  const [badgeTitle, setBadgeTitle] = useState('');
-  const [badgeIcon, setBadgeIcon] = useState('award');
-  const [badgeRarity, setBadgeRarity] = useState('gold');
-  const [courseCompletionXp, setCourseCompletionXp] = useState(500);
-  const [certificateTitle, setCertificateTitle] = useState('');
-  const [certificateInstructorSignature, setCertificateInstructorSignature] = useState(
-    user?.name || '',
-  );
-  const [certificateOrg, setCertificateOrg] = useState('');
-  const [certificateCustomMessage, setCertificateCustomMessage] = useState('');
-  const [certificateHasQrCode, setCertificateHasQrCode] = useState(true);
-  const [defaultCallMode, setDefaultCallMode] = useState('open');
-  const [allowStudentScreenShare, setAllowStudentScreenShare] = useState(true);
-  const [allowStudentCamera, setAllowStudentCamera] = useState(true);
-  const [step2SubTab, setStep2SubTab] = useState('channels');
+  const [hasCommunity, setHasCommunity] = useState(true);
+  const [existingCommunity, setExistingCommunity] = useState(false);
   const [channels, setChannels] = useState([
     {
       id: 'ch-geral',
@@ -628,6 +606,9 @@ export const CourseBuilderPage = () => {
   const [expandedChannelIds, setExpandedChannelIds] = useState(new Set());
   const [collapsedModuleIds, setCollapsedModuleIds] = useState(new Set());
   const [modules, setModules] = useState([]);
+  const [publication, setPublication] = useState(null);
+  const savedCourseId = useRef(null);
+  const savingCourse = useRef(false);
   const [isLoadingCourse, setIsLoadingCourse] = useState(isEditMode);
 
   // Outcome Handlers
@@ -699,7 +680,7 @@ export const CourseBuilderPage = () => {
         });
         const extension = file.name.split('.').pop()?.toUpperCase() || 'PDF';
         const newDoc = {
-          id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+          id: `doc-${crypto.randomUUID()}-${Math.random().toString(36).substr(2, 4)}`,
           title: file.name.replace(/\.[^/.]+$/, ''),
           fileName: file.name,
           type: extension,
@@ -767,15 +748,9 @@ export const CourseBuilderPage = () => {
             : '',
         );
         setThumbnailUrl(course.thumbnailUrl || '');
-        setBrandColor(course.brandColor || 'indigo');
-        setIsPublished(course.isPublished !== undefined ? !!course.isPublished : true);
-        setDefaultCallMode(course.defaultCallMode || 'open');
-        setAllowStudentScreenShare(
-          course.allowStudentScreenShare !== undefined ? !!course.allowStudentScreenShare : true,
-        );
-        setAllowStudentCamera(
-          course.allowStudentCamera !== undefined ? !!course.allowStudentCamera : true,
-        );
+        setHasCommunity(Boolean(course.spaceId));
+        setExistingCommunity(Boolean(course.spaceId));
+        setPublication(course);
         if (Array.isArray(course.learningOutcomes)) {
           setLearningOutcomes(course.learningOutcomes.length > 0 ? course.learningOutcomes : ['']);
         }
@@ -792,7 +767,7 @@ export const CourseBuilderPage = () => {
               name: c.name,
               type: c.type || (c.isVoice ? 'voice' : 'text'),
               accessMode: c.accessMode || 'discussion',
-              voiceMode: c.voiceMode || course.defaultCallMode || 'open',
+              voiceMode: 'open',
               topic: c.topic || '',
               guidingQuestion: c.guidingQuestion || '',
               guidelines: c.guidelines || '',
@@ -850,11 +825,11 @@ export const CourseBuilderPage = () => {
     soundEffects.play('click');
     const count = channels.filter((c) => c.type === type).length + 1;
     const newChan = {
-      id: `ch-${Date.now()}`,
+      id: `ch-${crypto.randomUUID()}`,
       name: type === 'voice' ? `sala-ao-vivo-${count}` : `novo-canal-${count}`,
       type,
       accessMode: type === 'text' ? 'discussion' : type === 'qa' ? 'qa' : undefined,
-      voiceMode: type === 'voice' ? defaultCallMode : undefined,
+      voiceMode: type === 'voice' ? 'open' : undefined,
       topic: 'Canal de interação da comunidade.',
       guidingQuestion: '',
       guidelines: 'Comunique de forma cordial e profissional.',
@@ -893,12 +868,18 @@ export const CourseBuilderPage = () => {
       });
       return;
     }
+    if (
+      isEditMode &&
+      !String(id).startsWith('ch-') &&
+      !window.confirm('Eliminar este canal e as suas mensagens ao guardar o curso?')
+    )
+      return;
     setChannels((prev) => prev.filter((c) => c.id !== id));
   };
   const handleAddModule = () => {
     soundEffects.play('click');
     const newMod = {
-      id: `mod-${Date.now()}`,
+      id: `mod-${crypto.randomUUID()}`,
       title: `Módulo ${modules.length + 1}`,
       description: '',
       dripMode: 'instant',
@@ -967,7 +948,7 @@ export const CourseBuilderPage = () => {
         if (m.id !== modId) return m;
         const count = m.lessons.length + 1;
         const newLes = {
-          id: `les-${Date.now()}`,
+          id: `les-${crypto.randomUUID()}`,
           title: `Aula ${count}`,
           type: lessonType,
           durationMin: 15,
@@ -1086,6 +1067,7 @@ export const CourseBuilderPage = () => {
     }
   };
   const handlePublish = async (publish = true) => {
+    if (savingCourse.current) return;
     if (!title.trim()) {
       toast({
         title: 'Campo Obrigatório',
@@ -1095,8 +1077,8 @@ export const CourseBuilderPage = () => {
       setActiveStep(1);
       return;
     }
+    savingCourse.current = true;
     setIsSubmitting(true);
-    soundEffects.play('success');
     try {
       const payload = {
         title: title.trim(),
@@ -1106,49 +1088,32 @@ export const CourseBuilderPage = () => {
         language,
         price: isFree ? 0 : Number(price || 0),
         isFree,
-        isPublished: true,
-        hasDiscount,
-        discountPrice: Number(discountPrice || 0),
-        couponCode: couponCode.trim(),
+        isPublished: false,
+        expectedUpdatedAt: publication?.updatedAt,
         durationHours: Number(durationHours || 0),
         thumbnailUrl: thumbnailUrl.trim(),
-        brandColor,
-        defaultCallMode,
-        allowStudentScreenShare,
-        allowStudentCamera,
         learningOutcomes: (learningOutcomes || []).map((o) => o.trim()).filter(Boolean),
         requirements: (requirements || []).map((r) => r.trim()).filter(Boolean),
         documents: documents || [],
-        badge: {
-          title: badgeTitle.trim() || (title.trim() ? `Certificado ${title.trim()}` : ''),
-          icon: badgeIcon,
-          rarity: badgeRarity,
-          xpReward: courseCompletionXp,
-        },
-        certificate: {
-          title: certificateTitle,
-          instructorSignature: certificateInstructorSignature.trim() || user?.name || 'Instrutor',
-          organization: certificateOrg,
-          customMessage: certificateCustomMessage,
-          hasQrCode: certificateHasQrCode,
-        },
-        channels,
+        hasCommunity,
+        channels: hasCommunity ? channels : [],
         modules,
       };
-      let resultId;
-      if (isEditMode && editCourseId) {
-        await api.put(`/creator/courses/${editCourseId}`, payload).then(({ data }) => data);
-        resultId = editCourseId;
-      } else {
-        const result = await api.post('/creator/courses', payload).then(({ data }) => data);
-        resultId = result.id || result.slug;
+      let resultId = savedCourseId.current || editCourseId;
+      if (resultId) await api.put(`/creator/courses/${resultId}`, payload);
+      else {
+        const { data } = await api.post('/creator/courses', payload);
+        resultId = data.id;
+        savedCourseId.current = resultId;
       }
-      await api.post(`/creator/courses/${resultId}/submit-review`).then(({ data }) => data);
+      const { data: saved } = await api.get(`/creator/courses/${resultId}`);
+      setPublication(saved);
+      if (publish) await api.post(`/creator/courses/${resultId}/submit-review`);
       toast({
-        title: 'Curso enviado para revisão',
-        message: isEditMode
-          ? 'As alterações foram guardadas e aguardam revisão da administração.'
-          : 'O curso foi criado e enviado para revisão antes da publicação.',
+        title: publish ? 'Curso enviado para revisão' : 'Rascunho guardado',
+        message: publish
+          ? 'Receberá a decisão e o feedback nas notificações e no painel do criador.'
+          : 'Pode continuar a editar o curso antes de o enviar para revisão.',
         type: 'success',
       });
       navigate('/creator');
@@ -1163,23 +1128,8 @@ export const CourseBuilderPage = () => {
         type: 'error',
       });
     } finally {
+      savingCourse.current = false;
       setIsSubmitting(false);
-    }
-  };
-  const renderBadgeIcon = (iconName, className = 'course-builder-render-badge-icon') => {
-    switch (iconName) {
-      case 'trophy':
-        return <Trophy className={className} />;
-      case 'flame':
-        return <Flame className={className} />;
-      case 'sparkles':
-        return <Sparkles className={className} />;
-      case 'star':
-        return <Star className={className} />;
-      case 'shield':
-        return <Shield className={className} />;
-      default:
-        return <Award className={className} />;
     }
   };
   if (isLoadingCourse) {
@@ -1208,12 +1158,20 @@ export const CourseBuilderPage = () => {
                 </span>
               </div>
               <p className="course-builder-description-5">
-                Estruture módulos, aulas, canais da comunidade e regras do curso.
+                Organize os módulos, as aulas e a comunidade do curso.
               </p>
             </div>
           </div>
 
           <div className="course-builder-panel-25">
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={isSubmitting}
+              onClick={() => handlePublish(false)}
+            >
+              Guardar rascunho
+            </Button>
             <Button
               variant="primary"
               size="sm"
@@ -1222,13 +1180,14 @@ export const CourseBuilderPage = () => {
               onClick={() => handlePublish(true)}
               className="course-builder-button-11"
             >
-              <span>{isEditMode ? 'Guardar Alterações' : 'Publicar Curso'}</span>
+              <span>Enviar para revisão</span>
             </Button>
           </div>
         </div>
       </header>
 
       <main className="course-builder-main">
+        {publication && <CourseFeedback course={publication} />}
         <nav aria-label="Progresso da criação do curso" className="course-builder-navigation">
           <div className="course-builder-panel-26">
             {[
@@ -1507,88 +1466,9 @@ export const CourseBuilderPage = () => {
                           className="course-builder-field-11"
                         />
                       </div>
-                      <div className="course-builder-panel-42">
-                        <label className="course-builder-field-label-3">
-                          Preço com Desconto (€)
-                        </label>
-                        <input
-                          type="number"
-                          value={discountPrice}
-                          onChange={(e) => setDiscountPrice(e.target.value)}
-                          placeholder="ex: 29"
-                          className="course-builder-field-12"
-                        />
-                      </div>
                     </div>
                   </div>
                 )}
-              </Card>
-
-              {/* Medalha & Reconhecimento */}
-              <Card className="course-builder-card-2">
-                <div className="course-builder-panel-43">
-                  <div className="course-builder-panel-11">
-                    <Award className="course-builder-award" />
-                    <h3 className="course-builder-subheading">Medalha de Conclusão</h3>
-                  </div>
-                </div>
-
-                <div className="course-builder-panel-44">
-                  <div>
-                    <label className="course-builder-field-label-3">Título da Medalha</label>
-                    <input
-                      type="text"
-                      value={badgeTitle}
-                      onChange={(e) => setBadgeTitle(e.target.value)}
-                      placeholder="ex: Especialista em Gestão"
-                      className="course-builder-field-11"
-                    />
-                  </div>
-                  <div>
-                    <label className="course-builder-field-label-3">Raridade</label>
-                    <Select
-                      value={badgeRarity}
-                      onChange={(e) => setBadgeRarity(e.target.value)}
-                      className="course-builder-select-3"
-                    >
-                      <option value="bronze">Bronze (Iniciante)</option>
-                      <option value="silver">Prata (Intermédio)</option>
-                      <option value="gold">Ouro (Avançado)</option>
-                      <option value="platinum">Platina (Especialista)</option>
-                      <option value="diamond">Diamante (Mestre)</option>
-                    </Select>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="course-builder-card-2">
-                <div className="course-builder-panel-38">
-                  <FileBadge className="course-builder-book-open" />
-                  <h3 className="course-builder-subheading">Certificado Oficial</h3>
-                </div>
-
-                <div className="course-builder-panel-5">
-                  <div>
-                    <label className="course-builder-field-label-3">Assinatura do Instrutor</label>
-                    <input
-                      type="text"
-                      value={certificateInstructorSignature}
-                      onChange={(e) => setCertificateInstructorSignature(e.target.value)}
-                      placeholder={user?.name || 'O seu nome ou título profissional'}
-                      className="course-builder-field-11"
-                    />
-                  </div>
-                  <div>
-                    <label className="course-builder-field-label-3">Instituição / Academia</label>
-                    <input
-                      type="text"
-                      value={certificateOrg}
-                      onChange={(e) => setCertificateOrg(e.target.value)}
-                      placeholder="Academia NEXO"
-                      className="course-builder-field-11"
-                    />
-                  </div>
-                </div>
               </Card>
             </div>
 
@@ -1800,7 +1680,7 @@ export const CourseBuilderPage = () => {
                 rightIcon={<ArrowRight className="course-builder-trash2" />}
                 className="course-builder-button-26"
               >
-                Continuar para Canais & Permissões
+                Continuar para Comunidade
               </Button>
             </div>
           </div>
@@ -1808,27 +1688,46 @@ export const CourseBuilderPage = () => {
 
         {activeStep === 2 && (
           <div className="course-builder-panel-27">
-            <div className="course-builder-panel-54">
-              <button
-                type="button"
-                onClick={() => setStep2SubTab('channels')}
-                className={`course-builder-button-27 ${step2SubTab === 'channels' ? 'course-builder-button-28' : 'course-builder-button-29'}`}
-              >
-                <Hash className="course-builder-trash2" />
-                <span>Canais da Turma ({channels.length})</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setStep2SubTab('calls')}
-                className={`course-builder-button-27 ${step2SubTab === 'calls' ? 'course-builder-button-28' : 'course-builder-button-29'}`}
-              >
-                <Volume2 className="course-builder-trash2" />
-                <span>Regras de Chamadas ao Vivo</span>
-              </button>
-            </div>
-
-            {step2SubTab === 'channels' && (
+            <Card className="course-builder-card">
+              <h2 className="course-builder-heading">Tipo de curso</h2>
+              <p className="course-builder-description-6">
+                Escolha se o curso inclui chats e salas de chamada para a turma.
+              </p>
+              <fieldset className="course-community-choice">
+                <legend>Comunidade do curso</legend>
+                <label>
+                  <input
+                    type="radio"
+                    name="course-community"
+                    checked={hasCommunity}
+                    onChange={() => setHasCommunity(true)}
+                  />{' '}
+                  Com comunidade <span>Chats, fóruns e chamadas ao vivo.</span>
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="course-community"
+                    checked={!hasCommunity}
+                    disabled={existingCommunity}
+                    onChange={() => setHasCommunity(false)}
+                  />{' '}
+                  Sem comunidade <span>Apenas módulos, aulas e avaliações.</span>
+                </label>
+              </fieldset>
+              {existingCommunity && (
+                <p className="course-builder-description-6">
+                  Este curso já tem uma comunidade. Os canais e as conversas existentes serão
+                  conservados.
+                </p>
+              )}
+              {!hasCommunity && (
+                <p className="course-builder-description-6">
+                  Pode ativar a comunidade mais tarde ao editar o curso.
+                </p>
+              )}
+            </Card>
+            {hasCommunity && (
               <Card className="course-builder-card">
                 <div className="course-builder-panel-55">
                   <div>
@@ -1941,30 +1840,11 @@ export const CourseBuilderPage = () => {
                                   <option value="announcement">
                                     Apenas Leitura / Informativo (Apenas Instrutor)
                                   </option>
-                                  <option value="qa">
-                                    Fila de Dúvidas (Perguntas & Respostas)
-                                  </option>
+                                  <option value="qa">Perguntas & Respostas</option>
                                 </Select>
                               </div>
                             ) : (
-                              <div>
-                                <label className="course-builder-field-label-4">
-                                  Formato da Sala ao Vivo
-                                </label>
-                                <Select
-                                  value={chan.voiceMode || defaultCallMode}
-                                  onChange={(e) =>
-                                    handleUpdateChannel(chan.id, 'voiceMode', e.target.value)
-                                  }
-                                  className="course-builder-select-4"
-                                >
-                                  <option value="open">Modo Aberto (Todos falam livremente)</option>
-                                  <option value="stage">
-                                    Modo Palco (Alunos entram silenciados)
-                                  </option>
-                                  <option value="qa">Modo Dúvidas (Fila de intervenção)</option>
-                                </Select>
-                              </div>
+                              <p>Chamada de voz e vídeo com os controlos normais da sala.</p>
                             )}
 
                             <div>
@@ -2001,123 +1881,6 @@ export const CourseBuilderPage = () => {
                       </div>
                     );
                   })}
-                </div>
-              </Card>
-            )}
-
-            {step2SubTab === 'calls' && (
-              <Card className="course-builder-card-3">
-                <div className="course-builder-panel-59">
-                  <h2 className="course-builder-heading">
-                    <Volume2 className="course-builder-book-open" />
-                    Regras das Salas ao Vivo (Voz & Vídeo)
-                  </h2>
-                  <p className="course-builder-description-6">
-                    Defina se todos os participantes podem falar livremente ou se a sala funciona
-                    como palco com intervenção controlada.
-                  </p>
-                </div>
-
-                <div className="course-builder-panel-60">
-                  {[
-                    {
-                      id: 'open',
-                      title: 'Modo Aberto (Convívio Livre)',
-                      desc: 'Todos os alunos podem desmutar o microfone livremente e interagir a qualquer momento.',
-                      icon: Volume2,
-                      badge: 'Ideal para debates',
-                    },
-                    {
-                      id: 'stage',
-                      title: 'Modo Palco (Silêncio Inicial)',
-                      desc: 'Alunos entram silenciados. Para falar, levantam a mão e o professor ou moderador autoriza.',
-                      icon: Radio,
-                      badge: 'Ideal para aulas e palestras',
-                    },
-                    {
-                      id: 'qa',
-                      title: 'Fila de Dúvidas',
-                      desc: 'Os alunos entram numa fila ordenada para esclarecimento de dúvidas pontuais.',
-                      icon: HelpCircle,
-                      badge: 'Ideal para mentoria',
-                    },
-                  ].map((mode) => (
-                    <div
-                      key={mode.id}
-                      onClick={() => setDefaultCallMode(mode.id)}
-                      className={`course-builder-panel-61 ${defaultCallMode === mode.id ? 'course-builder-panel-62' : 'course-builder-panel-63'}`}
-                    >
-                      <div className="course-builder-panel-15">
-                        <div className="course-builder-panel-6">
-                          <mode.icon
-                            className={`course-builder-render-badge-icon ${defaultCallMode === mode.id ? 'course-builder-course-builder' : 'course-builder-course-builder-2'}`}
-                          />
-                          <span className="course-builder-label-10">{mode.badge}</span>
-                        </div>
-                        <h3 className="course-builder-subheading-2">{mode.title}</h3>
-                        <p className="course-builder-description-9">{mode.desc}</p>
-                      </div>
-
-                      <div className="course-builder-panel-64">
-                        <span
-                          className={
-                            defaultCallMode === mode.id
-                              ? 'course-builder-label-11'
-                              : 'course-builder-label-12'
-                          }
-                        >
-                          {defaultCallMode === mode.id ? 'Selecionado' : 'Escolher este modo'}
-                        </span>
-                        {defaultCallMode === mode.id && (
-                          <Check className="course-builder-check-3" />
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="course-builder-panel-65">
-                  <h3 className="course-builder-subheading-3">
-                    <SlidersHorizontal className="course-builder-megaphone" />
-                    Permissões de Média dos Estudantes
-                  </h3>
-
-                  <div className="course-builder-panel-29">
-                    <label className="course-builder-field-label-5">
-                      <input
-                        type="checkbox"
-                        checked={allowStudentScreenShare}
-                        onChange={(e) => setAllowStudentScreenShare(e.target.checked)}
-                        className="course-builder-field-17"
-                      />
-                      <div>
-                        <p className="course-builder-description-10">
-                          Permitir partilha de ecrã para alunos
-                        </p>
-                        <p className="course-builder-description-11">
-                          Se desativado, apenas instrutores, tutores ou moderadores podem partilhar
-                          ecrã.
-                        </p>
-                      </div>
-                    </label>
-
-                    <label className="course-builder-field-label-5">
-                      <input
-                        type="checkbox"
-                        checked={allowStudentCamera}
-                        onChange={(e) => setAllowStudentCamera(e.target.checked)}
-                        className="course-builder-field-17"
-                      />
-                      <div>
-                        <p className="course-builder-description-10">
-                          Permitir câmara de vídeo para alunos
-                        </p>
-                        <p className="course-builder-description-11">
-                          Os estudantes podem ativar a sua webcam durante as sessões de estudo.
-                        </p>
-                      </div>
-                    </label>
-                  </div>
                 </div>
               </Card>
             )}
@@ -2567,23 +2330,12 @@ export const CourseBuilderPage = () => {
 
                 <div className="course-builder-panel-84">
                   <span className="course-builder-label-20">Canais da Turma</span>
-                  <p className="course-builder-description-14">{channels.length} Canais</p>
+                  <p className="course-builder-description-14">
+                    {hasCommunity ? channels.length : 0} Canais
+                  </p>
                   <p className="course-builder-description-17">
-                    {channels.filter((c) => c.type === 'voice').length} Voz / Palco
-                  </p>
-                </div>
-
-                <div className="course-builder-panel-84">
-                  <span className="course-builder-label-20">Regras de Voz</span>
-                  <p className="course-builder-description-18">
-                    {defaultCallMode === 'stage'
-                      ? 'Modo Palco'
-                      : defaultCallMode === 'qa'
-                        ? 'Fila Dúvidas'
-                        : 'Aberto'}
-                  </p>
-                  <p className="course-builder-description-16">
-                    {defaultCallMode === 'stage' ? 'Silêncio Inicial' : 'Livre'}
+                    {hasCommunity ? channels.filter((c) => c.type === 'voice').length : 0} Salas ao
+                    vivo
                   </p>
                 </div>
 
@@ -2653,7 +2405,7 @@ export const CourseBuilderPage = () => {
                   leftIcon={<Check className="course-builder-render-badge-icon" />}
                   className="course-builder-button-47"
                 >
-                  {isEditMode ? 'Guardar Alterações' : 'Confirmar & Publicar Curso'}
+                  Enviar para revisão
                 </Button>
               </div>
             </Card>

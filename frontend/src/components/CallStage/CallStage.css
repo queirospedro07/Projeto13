@@ -281,7 +281,7 @@
     padding-right: 0.5rem;
     padding-top: 0.25rem;
     padding-bottom: 0.25rem;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 10px;
     --nexo-text-opacity: 1;
     color: rgb(82 82 82 / var(--nexo-text-opacity, 1));

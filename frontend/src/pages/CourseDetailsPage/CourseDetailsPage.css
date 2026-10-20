@@ -1832,7 +1832,7 @@
   .course-details-label-22 {
     margin-left: 0.75rem;
     flex-shrink: 0;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 0.75rem;
     line-height: 1rem;
     --nexo-text-opacity: 1;

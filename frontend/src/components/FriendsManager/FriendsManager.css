@@ -598,7 +598,7 @@
   }
 
   .friends-manager-label {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-weight: 500;
     --nexo-text-opacity: 1;
     color: rgb(37 99 235 / var(--nexo-text-opacity, 1));
@@ -649,7 +649,7 @@
     padding-bottom: 0.75rem;
     padding-left: 2.25rem;
     padding-right: 1rem;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 0.875rem;
     line-height: 1.25rem;
     --nexo-text-opacity: 1;

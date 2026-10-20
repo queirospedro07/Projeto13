@@ -17,9 +17,10 @@ const resolveCourseAccessState = ({ user, course, enrollmentRow, isCollaborator 
   const userEnrollment = enrollmentRow || null;
   return {
     isCreator,
-    isEnrolled: isCreator || Boolean(userEnrollment),
+    isEnrolled: Boolean(userEnrollment),
+    canAccess: isCreator || Boolean(userEnrollment),
     userEnrollment,
-    userProgress: userEnrollment ? (userEnrollment.progressPercent ?? 0) : isCreator ? 100 : 0,
+    userProgress: userEnrollment ? (userEnrollment.progressPercent ?? 0) : 0,
   };
 };
 const getCourseMyLearning = async (req, res) => {
@@ -126,8 +127,8 @@ const getCourse = async (req, res) => {
         userEnrollment = await Course.findEnrollmentsByUserIdAndCourseId([req.user.id, course.id]);
         isCreator = course.creatorId === req.user.id;
       }
-      const isEnrolled = !!userEnrollment || isCreator;
-      const userProgress = userEnrollment ? userEnrollment.progressPercent : isCreator ? 100 : null;
+      const isEnrolled = Boolean(userEnrollment);
+      const userProgress = userEnrollment ? userEnrollment.progressPercent : 0;
       return {
         id: course.id,
         title: course.title,
@@ -234,7 +235,12 @@ const getCourseById = async (req, res) => {
         req.user.id === course.creatorId ||
         req.user.id === course.creator_id ||
         isCollab);
-    if (course.approvalStatus && course.approvalStatus !== 'APPROVED' && !canReviewPendingCourse) {
+    if (
+      course.approvalStatus &&
+      course.approvalStatus !== 'APPROVED' &&
+      !canReviewPendingCourse &&
+      !(await canStudyCourse(req.user, course))
+    ) {
       return res.status(403).json({
         error:
           'Este curso está atualmente a aguardar validação e aprovação pela administração NEXO.',
@@ -445,6 +451,10 @@ const getCourseById = async (req, res) => {
       id: course.id,
       title: course.title,
       slug: course.slug,
+      spaceId: space?.id || null,
+      hasCommunity: Boolean(space),
+      updatedAt: canReviewPendingCourse ? course.updatedAt : undefined,
+      approvalStatus: canReviewPendingCourse ? course.approvalStatus : undefined,
       description: course.description,
       category: course.category,
       difficulty: course.difficulty,
@@ -456,7 +466,7 @@ const getCourseById = async (req, res) => {
       language: course.language,
       learningOutcomes: parsedOutcomes,
       requirements: parsedRequirements,
-      documents: accessState.isEnrolled ? parsedDocuments : [],
+      documents: accessState.canAccess ? parsedDocuments : [],
       creator: {
         id: course.creator_id,
         name: course.creator_name,
@@ -464,7 +474,7 @@ const getCourseById = async (req, res) => {
         avatarUrl: course.creator_avatarUrl,
         bio: course.creator_bio,
       },
-      space: accessState.isEnrolled
+      space: accessState.canAccess
         ? space
         : space
           ? {
@@ -500,10 +510,13 @@ const getCourseById = async (req, res) => {
       reviewsCount: reviewsList.length,
       averageRating: avgRating,
       userEnrollment,
+      certificate: req.user
+        ? (await Course.findCertificateByUserAndCourse([req.user.id, course.id])) || null
+        : null,
       isEnrolled: accessState.isEnrolled,
       isCreator: accessState.isCreator,
       userProgress: accessState.userProgress,
-      classmates: accessState.isEnrolled ? classmates : [],
+      classmates: accessState.canAccess ? classmates : [],
     });
   } catch (err) {
     console.error('Course details error:', err);
@@ -565,7 +578,7 @@ const postCourseByIdEnroll = async (req, res) => {
       !(await canStudyCourse(req.user, course))
     )
       return res.status(409).json({
-        error: 'Confirme a compra no modal de pagamento simulado para obter acesso a este curso.',
+        error: 'Confirme o pagamento para obter acesso a este curso.',
         code: 'PAYMENT_REQUIRED',
       });
     const existing = await Course.findEnrollmentRowByUserIdAndCourseId([userId, course.id]);
@@ -685,7 +698,7 @@ const postCourseByCourseIdReviews = async (req, res) => {
         createdAt: now,
       },
     });
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao guardar avaliação',
     });

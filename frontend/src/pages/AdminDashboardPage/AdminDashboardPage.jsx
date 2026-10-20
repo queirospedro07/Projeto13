@@ -1,10 +1,13 @@
+import UserRoleEditor from '../../components/UserRoleEditor/UserRoleEditor';
+import { PageState } from '../../components/PageState';
+import CourseReview from '../../components/CourseReview/CourseReview';
 import { ReportQueue } from '../../components/Moderation';
 import CourseStatusChart from '../../components/CourseStatusChart';
 import { safeExternalUrl } from '../../utils/safeUrl';
 import './AdminDashboardPage.css';
-import { useState, useEffect, useMemo } from 'react';
-import { createPortal } from 'react-dom';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { Modal } from '../../components/Modal';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   LuSearch as Search,
   LuEye as Eye,
@@ -15,10 +18,9 @@ import {
 import { Button } from '../../components/Button';
 import { Badge } from '../../components/Badge';
 import { Avatar } from '../../components/Avatar';
-import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
 import { api } from '../../services/api';
-import { formatCoursePrice, formatCategory, formatLessonType } from '../../utils/formatters';
+import { formatCoursePrice, formatCategory } from '../../utils/formatters';
 export const AdminDashboardPage = () => {
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
@@ -26,8 +28,14 @@ export const AdminDashboardPage = () => {
   const [courses, setCourses] = useState([]);
 
   // Navegação
-  const [activeTab, setActiveTab] = useState('overview');
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(() =>
+    ['overview', 'courses', 'applications', 'users'].includes(searchParams.get('tab'))
+      ? searchParams.get('tab')
+      : 'overview',
+  );
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   // Filtros - Candidaturas
@@ -46,6 +54,8 @@ export const AdminDashboardPage = () => {
   // Modais
   const [selectedCourseDetail, setSelectedCourseDetail] = useState(null);
   const [courseDetailLoading, setCourseDetailLoading] = useState(false);
+  const [courseReviewError, setCourseReviewError] = useState(false);
+  const courseReviewRequest = useRef(0);
   const [selectedApp, setSelectedApp] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [rejectFeedback, setRejectFeedback] = useState('');
@@ -53,41 +63,46 @@ export const AdminDashboardPage = () => {
   const [rejectType, setRejectType] = useState(null); // 'app' | 'course'
   const [actionLoading, setActionLoading] = useState(false);
   const { toast } = useToast();
-  const fetchAdminData = async (manual = false) => {
-    if (manual) setRefreshing(true);
-    try {
-      const [statsData, usersData, appsData, coursesData] = await Promise.all([
-        api.get('/admin/stats').then(({ data }) => data),
-        api.get('/admin/users').then(({ data }) => data),
-        api.get('/admin/creator-applications').then(({ data }) => data),
-        api.get('/admin/courses', { params: { status: 'all' } }).then(({ data }) => data),
-      ]);
-      setStats(statsData || null);
-      setUsers(usersData || []);
-      setApplications(appsData || []);
-      setCourses(coursesData || []);
-      if (manual) {
+  const fetchAdminData = useCallback(
+    async (manual = false) => {
+      setLoadError(false);
+      if (manual) setRefreshing(true);
+      try {
+        const [statsData, usersData, appsData, coursesData] = await Promise.all([
+          api.get('/admin/stats').then(({ data }) => data),
+          api.get('/admin/users').then(({ data }) => data),
+          api.get('/admin/creator-applications').then(({ data }) => data),
+          api.get('/admin/courses', { params: { status: 'all' } }).then(({ data }) => data),
+        ]);
+        setStats(statsData || null);
+        setUsers(usersData || []);
+        setApplications(appsData || []);
+        setCourses(coursesData || []);
+        if (manual) {
+          toast({
+            title: 'Atualizado',
+            message: 'Dados sincronizados com sucesso.',
+            type: 'success',
+          });
+        }
+      } catch (err) {
+        setLoadError(true);
+        console.error(err);
         toast({
-          title: 'Atualizado',
-          message: 'Dados sincronizados com sucesso.',
-          type: 'success',
+          title: 'Erro',
+          message: 'Não foi possível carregar os dados.',
+          type: 'error',
         });
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
       }
-    } catch (err) {
-      console.error(err);
-      toast({
-        title: 'Erro',
-        message: 'Não foi possível carregar os dados.',
-        type: 'error',
-      });
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+    },
+    [toast],
+  );
   useEffect(() => {
     fetchAdminData();
-  }, []);
+  }, [fetchAdminData]);
 
   // Suspender / Reativar
   const handleToggleSuspend = async (userId) => {
@@ -176,7 +191,11 @@ export const AdminDashboardPage = () => {
   const handleApproveCourse = async (courseId) => {
     setActionLoading(true);
     try {
-      await api.put(`/admin/courses/${courseId}/approve`).then(({ data }) => data);
+      await api
+        .put(`/admin/courses/${courseId}/approve`, {
+          expectedUpdatedAt: selectedCourseDetail?.updatedAt,
+        })
+        .then(({ data }) => data);
       toast({
         title: 'Curso Aprovado',
         message: 'O curso já está visível para todos os alunos.',
@@ -204,6 +223,7 @@ export const AdminDashboardPage = () => {
       await api
         .put(`/admin/courses/${selectedCourse.id}/reject`, {
           notes: rejectFeedback,
+          expectedUpdatedAt: selectedCourse?.updatedAt,
         })
         .then(({ data }) => data);
       toast({
@@ -229,19 +249,24 @@ export const AdminDashboardPage = () => {
 
   // Ver currículo do curso
   const handleOpenCourseReview = async (course) => {
+    const requestId = ++courseReviewRequest.current;
     setSelectedCourseDetail(course);
     setCourseDetailLoading(true);
+    setCourseReviewError(false);
     try {
-      const details = await api.get(`/courses/${course.id}`).then(({ data }) => data);
-      setSelectedCourseDetail(details);
+      const details = await api.get(`/creator/courses/${course.id}`).then(({ data }) => data);
+      if (requestId !== courseReviewRequest.current) return;
+      setSelectedCourseDetail({ ...course, ...details });
     } catch {
+      if (requestId !== courseReviewRequest.current) return;
+      setCourseReviewError(true);
       toast({
         title: 'Erro',
         message: 'Não foi possível carregar o currículo.',
         type: 'error',
       });
     } finally {
-      setCourseDetailLoading(false);
+      if (requestId === courseReviewRequest.current) setCourseDetailLoading(false);
     }
   };
 
@@ -281,7 +306,11 @@ export const AdminDashboardPage = () => {
         (u.name && u.name.toLowerCase().includes(q)) ||
         (u.email && u.email.toLowerCase().includes(q)) ||
         (u.username && u.username.toLowerCase().includes(q));
-      const matchRole = userRoleFilter === 'ALL' || u.role === userRoleFilter;
+      const matchRole =
+        userRoleFilter === 'ALL' ||
+        (userRoleFilter === 'CREATOR'
+          ? u.role === 'CREATOR' || u.isTeacher
+          : u.role === userRoleFilter);
       const matchStatus =
         userStatusFilter === 'ALL'
           ? true
@@ -291,6 +320,15 @@ export const AdminDashboardPage = () => {
       return matchSearch && matchRole && matchStatus;
     });
   }, [users, userSearch, userRoleFilter, userStatusFilter]);
+  if (loading) return <PageState loading title="A carregar a administração…" />;
+  if (loadError)
+    return (
+      <PageState
+        title="Não foi possível carregar a administração"
+        message="Os dados continuam guardados. Tente novamente."
+        onRetry={() => fetchAdminData()}
+      />
+    );
   return (
     <div className="admin-dashboard-panel">
       {/* ── HEADER SÓBRIO & PROFISSIONAL ── */}
@@ -500,7 +538,13 @@ export const AdminDashboardPage = () => {
                       }
                       className="admin-dashboard-badge"
                     >
-                      {u.role === 'ADMIN' ? 'Admin' : u.role === 'CREATOR' ? 'Formador' : 'Aluno'}
+                      {u.role === 'ADMIN'
+                        ? u.isTeacher
+                          ? 'Admin & Formador'
+                          : 'Administrador'
+                        : u.role === 'CREATOR'
+                          ? 'Formador'
+                          : 'Aluno'}
                     </Badge>
                   </div>
                 ))}
@@ -804,7 +848,7 @@ export const AdminDashboardPage = () => {
                       onClick={() => handleOpenCourseReview(course)}
                       className="admin-dashboard-button"
                     >
-                      Rever Aulas
+                      Rever curso
                     </Button>
                     {course.approvalStatus === 'APPROVED' && (
                       <Link to={`/courses/${course.id}`}>
@@ -921,6 +965,11 @@ export const AdminDashboardPage = () => {
                       </Badge>
                     </td>
                     <td className="admin-dashboard-table-heading-2">
+                      <UserRoleEditor
+                        key={`${u.id}:${u.role}:${u.isTeacher}`}
+                        user={u}
+                        onChanged={() => fetchAdminData()}
+                      />
                       {u.role !== 'ADMIN' && (
                         <button
                           type="button"
@@ -939,150 +988,71 @@ export const AdminDashboardPage = () => {
         </div>
       )}
 
-      {/* ── MODAL DE REVISÃO DO CURSO ── */}
+      {selectedCourseDetail && (
+        <CourseReview
+          key={`${selectedCourseDetail.id}:${selectedCourseDetail.updatedAt}`}
+          course={selectedCourseDetail}
+          loading={courseDetailLoading}
+          error={courseReviewError}
+          busy={actionLoading}
+          onClose={() => {
+            courseReviewRequest.current += 1;
+            setSelectedCourseDetail(null);
+          }}
+          onRetry={() => handleOpenCourseReview(selectedCourseDetail)}
+          onApprove={() => handleApproveCourse(selectedCourseDetail.id)}
+          onRequestChanges={() => {
+            setSelectedCourse(selectedCourseDetail);
+            setRejectFeedback('');
+            setRejectType('course');
+            setSelectedCourseDetail(null);
+            setShowRejectModal(true);
+          }}
+        />
+      )}
+
       <Modal
-        isOpen={Boolean(selectedCourseDetail)}
-        onClose={() => setSelectedCourseDetail(null)}
-        title="Currículo do Curso"
-        maxWidth="3xl"
-        bodyClassName="admin-dashboard-modal custom-scrollbar"
+        isOpen={showRejectModal}
+        maxWidth="md"
+        title={rejectType === 'app' ? 'Rejeitar candidatura' : 'Pedir alterações ao curso'}
+        onClose={() => {
+          if (!actionLoading) {
+            setShowRejectModal(false);
+            setRejectFeedback('');
+          }
+        }}
       >
-        {courseDetailLoading ? (
-          <div className="admin-dashboard-panel-51">A carregar conteúdo...</div>
-        ) : (
-          selectedCourseDetail && (
-            <div className="admin-dashboard-panel-52">
-              <div className="admin-dashboard-panel-53">
-                <img
-                  src={selectedCourseDetail.thumbnailUrl}
-                  alt={selectedCourseDetail.title}
-                  className="admin-dashboard-image-2"
-                />
-                <div>
-                  <h3 className="admin-dashboard-subheading-5">{selectedCourseDetail.title}</h3>
-                  <p className="admin-dashboard-description-2">
-                    {selectedCourseDetail.description}
-                  </p>
-                  <div className="admin-dashboard-panel-54">
-                    Formador: {selectedCourseDetail.creator?.name || 'N/A'} •{' '}
-                    {formatCoursePrice(selectedCourseDetail)}
-                  </div>
-                </div>
-              </div>
-
-              <div className="admin-dashboard-panel-55">
-                <h4 className="admin-dashboard-caption">
-                  Módulos e Aulas ({selectedCourseDetail.modules?.length || 0})
-                </h4>
-                {selectedCourseDetail.modules?.map((mod, idx) => (
-                  <div key={mod.id || idx} className="admin-dashboard-panel-56">
-                    <div className="admin-dashboard-panel-57">
-                      Módulo {idx + 1}: {mod.title}
-                    </div>
-                    <div className="admin-dashboard-panel-58">
-                      {mod.lessons?.map((les, lIdx) => (
-                        <div key={les.id || lIdx} className="admin-dashboard-panel-59">
-                          <span>
-                            {lIdx + 1}. {les.title}
-                          </span>
-                          <span className="admin-dashboard-label-10">
-                            {formatLessonType(les.type)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="admin-dashboard-panel-60">
-                <Button variant="secondary" size="sm" onClick={() => setSelectedCourseDetail(null)}>
-                  Fechar
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  disabled={actionLoading}
-                  onClick={() => {
-                    setSelectedCourse(selectedCourseDetail);
-                    setRejectType('course');
-                    setSelectedCourseDetail(null);
-                    setShowRejectModal(true);
-                  }}
-                  className="admin-dashboard-button-17"
-                >
-                  Pedir Alterações
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  disabled={actionLoading}
-                  onClick={() => handleApproveCourse(selectedCourseDetail.id)}
-                  className="admin-dashboard-button-18"
-                >
-                  Aprovar Curso
-                </Button>
-              </div>
-            </div>
-          )
-        )}
+        <p>O feedback fica guardado e será enviado ao utilizador nas notificações.</p>
+        <label htmlFor="review-feedback">Alterações necessárias</label>
+        <textarea
+          id="review-feedback"
+          rows={5}
+          maxLength={2000}
+          required
+          value={rejectFeedback}
+          onChange={(event) => setRejectFeedback(event.target.value)}
+          placeholder="Explique o que deve ser corrigido antes da aprovação…"
+          className="admin-dashboard-textarea"
+        />
+        <div className="admin-dashboard-panel-64">
+          <Button
+            variant="secondary"
+            disabled={actionLoading}
+            onClick={() => setShowRejectModal(false)}
+          >
+            Cancelar
+          </Button>
+          <Button
+            disabled={actionLoading || !rejectFeedback.trim()}
+            isLoading={actionLoading}
+            onClick={
+              rejectType === 'course' ? handleConfirmRejectCourse : handleConfirmRejectApplication
+            }
+          >
+            Enviar feedback
+          </Button>
+        </div>
       </Modal>
-
-      {/* ── MODAL DE REJEIÇÃO COM FEEDBACK ── */}
-      {showRejectModal &&
-        createPortal(
-          <div className="admin-dashboard-panel-61">
-            <div
-              className="admin-dashboard-panel-62 backdrop-blur-xs"
-              onClick={() => {
-                setShowRejectModal(false);
-                setRejectFeedback('');
-              }}
-            />
-            <div className="admin-dashboard-panel-63">
-              <h3 className="admin-dashboard-subheading-5">
-                {rejectType === 'app' ? 'Rejeitar Candidatura' : 'Pedir Alterações ao Curso'}
-              </h3>
-              <p className="admin-dashboard-description-3">
-                Escreva o motivo para que o utilizador possa compreender e efetuar as correções
-                necessárias.
-              </p>
-              <textarea
-                rows={3}
-                value={rejectFeedback}
-                onChange={(e) => setRejectFeedback(e.target.value)}
-                placeholder="Indique o motivo..."
-                className="admin-dashboard-textarea"
-              />
-              <div className="admin-dashboard-panel-64">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    setShowRejectModal(false);
-                    setRejectFeedback('');
-                  }}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  disabled={actionLoading}
-                  onClick={
-                    rejectType === 'course'
-                      ? handleConfirmRejectCourse
-                      : handleConfirmRejectApplication
-                  }
-                  className="admin-dashboard-button-19"
-                >
-                  Confirmar
-                </Button>
-              </div>
-            </div>
-          </div>,
-          document.body,
-        )}
       {activeTab === 'overview' && <ReportQueue />}
     </div>
   );

@@ -126,7 +126,7 @@ app.use((req, res) => {
 });
 
 // Tratamento de erros
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   console.error(err.stack || err);
   const databaseUnavailable = [
     'ECONNREFUSED',

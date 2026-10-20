@@ -5,9 +5,12 @@ import { Select } from '../Select';
 import { safeExternalUrl } from '../../utils/safeUrl';
 import './CreatorTools.css';
 export function ReviewQueue() {
+  const [kind, setKind] = useState('all');
+  const [courseFilter, setCourseFilter] = useState('all');
+  const [search, setSearch] = useState('');
   const [items, setItems] = useState([]),
     [error, setError] = useState(''),
-    [busy, setBusy] = useState(false),
+    [busy, setBusy] = useState(true),
     [scores, setScores] = useState({}),
     [feedback, setFeedback] = useState({});
   const load = async () => {
@@ -38,31 +41,56 @@ export function ReviewQueue() {
     load();
   }, []);
   const review = async (item, status) => {
+    if (busy) return;
     setBusy(true);
     setError('');
     try {
       if (item.kind === 'quiz') {
         const score = Number(scores[item.id]);
-        if (scores[item.id] === undefined || !Number.isInteger(score) || score < 0 || score > 100)
+        if (
+          String(scores[item.id] ?? '').trim() === '' ||
+          !Number.isInteger(score) ||
+          score < 0 ||
+          score > 100
+        )
           throw new Error('Introduza uma nota entre 0 e 100.');
         await api
           .put(`/quizzes/reviews/${item.id}`, {
             score,
           })
           .then(({ data }) => data);
-      } else
+      } else {
+        if (status === 'CHANGES_REQUESTED' && !feedback[item.id]?.trim())
+          throw new Error('Escreva o feedback com as alterações necessárias.');
         await api
           .put(`/projects/reviews/${item.id}`, {
             status,
             feedback: feedback[item.id] || '',
           })
           .then(({ data }) => data);
+      }
       await load();
     } catch (e) {
       setError(e.message);
       setBusy(false);
     }
   };
+  const normalize = (value) =>
+    String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+  const filtered = items.filter(
+    (item) =>
+      (kind === 'all' || item.kind === kind) &&
+      (courseFilter === 'all' || item.courseId === courseFilter) &&
+      normalize(`${item.studentName} ${item.lessonTitle} ${item.courseTitle}`).includes(
+        normalize(search),
+      ),
+  );
+  const courses = [
+    ...new Map(items.map((item) => [item.courseId, item.courseTitle || 'Curso'])).entries(),
+  ];
   return (
     <section className="creator-tool">
       <header>
@@ -75,21 +103,62 @@ export function ReviewQueue() {
           Atualizar
         </Button>
       </header>
+      <div className="creator-review-filters">
+        <label htmlFor="review-search">
+          Pesquisar aluno ou trabalho
+          <input
+            id="review-search"
+            type="search"
+            maxLength={120}
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+        </label>
+        <label htmlFor="review-kind">
+          Tipo de trabalho
+          <select id="review-kind" value={kind} onChange={(event) => setKind(event.target.value)}>
+            <option value="all">Todos</option>
+            <option value="project">Projetos</option>
+            <option value="quiz">Questionários</option>
+          </select>
+        </label>
+        <label htmlFor="review-course">
+          Curso
+          <select
+            id="review-course"
+            value={courseFilter}
+            onChange={(event) => setCourseFilter(event.target.value)}
+          >
+            <option value="all">Todos os cursos</option>
+            {courses.map(([id, title]) => (
+              <option key={id} value={id}>
+                {title}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      {!busy && <p>{filtered.length} trabalho(s) pendente(s) neste filtro.</p>}
       {error && (
         <p role="alert" className="creator-tool-error">
           {error}
         </p>
       )}
-      {!items.length && !error && (
+      {!filtered.length && !error && (
         <p role="status">
           {busy ? 'A carregar…' : 'Não existem trabalhos pendentes de avaliação.'}
         </p>
       )}
-      {items.map((item) => (
-        <article key={item.id} className="creator-review">
+      {filtered.map((item) => (
+        <article key={`${item.kind}:${item.id}`} className="creator-review">
           <h3>{item.lessonTitle}</h3>
           <p>
             {item.studentName} · {item.kind === 'quiz' ? 'Questionário' : 'Projeto'}
+          </p>
+          <p>
+            {item.courseTitle}
+            {(item.submittedAt || item.criado_em) &&
+              ` · Entregue em ${new Date(item.submittedAt || item.criado_em).toLocaleString('pt-PT')}`}
           </p>
           {item.kind === 'quiz' ? (
             <>

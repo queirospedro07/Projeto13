@@ -1,5 +1,12 @@
+const { aliasesForCategory } = require('../utils/courseCategories');
 const { queryAll, queryOne, execute } = require('../database/connection.js');
 const Course = {
+  findCertificateByUserAndCourse(params = []) {
+    return queryOne(
+      'SELECT id, "credentialId", "issuedAt" FROM certificates WHERE "userId" = $1 AND "courseId" = $2',
+      params,
+    );
+  },
   listEnrollmentsByUserId(params = []) {
     return queryAll(
       `SELECT DISTINCT 
@@ -59,27 +66,8 @@ const Course = {
       params.push(`%${search}%`, `%${search}%`);
     }
     if (category && category !== 'all') {
-      const catLower = category.toLowerCase();
-      if (catLower === 'programming' || catLower.includes('programa')) {
-        sql += ` AND (LOWER(c.category) = 'programming' OR LOWER(c.category) LIKE '%programa%')`;
-      } else if (catLower === 'design' || catLower.includes('design')) {
-        sql += ` AND LOWER(c.category) LIKE '%design%'`;
-      } else if (
-        catLower === 'ai & data' ||
-        catLower === 'ai' ||
-        catLower === 'data' ||
-        catLower.includes('dados') ||
-        catLower.includes('ia')
-      ) {
-        sql += ` AND (LOWER(c.category) LIKE '%ai%' OR LOWER(c.category) LIKE '%data%' OR LOWER(c.category) LIKE '%dados%' OR LOWER(c.category) LIKE '%ia%')`;
-      } else if (catLower === 'cybersecurity' || catLower.includes('ciber')) {
-        sql += ` AND (LOWER(c.category) LIKE '%cyber%' OR LOWER(c.category) LIKE '%ciber%')`;
-      } else if (catLower === 'cloud & devops' || catLower === 'cloud' || catLower === 'devops') {
-        sql += ` AND (LOWER(c.category) LIKE '%cloud%' OR LOWER(c.category) LIKE '%devops%')`;
-      } else {
-        sql += ` AND LOWER(c.category) = $${params.length + 1}`;
-        params.push(catLower);
-      }
+      params.push(aliasesForCategory(category));
+      sql += ` AND LOWER(c.category) = ANY($${params.length}::text[])`;
     }
     if (difficulty && difficulty !== 'all') {
       sql += ` AND c.difficulty = $${params.length + 1}`;

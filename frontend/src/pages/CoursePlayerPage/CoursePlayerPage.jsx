@@ -1,5 +1,6 @@
 import { ProjectSubmission } from '../../components/ProjectSubmission';
 import './CoursePlayerPage.css';
+import CourseCompletion from '../../components/CourseCompletion/CourseCompletion';
 import { safeExternalUrl } from '../../utils/safeUrl';
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
@@ -164,15 +165,11 @@ export const CoursePlayerPage = () => {
           });
         }
       });
-      if (user && data.id && !data.isEnrolled && (data.isFree || Number(data.price || 0) <= 0)) {
-        api
-          .post(`/courses/${data.id}/enroll`)
-          .then(({ data }) => data)
-          .then(() => {
-            window.dispatchEvent(new Event('nexo_courses_visibility_changed'));
-          })
-          .catch(() => {});
-        data.isEnrolled = true;
+      const canManage =
+        user && (user.role === 'ADMIN' || data.creator?.id === user.id || data.isCreator);
+      if (!data.isEnrolled && !data.isMember && !data.space?.isMember && !canManage) {
+        navigate(`/courses/${data.slug || data.id || courseId}`, { replace: true });
+        return;
       }
       setCourse(data);
       const completed = new Set();
@@ -382,6 +379,7 @@ export const CoursePlayerPage = () => {
         ];
         return {
           ...prev,
+          certificate: res.certificate || prev.certificate,
           userEnrollment: {
             ...prev.userEnrollment,
             ...res.enrollment,
@@ -392,6 +390,15 @@ export const CoursePlayerPage = () => {
         };
       });
       soundEffects.playSuccess();
+      if (res.certificate?.id) {
+        toast({
+          title: 'Curso concluído!',
+          message: 'O seu certificado foi emitido.',
+          type: 'success',
+        });
+        navigate(`/certificates/verify/${encodeURIComponent(res.certificate.id)}`);
+        return;
+      }
       toast({
         title: 'Aula Concluída!',
         message: `Progresso: ${res.enrollment?.progressPercent ?? 0}%`,
@@ -461,10 +468,19 @@ export const CoursePlayerPage = () => {
     e.preventDefault();
     if (!newChannelName.trim()) return;
     setIsCreatingChannel(true);
-    const spaceId = course?.spaceId || course?.space?.id;
+    let spaceId = course?.spaceId || course?.space?.id;
     const formattedName = newChannelName.toLowerCase().replace(/[^a-z0-9-_]/g, '-');
     try {
-      if (!spaceId) throw new Error('A comunidade deste curso não está disponível.');
+      if (!spaceId) {
+        const { data } = await api.post(`/creator/courses/${course.id}/community`);
+        spaceId = data.spaceId;
+        setCourse((current) => ({
+          ...current,
+          spaceId,
+          hasCommunity: true,
+          space: { id: spaceId, channels: [], members: [] },
+        }));
+      }
       const channelData = {
         name: formattedName,
         type: newChannelType,
@@ -552,6 +568,7 @@ export const CoursePlayerPage = () => {
       <div className="course-player-panel-4">
         <CourseServerSidebar
           courseTitle={course.title}
+          hasCommunity={Boolean(course.hasCommunity)}
           courseId={course.id}
           isCreatorOrAdmin={isCreatorOrAdmin}
           customChannels={customChannels}
@@ -607,6 +624,7 @@ export const CoursePlayerPage = () => {
           <div className="course-player-panel-7">
             <CourseServerSidebar
               courseTitle={course.title}
+              hasCommunity={Boolean(course.hasCommunity)}
               courseId={course.id}
               isCreatorOrAdmin={isCreatorOrAdmin}
               customChannels={customChannels}
@@ -672,6 +690,11 @@ export const CoursePlayerPage = () => {
       )}
 
       <main className="course-player-main">
+        {(course.certificate ||
+          (allLessons.length > 0 &&
+            allLessons.every((lesson) => completedLessonIds.has(lesson.id)))) && (
+          <CourseCompletion courseId={course.id} certificate={course.certificate} />
+        )}
         <header className="course-player-header">
           <div className="course-player-panel-8">
             <button
@@ -1024,7 +1047,7 @@ export const CoursePlayerPage = () => {
                 ) : (
                   <button onClick={handleMarkComplete} className="course-player-button-14">
                     <Award className="course-player-chevron-left" />
-                    <span>Concluir Curso Oficialmente</span>
+                    <span>Concluir última aula</span>
                   </button>
                 )}
               </div>
@@ -1096,6 +1119,11 @@ export const CoursePlayerPage = () => {
           }
         >
           <form onSubmit={handleSaveChannelSubmit} className="course-player-form-2">
+            {!course?.spaceId && !course?.space?.id && (
+              <p>
+                Ao criar o primeiro canal, ativa a comunidade deste curso para chats e chamadas.
+              </p>
+            )}
             <div>
               <label className="course-player-field-label-3">Sugestões Rápidas (1-Clique)</label>
               <div className="course-player-panel-32">

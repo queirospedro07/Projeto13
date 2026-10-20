@@ -22,7 +22,7 @@
   }
 
   .apply-creator-label {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 0.75rem;
     line-height: 1rem;
     --nexo-text-opacity: 1;
@@ -418,7 +418,7 @@
   }
 
   .apply-creator-label-3 {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 0.75rem;
     line-height: 1rem;
     --nexo-text-opacity: 1;
@@ -1209,7 +1209,7 @@
     padding-right: 1rem;
     padding-top: 0.75rem;
     padding-bottom: 0.75rem;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 0.75rem;
     line-height: 1rem;
     --nexo-text-opacity: 1;
@@ -1560,7 +1560,7 @@
     --nexo-bg-opacity: 1;
     background-color: rgb(250 250 250 / var(--nexo-bg-opacity, 1));
     padding: 1rem;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 0.75rem;
     line-height: 1rem;
     line-height: 1.625;

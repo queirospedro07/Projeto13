@@ -56,7 +56,9 @@ export const CourseDetailsPage = () => {
       user.id === course?.creatorId ||
       user.id === course?.instructorId),
   );
-  const isCreatorOrAdmin = Boolean(user && (user.role === 'ADMIN' || isInstructorOfThisCourse));
+  const isCreatorOrAdmin = Boolean(
+    user && (user.role === 'ADMIN' || isInstructorOfThisCourse || course?.isCreator),
+  );
   const outcomes =
     Array.isArray(course?.learningOutcomes) && course.learningOutcomes.length > 0
       ? course.learningOutcomes
@@ -185,9 +187,7 @@ export const CourseDetailsPage = () => {
       </div>
     );
   }
-  const isEnrolled = Boolean(
-    course?.isEnrolled || course?.userEnrollment || (user && course?.creator?.id === user.id),
-  );
+  const isEnrolled = Boolean(course?.isEnrolled || course?.userEnrollment);
   const userProgress = Math.round(
     course?.userProgress ?? course?.userEnrollment?.progressPercent ?? 0,
   );
@@ -333,14 +333,18 @@ export const CourseDetailsPage = () => {
                 {/* Corpo de Ações */}
                 <div className="course-details-panel-15">
                   <div className="course-details-panel-16">
-                    {isInstructorOfThisCourse ? (
+                    {isCreatorOrAdmin ? (
                       <div className="course-details-panel-17">
                         <span className="course-details-label-10">
                           <Sparkles className="course-details-sparkles" />
-                          Acesso de Formador (Autor)
+                          {isInstructorOfThisCourse
+                            ? 'Acesso de Formador (Autor)'
+                            : user?.role === 'ADMIN'
+                              ? 'Acesso de Administrador'
+                              : 'Acesso de Formador'}
                         </span>
                         <span className="course-details-label-11">
-                          Acesso total ilimitado como formador deste curso
+                          Acesso de gestão deste curso
                         </span>
                       </div>
                     ) : isEnrolled ? (
@@ -366,12 +370,12 @@ export const CourseDetailsPage = () => {
                   </div>
 
                   {/* Botões de Ação */}
-                  {isInstructorOfThisCourse ? (
+                  {isCreatorOrAdmin ? (
                     <div className="course-details-panel-19">
                       <Link to={`/learn/${course.id}`} className="course-details-link-3">
                         <button className="course-details-button-2">
                           <Play className="course-details-play" />
-                          <span>Abrir Sala de Aula (Modo Formador)</span>
+                          <span>Abrir Sala de Aula</span>
                           <ArrowRight className="course-details-arrow-right" />
                         </button>
                       </Link>

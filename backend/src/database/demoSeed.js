@@ -9,8 +9,7 @@ const demoUsers = [
     username: 'sofia.almeida',
     name: 'Sofia Almeida',
     role: 'CREATOR',
-    avatarUrl:
-      'https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=240&h=240&fit=crop&crop=faces&auto=format&q=80',
+    avatarUrl: null,
     bio: 'Formadora de desenvolvimento web e interfaces digitais.',
     location: 'Lisboa, Portugal',
     headline: 'Formadora de Desenvolvimento Web',
@@ -21,8 +20,7 @@ const demoUsers = [
     username: 'miguel.ferreira',
     name: 'Miguel Ferreira',
     role: 'CREATOR',
-    avatarUrl:
-      'https://images.unsplash.com/photo-1552058544-f2b08422138a?w=240&h=240&fit=crop&crop=faces&auto=format&q=80',
+    avatarUrl: null,
     bio: 'Programador e formador nas áreas de JavaScript, Git e bases de dados.',
     location: 'Porto, Portugal',
     headline: 'Programador e Formador',
@@ -33,8 +31,7 @@ const demoUsers = [
     username: 'marta.lopes',
     name: 'Marta Lopes',
     role: 'STUDENT',
-    avatarUrl:
-      'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=240&h=240&fit=crop&crop=faces&auto=format&q=80',
+    avatarUrl: null,
     bio: 'A aprender desenvolvimento web e design de interfaces.',
     location: 'Braga, Portugal',
     headline: 'Estudante de Desenvolvimento Web',
@@ -45,8 +42,7 @@ const demoUsers = [
     username: 'diogo.costa',
     name: 'Diogo Costa',
     role: 'STUDENT',
-    avatarUrl:
-      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=240&h=240&fit=crop&crop=faces&auto=format&q=80',
+    avatarUrl: null,
     bio: 'Interessado em programação, automação e tecnologia.',
     location: 'Coimbra, Portugal',
     headline: 'Estudante de Tecnologia',
@@ -57,8 +53,7 @@ const demoUsers = [
     username: 'beatriz.martins',
     name: 'Beatriz Martins',
     role: 'STUDENT',
-    avatarUrl:
-      'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=240&h=240&fit=crop&crop=faces&auto=format&q=80',
+    avatarUrl: null,
     bio: 'A desenvolver competências em programação e dados.',
     location: 'Aveiro, Portugal',
     headline: 'Estudante de Programação',
@@ -69,8 +64,7 @@ const demoUsers = [
     username: 'joao.neves',
     name: 'João Neves',
     role: 'STUDENT',
-    avatarUrl:
-      'https://images.unsplash.com/photo-1531384441138-2736e62e0919?w=240&h=240&fit=crop&crop=faces&auto=format&q=80',
+    avatarUrl: null,
     bio: 'A explorar JavaScript, Python e ferramentas de colaboração.',
     location: 'Viseu, Portugal',
     headline: 'Estudante Full Stack',
@@ -81,8 +75,7 @@ const demoUsers = [
     username: 'ines.carvalho',
     name: 'Inês Carvalho',
     role: 'STUDENT',
-    avatarUrl:
-      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=240&h=240&fit=crop&crop=faces&auto=format&q=80',
+    avatarUrl: null,
     bio: 'Interessada em criação de produtos digitais e tecnologia.',
     location: 'Faro, Portugal',
     headline: 'Estudante de Produtos Digitais',
@@ -93,8 +86,7 @@ const demoUsers = [
     username: 'rafael.moreira',
     name: 'Rafael Moreira',
     role: 'STUDENT',
-    avatarUrl:
-      'https://images.unsplash.com/photo-1504593811423-6dd665756598?w=240&h=240&fit=crop&crop=faces&auto=format&q=80',
+    avatarUrl: null,
     bio: 'A reforçar fundamentos de programação e bases de dados.',
     location: 'Leiria, Portugal',
     headline: 'Estudante de Engenharia de Software',

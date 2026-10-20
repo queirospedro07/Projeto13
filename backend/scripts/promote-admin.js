@@ -13,15 +13,15 @@ async function main() {
     }
     await connectDB();
     const user = await queryOne(
-      'SELECT id, papel FROM utilizadores WHERE lower(nome_utilizador) = lower($1)',
+      'SELECT id, papel, admin_formador FROM utilizadores WHERE lower(nome_utilizador) = lower($1)',
       [username],
     );
     if (!user) throw new Error('Conta não encontrada. Nenhuma conta foi criada ou alterada.');
-    if (user.papel !== 'ADMIN') {
+    if (user.papel !== 'ADMIN' || user.admin_formador !== 1) {
       await transaction(
         async () =>
           await execute(
-            "UPDATE utilizadores SET papel = 'ADMIN', versao_sessao = versao_sessao + 1, atualizado_em = $1 WHERE id = $2",
+            "UPDATE utilizadores SET papel = 'ADMIN', admin_formador = 1, versao_sessao = versao_sessao + 1, atualizado_em = $1 WHERE id = $2",
             [new Date().toISOString(), user.id],
           ),
       );

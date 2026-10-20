@@ -111,7 +111,7 @@ const getProfileUserByIdentifier = async (req, res) => {
       })(),
       createdAt: user.createdAt,
     });
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao carregar perfil do utilizador',
     });
@@ -282,7 +282,7 @@ const postProfileProfileClearField = async (req, res) => {
     return res.json({
       success: true,
     });
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       error: 'Falha ao limpar campo',
     });

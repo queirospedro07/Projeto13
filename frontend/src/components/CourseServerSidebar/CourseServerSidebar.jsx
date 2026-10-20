@@ -16,6 +16,7 @@ import {
 export const CourseServerSidebar = ({
   courseTitle,
   courseId,
+  hasCommunity = false,
   isCreatorOrAdmin,
   customChannels,
   currentTextChannel,
@@ -48,7 +49,7 @@ export const CourseServerSidebar = ({
               <h2 className="course-server-sidebar-heading">{courseTitle}</h2>
               <div className="course-server-sidebar-panel-6">
                 <span className="course-server-sidebar-label"></span>
-                <span>Servidor do Espaço</span>
+                <span>{hasCommunity ? 'Comunidade do curso' : 'Sala de aula'}</span>
               </div>
             </div>
           </div>
@@ -64,7 +65,7 @@ export const CourseServerSidebar = ({
                 <BookOpen className="course-server-sidebar-book-open" />
               </Link>
             )}
-            {isCreatorOrAdmin && (
+            {hasCommunity && isCreatorOrAdmin && (
               <button
                 onClick={() => onOpenCreateChannel('text')}
                 className="course-server-sidebar-button"
@@ -88,6 +89,7 @@ export const CourseServerSidebar = ({
 
         <div className="course-server-sidebar-panel-8">
           {(() => {
+            if (!hasCommunity) return null;
             const voiceChannels = customChannels.filter((c) => c.type === 'voice' || c.isVoice);
             if (voiceChannels.length === 0 && !isCreatorOrAdmin) return null;
             return (
@@ -162,66 +164,68 @@ export const CourseServerSidebar = ({
             );
           })()}
 
-          <div>
-            <div className="course-server-sidebar-panel-9">
-              <span>Canais de Conversa</span>
-              {isCreatorOrAdmin && (
-                <button
-                  onClick={() => onOpenCreateChannel('text')}
-                  className="course-server-sidebar-button-3"
-                  title="Criar canal"
-                  aria-label="Criar canal"
-                >
-                  <Plus className="course-server-sidebar-video" />
-                </button>
-              )}
-            </div>
-            <div className="course-server-sidebar-panel-10">
-              {customChannels
-                .filter((c) => c.type !== 'voice')
-                .map((ch) => {
-                  const isSelected = activeView === 'channel' && currentTextChannel?.id === ch.id;
-                  return (
-                    <div key={ch.id} className="course-server-sidebar-panel-11 group/item">
-                      <button
-                        onClick={() => onSelectChannel(ch)}
-                        className={`course-server-sidebar-button-8 ${isSelected ? 'course-server-sidebar-button-5' : 'course-server-sidebar-button-9'}`}
-                      >
-                        {ch.type === 'qa' ? (
-                          <HelpCircle
-                            className={`course-server-sidebar-video-2 ${isSelected ? 'course-server-sidebar-video-3' : 'course-server-sidebar-video-4'}`}
-                          />
-                        ) : ch.type === 'showcase' ? (
-                          <Sparkles
-                            className={`course-server-sidebar-video-2 ${isSelected ? 'course-server-sidebar-video-3' : 'course-server-sidebar-video-4'}`}
-                          />
-                        ) : (
-                          <Hash
-                            className={`course-server-sidebar-video-2 ${isSelected ? 'course-server-sidebar-video-3' : 'course-server-sidebar-hash'}`}
-                          />
-                        )}
-                        <span className="course-server-sidebar-label-3">{ch.name}</span>
-                      </button>
+          {hasCommunity && (
+            <div>
+              <div className="course-server-sidebar-panel-9">
+                <span>Canais de Conversa</span>
+                {isCreatorOrAdmin && (
+                  <button
+                    onClick={() => onOpenCreateChannel('text')}
+                    className="course-server-sidebar-button-3"
+                    title="Criar canal"
+                    aria-label="Criar canal"
+                  >
+                    <Plus className="course-server-sidebar-video" />
+                  </button>
+                )}
+              </div>
+              <div className="course-server-sidebar-panel-10">
+                {customChannels
+                  .filter((c) => c.type !== 'voice')
+                  .map((ch) => {
+                    const isSelected = activeView === 'channel' && currentTextChannel?.id === ch.id;
+                    return (
+                      <div key={ch.id} className="course-server-sidebar-panel-11 group/item">
+                        <button
+                          onClick={() => onSelectChannel(ch)}
+                          className={`course-server-sidebar-button-8 ${isSelected ? 'course-server-sidebar-button-5' : 'course-server-sidebar-button-9'}`}
+                        >
+                          {ch.type === 'qa' ? (
+                            <HelpCircle
+                              className={`course-server-sidebar-video-2 ${isSelected ? 'course-server-sidebar-video-3' : 'course-server-sidebar-video-4'}`}
+                            />
+                          ) : ch.type === 'showcase' ? (
+                            <Sparkles
+                              className={`course-server-sidebar-video-2 ${isSelected ? 'course-server-sidebar-video-3' : 'course-server-sidebar-video-4'}`}
+                            />
+                          ) : (
+                            <Hash
+                              className={`course-server-sidebar-video-2 ${isSelected ? 'course-server-sidebar-video-3' : 'course-server-sidebar-hash'}`}
+                            />
+                          )}
+                          <span className="course-server-sidebar-label-3">{ch.name}</span>
+                        </button>
 
-                      {isCreatorOrAdmin && (
-                        <div className="course-server-sidebar-panel-13">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onOpenEditChannel(ch);
-                            }}
-                            className="course-server-sidebar-button-7"
-                            title="Editar canal"
-                          >
-                            <Settings className="course-server-sidebar-video" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                        {isCreatorOrAdmin && (
+                          <div className="course-server-sidebar-panel-13">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onOpenEditChannel(ch);
+                              }}
+                              className="course-server-sidebar-button-7"
+                              title="Editar canal"
+                            >
+                              <Settings className="course-server-sidebar-video" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
             </div>
-          </div>
+          )}
 
           <div>
             <div className="course-server-sidebar-panel-9">
