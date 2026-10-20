@@ -10,4 +10,5 @@ const Report = {
     );
   },
 };
+
 module.exports = Report;

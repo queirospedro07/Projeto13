@@ -26,21 +26,28 @@ export default function Notifications() {
       if (!signal?.aborted) setLoading(false);
     }
   }, []);
+
   useEffect(() => {
     const controller = new AbortController();
     const refresh = () => {
       if (!document.hidden) load(controller.signal);
     };
+
     refresh();
+
     const timer = setInterval(refresh, 60000);
+
     window.addEventListener('focus', refresh);
+
     return () => {
       controller.abort();
       clearInterval(timer);
       window.removeEventListener('focus', refresh);
     };
   }, [load]);
+
   const unread = items.filter((item) => !item.isRead).length;
+
   async function read(item) {
     if (busy) return;
     setBusy(true);
@@ -50,6 +57,7 @@ export default function Notifications() {
         current.map((value) => (value.id === item.id ? { ...value, isRead: true } : value)),
       );
       setOpen(false);
+
       const target =
         typeof item.link === 'string' &&
         /^\/(?!\/)/.test(item.link) &&
@@ -57,6 +65,7 @@ export default function Notifications() {
         !Array.from(item.link).some((character) => character.charCodeAt(0) < 32)
           ? item.link
           : '/dashboard';
+
       navigate(target);
     } catch (error) {
       setError(error.message);
@@ -64,6 +73,7 @@ export default function Notifications() {
       setBusy(false);
     }
   }
+
   async function readAll() {
     setBusy(true);
     try {
@@ -75,6 +85,7 @@ export default function Notifications() {
       setBusy(false);
     }
   }
+
   return (
     <>
       <button
@@ -89,18 +100,30 @@ export default function Notifications() {
         <LuBell aria-hidden="true" />
         {unread > 0 && <span>{unread}</span>}
       </button>
-      <Modal isOpen={open} title="Notificações" maxWidth="lg" onClose={() => setOpen(false)}>
+      <Modal
+        isOpen={open}
+        title="Notificações"
+        maxWidth="lg"
+        onClose={() => setOpen(false)}
+      >
         {loading && <p role="status">A carregar notificações…</p>}
         {error && (
           <div role="alert">
             <p>{error}</p>
-            <Button variant="secondary" onClick={() => load()}>
+            <Button
+              variant="secondary"
+              onClick={() => load()}
+            >
               Tentar novamente
             </Button>
           </div>
         )}
         {unread > 0 && (
-          <Button variant="secondary" disabled={busy} onClick={readAll}>
+          <Button
+            variant="secondary"
+            disabled={busy}
+            onClick={readAll}
+          >
             Marcar todas como lidas
           </Button>
         )}

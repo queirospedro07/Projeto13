@@ -15,13 +15,19 @@ export default function CourseStatusChart({ courses }) {
   }));
 
   return (
-    <section className="course-status-chart" aria-labelledby="course-status-heading">
+    <section
+      className="course-status-chart"
+      aria-labelledby="course-status-heading"
+    >
       <h2 id="course-status-heading">Estado dos cursos</h2>
       <p>Distribuição dos cursos registados por estado de publicação.</p>
       {courses.length ? (
         <>
           <div className="course-status-chart__plot">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer
+              width="100%"
+              height="100%"
+            >
               <BarChart
                 data={data}
                 accessibilityLayer
@@ -32,7 +38,10 @@ export default function CourseStatusChart({ courses }) {
                   vertical={false}
                   stroke="var(--border-color)"
                 />
-                <XAxis dataKey="name" tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fill: 'var(--text-secondary)', fontSize: 12 }}
+                />
                 <YAxis
                   allowDecimals={false}
                   tick={{ fill: 'var(--text-secondary)', fontSize: 12 }}

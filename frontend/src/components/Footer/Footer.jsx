@@ -3,6 +3,7 @@ import { useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Logo } from '../Logo';
 import './Footer.css';
+
 export default function Footer() {
   const currentYear = new Date().getFullYear();
   const footerRef = useRef(null);
@@ -24,25 +25,32 @@ export default function Footer() {
       canvas.width = footer.offsetWidth;
       canvas.height = footer.offsetHeight;
     };
+
     handleResize();
     window.addEventListener('resize', handleResize);
+
     const animate = () => {
       if (!isIntersecting || trailRef.current.length === 0) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         isRunning = false;
         animFrameRef.current = null;
+
         return;
       }
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
       const isDark = document.documentElement.classList.contains('dark');
       for (let i = trailRef.current.length - 1; i >= 0; i--) {
         const p = trailRef.current[i];
+
         p.opacity -= 0.02;
         p.radius += 0.45;
         if (p.opacity <= 0) {
           trailRef.current.splice(i, 1);
           continue;
         }
+
         const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.radius);
         if (isDark) {
           grad.addColorStop(0, `rgba(59, 130, 246, ${p.opacity * 0.95})`);
@@ -53,11 +61,13 @@ export default function Footer() {
           grad.addColorStop(0.5, `rgba(59, 130, 246, ${p.opacity * 0.4})`);
           grad.addColorStop(1, 'rgba(25, 149, 250, 0)');
         }
+
         ctx.fillStyle = grad;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         ctx.fill();
       }
+
       if (trailRef.current.length > 0) {
         animFrameRef.current = requestAnimationFrame(animate);
       } else {
@@ -65,12 +75,14 @@ export default function Footer() {
         animFrameRef.current = null;
       }
     };
+
     window.__pace_start_footer_trail = () => {
       if (isIntersecting && !isRunning) {
         isRunning = true;
         animFrameRef.current = requestAnimationFrame(animate);
       }
     };
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         isIntersecting = entry.isIntersecting;
@@ -86,7 +98,9 @@ export default function Footer() {
         threshold: 0.01,
       },
     );
+
     observer.observe(footer);
+
     return () => {
       delete window.__pace_start_footer_trail;
       observer.disconnect();
@@ -94,6 +108,7 @@ export default function Footer() {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
   }, []);
+
   const handleMouseMove = (e) => {
     if (!footerRef.current) return;
     const rect = footerRef.current.getBoundingClientRect();
@@ -112,23 +127,34 @@ export default function Footer() {
       }
     }
   };
+
   return (
     <>
-      <footer ref={footerRef} onMouseMove={handleMouseMove} className="footer-footer ui-group">
+      <footer
+        ref={footerRef}
+        onMouseMove={handleMouseMove}
+        className="footer-footer ui-group"
+      >
         {/* Subtle Ambient Background Gradient */}
         <div className="footer-panel">
           <div className="footer-panel-2" />
         </div>
 
         {/* Real-Time Interactive Fluid Pace-Style Cursor Trail Canvas */}
-        <canvas ref={canvasRef} className="footer-canvas" />
+        <canvas
+          ref={canvasRef}
+          className="footer-canvas"
+        />
 
         <div className="footer-panel-3">
           {/* Main Grid */}
           <div className="footer-panel-4">
             {/* Brand & Description */}
             <div className="footer-panel-5">
-              <Logo size="lg" to="/" />
+              <Logo
+                size="lg"
+                to="/"
+              />
               <p className="footer-description">
                 Cursos práticos, uma comunidade para trocar ideias e certificados de conclusão.
               </p>
@@ -141,32 +167,50 @@ export default function Footer() {
                 <span className="footer-label">Áreas de Estudo</span>
                 <ul className="footer-list">
                   <li>
-                    <Link to="/explore" className="footer-link">
+                    <Link
+                      to="/explore"
+                      className="footer-link"
+                    >
                       Catálogo Geral
                     </Link>
                   </li>
                   <li>
-                    <Link to="/explore?category=Negócios" className="footer-link">
+                    <Link
+                      to="/explore?category=Negócios"
+                      className="footer-link"
+                    >
                       Negócios & Gestão
                     </Link>
                   </li>
                   <li>
-                    <Link to="/explore?category=Marketing" className="footer-link">
+                    <Link
+                      to="/explore?category=Marketing"
+                      className="footer-link"
+                    >
                       Marketing & Vendas
                     </Link>
                   </li>
                   <li>
-                    <Link to="/explore?category=Línguas" className="footer-link">
+                    <Link
+                      to="/explore?category=Línguas"
+                      className="footer-link"
+                    >
                       Línguas & Idiomas
                     </Link>
                   </li>
                   <li>
-                    <Link to="/explore?category=Programação" className="footer-link">
+                    <Link
+                      to="/explore?category=Programação"
+                      className="footer-link"
+                    >
                       Tecnologia & Web
                     </Link>
                   </li>
                   <li>
-                    <Link to="/explore?category=Design" className="footer-link">
+                    <Link
+                      to="/explore?category=Design"
+                      className="footer-link"
+                    >
                       Design & Artes
                     </Link>
                   </li>
@@ -178,32 +222,50 @@ export default function Footer() {
                 <span className="footer-label">Plataforma</span>
                 <ul className="footer-list">
                   <li>
-                    <Link to="/" className="footer-link-2">
+                    <Link
+                      to="/"
+                      className="footer-link-2"
+                    >
                       Início
                     </Link>
                   </li>
                   <li>
-                    <Link to="/dashboard" className="footer-link">
+                    <Link
+                      to="/dashboard"
+                      className="footer-link"
+                    >
                       Painel do Aluno
                     </Link>
                   </li>
                   <li>
-                    <Link to="/creator" className="footer-link">
+                    <Link
+                      to="/creator"
+                      className="footer-link"
+                    >
                       Estúdio do Formador
                     </Link>
                   </li>
                   <li>
-                    <Link to="/explore" className="footer-link">
+                    <Link
+                      to="/explore"
+                      className="footer-link"
+                    >
                       Comunidade e salas de estudo
                     </Link>
                   </li>
                   <li>
-                    <Link to="/library" className="footer-link">
+                    <Link
+                      to="/library"
+                      className="footer-link"
+                    >
                       Certificados de conclusão
                     </Link>
                   </li>
                   <li>
-                    <Link to="/help" className="footer-link-2">
+                    <Link
+                      to="/help"
+                      className="footer-link-2"
+                    >
                       Dúvidas & Suporte
                     </Link>
                   </li>
@@ -215,12 +277,18 @@ export default function Footer() {
                 <span className="footer-label">Comunidade & Moderação</span>
                 <ul className="footer-list">
                   <li>
-                    <Link to="/creator/apply" className="footer-link-2">
+                    <Link
+                      to="/creator/apply"
+                      className="footer-link-2"
+                    >
                       Candidatura a Formador
                     </Link>
                   </li>
                   <li>
-                    <Link to="/login" className="footer-link">
+                    <Link
+                      to="/login"
+                      className="footer-link"
+                    >
                       Iniciar Sessão
                     </Link>
                   </li>
@@ -244,15 +312,24 @@ export default function Footer() {
           <div className="footer-panel-9">
             <span>© {currentYear} NEXO. Todos os direitos reservados.</span>
             <div className="footer-panel-10">
-              <Link to="/terms" className="footer-link-4">
+              <Link
+                to="/terms"
+                className="footer-link-4"
+              >
                 Termos de Utilização
               </Link>
               <span>•</span>
-              <Link to="/privacy" className="footer-link-4">
+              <Link
+                to="/privacy"
+                className="footer-link-4"
+              >
                 Política de Privacidade
               </Link>
               <span>•</span>
-              <Link to="/help" className="footer-link-4">
+              <Link
+                to="/help"
+                className="footer-link-4"
+              >
                 Dúvidas & FAQ
               </Link>
               <span>•</span>

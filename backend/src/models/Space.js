@@ -41,11 +41,14 @@ const Space = {
       sql += ` AND s.category = $1`;
       params.push(category);
     }
+
     if (search) {
       sql += ` AND (s.name LIKE $${params.length + 1} OR s.description LIKE $${params.length + 2})`;
       params.push(`%${search}%`, `%${search}%`);
     }
+
     sql += ` ORDER BY "membersCount" DESC`;
+
     return queryAll(sql, params);
   },
   findMemBySpaceIdAndUserId(params = []) {
@@ -158,4 +161,5 @@ const Space = {
     );
   },
 };
+
 module.exports = Space;

@@ -5,6 +5,7 @@ import { LuLock as Lock, LuMail as Mail, LuCircleAlert as AlertCircle } from 're
 import { Logo } from '../../components/Logo';
 import { SEO } from '../../components/SEO';
 import { useAuth } from '../../context/AuthContext';
+
 export const LoginPage = () => {
   const { login, user } = useAuth();
   const [loginInput, setLoginInput] = useState('');
@@ -17,12 +18,21 @@ export const LoginPage = () => {
   const getRoleRedirect = (role) => {
     if (role === 'ADMIN') return '/admin';
     if (role === 'CREATOR') return '/creator';
+
     return '/dashboard';
   };
+
   if (user) {
     const target = location.state?.from?.pathname || getRoleRedirect(user.role);
-    return <Navigate to={target} replace />;
+
+    return (
+      <Navigate
+        to={target}
+        replace
+      />
+    );
   }
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -36,6 +46,7 @@ export const LoginPage = () => {
         rememberMe,
       );
       const target = location.state?.from?.pathname || getRoleRedirect(loggedUser?.role);
+
       navigate(target, {
         replace: true,
       });
@@ -45,6 +56,7 @@ export const LoginPage = () => {
       setIsLoading(false);
     }
   };
+
   return (
     <>
       <SEO
@@ -56,7 +68,10 @@ export const LoginPage = () => {
         <div className="login-panel-2">
           <div className="login-panel-3">
             <div className="login-panel-4">
-              <Logo size="lg" to="/" />
+              <Logo
+                size="lg"
+                to="/"
+              />
             </div>
             <h2 className="login-heading">Iniciar Sessão</h2>
             <p className="login-description">
@@ -66,15 +81,24 @@ export const LoginPage = () => {
 
           <div className="login-panel-5">
             {error && (
-              <div className="login-panel-6" role="alert">
+              <div
+                className="login-panel-6"
+                role="alert"
+              >
                 <AlertCircle className="login-alert-circle" />
                 <span className="login-label">{error}</span>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="login-form">
+            <form
+              onSubmit={handleSubmit}
+              className="login-form"
+            >
               <div>
-                <label htmlFor="login-identifier" className="login-field-label">
+                <label
+                  htmlFor="login-identifier"
+                  className="login-field-label"
+                >
                   E-mail ou Nome de Utilizador
                 </label>
                 <div className="login-panel-7">
@@ -95,10 +119,16 @@ export const LoginPage = () => {
 
               <div>
                 <div className="login-panel-8">
-                  <label htmlFor="login-password" className="login-field-label-2">
+                  <label
+                    htmlFor="login-password"
+                    className="login-field-label-2"
+                  >
                     Palavra-passe
                   </label>
-                  <Link to="/forgot-password" className="login-link">
+                  <Link
+                    to="/forgot-password"
+                    className="login-link"
+                  >
                     Esqueceu-se da palavra-passe?
                   </Link>
                 </div>
@@ -126,19 +156,29 @@ export const LoginPage = () => {
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="login-field-2"
                 />
-                <label htmlFor="remember" className="login-field-label-3">
+                <label
+                  htmlFor="remember"
+                  className="login-field-label-3"
+                >
                   Lembrar a sessão neste navegador
                 </label>
               </div>
 
-              <button type="submit" disabled={isLoading} className="login-button">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="login-button"
+              >
                 {isLoading ? 'A entrar...' : 'Entrar na Plataforma'}
               </button>
             </form>
 
             <div className="login-panel-10">
               Ainda não tem conta?{' '}
-              <Link to="/register" className="login-link-2">
+              <Link
+                to="/register"
+                className="login-link-2"
+              >
                 Criar conta gratuita
               </Link>
             </div>

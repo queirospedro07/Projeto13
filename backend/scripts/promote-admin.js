@@ -5,13 +5,16 @@ const {
   execute,
   transaction,
 } = require('../src/database/connection.js');
+
 async function main() {
   try {
     const username = process.argv[2];
     if (!username || !/^[a-zA-Z0-9_.]{3,30}$/.test(username)) {
       throw new Error('Utilização: npm run account:promote -- nome_utilizador');
     }
+
     await connectDB();
+
     const user = await queryOne(
       'SELECT id, papel, admin_formador FROM utilizadores WHERE lower(nome_utilizador) = lower($1)',
       [username],
@@ -26,6 +29,7 @@ async function main() {
           ),
       );
     }
+
     console.log(
       `${username}: administrador e formador. A palavra-passe foi conservada. Inicie sessão novamente.`,
     );
@@ -36,6 +40,7 @@ async function main() {
     await closeDatabase();
   }
 }
+
 main().catch((error) => {
   console.error(error.message);
   process.exitCode = 1;

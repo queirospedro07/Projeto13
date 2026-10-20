@@ -2,6 +2,7 @@ import './LessonNotesTab.css';
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../../services/api';
 import { soundEffects } from '../../services/soundEffects';
+
 export const LessonNotesTab = ({ lessonId, initialNote = '', onSave }) => {
   const [noteContent, setNoteContent] = useState(initialNote);
   const [isSaving, setIsSaving] = useState(false);
@@ -11,8 +12,10 @@ export const LessonNotesTab = ({ lessonId, initialNote = '', onSave }) => {
   const [saved, setSaved] = useState(false);
   const [retry, setRetry] = useState(0);
   const submitting = useRef(false);
+
   useEffect(() => {
     let active = true;
+
     setNoteContent(initialNote);
     setLoading(true);
     setError('');
@@ -20,8 +23,10 @@ export const LessonNotesTab = ({ lessonId, initialNote = '', onSave }) => {
     setSaved(false);
     if (!lessonId) {
       setLoading(false);
+
       return;
     }
+
     api
       .get(`/notes/${encodeURIComponent(lessonId)}`)
       .then(({ data }) => {
@@ -36,10 +41,12 @@ export const LessonNotesTab = ({ lessonId, initialNote = '', onSave }) => {
       .finally(() => {
         if (active) setLoading(false);
       });
+
     return () => {
       active = false;
     };
   }, [initialNote, lessonId, retry]);
+
   const handleSave = async () => {
     if (!lessonId || loading || submitting.current) return;
     submitting.current = true;
@@ -62,6 +69,7 @@ export const LessonNotesTab = ({ lessonId, initialNote = '', onSave }) => {
       setIsSaving(false);
     }
   };
+
   return (
     <div className="lesson-notes-tab-panel">
       <div className="lesson-notes-tab-panel-2">
@@ -84,7 +92,10 @@ export const LessonNotesTab = ({ lessonId, initialNote = '', onSave }) => {
       {error && (
         <p role="alert">
           {error}{' '}
-          <button type="button" onClick={() => (loadError ? setRetry((n) => n + 1) : handleSave())}>
+          <button
+            type="button"
+            onClick={() => (loadError ? setRetry((n) => n + 1) : handleSave())}
+          >
             Tentar novamente
           </button>
         </p>

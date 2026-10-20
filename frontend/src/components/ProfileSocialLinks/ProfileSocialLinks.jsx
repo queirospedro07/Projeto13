@@ -15,6 +15,7 @@ import {
   LuArrowUpRight as ArrowUpRight,
 } from 'react-icons/lu';
 import { getProfileLinks } from '../../utils/profileSocials';
+
 export const NETWORK_ICONS = {
   website: Globe,
   github: Github,
@@ -27,9 +28,11 @@ export const NETWORK_ICONS = {
   discord: MessageCircle,
   facebook: Facebook,
 };
+
 export function ProfileSocialLinks({ profile, compact = false }) {
   const links = getProfileLinks(profile);
   if (!links.length) return null;
+
   return (
     <div
       className={`profile-social-links ${compact ? 'profile-social-links-compact' : ''}`}
@@ -37,6 +40,7 @@ export function ProfileSocialLinks({ profile, compact = false }) {
     >
       {links.map(({ key, label, url }) => {
         const Icon = NETWORK_ICONS[key];
+
         return (
           <a
             key={key}
@@ -50,7 +54,10 @@ export function ProfileSocialLinks({ profile, compact = false }) {
             {!compact && (
               <>
                 <span>{label}</span>
-                <ArrowUpRight className="profile-social-link-arrow" aria-hidden="true" />
+                <ArrowUpRight
+                  className="profile-social-link-arrow"
+                  aria-hidden="true"
+                />
               </>
             )}
           </a>

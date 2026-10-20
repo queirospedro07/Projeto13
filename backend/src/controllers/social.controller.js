@@ -12,6 +12,7 @@ const getSocialFriends = async (req, res) => {
     const friends = (
       await asyncMap(acceptedFriendships, async (f) => {
         const u = await Social.findUById([f.friendId]);
+
         return {
           friendshipId: f.friendshipId,
           friendsSince: f.friendsSince,
@@ -21,6 +22,7 @@ const getSocialFriends = async (req, res) => {
     ).filter((f) => f.user);
     const incoming = await Social.listIncomingByAddresseeId([userId]);
     const outgoing = await Social.listOutgoingByRequesterId([userId]);
+
     return res.json({
       friends,
       incoming: incoming.map((r) => ({
@@ -48,11 +50,13 @@ const getSocialFriends = async (req, res) => {
     });
   } catch (err) {
     console.error('Friends fetch error:', err);
+
     return res.status(500).json({
       error: 'Falha ao obter lista de amigos',
     });
   }
 };
+
 const postSocialFriendsRequestByTargetUserId = async (req, res) => {
   try {
     const requesterId = req.user.id;
@@ -63,12 +67,14 @@ const postSocialFriendsRequestByTargetUserId = async (req, res) => {
         error: 'Não pode enviar pedido de amizade para si próprio',
       });
     }
+
     const targetUser = await Social.findTargetUserById([targetUserId]);
     if (!targetUser) {
       return res.status(404).json({
         error: 'Utilizador não encontrado',
       });
     }
+
     const existing = await Social.findExistingByRequesterIdAndAddresseeId([
       requesterId,
       targetUserId,
@@ -82,21 +88,26 @@ const postSocialFriendsRequestByTargetUserId = async (req, res) => {
           status: 'ACCEPTED',
         });
       }
+
       if (existing.status === 'PENDING') {
         if (existing.requesterId === targetUserId) {
           await Social.updateFriendshipsByUpdatedAtAndId([now, existing.id]);
+
           return res.json({
             message: 'Pedido de amizade aceite com sucesso!',
             status: 'ACCEPTED',
           });
         }
+
         return res.json({
           message: 'Pedido de amizade já se encontra pendente',
           status: 'PENDING',
         });
       }
     }
+
     const friendshipId = `fr-${Date.now()}`;
+
     await transaction(async () => {
       await Social.insertFriendships([friendshipId, requesterId, targetUserId, now, now]);
       await Social.insertNotifications([
@@ -107,6 +118,7 @@ const postSocialFriendsRequestByTargetUserId = async (req, res) => {
         now,
       ]);
     });
+
     return res.status(201).json({
       message: 'Pedido de amizade enviado com sucesso!',
       friendshipId,
@@ -114,11 +126,13 @@ const postSocialFriendsRequestByTargetUserId = async (req, res) => {
     });
   } catch (err) {
     console.error('Friend request error:', err);
+
     return res.status(500).json({
       error: 'Falha ao enviar pedido de amizade',
     });
   }
 };
+
 const postSocialFriendsAcceptByFriendshipId = async (req, res) => {
   try {
     const { friendshipId } = req.params;
@@ -130,14 +144,18 @@ const postSocialFriendsAcceptByFriendshipId = async (req, res) => {
         error: 'Pedido de amizade não encontrado',
       });
     }
+
     if (friendship.addresseeId !== userId) {
       return res.status(403).json({
         error: 'Não tem permissão para responder a este pedido',
       });
     }
+
     await Social.updateFriendshipsByUpdatedAtAndId([now, friendshipId]);
+
     const otherUserId =
       friendship.requesterId === userId ? friendship.addresseeId : friendship.requesterId;
+
     await Social.insertNotifications([
       `notif-${Date.now()}`,
       otherUserId,
@@ -145,6 +163,7 @@ const postSocialFriendsAcceptByFriendshipId = async (req, res) => {
       `${req.user.username} aceitou o seu pedido de amizade. Agora podem trocar mensagens diretas.`,
       now,
     ]);
+
     return res.json({
       message: 'Amizade aceite com sucesso!',
       status: 'ACCEPTED',
@@ -155,6 +174,7 @@ const postSocialFriendsAcceptByFriendshipId = async (req, res) => {
     });
   }
 };
+
 const postSocialFriendsRejectByFriendshipId = async (req, res) => {
   try {
     const { friendshipId } = req.params;
@@ -165,12 +185,15 @@ const postSocialFriendsRejectByFriendshipId = async (req, res) => {
         error: 'Pedido não encontrado',
       });
     }
+
     if (friendship.addresseeId !== userId && friendship.requesterId !== userId) {
       return res.status(403).json({
         error: 'Sem permissão',
       });
     }
+
     await Social.deleteFriendshipsById([friendshipId]);
+
     return res.json({
       message: 'Pedido removido com sucesso.',
     });
@@ -180,16 +203,19 @@ const postSocialFriendsRejectByFriendshipId = async (req, res) => {
     });
   }
 };
+
 const deleteSocialFriendsRemoveByTargetUserId = async (req, res) => {
   try {
     const userId = req.user.id;
     const { targetUserId } = req.params;
+
     await Social.deleteFriendshipsByRequesterIdAndAddresseeId([
       userId,
       targetUserId,
       targetUserId,
       userId,
     ]);
+
     return res.json({
       message: 'Amigo removido com sucesso.',
     });
@@ -199,6 +225,7 @@ const deleteSocialFriendsRemoveByTargetUserId = async (req, res) => {
     });
   }
 };
+
 const postSocialFollowByTargetUserId = async (req, res) => {
   try {
     const followerId = req.user.id;
@@ -209,6 +236,7 @@ const postSocialFollowByTargetUserId = async (req, res) => {
         error: 'Não pode seguir o seu próprio perfil',
       });
     }
+
     const targetUser = await Social.findTargetUserByIdForPostSocialFollowByTargetUserId([
       targetUserId,
     ]);
@@ -217,6 +245,7 @@ const postSocialFollowByTargetUserId = async (req, res) => {
         error: 'Utilizador não encontrado',
       });
     }
+
     const existing = await Social.findExistingByFollowerIdAndFollowingId([
       followerId,
       targetUserId,
@@ -227,7 +256,9 @@ const postSocialFollowByTargetUserId = async (req, res) => {
         isFollowing: true,
       });
     }
+
     const followId = `fol-${Date.now()}`;
+
     await transaction(async () => {
       await Social.insertFollows([followId, followerId, targetUserId, now]);
       await Social.insertNotificationsForLookup([
@@ -239,6 +270,7 @@ const postSocialFollowByTargetUserId = async (req, res) => {
         now,
       ]);
     });
+
     return res.status(201).json({
       message: 'A seguir utilizador!',
       isFollowing: true,
@@ -249,11 +281,14 @@ const postSocialFollowByTargetUserId = async (req, res) => {
     });
   }
 };
+
 const postSocialUnfollowByTargetUserId = async (req, res) => {
   try {
     const followerId = req.user.id;
     const { targetUserId } = req.params;
+
     await Social.deleteFollowsByFollowerIdAndFollowingId([followerId, targetUserId]);
+
     return res.json({
       message: 'Deixou de seguir o utilizador.',
       isFollowing: false,
@@ -264,10 +299,12 @@ const postSocialUnfollowByTargetUserId = async (req, res) => {
     });
   }
 };
+
 const getSocialFollowersByUserId = async (req, res) => {
   try {
     const { userId } = req.params;
     const followers = await Social.listFollowersByFollowingId([userId]);
+
     return res.json({
       followers,
       count: followers.length,
@@ -278,10 +315,12 @@ const getSocialFollowersByUserId = async (req, res) => {
     });
   }
 };
+
 const getSocialFollowingByUserId = async (req, res) => {
   try {
     const { userId } = req.params;
     const following = await Social.listFollowingByFollowerId([userId]);
+
     return res.json({
       following,
       count: following.length,
@@ -292,6 +331,7 @@ const getSocialFollowingByUserId = async (req, res) => {
     });
   }
 };
+
 const getSocialStatusByTargetUserId = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -310,6 +350,7 @@ const getSocialStatusByTargetUserId = async (req, res) => {
         (await Social.countFriendshipsByRequesterIdAndAddresseeId([targetUserId, targetUserId])) ||
         {}
       ).c || 0;
+
     return res.json({
       isFollowing: !!follow,
       friendshipStatus: friendship ? friendship.status : 'NONE',
@@ -325,6 +366,7 @@ const getSocialStatusByTargetUserId = async (req, res) => {
     });
   }
 };
+
 const getSocialUsersSearch = async (req, res) => {
   try {
     const { query } = req.query;
@@ -333,12 +375,15 @@ const getSocialUsersSearch = async (req, res) => {
       const users = userId
         ? await Social.listUsers([userId])
         : await Social.listUsersForGetSocialUsersSearch();
+
       return res.json(users);
     }
+
     const searchTerm = `%${String(query).trim()}%`;
     const users = userId
       ? await Social.listUsersByNameAndUsername([userId, searchTerm, searchTerm])
       : await Social.listUsersByNameAndUsernameForGetSocialUsersSearch([searchTerm, searchTerm]);
+
     return res.json(users);
   } catch {
     return res.status(500).json({
@@ -346,6 +391,7 @@ const getSocialUsersSearch = async (req, res) => {
     });
   }
 };
+
 const getSocialDmConversations = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -362,6 +408,7 @@ const getSocialDmConversations = async (req, res) => {
         const unreadCount =
           ((await Social.countDirectMessagesBySenderIdAndReceiverId([p.peerId, userId])) || {}).c ||
           0;
+
         return {
           peer,
           lastMessage,
@@ -369,24 +416,31 @@ const getSocialDmConversations = async (req, res) => {
         };
       })
     ).filter((c) => c.peer);
+
     conversations.sort((a, b) => {
       const tA = new Date(a.lastMessage?.createdAt || 0).getTime();
       const tB = new Date(b.lastMessage?.createdAt || 0).getTime();
+
       return tB - tA;
     });
+
     return res.json(conversations);
   } catch (err) {
     console.error('DM conversations error:', err);
+
     return res.status(500).json({
       error: 'Falha ao obter conversas',
     });
   }
 };
+
 const getSocialDmMessagesByTargetUserId = async (req, res) => {
   try {
     const userId = req.user.id;
     const { targetUserId } = req.params;
+
     await Social.updateDirectMessagesBySenderIdAndReceiverId([targetUserId, userId]);
+
     const messages = await Social.listMessagesBySenderIdAndReceiverId([
       userId,
       targetUserId,
@@ -409,17 +463,20 @@ const getSocialDmMessagesByTargetUserId = async (req, res) => {
         role: m.user_role,
       },
     }));
+
     return res.json({
       peer,
       messages: formatted,
     });
   } catch (err) {
     console.error('DM history error:', err);
+
     return res.status(500).json({
       error: 'Falha ao obter histórico de mensagens',
     });
   }
 };
+
 const postSocialDmSend = async (req, res) => {
   try {
     const senderId = req.user.id;
@@ -436,19 +493,24 @@ const postSocialDmSend = async (req, res) => {
         error: 'Destinatário e conteúdo são obrigatórios',
       });
     }
+
     if (senderId === receiverId) {
       return res.status(400).json({
         error: 'Não pode enviar mensagens diretas para si próprio',
       });
     }
+
     const receiver = await Social.findTargetUserByIdForPostSocialFollowByTargetUserId([receiverId]);
     if (!receiver) {
       return res.status(404).json({
         error: 'Destinatário não encontrado',
       });
     }
+
     const dmId = `dm-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+
     await Social.insertDirectMessages([dmId, senderId, receiverId, content.trim(), now]);
+
     const sender = await Social.findSenderById([senderId]);
     const dmResponse = {
       id: dmId,
@@ -464,14 +526,17 @@ const postSocialDmSend = async (req, res) => {
       io.to(`user_${receiverId}`).emit('direct-message', dmResponse);
       io.to(`user_${senderId}`).emit('direct-message', dmResponse);
     }
+
     return res.status(201).json(dmResponse);
   } catch (err) {
     console.error('Send DM error:', err);
+
     return res.status(500).json({
       error: 'Falha ao enviar mensagem direta',
     });
   }
 };
+
 exports.getSocialFriends = getSocialFriends;
 exports.postSocialFriendsRequestByTargetUserId = postSocialFriendsRequestByTargetUserId;
 exports.postSocialFriendsAcceptByFriendshipId = postSocialFriendsAcceptByFriendshipId;

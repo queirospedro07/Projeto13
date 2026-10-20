@@ -1,6 +1,7 @@
 import './SpaceMembersSidebar.css';
 import { Link } from 'react-router-dom';
 import { Avatar } from '../Avatar';
+
 export const SpaceMembersSidebar = ({ space }) => {
   const members = (space?.members || [])
     .map((m) => ({
@@ -11,6 +12,7 @@ export const SpaceMembersSidebar = ({ space }) => {
       role: m.role || m.user?.role || 'MEMBER',
     }))
     .filter((m) => m.id !== space?.owner?.id);
+
   return (
     <aside className="space-members-sidebar-sidebar custom-scrollbar">
       {/* Criador & Instrutor */}
@@ -50,7 +52,12 @@ export const SpaceMembersSidebar = ({ space }) => {
                 className="space-members-sidebar-link-2 ui-group"
                 title={`Ver perfil de ${m.name}`}
               >
-                <Avatar src={m.avatarUrl} name={m.name} size="sm" status="online" />
+                <Avatar
+                  src={m.avatarUrl}
+                  name={m.name}
+                  size="sm"
+                  status="online"
+                />
                 <div className="space-members-sidebar-panel-3">
                   <p className="space-members-sidebar-description-3">{m.name}</p>
                   <p className="space-members-sidebar-description-4">@{m.username}</p>

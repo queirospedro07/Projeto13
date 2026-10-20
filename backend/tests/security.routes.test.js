@@ -8,15 +8,20 @@ import { execFileSync } from 'node:child_process';
 import { Server } from 'socket.io';
 import { readFileSync } from 'node:fs';
 import { io as clientIO } from 'socket.io-client';
+
 const directory = mkdtempSync(path.join(tmpdir(), 'nexo-security-'));
+
 Object.assign(process.env, {
   NODE_ENV: 'test',
   DATA_DIRECTORY: directory,
   DATABASE_URL: '',
   SEED_DEMO_DATA: 'false',
 });
+
 const { prepareTestDatabase, cleanupTestDatabase } = await import('./helpers/database.js');
+
 await prepareTestDatabase();
+
 const db = await import('../src/database/connection.js');
 const { default: app } = await import('../src/app.js');
 const { signJwtToken } = await import('../src/middleware/auth.js');
@@ -24,8 +29,10 @@ const { runMigrations } = await import('../src/database/schema.js');
 const { authenticateSocket } = await import('../src/sockets/security.js');
 const { setupSocketIO } = await import('../src/sockets/chatSocket.js');
 const { eligibleForCertificate, issueCertificate } = await import('../src/services/progress.js');
-let server, io;
+let server;
+let io;
 const clients = [];
+
 test.after(async () => {
   clients.forEach((s) => s.disconnect());
   if (io) await new Promise((resolve) => io.close(resolve));
@@ -44,8 +51,9 @@ test(
   },
   async (t) => {
     await db.connectDB();
-    const now = new Date().toISOString(),
-      tokens = {};
+
+    const now = new Date().toISOString();
+    const tokens = {};
     for (const [id, role] of [
       ['owner', 'CREATOR'],
       ['other', 'CREATOR'],
@@ -63,6 +71,7 @@ test(
         username: id,
       });
     }
+
     await db.execute(
       'INSERT INTO espacos(id,nome,slug,categoria,id_proprietario,criado_em) VALUES($1,$2,$3,$4,$5,$6)',
       ['space', 'Comunidade', 'space', 'Tecnologia', 'owner', now],
@@ -93,6 +102,7 @@ test(
         'Módulo',
       ]);
     }
+
     await db.execute('INSERT INTO canais(id,id_espaco,nome) VALUES($1,$2,$3)', [
       'channel',
       'space',
@@ -102,6 +112,7 @@ test(
       'INSERT INTO inscricoes(id,id_utilizador,id_curso,inscrito_em) VALUES($1,$2,$3,$4)',
       ['enrollment', 'student', 'free', now],
     );
+
     const assessment = {
       questions: [
         {
@@ -164,6 +175,7 @@ test(
     io.use(authenticateSocket);
     setupSocketIO(io);
     app.set('io', io);
+
     const origin = `http://127.0.0.1:${server.address().port}`;
     const request = async (route, { user = 'student', method = 'GET', body } = {}) => {
       const response = await fetch(origin + '/api' + route, {
@@ -186,12 +198,15 @@ test(
             }
           : {}),
       });
+
       return {
         status: response.status,
         body: await response.json(),
       };
     };
+
     const status = (r, n) => assert.equal(r.status, n, JSON.stringify(r.body));
+
     await t.test('administrators can access both administration and teaching tools', async () => {
       status(
         await request('/admin/stats', {
@@ -290,9 +305,11 @@ test(
         403,
       );
       status(await request('/channels/channel/messages'), 403);
+
       const pub = await request('/courses/paid', {
         user: null,
       });
+
       status(pub, 200);
       assert.ok(!JSON.stringify(pub.body).includes('paid-secret'));
       status(await request('/courses/paid/classmates'), 403);
@@ -334,7 +351,9 @@ test(
         }),
         403,
       );
+
       const quiz = await request('/quizzes/lesson/quiz');
+
       status(quiz, 200);
       assert.ok(!JSON.stringify(quiz.body).includes('isCorrect'));
       status(
@@ -346,6 +365,7 @@ test(
         }),
         403,
       );
+
       const wrong = await request('/quizzes/quiz/submit', {
         method: 'POST',
         body: {
@@ -356,9 +376,11 @@ test(
           passed: true,
         },
       });
+
       status(wrong, 200);
       assert.equal(wrong.body.passed, false);
       assert.equal(wrong.body.score, 0);
+
       const right = await request('/quizzes/quiz/submit', {
         method: 'POST',
         body: {
@@ -367,6 +389,7 @@ test(
           },
         },
       });
+
       status(right, 200);
       assert.equal(right.body.passed, true);
       status(
@@ -381,6 +404,7 @@ test(
       ]);
       assert.equal(await eligibleForCertificate('student', 'free'), false);
       await assert.rejects(async () => await issueCertificate('student', 'free'));
+
       const pending = await request('/quizzes/manual/submit', {
         method: 'POST',
         body: {
@@ -389,6 +413,7 @@ test(
           },
         },
       });
+
       status(pending, 200);
       assert.equal(pending.body.passed, false);
       status(
@@ -420,12 +445,14 @@ test(
         }),
         403,
       );
+
       const project = await request('/projects/lesson/project', {
         method: 'POST',
         body: {
           url: 'https://example.test/project',
         },
       });
+
       status(project, 201);
       assert.equal((await request('/projects/lesson/project')).body.id, project.body.id);
       status(
@@ -476,6 +503,7 @@ test(
           content: 'Mensagem legítima',
         },
       });
+
       status(message, 201);
       status(
         await request('/messages/' + message.body.id + '/pin', {
@@ -574,6 +602,7 @@ test(
             },
           ],
         };
+
         status(
           await request('/creator/courses', {
             user: 'other',
@@ -585,11 +614,13 @@ test(
           }),
           403,
         );
+
         const created = await request('/creator/courses', {
           user: 'owner',
           method: 'POST',
           body,
         });
+
         status(created, 201);
         assert.equal(created.body.isPublished, 0);
         assert.equal(created.body.approvalStatus, 'DRAFT');
@@ -622,6 +653,7 @@ test(
           }),
           200,
         );
+
         const adminCourse = await request('/creator/courses', {
           user: 'admin',
           method: 'POST',
@@ -630,6 +662,7 @@ test(
             title: 'Curso do administrador',
           },
         });
+
         status(adminCourse, 201);
         assert.equal(adminCourse.body.isPublished, 1);
       },
@@ -640,6 +673,7 @@ test(
         type: 'voice',
         topic: 'Discussão',
       };
+
       status(
         await request('/spaces/space/channels', {
           method: 'POST',
@@ -647,11 +681,13 @@ test(
         }),
         403,
       );
+
       const created = await request('/spaces/space/channels', {
         user: 'owner',
         method: 'POST',
         body,
       });
+
       status(created, 201);
       status(
         await request('/spaces/space/channels/' + created.body.id, {
@@ -668,7 +704,9 @@ test(
         (await db.queryOne('SELECT name FROM channels WHERE id=$1', [created.body.id])).name,
         'sala-atualizada',
       );
+
       const message = await db.queryOne('SELECT id FROM messages LIMIT 1');
+
       status(
         await request('/messages/' + message.id + '/resolve', {
           method: 'POST',
@@ -730,11 +768,13 @@ test(
         reconnection: false,
         timeout: 2000,
       });
+
       clients.push(anonymous);
       await new Promise((resolve, reject) => {
         anonymous.once('connect_error', resolve);
         anonymous.once('connect', () => reject(new Error('Anonymous socket connected')));
       });
+
       const outsider = clientIO(origin, {
         auth: {
           token: tokens.outsider,
@@ -743,16 +783,21 @@ test(
         reconnection: false,
         timeout: 2000,
       });
+
       clients.push(outsider);
       await new Promise((resolve, reject) => {
         outsider.once('connect', resolve);
         outsider.once('connect_error', reject);
       });
+
       const denied = new Promise((resolve) => outsider.once('operation-error', resolve));
+
       outsider.emit('join-channel', 'channel');
       await denied;
       assert.equal(io.sockets.sockets.get(outsider.id).rooms.has('channel_channel'), false);
+
       const forged = new Promise((resolve) => outsider.once('operation-error', resolve));
+
       outsider.emit('send-message', {
         channelId: 'channel',
         content: 'Spoof',
@@ -764,6 +809,7 @@ test(
       const oldSocket = clients.at(-1);
       const disconnected = new Promise((resolve) => oldSocket.once('disconnect', resolve));
       const reset = 'a'.repeat(64);
+
       await db.execute(
         'INSERT INTO tokens_recuperacao_palavra_passe(id,id_utilizador,hash_token,expira_em,criado_em) VALUES($1,$2,$3,$4,$5)',
         [
@@ -827,6 +873,7 @@ test(
           password: 'StrongPassword123!',
           role: 'ADMIN',
         };
+
         status(
           await request('/auth/register', {
             user: null,
@@ -847,6 +894,7 @@ test(
           }),
           400,
         );
+
         const result = await request('/auth/register', {
           user: null,
           method: 'POST',
@@ -855,6 +903,7 @@ test(
             acceptedTerms: true,
           },
         });
+
         status(result, 201);
         assert.equal(result.body.user.role, 'STUDENT');
         assert.equal(result.body.user.avatarUrl, null);
@@ -879,11 +928,15 @@ test(
         cwd: path.resolve(import.meta.dirname, '..'),
         env: process.env,
       });
+
       const files = readdirSync(path.join(directory, 'backups')).filter((file) =>
         file.endsWith('.json'),
       );
+
       assert.equal(files.length, 1);
+
       const snapshot = JSON.parse(readFileSync(path.join(directory, 'backups', files[0]), 'utf8'));
+
       assert.equal(snapshot.format, 'nexo-postgresql-v1');
       assert.equal(snapshot.tables.submissoes_projeto.length, 1);
     });

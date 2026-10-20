@@ -16,6 +16,7 @@ import { useAuth } from '../../context/AuthContext';
 import { ProgressBar } from '../../components/ProgressBar';
 import { api } from '../../services/api';
 import { formatCoursePrice, formatCategory } from '../../utils/formatters';
+
 export const DashboardPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -54,6 +55,7 @@ export const DashboardPage = () => {
       e.preventDefault();
       e.stopPropagation();
     }
+
     setPinnedCourseIds((prev) => {
       const isPinned = prev.includes(courseId);
       const next = isPinned ? prev.filter((id) => id !== courseId) : [courseId, ...prev];
@@ -61,21 +63,27 @@ export const DashboardPage = () => {
         localStorage.setItem(`nexo_pinned_courses_${user.id}`, JSON.stringify(next));
         window.dispatchEvent(new Event('nexo_pins_changed'));
       }
+
       return next;
     });
   };
+
   const toggleHideCourse = (courseId) => {
     setHiddenCourseIds((prev) => {
       const next = prev.includes(courseId)
         ? prev.filter((id) => id !== courseId)
         : [...prev, courseId];
+
       localStorage.setItem('nexo_hidden_courses', JSON.stringify(next));
       window.dispatchEvent(new Event('nexo_courses_visibility_changed'));
+
       return next;
     });
   };
+
   useEffect(() => {
     let active = true;
+
     setLoading(true);
     setError(false);
     Promise.all([
@@ -91,7 +99,9 @@ export const DashboardPage = () => {
       .then(([enrollments, courses]) => {
         if (!active) return;
         setMyCourses(enrollments || []);
+
         const enrolledIds = new Set((enrollments || []).map((item) => item.courseId));
+
         setRecommendedCourses(
           (courses || []).filter((course) => !enrolledIds.has(course.id)).slice(0, 3),
         );
@@ -102,10 +112,12 @@ export const DashboardPage = () => {
       .finally(() => {
         if (active) setLoading(false);
       });
+
     return () => {
       active = false;
     };
   }, [user?.id, revision]);
+
   const completedCoursesCount = myCourses.filter(
     (e) => (e.progressPercent || 0) >= 100 || e.isCompleted,
   ).length;
@@ -113,14 +125,17 @@ export const DashboardPage = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Bom dia';
     if (hour < 18) return 'Boa tarde';
+
     return 'Boa noite';
   };
+
   const visibleCourses = myCourses
     .filter((e) => {
       const courseId = e.course?.id || e.courseId;
       const isFinished = (e.progressPercent || 0) >= 100 || e.isCompleted;
       if (courseId && hiddenCourseIds.includes(courseId)) return false;
       if (hideCompleted && isFinished) return false;
+
       return true;
     })
     .sort((a, b) => {
@@ -130,11 +145,18 @@ export const DashboardPage = () => {
       const bPinned = pinnedCourseIds.includes(bId);
       if (aPinned && !bPinned) return -1;
       if (!aPinned && bPinned) return 1;
+
       return 0;
     });
   const primaryEnrollment = visibleCourses[0] || null;
   const isStudent = user?.role === 'STUDENT' || !['ADMIN', 'CREATOR'].includes(user?.role);
-  if (loading) return <PageState loading title="A preparar os seus cursos…" />;
+  if (loading)
+    return (
+      <PageState
+        loading
+        title="A preparar os seus cursos…"
+      />
+    );
   if (error)
     return (
       <PageState
@@ -143,6 +165,7 @@ export const DashboardPage = () => {
         onRetry={() => setRevision((value) => value + 1)}
       />
     );
+
   return (
     <div className="dashboard-panel">
       {/* Cabeçalho */}
@@ -161,7 +184,10 @@ export const DashboardPage = () => {
         </div>
 
         <div className="dashboard-panel-4">
-          <Link to="/explore" className="dashboard-link">
+          <Link
+            to="/explore"
+            className="dashboard-link"
+          >
             <button className="dashboard-button">
               <Compass className="dashboard-compass" />
               <span>Explorar Cursos</span>
@@ -265,7 +291,10 @@ export const DashboardPage = () => {
                   <p className="dashboard-description-5">{myCourses.length}</p>
                 </div>
               </div>
-              <Link to="/library" className="dashboard-link-3">
+              <Link
+                to="/library"
+                className="dashboard-link-3"
+              >
                 Ver Todos
               </Link>
             </div>
@@ -297,7 +326,10 @@ export const DashboardPage = () => {
               <h2 className="dashboard-heading">Os Meus Cursos em Andamento</h2>
             </div>
             <div className="dashboard-panel-4">
-              <Link to="/library" className="dashboard-link-4">
+              <Link
+                to="/library"
+                className="dashboard-link-4"
+              >
                 Ver Biblioteca Completa
               </Link>
             </div>
@@ -306,7 +338,10 @@ export const DashboardPage = () => {
           {visibleCourses.length === 0 ? (
             <div className="dashboard-panel-21">
               <p className="dashboard-description-6">Nenhum curso ativo no momento.</p>
-              <Link to="/library" className="dashboard-link-5">
+              <Link
+                to="/library"
+                className="dashboard-link-5"
+              >
                 Gerir os meus cursos na biblioteca
               </Link>
             </div>
@@ -317,10 +352,17 @@ export const DashboardPage = () => {
                 if (!course) return null;
                 const progress = Math.round(e.progressPercent || 0);
                 const isFinished = progress >= 100 || e.isCompleted;
+
                 return (
-                  <div key={course.id} className="dashboard-panel-23">
+                  <div
+                    key={course.id}
+                    className="dashboard-panel-23"
+                  >
                     <div>
-                      <Link to={`/courses/${course.id}`} className="dashboard-link-6 group/thumb">
+                      <Link
+                        to={`/courses/${course.id}`}
+                        className="dashboard-link-6 group/thumb"
+                      >
                         {course.thumbnailUrl ? (
                           <img
                             src={course.thumbnailUrl}
@@ -373,7 +415,10 @@ export const DashboardPage = () => {
                         </div>
                       </Link>
 
-                      <Link to={`/courses/${course.id}`} className="dashboard-link-2">
+                      <Link
+                        to={`/courses/${course.id}`}
+                        className="dashboard-link-2"
+                      >
                         <h3 className="dashboard-subheading-3">{course.title}</h3>
                       </Link>
                     </div>
@@ -390,7 +435,10 @@ export const DashboardPage = () => {
                       />
 
                       <div className="dashboard-panel-28">
-                        <Link to={`/courses/${course.id}`} className="dashboard-link-2">
+                        <Link
+                          to={`/courses/${course.id}`}
+                          className="dashboard-link-2"
+                        >
                           <button
                             className="dashboard-button-9"
                             title="Ver detalhes e programa do curso"
@@ -399,8 +447,14 @@ export const DashboardPage = () => {
                             <span>Detalhes</span>
                           </button>
                         </Link>
-                        <Link to={`/learn/${course.id}`} className="dashboard-link-2">
-                          <button className="dashboard-button-10" title="Aceder às aulas do curso">
+                        <Link
+                          to={`/learn/${course.id}`}
+                          className="dashboard-link-2"
+                        >
+                          <button
+                            className="dashboard-button-10"
+                            title="Aceder às aulas do curso"
+                          >
                             <PlayCircle className="dashboard-play-circle" />
                             <span>Aulas</span>
                           </button>
@@ -420,16 +474,25 @@ export const DashboardPage = () => {
         <div className="dashboard-panel-29">
           <div className="dashboard-panel-30">
             <h2 className="dashboard-heading">Cursos Recomendados para Si</h2>
-            <Link to="/explore" className="dashboard-link-4">
+            <Link
+              to="/explore"
+              className="dashboard-link-4"
+            >
               Explorar Catálogo
             </Link>
           </div>
 
           <div className="dashboard-panel-22">
             {recommendedCourses.map((c) => (
-              <div key={c.id} className="dashboard-panel-31">
+              <div
+                key={c.id}
+                className="dashboard-panel-31"
+              >
                 <div>
-                  <Link to={`/courses/${c.id}`} className="dashboard-link-6 group/thumb">
+                  <Link
+                    to={`/courses/${c.id}`}
+                    className="dashboard-link-6 group/thumb"
+                  >
                     <img
                       src={
                         c.thumbnailUrl ||
@@ -441,7 +504,10 @@ export const DashboardPage = () => {
                     <span className="dashboard-label-8">{formatCategory(c.category)}</span>
                   </Link>
 
-                  <Link to={`/courses/${c.id}`} className="dashboard-link-2">
+                  <Link
+                    to={`/courses/${c.id}`}
+                    className="dashboard-link-2"
+                  >
                     <h3 className="dashboard-subheading-3">{c.title}</h3>
                   </Link>
                   <p className="dashboard-description-7">{c.description}</p>
@@ -461,4 +527,5 @@ export const DashboardPage = () => {
     </div>
   );
 };
+
 export default DashboardPage;

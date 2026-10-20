@@ -1,6 +1,7 @@
 const { readFileSync, readdirSync } = require('node:fs');
 const { createHash } = require('node:crypto');
 const { getPool } = require('./connection.js');
+
 async function runMigrations() {
   const client = await getPool().connect();
   try {
@@ -9,6 +10,7 @@ async function runMigrations() {
     await client.query(
       'CREATE TABLE IF NOT EXISTS nexo_migrations (name TEXT PRIMARY KEY, checksum TEXT NOT NULL, applied_at TIMESTAMPTZ NOT NULL DEFAULT now())',
     );
+
     const directory = require('node:path').resolve(__dirname, './migrations/');
     for (const name of readdirSync(directory)
       .filter((file) => file.endsWith('.sql'))
@@ -31,6 +33,7 @@ async function runMigrations() {
         ]);
       }
     }
+
     await client.query('COMMIT');
   } catch (error) {
     await client.query('ROLLBACK');
@@ -39,4 +42,5 @@ async function runMigrations() {
     client.release();
   }
 }
+
 exports.runMigrations = runMigrations;

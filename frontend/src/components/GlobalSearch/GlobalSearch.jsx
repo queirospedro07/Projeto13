@@ -14,6 +14,7 @@ import { Avatar } from '../Avatar';
 import { api } from '../../services/api';
 import { formatCoursePrice } from '../../utils/formatters';
 import { useAuth } from '../../context/AuthContext';
+
 export const GlobalSearch = ({ onClose } = {}) => {
   const { user } = useAuth();
   const [query, setQuery] = useState('');
@@ -23,13 +24,16 @@ export const GlobalSearch = ({ onClose } = {}) => {
   const [users, setUsers] = useState([]);
   const containerRef = useRef(null);
   const navigate = useNavigate();
+
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         setIsOpen(false);
       }
     };
+
     document.addEventListener('mousedown', handleClickOutside);
+
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
   useEffect(() => {
@@ -37,8 +41,10 @@ export const GlobalSearch = ({ onClose } = {}) => {
       setCourses([]);
       setUsers([]);
       setIsOpen(false);
+
       return;
     }
+
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
@@ -64,6 +70,7 @@ export const GlobalSearch = ({ onClose } = {}) => {
           usersRes.status === 'fulfilled' && Array.isArray(usersRes.value)
             ? usersRes.value.slice(0, 4)
             : [];
+
         setCourses(foundCourses);
         setUsers(foundUsers);
         setIsOpen(true);
@@ -72,6 +79,7 @@ export const GlobalSearch = ({ onClose } = {}) => {
         setLoading(false);
       }
     }, 220);
+
     return () => clearTimeout(timer);
   }, [query]);
   if (!user) return null;
@@ -82,22 +90,32 @@ export const GlobalSearch = ({ onClose } = {}) => {
     onClose?.();
     navigate(`/search?q=${encodeURIComponent(query.trim())}`);
   };
+
   const handleSelectCourse = (course) => {
     setIsOpen(false);
     setQuery('');
     onClose?.();
     navigate(`/courses/${course.id || course.slug}`);
   };
+
   const handleSelectUser = (user) => {
     setIsOpen(false);
     setQuery('');
     onClose?.();
     navigate(`/profile/${user.username}`);
   };
+
   const hasResults = courses.length > 0 || users.length > 0;
+
   return (
-    <div ref={containerRef} className="global-search-panel">
-      <form onSubmit={handleSubmit} className="global-search-form">
+    <div
+      ref={containerRef}
+      className="global-search-panel"
+    >
+      <form
+        onSubmit={handleSubmit}
+        className="global-search-form"
+      >
         <Search className="global-search-search" />
         <input
           type="text"
@@ -194,7 +212,12 @@ export const GlobalSearch = ({ onClose } = {}) => {
                     className="global-search-panel-11 ui-group"
                   >
                     <div className="global-search-panel-12">
-                      <Avatar src={u.avatarUrl} name={u.name} role={u.role} size="sm" />
+                      <Avatar
+                        src={u.avatarUrl}
+                        name={u.name}
+                        role={u.role}
+                        size="sm"
+                      />
                       <div className="global-search-panel-9">
                         <p className="global-search-description-3">{u.name}</p>
                         <p className="global-search-description-2">
@@ -236,7 +259,11 @@ export const GlobalSearch = ({ onClose } = {}) => {
 
           {hasResults && (
             <div className="global-search-panel-14">
-              <button type="button" onClick={handleSubmit} className="global-search-button-4">
+              <button
+                type="button"
+                onClick={handleSubmit}
+                className="global-search-button-4"
+              >
                 Ver todos os resultados para "{query}" →
               </button>
             </div>
@@ -246,4 +273,5 @@ export const GlobalSearch = ({ onClose } = {}) => {
     </div>
   );
 };
+
 export default GlobalSearch;

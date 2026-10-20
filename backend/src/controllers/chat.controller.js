@@ -11,6 +11,7 @@ const getChatChannelsByChannelIdMessages = async (req, res) => {
         error: 'Não tem acesso a este canal.',
       });
     }
+
     const messages = await Chat.listMessagesByChannelId([channelId]);
     const formatted = await asyncMap(messages, async (m) => {
       let replyTo = null;
@@ -26,6 +27,7 @@ const getChatChannelsByChannelIdMessages = async (req, res) => {
           };
         }
       }
+
       return {
         id: m.id,
         channelId: m.channelId,
@@ -54,14 +56,17 @@ const getChatChannelsByChannelIdMessages = async (req, res) => {
         replyTo,
       };
     });
+
     return res.json(formatted);
   } catch (err) {
     console.error('Messages error:', err);
+
     return res.status(500).json({
       error: 'Falha ao obter mensagens',
     });
   }
 };
+
 const postChatChannelsByChannelIdMessages = async (req, res) => {
   try {
     const { channelId } = req.params;
@@ -72,12 +77,14 @@ const postChatChannelsByChannelIdMessages = async (req, res) => {
         error: 'Não tem acesso a este canal.',
       });
     }
+
     const channelInfo = await Chat.findChannelInfoById([channelId]);
     if (!channelInfo) {
       return res.status(404).json({
         error: 'Canal não encontrado.',
       });
     }
+
     if (
       channelInfo.isLocked === 1 ||
       channelInfo.accessMode === 'announcement' ||
@@ -94,12 +101,14 @@ const postChatChannelsByChannelIdMessages = async (req, res) => {
         });
       }
     }
+
     const now = new Date().toISOString();
     if (typeof content !== 'string' || !content.trim() || content.length > 4000) {
       return res.status(400).json({
         error: 'O conteúdo da mensagem não pode estar vazio',
       });
     }
+
     if (
       replyToId != null &&
       (typeof replyToId !== 'string' ||
@@ -109,14 +118,17 @@ const postChatChannelsByChannelIdMessages = async (req, res) => {
         error: 'A resposta deve referir uma mensagem deste canal.',
       });
     }
+
     // File uploads need a dedicated storage service; never accept arbitrary inline files.
     if (attachments != null && (!Array.isArray(attachments) || attachments.length > 0)) {
       return res.status(400).json({
         error: 'Os anexos ainda não estão disponíveis. Partilhe uma ligação na mensagem.',
       });
     }
+
     const messageId = randomUUID();
     const attachStr = attachments ? JSON.stringify(attachments) : null;
+
     await Chat.insertMessages([
       messageId,
       channelId,
@@ -127,6 +139,7 @@ const postChatChannelsByChannelIdMessages = async (req, res) => {
       now,
       now,
     ]);
+
     const user = await Chat.findUserById([userId]);
     const newMsgObj = {
       id: messageId,
@@ -145,14 +158,17 @@ const postChatChannelsByChannelIdMessages = async (req, res) => {
     if (io) {
       io.to(`channel_${channelId}`).emit('new-message', newMsgObj);
     }
+
     return res.status(201).json(newMsgObj);
   } catch (err) {
     console.error('Post message error:', err);
+
     return res.status(500).json({
       error: 'Falha ao enviar mensagem',
     });
   }
 };
+
 const postChatMessagesByMessageIdPin = async (req, res) => {
   try {
     const { messageId } = req.params;
@@ -162,19 +178,24 @@ const postChatMessagesByMessageIdPin = async (req, res) => {
         error: 'Mensagem não encontrada.',
       });
     }
+
     if (!(await canAccessChannel(req.user, message.channelId))) {
       return res.status(403).json({
         error: 'Não tem acesso a este canal.',
       });
     }
+
     const channel = await Chat.findChannelById([message.channelId]);
     if (!(await canModerateSpace(req.user, channel?.spaceId))) {
       return res.status(403).json({
         error: 'Só a equipa de moderação pode fixar mensagens.',
       });
     }
+
     const newPinned = message.isPinned === 1 ? 0 : 1;
+
     await Chat.updateMessagesByIsPinnedAndId([newPinned, messageId]);
+
     return res.json({
       success: true,
       messageId,
@@ -186,6 +207,7 @@ const postChatMessagesByMessageIdPin = async (req, res) => {
     });
   }
 };
+
 const postChatMessagesByMessageIdResolve = async (req, res) => {
   const message = await Chat.findMessageByIdForPostChatMessagesByMessageIdResolve([
     req.params.messageId,
@@ -201,10 +223,12 @@ const postChatMessagesByMessageIdResolve = async (req, res) => {
   const existing = await Chat.findResolucoesMensagensByIdMensagem([message.id]);
   if (existing) await Chat.deleteResolucoesMensagensByIdMensagem([message.id]);
   else await Chat.insertResolucoesMensagens([message.id, req.user.id, new Date().toISOString()]);
+
   return res.json({
     isResolved: !existing,
   });
 };
+
 exports.getChatChannelsByChannelIdMessages = getChatChannelsByChannelIdMessages;
 exports.postChatChannelsByChannelIdMessages = postChatChannelsByChannelIdMessages;
 exports.postChatMessagesByMessageIdPin = postChatMessagesByMessageIdPin;

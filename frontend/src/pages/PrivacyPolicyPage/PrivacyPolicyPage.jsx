@@ -10,12 +10,15 @@ import {
 } from 'react-icons/lu';
 import { Card } from '../../components/Card';
 import { SEO } from '../../components/SEO';
+
 export const PrivacyPolicyPage = () => {
+  const contactEmail = import.meta.env.VITE_CONTACT_EMAIL || '';
+
   return (
     <>
       <SEO
         title="Política de Privacidade — NEXO"
-        description="Conheça como a NEXO recolhe, protege e trata os seus dados pessoais em total conformidade com o RGPD em Portugal e na União Europeia."
+        description="Informação sobre os dados pessoais utilizados pela plataforma NEXO e contactos para questões de privacidade."
         canonical="https://nexo.pt/privacy"
       />
 
@@ -23,7 +26,10 @@ export const PrivacyPolicyPage = () => {
         <div className="privacy-policy-page-panel-2">
           {/* Header */}
           <div className="privacy-policy-page-panel-3">
-            <Link to="/" className="privacy-policy-page-link">
+            <Link
+              to="/"
+              className="privacy-policy-page-link"
+            >
               <ArrowLeft className="privacy-policy-page-arrow-left" />
               <span>Voltar à Página Principal</span>
             </Link>
@@ -61,12 +67,17 @@ export const PrivacyPolicyPage = () => {
               </p>
               <p>
                 Para quaisquer questões relativas ao tratamento dos seus dados ou exercício dos seus
-                direitos, pode contactar o nosso Encarregado de Proteção de Dados através do correio
-                eletrónico:{' '}
-                <a href="mailto:privacidade@nexo.pt" className="privacy-policy-page-link-2">
-                  privacidade@nexo.pt
-                </a>
-                .
+                direitos, contacte o responsável pela plataforma:{' '}
+                {contactEmail ? (
+                  <a
+                    href={`mailto:${contactEmail}`}
+                    className="privacy-policy-page-link-2"
+                  >
+                    {contactEmail}
+                  </a>
+                ) : (
+                  'contacto de privacidade por configurar.'
+                )}
               </p>
             </section>
 
@@ -194,7 +205,10 @@ export const PrivacyPolicyPage = () => {
                   A nossa equipa de conformidade responde no prazo máximo de 48 horas úteis.
                 </p>
               </div>
-              <Link to="/help" className="privacy-policy-page-link-3">
+              <Link
+                to="/help"
+                className="privacy-policy-page-link-3"
+              >
                 <Mail className="privacy-policy-page-mail" />
                 <span>Contactar Suporte</span>
               </Link>
@@ -205,4 +219,5 @@ export const PrivacyPolicyPage = () => {
     </>
   );
 };
+
 export default PrivacyPolicyPage;

@@ -11,5 +11,6 @@ const postPaymentSimulateByCourseId = async (req, res, next) => {
     next(error);
   }
 };
+
 exports.getPayment = getPayment;
 exports.postPaymentSimulateByCourseId = postPaymentSimulateByCourseId;

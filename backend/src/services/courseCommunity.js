@@ -5,6 +5,7 @@ const { canManageCourse } = require('./courseAccess');
 async function ensureCourseCommunity(user, courseId) {
   return transaction(async () => {
     await lockTransaction(`course-community:${courseId}`);
+
     const course = await queryOne('SELECT * FROM courses WHERE id = $1', [courseId]);
     if (!course) throw Object.assign(new Error('Curso não encontrado.'), { status: 404 });
     if (!(await canManageCourse(user, course)))
@@ -21,6 +22,7 @@ async function ensureCourseCommunity(user, courseId) {
       return course.spaceId;
     const spaceId = randomUUID();
     const now = new Date().toISOString();
+
     await execute(
       `INSERT INTO espacos (id,nome,slug,descricao,url_icone,url_banner,e_privado,categoria,id_proprietario,total_membros,criado_em)
        VALUES ($1,$2,$3,$4,$5,$6,1,$7,$8,1,$9)`,
@@ -51,7 +53,9 @@ async function ensureCourseCommunity(user, courseId) {
        FROM inscricoes WHERE id_curso = $3 AND id_utilizador <> $4 ON CONFLICT DO NOTHING`,
       [spaceId, now, course.id, course.creatorId],
     );
+
     return spaceId;
   });
 }
+
 exports.ensureCourseCommunity = ensureCourseCommunity;

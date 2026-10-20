@@ -19,6 +19,7 @@ const passwordResetLimiter = rateLimit({
   },
 });
 const router = Router();
+
 // GET /auth/user/:identifier — Perfil público de um utilizador
 router.get('/user/:identifier', optionalAuth, asyncHandler(getProfileUserByIdentifier));
 

@@ -2,6 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { randomBytes } = require('node:crypto');
 const dotenv = require('dotenv');
+
 async function main() {
   const root = path.resolve(__dirname, '../..');
   const environmentFile = path.join(root, 'backend/.env');
@@ -11,12 +12,14 @@ async function main() {
     console.log('external');
     process.exit(0);
   }
+
   if (!env.DATABASE_URL || env.DATABASE_URL.includes('CHANGE_ME')) {
     env.DATABASE_URL = `postgresql://nexo:${randomBytes(24).toString('hex')}@127.0.0.1:5433/nexo`;
     source =
       source.replace(/^DATABASE_URL=.*\r?\n?/gm, '') + `\nDATABASE_URL=${env.DATABASE_URL}\n`;
     fs.writeFileSync(environmentFile, source);
   }
+
   const url = new URL(env.DATABASE_URL);
   if (!['localhost', '127.0.0.1'].includes(url.hostname) || url.port !== '5433')
     throw new Error('LOCAL_POSTGRES_DOCKER exige DATABASE_URL local na porta 5433.');
@@ -41,6 +44,7 @@ async function main() {
   );
   console.log('managed');
 }
+
 main().catch((error) => {
   console.error(error.message);
   process.exitCode = 1;

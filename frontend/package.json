@@ -12,7 +12,8 @@
     "styles:check": "node scripts/check-styles.js",
     "format": "prettier --write \"src/**/*.{js,jsx,css}\" \"tests/**/*.{js,jsx}\" vite.config.js vitest.config.js eslint.config.js",
     "format:check": "prettier --check \"src/**/*.{js,jsx,css}\" \"tests/**/*.{js,jsx}\" vite.config.js vitest.config.js eslint.config.js",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint:fix": "eslint src tests --fix"
   },
   "engines": {
     "node": ">=22.16.0"

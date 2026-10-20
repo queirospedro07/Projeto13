@@ -6,7 +6,7 @@
     margin-right: auto;
     margin-bottom: 0.5rem;
     display: flex;
-    height: calc(100vh - 5.5rem);
+    height: calc(100dvh - 10.5rem - env(safe-area-inset-bottom, 0px));
     max-width: 80rem;
     animation: fadeIn 0.15s ease-out forwards;
     flex-direction: column;
@@ -33,7 +33,7 @@
   @media (min-width: 768px) {
     .messages-page-panel {
       margin-bottom: 1.5rem;
-      height: calc(100vh - 6rem);
+      height: calc(100dvh - 6rem);
       flex-direction: row;
       border-radius: 0.75rem;
     }
@@ -47,6 +47,17 @@
     border-right-width: 1px;
     border-color: rgb(229 229 229 / 0.9);
     background-color: rgb(250 250 250 / 0.6);
+  }
+
+  @media (max-width: 767px) {
+    .messages-page-main.messages-page-sidebar-2 {
+      display: none;
+    }
+
+    .messages-page-sidebar {
+      min-height: 0;
+      height: 100%;
+    }
   }
 
   .messages-page-sidebar:is(.dark *) {

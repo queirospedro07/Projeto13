@@ -1,7 +1,9 @@
 import './Modal.css';
+import { lockModalScroll } from '../../utils/modalScroll';
 import { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { LuX as X } from 'react-icons/lu';
+
 export const Modal = ({
   isOpen,
   onClose,
@@ -13,6 +15,7 @@ export const Modal = ({
   const [mounted, setMounted] = useState(false);
   const dialogRef = useRef(null);
   const closeRef = useRef(onClose);
+
   useEffect(() => {
     closeRef.current = onClose;
   }, [onClose]);
@@ -22,7 +25,7 @@ export const Modal = ({
   useEffect(() => {
     if (!isOpen || !mounted) return;
     const previouslyFocused = document.activeElement;
-    const previousOverflow = document.body.style.overflow;
+    const releaseScroll = lockModalScroll();
     const dialog = dialogRef.current;
     const focusable = () =>
       [
@@ -37,15 +40,18 @@ export const Modal = ({
         event.preventDefault();
         closeRef.current();
       }
+
       if (event.key !== 'Tab') return;
-      const elements = focusable(),
-        first = elements[0],
-        last = elements.at(-1);
+      const elements = focusable();
+      const first = elements[0];
+      const last = elements.at(-1);
       if (!first) {
         event.preventDefault();
         dialog.focus();
+
         return;
       }
+
       if (
         event.shiftKey &&
         (document.activeElement === first || !dialog.contains(document.activeElement))
@@ -60,11 +66,12 @@ export const Modal = ({
         first.focus();
       }
     };
-    document.body.style.overflow = 'hidden';
+
     window.addEventListener('keydown', handleKeyDown);
     (focusable()[0] || dialog)?.focus();
+
     return () => {
-      document.body.style.overflow = previousOverflow;
+      releaseScroll();
       window.removeEventListener('keydown', handleKeyDown);
       if (previouslyFocused?.isConnected) previouslyFocused.focus();
     };
@@ -81,7 +88,11 @@ export const Modal = ({
   const modalContent = (
     <div className="modal-panel dialog-layer">
       {/* Crisp Solid Dark Backdrop - Fixed to viewport */}
-      <div className="modal-panel-2" onClick={onClose} aria-hidden="true" />
+      <div
+        className="modal-panel-2"
+        onClick={onClose}
+        aria-hidden="true"
+      />
 
       <div
         className={`modal-panel-3 ${maxWidths[maxWidth]} modal-panel-4`}
@@ -96,6 +107,7 @@ export const Modal = ({
           <div className="modal-panel-5 modal-header-spacing">
             <h3 className="modal-subheading">{title}</h3>
             <button
+              type="button"
               onClick={onClose}
               className="modal-button"
               aria-label="Fechar diálogo"
@@ -110,5 +122,6 @@ export const Modal = ({
       </div>
     </div>
   );
+
   return createPortal(modalContent, document.body);
 };

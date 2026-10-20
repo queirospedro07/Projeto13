@@ -10,6 +10,7 @@ import {
 } from 'react-icons/lu';
 import { Avatar } from '../Avatar';
 import { Button } from '../Button';
+
 export const FriendsManager = ({
   friendsSubTab,
   onSetFriendsSubTab,
@@ -80,7 +81,10 @@ export const FriendsManager = ({
           ) : (
             <div className="friends-manager-panel-5">
               {friendsData.friends.map((f) => (
-                <div key={f.friendshipId} className="friends-manager-panel-6 ui-group">
+                <div
+                  key={f.friendshipId}
+                  className="friends-manager-panel-6 ui-group"
+                >
                   <div className="friends-manager-panel-7">
                     <Avatar
                       shape="square"
@@ -90,7 +94,10 @@ export const FriendsManager = ({
                       className="friends-manager-avatar"
                     />
                     <div className="friends-manager-panel-8">
-                      <Link to={`/profile/${f.user.username}`} className="friends-manager-link">
+                      <Link
+                        to={`/profile/${f.user.username}`}
+                        className="friends-manager-link"
+                      >
                         {f.user.name}
                       </Link>
                       <p className="friends-manager-description-3">@{f.user.username}</p>
@@ -134,7 +141,10 @@ export const FriendsManager = ({
             ) : (
               <div className="friends-manager-panel-11">
                 {friendsData.incoming.map((r) => (
-                  <div key={r.friendshipId} className="friends-manager-panel-12">
+                  <div
+                    key={r.friendshipId}
+                    className="friends-manager-panel-12"
+                  >
                     <div className="friends-manager-panel-7">
                       <Avatar
                         shape="square"
@@ -188,7 +198,10 @@ export const FriendsManager = ({
             </p>
           </div>
 
-          <form onSubmit={onSearchAndAddFriend} className="friends-manager-form">
+          <form
+            onSubmit={onSearchAndAddFriend}
+            className="friends-manager-form"
+          >
             <div className="friends-manager-panel-15">
               <span className="friends-manager-label-2">@</span>
               <input
@@ -249,4 +262,5 @@ export const FriendsManager = ({
     </div>
   );
 };
+
 export default FriendsManager;

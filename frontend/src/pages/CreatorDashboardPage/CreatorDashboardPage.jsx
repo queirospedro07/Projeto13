@@ -15,6 +15,7 @@ import {
 } from 'react-icons/lu';
 import { api } from '../../services/api';
 import { formatCoursePrice, formatCategory } from '../../utils/formatters';
+
 export const CreatorDashboardPage = () => {
   const [stats, setStats] = useState(null);
   const [courses, setCourses] = useState([]);
@@ -22,8 +23,10 @@ export const CreatorDashboardPage = () => {
   const [error, setError] = useState(false);
   const [revision, setRevision] = useState(0);
   const [deletingCourseId, setDeletingCourseId] = useState(null);
+
   useEffect(() => {
     let active = true;
+
     setLoading(true);
     setError(false);
     Promise.all([
@@ -42,10 +45,12 @@ export const CreatorDashboardPage = () => {
       .finally(() => {
         if (active) setLoading(false);
       });
+
     return () => {
       active = false;
     };
   }, [revision]);
+
   const totalStudents =
     stats?.totalStudents || courses.reduce((acc, c) => acc + (c._count?.enrollments || 0), 0);
   const handleDeleteCourse = async (course) => {
@@ -63,7 +68,14 @@ export const CreatorDashboardPage = () => {
       setDeletingCourseId(null);
     }
   };
-  if (loading) return <PageState loading title="A preparar o seu estúdio…" />;
+
+  if (loading)
+    return (
+      <PageState
+        loading
+        title="A preparar o seu estúdio…"
+      />
+    );
   if (error)
     return (
       <PageState
@@ -72,6 +84,7 @@ export const CreatorDashboardPage = () => {
         onRetry={() => setRevision((value) => value + 1)}
       />
     );
+
   return (
     <div className="creator-dashboard-panel">
       <div className="creator-dashboard-panel-2">
@@ -175,7 +188,10 @@ export const CreatorDashboardPage = () => {
           ) : (
             <div className="creator-dashboard-panel-14">
               {courses.map((course) => (
-                <div key={course.id} className="creator-dashboard-panel-15">
+                <div
+                  key={course.id}
+                  className="creator-dashboard-panel-15"
+                >
                   <div className="creator-dashboard-panel-16">
                     <img
                       src={
@@ -242,4 +258,5 @@ export const CreatorDashboardPage = () => {
     </div>
   );
 };
+
 export default CreatorDashboardPage;

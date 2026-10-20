@@ -3,6 +3,8 @@ const reportRoutes = require('./routes/report.routes.js');
 const paymentRoutes = require('./routes/payment.routes.js');
 const projectRoutes = require('./routes/project.routes.js');
 const express = require('express');
+const { authenticate } = require('./middleware/auth.js');
+const { getIceServers } = require('./config/iceServers.js');
 const {
   helmetMiddleware,
   corsMiddleware,
@@ -23,6 +25,7 @@ const notificationRoutes = require('./routes/notification.routes.js');
 const socialRoutes = require('./routes/social.routes.js');
 const helpRoutes = require('./routes/help.routes.js');
 const app = express();
+
 app.disable('x-powered-by');
 if (process.env.TRUST_PROXY_HOPS) {
   const hops = Number(process.env.TRUST_PROXY_HOPS);
@@ -30,6 +33,7 @@ if (process.env.TRUST_PROXY_HOPS) {
     throw new Error('TRUST_PROXY_HOPS deve ser um inteiro entre 1 e 5.');
   app.set('trust proxy', hops);
 }
+
 if (process.env.NODE_ENV === 'production' && !process.env.CLIENT_URL && !process.env.FRONTEND_URL)
   throw new Error('Configure o domínio HTTPS do frontend em produção.');
 // Middlewares de segurança e parsing
@@ -59,11 +63,6 @@ app.use(
 );
 app.use(sanitizeInputs);
 
-// Limite de pedidos por IP
-
-// Rota de estado do servidor
-// Limite de pedidos por IP
-
 // Rota de estado do servidor
 app.get('/api/health', async (_req, res) => {
   try {
@@ -84,21 +83,10 @@ app.get('/api/health', async (_req, res) => {
 });
 
 // Servidores STUN para chamadas WebRTC
-app.get('/api/ice-servers', (_req, res) => {
-  const iceServers = [
-    {
-      urls: 'stun:stun.l.google.com:19302',
-    },
-    {
-      urls: 'stun:stun1.l.google.com:19302',
-    },
-    {
-      urls: 'stun:stun.relay.metered.ca:80',
-    },
-  ];
-  res.setHeader('Cache-Control', 'public, max-age=3600');
+app.get('/api/ice-servers', authenticate, (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
   res.json({
-    iceServers,
+    iceServers: getIceServers(),
   });
 });
 
@@ -128,6 +116,7 @@ app.use((req, res) => {
 // Tratamento de erros
 app.use((err, req, res, _next) => {
   console.error(err.stack || err);
+
   const databaseUnavailable = [
     'ECONNREFUSED',
     'ECONNRESET',
@@ -150,6 +139,7 @@ app.use((err, req, res, _next) => {
     : process.env.NODE_ENV === 'production' && status >= 500
       ? 'Ocorreu um erro interno no servidor.'
       : err.message || 'Erro interno no servidor';
+
   res.status(status).json({
     message,
     error: message,

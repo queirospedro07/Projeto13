@@ -12,6 +12,7 @@ import { Card } from '../../components/Card';
 import { Logo } from '../../components/Logo';
 import { SEO } from '../../components/SEO';
 import { api } from '../../services/api';
+
 export const ForgotPasswordPage = () => {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -28,6 +29,7 @@ export const ForgotPasswordPage = () => {
           email,
         })
         .then(({ data }) => data);
+
       setDevResetUrl(response.devResetUrl || '');
       setSubmitted(true);
     } catch (requestError) {
@@ -36,6 +38,7 @@ export const ForgotPasswordPage = () => {
       setIsLoading(false);
     }
   };
+
   const safeDevResetUrl = (() => {
     if (!devResetUrl) return '';
     try {
@@ -43,11 +46,13 @@ export const ForgotPasswordPage = () => {
       if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
         return parsed.href;
       }
+
       return '';
     } catch {
       return '';
     }
   })();
+
   return (
     <>
       <SEO
@@ -59,7 +64,10 @@ export const ForgotPasswordPage = () => {
         <div className="forgot-password-panel-2">
           <div className="forgot-password-panel-3">
             <div className="forgot-password-panel-4">
-              <Logo size="lg" to="/" />
+              <Logo
+                size="lg"
+                to="/"
+              />
             </div>
             <h2 className="forgot-password-heading">Recuperar Palavra-passe</h2>
             <p className="forgot-password-description">
@@ -90,27 +98,44 @@ export const ForgotPasswordPage = () => {
                 {safeDevResetUrl && (
                   <div className="forgot-password-panel-6">
                     <p className="forgot-password-description-3">Ligação de teste local</p>
-                    <a href={safeDevResetUrl} className="forgot-password-link">
+                    <a
+                      href={safeDevResetUrl}
+                      className="forgot-password-link"
+                    >
                       Redefinir palavra-passe
                     </a>
                   </div>
                 )}
                 <Link to="/login">
-                  <Button variant="secondary" size="lg" className="forgot-password-button">
+                  <Button
+                    as="span"
+                    variant="secondary"
+                    size="lg"
+                    className="forgot-password-button"
+                  >
                     Voltar ao Início de Sessão
                   </Button>
                 </Link>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="forgot-password-form">
+              <form
+                onSubmit={handleSubmit}
+                className="forgot-password-form"
+              >
                 {error && (
-                  <div role="alert" className="forgot-password-panel-7">
+                  <div
+                    role="alert"
+                    className="forgot-password-panel-7"
+                  >
                     <AlertCircle className="forgot-password-alert-circle" />
                     <span>{error}</span>
                   </div>
                 )}
                 <div>
-                  <label htmlFor="recovery-email" className="forgot-password-field-label">
+                  <label
+                    htmlFor="recovery-email"
+                    className="forgot-password-field-label"
+                  >
                     Endereço de Email
                   </label>
                   <div className="forgot-password-panel-8">
@@ -140,7 +165,10 @@ export const ForgotPasswordPage = () => {
                 </Button>
 
                 <div className="forgot-password-panel-9">
-                  <Link to="/login" className="forgot-password-link-2">
+                  <Link
+                    to="/login"
+                    className="forgot-password-link-2"
+                  >
                     <ArrowLeft className="forgot-password-arrow-left" /> Voltar ao Início de Sessão
                   </Link>
                 </div>

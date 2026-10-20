@@ -1,5 +1,7 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-const ThemeContext = createContext(undefined);
+import { useContext, useState, useEffect, useCallback } from 'react';
+
+import { ThemeContext } from './contexts';
+
 export const ThemeProvider = ({ children }) => {
   const [theme, setThemeState] = useState(() => {
     return (
@@ -13,10 +15,12 @@ export const ThemeProvider = ({ children }) => {
     if (currentTheme === 'system') {
       const prefersDark =
         window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
       resolved = prefersDark ? 'dark' : 'light';
     } else {
       resolved = currentTheme;
     }
+
     setActualTheme(resolved);
     if (resolved === 'dark') {
       root.classList.add('dark');
@@ -39,6 +43,7 @@ export const ThemeProvider = ({ children }) => {
     else if (theme === 'dark') setTheme('system');
     else setTheme('light');
   }, [theme, setTheme]);
+
   useEffect(() => {
     applyTheme(theme);
     if (window.matchMedia) {
@@ -50,15 +55,19 @@ export const ThemeProvider = ({ children }) => {
           applyTheme('system');
         }
       };
+
       try {
         mediaQuery.addEventListener('change', handleMediaChange);
+
         return () => mediaQuery.removeEventListener('change', handleMediaChange);
       } catch {
         mediaQuery.addListener(handleMediaChange);
+
         return () => mediaQuery.removeListener(handleMediaChange);
       }
     }
   }, [theme, applyTheme]);
+
   return (
     <ThemeContext.Provider
       value={{
@@ -72,8 +81,10 @@ export const ThemeProvider = ({ children }) => {
     </ThemeContext.Provider>
   );
 };
+
 export const useTheme = () => {
   const context = useContext(ThemeContext);
   if (!context) throw new Error('useTheme must be used within ThemeProvider');
+
   return context;
 };

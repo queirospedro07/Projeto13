@@ -4,7 +4,7 @@
   .space-chat-panel {
     position: relative;
     display: flex;
-    height: calc(100dvh - 8rem);
+    height: calc(100dvh - 11rem - env(safe-area-inset-bottom, 0px));
     overflow: hidden;
     border-radius: 1rem;
     border-width: 1px;
@@ -28,7 +28,7 @@
 
   @media (min-width: 768px) {
     .space-chat-panel {
-      height: calc(100vh - 5rem);
+      height: calc(100dvh - 8rem);
       border-radius: 0.75rem;
     }
   }

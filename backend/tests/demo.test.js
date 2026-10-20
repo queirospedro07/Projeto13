@@ -4,18 +4,24 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import bcrypt from 'bcryptjs';
+
 const directory = mkdtempSync(path.join(tmpdir(), 'nexo-demo-'));
+
 Object.assign(process.env, {
   NODE_ENV: 'test',
   DATA_DIRECTORY: directory,
   DATABASE_URL: '',
   SEED_DEMO_DATA: 'false',
 });
+
 const { prepareTestDatabase, cleanupTestDatabase } = await import('./helpers/database.js');
+
 await prepareTestDatabase();
+
 const connection = await import('../src/database/connection.js');
 const { seedDemoShowcaseData } = await import('../src/database/demoSeed.js');
 const { demoLogin } = await import('../src/controllers/auth.controller.js');
+
 test.after(async () => {
   await connection.closeDatabase();
   await cleanupTestDatabase();
@@ -26,7 +32,9 @@ test.after(async () => {
 });
 test('demo setup is additive, repeatable and never resets existing users or content', async () => {
   await connection.connectDB();
+
   const now = new Date().toISOString();
+
   await connection.execute(
     'INSERT INTO utilizadores (id,email,nome_utilizador,hash_palavra_passe,nome,papel,criado_em,atualizado_em) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
     ['real-admin', 'real@example.test', 'real_admin', 'unchanged', 'Admin', 'ADMIN', now, now],
@@ -41,9 +49,11 @@ test('demo setup is additive, repeatable and never resets existing users or cont
       .id_criador,
     'real-admin',
   );
+
   const student = await connection.queryOne(
     "SELECT * FROM utilizadores WHERE id = 'demo-student-marta'",
   );
+
   assert.ok(await bcrypt.compare('nexoDemo2026!', student.hash_palavra_passe));
   await connection.execute(
     "UPDATE utilizadores SET url_avatar = 'edited', hash_palavra_passe = 'edited-password' WHERE id = 'demo-student-marta'",
@@ -61,9 +71,11 @@ test('demo setup is additive, repeatable and never resets existing users or cont
     ).hash_palavra_passe,
     'unchanged',
   );
+
   const edited = await connection.queryOne(
     "SELECT * FROM utilizadores WHERE id = 'demo-student-marta'",
   );
+
   assert.equal(edited.hash_palavra_passe, 'edited-password');
   assert.equal(edited.url_avatar, 'edited');
   assert.equal(
@@ -79,14 +91,17 @@ test('quick demo login cannot select a real account or an administrator', async 
     statusCode: 200,
     status(code) {
       this.statusCode = code;
+
       return this;
     },
     json(body) {
       this.body = body;
+
       return this;
     },
   });
   let res = response();
+
   await demoLogin(
     {
       params: {

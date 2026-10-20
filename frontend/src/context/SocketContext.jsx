@@ -1,7 +1,9 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
-const SocketContext = createContext(undefined);
+
+import { SocketContext } from './contexts';
+
 export const SocketProvider = ({ children }) => {
   const { user, token } = useAuth();
   const [socket, setSocket] = useState(null);
@@ -13,23 +15,27 @@ export const SocketProvider = ({ children }) => {
     const idSet = new Set(
       arr.map((u) => (typeof u === 'string' ? u : u?.userId || u?.id)).filter(Boolean),
     );
+
     arr.has = (id) => idSet.has(id);
+
     return arr;
   }, [onlineUsersList]);
+
   useEffect(() => {
     if (!user?.id || !token) {
       setSocket(null);
       setIsConnected(false);
+
       return undefined;
     }
+
     const envSocketUrl = import.meta.env?.VITE_SOCKET_URL || import.meta.env?.VITE_API_URL;
     let socketServerUrl = envSocketUrl
       ? envSocketUrl.replace(/\/api\/?$/, '').replace(/\/$/, '')
       : window.location.origin;
-    if (!envSocketUrl && window.location.hostname === 'localhost') {
-      socketServerUrl = 'http://localhost:5000';
-    }
+
     serverUrlRef.current = socketServerUrl;
+
     const newSocket = io(socketServerUrl, {
       transports: ['websocket', 'polling'],
       auth: {
@@ -40,6 +46,7 @@ export const SocketProvider = ({ children }) => {
       reconnectionDelayMax: 10000,
       timeout: 60000,
     });
+
     newSocket.on('connect', () => {
       setIsConnected(true);
       if (user) {
@@ -56,6 +63,7 @@ export const SocketProvider = ({ children }) => {
       setOnlineUsersList(users);
     });
     setSocket(newSocket);
+
     return () => {
       newSocket.disconnect();
     };
@@ -69,16 +77,22 @@ export const SocketProvider = ({ children }) => {
         cache: 'no-store',
       }).catch(() => {});
     };
+
     ping();
+
     const interval = setInterval(ping, 10 * 60 * 1000);
+
     return () => clearInterval(interval);
   }, []);
+
   const joinChannel = (channelId) => {
     socket?.emit('join-channel', channelId);
   };
+
   const leaveChannel = (channelId) => {
     socket?.emit('leave-channel', channelId);
   };
+
   const sendTyping = (channelId) => {
     if (user && socket) {
       socket.emit('typing', {
@@ -86,6 +100,7 @@ export const SocketProvider = ({ children }) => {
       });
     }
   };
+
   const sendStopTyping = (channelId) => {
     if (user && socket) {
       socket.emit('stop-typing', {
@@ -93,6 +108,7 @@ export const SocketProvider = ({ children }) => {
       });
     }
   };
+
   return (
     <SocketContext.Provider
       value={{
@@ -109,8 +125,10 @@ export const SocketProvider = ({ children }) => {
     </SocketContext.Provider>
   );
 };
+
 export const useSocket = () => {
   const context = useContext(SocketContext);
   if (!context) throw new Error('useSocket must be used within SocketProvider');
+
   return context;
 };

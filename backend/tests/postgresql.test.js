@@ -5,17 +5,23 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { prepareTestDatabase, cleanupTestDatabase } from './helpers/database.js';
+
 process.env.NODE_ENV = 'test';
+
 const directory = mkdtempSync(path.join(tmpdir(), 'nexo-postgresql-'));
+
 process.env.DATA_DIRECTORY = directory;
 await prepareTestDatabase();
+
 const connection = await import('../src/database/connection.js');
 const { simulatePayment } = await import('../src/services/payments.js');
 const { default: app } = await import('../src/app.js');
 const { signJwtToken } = await import('../src/middleware/auth.js');
 let server;
+
 test.before(async () => {
   await connection.connectDB();
+
   const now = new Date().toISOString();
   for (const id of ['teacher', 'student']) {
     await connection.execute(
@@ -23,6 +29,7 @@ test.before(async () => {
       [id, `${id}@example.test`, id, 'unused', id, 'STUDENT', now, now],
     );
   }
+
   for (const [id, price] of [
     ['free', 0],
     ['paid', 19.99],
@@ -32,6 +39,7 @@ test.before(async () => {
       [id, id, id, 'Teste concorrente', 'programming', 'teacher', price, price ? 0 : 1, now, now],
     );
   }
+
   server = await new Promise((resolve) => {
     const instance = app.listen(0, '127.0.0.1', () => resolve(instance));
   });
@@ -65,6 +73,7 @@ test('simultaneous approved payments create one charge simulation and one enroll
         ),
     ),
   );
+
   assert.equal(results.filter((result) => result.status === 'approved').length, 1);
   assert.equal((await connection.queryOne('SELECT COUNT(*) AS n FROM simulacoes_pagamento')).n, 1);
   assert.equal(
@@ -78,8 +87,10 @@ test('course aggregates retain numeric API types after the PostgreSQL migration'
     'INSERT INTO avaliacoes(id,id_curso,id_utilizador,classificacao,comentario,criado_em) VALUES ($1,$2,$3,$4,$5,$6)',
     ['rating', 'free', 'student', 4, 'Teste de avaliação', new Date().toISOString()],
   );
+
   const response = await fetch(`http://127.0.0.1:${server.address().port}/api/courses`);
   const course = (await response.json()).find((item) => item.id === 'free');
+
   assert.equal(course.averageRating, 4);
   assert.equal(typeof course.reviewsCount, 'number');
   assert.equal(typeof course.price, 'number');
@@ -104,6 +115,7 @@ test('simultaneous free enrollments remain idempotent', async () => {
         }),
     ),
   );
+
   assert.ok(responses.every((response) => [200, 201].includes(response.status)));
   assert.equal(
     (await connection.queryOne('SELECT COUNT(*) AS n FROM enrollments WHERE "courseId" = \'free\''))
@@ -118,6 +130,7 @@ test('native PostgreSQL handles combined filters, profile fields and course mode
   const { default: Creator } = await import('../src/models/Creator.js');
   const { default: User } = await import('../src/models/User.js');
   const now = new Date().toISOString();
+
   await connection.execute(
     `INSERT INTO cursos (id,titulo,slug,descricao,categoria,dificuldade,id_criador,preco,e_gratuito,e_publicado,estado_aprovacao,criado_em,atualizado_em)
      VALUES ($1,$2,$3,$4,$5,$6,$7,0,1,1,'APPROVED',$8,$8)`,
@@ -139,15 +152,19 @@ test('native PostgreSQL handles combined filters, profile fields and course mode
       difficulty: 'beginner',
       sort: 'popular',
     });
+
     assert.deepEqual(
       courses.map((course) => course.id),
       ['native-sql'],
     );
+
     const updated = await User.update('teacher', {
       name: 'Updated teacher',
       bio: 'Profile regression',
     });
+
     assert.equal(updated.name, 'Updated teacher');
+
     const fields = [
       null,
       null,
@@ -171,6 +188,7 @@ test('native PostgreSQL handles combined filters, profile fields and course mode
       now,
       'native-sql',
     ];
+
     await Creator.updateCourseDetails(true, fields);
     assert.equal((await Creator.findCoursesById(['native-sql'])).approvalStatus, 'APPROVED');
     await Creator.updateCourseDetails(false, fields);
@@ -206,11 +224,14 @@ test('failed transactions roll back and savepoints isolate nested failures', asy
 });
 test('PostgreSQL backups restore into an empty schema without overwriting existing data', async () => {
   const cwd = path.resolve(import.meta.dirname, '..');
+
   execFileSync(process.execPath, ['scripts/backup.js'], {
     cwd,
     env: process.env,
   });
+
   const filename = path.join(directory, 'backups', readdirSync(path.join(directory, 'backups'))[0]);
+
   assert.throws(() =>
     execFileSync(process.execPath, ['scripts/restore.js', filename], {
       cwd,
@@ -218,7 +239,9 @@ test('PostgreSQL backups restore into an empty schema without overwriting existi
       stdio: 'pipe',
     }),
   );
+
   const schema = `restore_${process.pid}`;
+
   await connection.getPool().query(`CREATE SCHEMA "${schema}"`);
   try {
     execFileSync(process.execPath, ['scripts/restore.js', filename], {
@@ -228,9 +251,11 @@ test('PostgreSQL backups restore into an empty schema without overwriting existi
         DATABASE_SCHEMA: schema,
       },
     });
+
     const restored = await connection
       .getPool()
       .query(`SELECT COUNT(*) AS n FROM "${schema}".inscricoes`);
+
     assert.equal(Number(restored.rows[0].n), 2);
   } finally {
     await connection.getPool().query(`DROP SCHEMA "${schema}" CASCADE`);

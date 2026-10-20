@@ -1,5 +1,6 @@
 import './Badge.css';
 import { classNames } from '../../utils/classNames';
+
 export const Badge = ({ children, variant = 'default', size = 'md', className, icon }) => {
   const base = 'badge-base';
   const sizes = {
@@ -16,6 +17,7 @@ export const Badge = ({ children, variant = 'default', size = 'md', className, i
     danger: 'badge-variants-danger',
     outline: 'badge-variants-outline',
   };
+
   return (
     <span className={classNames(base, sizes[size], variants[variant], className)}>
       {icon}

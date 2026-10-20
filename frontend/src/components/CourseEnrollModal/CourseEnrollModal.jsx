@@ -19,6 +19,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../Toast';
 import { api } from '../../services/api';
 import { formatCoursePrice, formatCategory } from '../../utils/formatters';
+
 export const CourseEnrollModal = ({
   isOpen,
   onClose,
@@ -40,6 +41,7 @@ export const CourseEnrollModal = ({
     Number(course.price) > 0,
   );
   const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -49,10 +51,12 @@ export const CourseEnrollModal = ({
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') onClose();
     };
+
     if (isOpen) {
       document.body.style.overflow = 'hidden';
       window.addEventListener('keydown', handleKeyDown);
     }
+
     return () => {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', handleKeyDown);
@@ -72,12 +76,15 @@ export const CourseEnrollModal = ({
     onClose();
     navigate(`/courses/${courseIdentifier}`);
   };
+
   const handleConfirmEnroll = async () => {
     if (isAlreadyEnrolled) {
       onClose();
       navigate(`/learn/${courseIdentifier}`);
+
       return;
     }
+
     if (!user) {
       toast({
         title: 'Sessão Necessária',
@@ -86,8 +93,10 @@ export const CourseEnrollModal = ({
       });
       onClose();
       navigate('/login');
+
       return;
     }
+
     setIsSubmitting(true);
     try {
       if (
@@ -99,6 +108,7 @@ export const CourseEnrollModal = ({
       } else {
         await api.post(`/courses/${course.id}/enroll`).then(({ data }) => data);
       }
+
       window.dispatchEvent(new Event('nexo_courses_visibility_changed'));
       toast({
         title: 'Matrícula Confirmada!',
@@ -121,14 +131,22 @@ export const CourseEnrollModal = ({
       setIsSubmitting(false);
     }
   };
+
   const modalContent = (
     <div className="course-enroll-modal-panel dialog-layer">
       {/* Fixed solid dark backdrop */}
-      <div className="course-enroll-modal-panel-2" onClick={onClose} aria-hidden="true" />
+      <div
+        className="course-enroll-modal-panel-2"
+        onClick={onClose}
+        aria-hidden="true"
+      />
 
       {/* Centering container allowing natural full scroll without bottom cutoff */}
       <div className="course-enroll-modal-panel-3">
-        <div className="course-enroll-modal-panel-4" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="course-enroll-modal-panel-4"
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* Close Button */}
           <button
             onClick={onClose}
@@ -172,7 +190,11 @@ export const CourseEnrollModal = ({
             {/* Banner bottom info */}
             <div className="course-enroll-modal-panel-8">
               <div className="course-enroll-modal-panel-9">
-                <Avatar src={creator?.avatarUrl} name={creator?.name || 'Instrutor'} size="sm" />
+                <Avatar
+                  src={creator?.avatarUrl}
+                  name={creator?.name || 'Instrutor'}
+                  size="sm"
+                />
                 <span className="course-enroll-modal-label-3">
                   {creator?.name || 'Instrutor Certificado'}
                 </span>
@@ -299,6 +321,8 @@ export const CourseEnrollModal = ({
         }}
       />
     );
+
   return createPortal(modalContent, document.body);
 };
+
 export default CourseEnrollModal;

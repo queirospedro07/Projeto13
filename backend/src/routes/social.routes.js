@@ -18,6 +18,7 @@ const {
 } = require('../controllers/social.controller.js');
 const { asyncHandler } = require('../middleware/asyncHandler.js');
 const router = Router();
+
 router.get('/friends', authenticate, asyncHandler(getSocialFriends));
 router.post(
   '/friends/request/:targetUserId',

@@ -8,6 +8,17 @@ export default [
     languageOptions: { ecmaVersion: 'latest', sourceType: 'commonjs', globals: globals.node },
     rules: {
       ...js.configs.recommended.rules,
+      'one-var': ['error', 'never'],
+      'padding-line-between-statements': [
+        'error',
+        { blankLine: 'always', prev: '*', next: 'return' },
+        { blankLine: 'always', prev: 'block-like', next: '*' },
+        { blankLine: 'always', prev: '*', next: ['function', 'class', 'export'] },
+        { blankLine: 'always', prev: ['const', 'let', 'var'], next: 'expression' },
+        { blankLine: 'always', prev: 'expression', next: ['const', 'let', 'var'] },
+        { blankLine: 'always', prev: 'import', next: '*' },
+        { blankLine: 'any', prev: 'import', next: 'import' },
+      ],
       'no-unused-vars': [
         'warn',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },

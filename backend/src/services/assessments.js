@@ -8,6 +8,7 @@ const parse = (value, fallback) => {
     return fallback;
   }
 };
+
 const normalise = (text) =>
   String(text || '')
     .normalize('NFD')
@@ -16,6 +17,7 @@ const normalise = (text) =>
     .replace(/[^a-z0-9\s]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+
 async function loadAssessment(lessonId) {
   const lesson = await lessonWithCourse(lessonId);
   if (!lesson || lesson.type !== 'quiz') return null;
@@ -45,6 +47,7 @@ async function loadAssessment(lessonId) {
           : option?.isCorrect === true,
     })),
   }));
+
   return {
     lessonId: lesson.id,
     courseId: lesson.courseId,
@@ -58,8 +61,10 @@ async function loadAssessment(lessonId) {
     questions: formatted,
   };
 }
+
 function publicAssessment(quiz) {
   if (!quiz) return null;
+
   return {
     id: quiz.id,
     lessonId: quiz.lessonId,
@@ -80,6 +85,7 @@ function publicAssessment(quiz) {
     })),
   };
 }
+
 function gradeAssessment(quiz, answers) {
   if (
     !answers ||
@@ -89,10 +95,10 @@ function gradeAssessment(quiz, answers) {
   )
     throw new Error('Respostas inválidas.');
   if (!quiz.questions.length) throw new Error('O questionário ainda não tem perguntas.');
-  let earned = 0,
-    total = 0,
-    correctCount = 0,
-    pending = 0;
+  let earned = 0;
+  let total = 0;
+  let correctCount = 0;
+  let pending = 0;
   const results = quiz.questions.map((q) => {
     const answer = answers[q.id];
     let isCorrect;
@@ -105,6 +111,7 @@ function gradeAssessment(quiz, answers) {
         isCorrect = null;
       } else {
         const matched = keywords.filter((word) => normalise(answer).includes(word)).length;
+
         isCorrect =
           answer.trim().split(/\s+/).length >= (Number(q.minWords) || 1) &&
           (matched / keywords.length >= 0.5 || matched >= Math.min(2, keywords.length));
@@ -121,13 +128,16 @@ function gradeAssessment(quiz, answers) {
       if (!correct.length)
         throw new Error('O formador ainda não configurou as respostas deste questionário.');
       const unique = new Set(selected);
+
       isCorrect = unique.size === correct.length && correct.every((id) => unique.has(id));
     }
+
     total += q.points;
     if (isCorrect) {
       earned += q.points;
       correctCount++;
     }
+
     return {
       questionId: q.id,
       isCorrect,
@@ -137,6 +147,7 @@ function gradeAssessment(quiz, answers) {
     };
   });
   const score = Math.round((earned / total) * 100);
+
   return {
     score,
     passed: pending === 0 && score >= quiz.passingScore,
@@ -147,8 +158,10 @@ function gradeAssessment(quiz, answers) {
     results,
   };
 }
+
 async function recordAssessment(userId, quiz, answers, result) {
   const id = randomUUID();
+
   await execute(
     'INSERT INTO submissoes_questionario (id, id_utilizador, id_aula, respostas, resultado, nota, aprovado, pendente, criado_em) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
     [
@@ -163,8 +176,10 @@ async function recordAssessment(userId, quiz, answers, result) {
       new Date().toISOString(),
     ],
   );
+
   return id;
 }
+
 async function hasPassedAssessment(userId, lessonId) {
   return Boolean(
     await queryOne(
@@ -173,6 +188,7 @@ async function hasPassedAssessment(userId, lessonId) {
     ),
   );
 }
+
 exports.loadAssessment = loadAssessment;
 exports.publicAssessment = publicAssessment;
 exports.gradeAssessment = gradeAssessment;

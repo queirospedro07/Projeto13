@@ -10,6 +10,7 @@ import {
   LuVideo as Video,
 } from 'react-icons/lu';
 import { formatDuration } from '../../utils/formatters';
+
 export const getYouTubeEmbedUrl = (url) => {
   if (!url) return null;
   const trimmed = url.trim();
@@ -19,8 +20,10 @@ export const getYouTubeEmbedUrl = (url) => {
   if (match && match[1]) {
     return `https://www.youtube-nocookie.com/embed/${match[1]}?rel=0&modestbranding=1`;
   }
+
   return null;
 };
+
 export const LessonVideoPlayer = ({
   videoUrl,
   title,
@@ -49,6 +52,7 @@ export const LessonVideoPlayer = ({
       setIsPlaying(true);
     }
   };
+
   const handleTimeUpdate = () => {
     if (videoRef.current) {
       setCurrentTime(videoRef.current.currentTime);
@@ -57,6 +61,7 @@ export const LessonVideoPlayer = ({
       }
     }
   };
+
   const handleSeek = (e) => {
     const time = Number(e.target.value);
     if (videoRef.current) {
@@ -64,18 +69,22 @@ export const LessonVideoPlayer = ({
       setCurrentTime(time);
     }
   };
+
   const handleSpeedChange = (speed) => {
     if (videoRef.current) {
       videoRef.current.playbackRate = speed;
       setPlaybackRate(speed);
     }
+
     setShowSpeedMenu(false);
   };
+
   const toggleMute = () => {
     if (!videoRef.current) return;
     videoRef.current.muted = !isMuted;
     setIsMuted(!isMuted);
   };
+
   return (
     <div className="lesson-video-player-panel">
       <div className="lesson-video-player-panel-2 ui-group">
@@ -108,7 +117,10 @@ export const LessonVideoPlayer = ({
             <p className="lesson-video-player-description">
               Transmissão em alta definição 1080p disponível para reprodução.
             </p>
-            <button onClick={togglePlay} className="lesson-video-player-button">
+            <button
+              onClick={togglePlay}
+              className="lesson-video-player-button"
+            >
               <Play className="lesson-video-player-play" />
               <span>Iniciar Vídeo-Aula</span>
             </button>
@@ -128,7 +140,10 @@ export const LessonVideoPlayer = ({
 
             <div className="lesson-video-player-panel-6">
               <div className="lesson-video-player-panel-7">
-                <button onClick={togglePlay} className="lesson-video-player-button-2">
+                <button
+                  onClick={togglePlay}
+                  className="lesson-video-player-button-2"
+                >
                   {isPlaying ? (
                     <Pause className="lesson-video-player-pause" />
                   ) : (
@@ -137,7 +152,10 @@ export const LessonVideoPlayer = ({
                 </button>
 
                 <div className="lesson-video-player-panel-8">
-                  <button onClick={toggleMute} className="lesson-video-player-button-2">
+                  <button
+                    onClick={toggleMute}
+                    className="lesson-video-player-button-2"
+                  >
                     {isMuted ? (
                       <VolumeX className="lesson-video-player-volume-x" />
                     ) : (

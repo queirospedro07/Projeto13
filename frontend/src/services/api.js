@@ -1,4 +1,5 @@
 import axios from 'axios';
+
 const envApiUrl = import.meta.env?.VITE_API_URL;
 const API_BASE = envApiUrl ? `${envApiUrl.replace(/\/$/, '')}` : '/api';
 
@@ -11,18 +12,22 @@ export const api = axios.create({
   },
 });
 const TOKEN_KEYS = ['nexo_token', 'token', 'learnspace_token'];
+
 export function getAuthToken() {
   for (const storage of [sessionStorage, localStorage])
     for (const key of TOKEN_KEYS) {
       const token = storage.getItem(key);
       if (token) return token;
     }
+
   return null;
 }
+
 export function setAuthToken(token, remember = false) {
   removeAuthToken();
   (remember ? localStorage : sessionStorage).setItem('nexo_token', token);
 }
+
 export function removeAuthToken() {
   for (const storage of [sessionStorage, localStorage])
     for (const key of TOKEN_KEYS) storage.removeItem(key);
@@ -35,6 +40,7 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
     return config;
   },
   (error) => Promise.reject(error),
@@ -54,14 +60,17 @@ api.interceptors.response.use(
         }
       }
     }
+
     const message =
       error.response?.data?.message ||
       error.response?.data?.error ||
       error.message ||
       'Erro no pedido';
     const requestError = new Error(message);
+
     requestError.status = error.response?.status;
     requestError.code = error.code;
+
     return Promise.reject(requestError);
   },
 );

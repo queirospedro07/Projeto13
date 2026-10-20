@@ -23,4 +23,5 @@ const Certificate = {
     );
   },
 };
+
 module.exports = Certificate;

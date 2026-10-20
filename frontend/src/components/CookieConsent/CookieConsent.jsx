@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { LuCookie as Cookie, LuX as X } from 'react-icons/lu';
 import { Button } from '../Button';
+
 export const CookieConsent = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
@@ -12,14 +13,17 @@ export const CookieConsent = () => {
     analytics: true,
     functional: true,
   });
+
   useEffect(() => {
     const consent = localStorage.getItem('nexo_cookie_consent');
     if (!consent) {
       // Delay showing banner slightly for smooth entrance
       const timer = setTimeout(() => setIsVisible(true), 1200);
+
       return () => clearTimeout(timer);
     }
   }, []);
+
   const handleAcceptAll = () => {
     localStorage.setItem(
       'nexo_cookie_consent',
@@ -32,6 +36,7 @@ export const CookieConsent = () => {
     );
     setIsVisible(false);
   };
+
   const handleRejectNonEssential = () => {
     localStorage.setItem(
       'nexo_cookie_consent',
@@ -44,6 +49,7 @@ export const CookieConsent = () => {
     );
     setIsVisible(false);
   };
+
   const handleSaveCustom = () => {
     localStorage.setItem(
       'nexo_cookie_consent',
@@ -55,9 +61,15 @@ export const CookieConsent = () => {
     );
     setIsVisible(false);
   };
+
   if (!isVisible) return null;
+
   return (
-    <div role="region" aria-label="Consentimento de Cookies" className="cookie-consent-panel">
+    <div
+      role="region"
+      aria-label="Consentimento de Cookies"
+      className="cookie-consent-panel"
+    >
       <div className="cookie-consent-panel-2">
         <div className="cookie-consent-panel-3">
           <Cookie className="cookie-consent-cookie" />
@@ -79,7 +91,10 @@ export const CookieConsent = () => {
             Utilizamos cookies essenciais para garantir o funcionamento seguro da plataforma,
             memorizar a sua sessão e aperfeiçoar a sua experiência de formação, em conformidade com
             o RGPD. Saiba mais na nossa{' '}
-            <Link to="/privacy" className="cookie-consent-link">
+            <Link
+              to="/privacy"
+              className="cookie-consent-link"
+            >
               Política de Privacidade
             </Link>
             .
@@ -89,7 +104,12 @@ export const CookieConsent = () => {
             <div className="cookie-consent-panel-6">
               <label className="cookie-consent-field-label">
                 <span>Cookies Essenciais (Autenticação e Sessão)</span>
-                <input type="checkbox" checked disabled className="cookie-consent-field" />
+                <input
+                  type="checkbox"
+                  checked
+                  disabled
+                  className="cookie-consent-field"
+                />
               </label>
               <label className="cookie-consent-field-label-2">
                 <span>Cookies de Métricas Anónimas</span>
@@ -127,7 +147,10 @@ export const CookieConsent = () => {
                 >
                   Apenas Essenciais
                 </Button>
-                <button onClick={() => setShowDetails(true)} className="cookie-consent-button-4">
+                <button
+                  onClick={() => setShowDetails(true)}
+                  className="cookie-consent-button-4"
+                >
                   Personalizar
                 </button>
               </>
@@ -157,4 +180,5 @@ export const CookieConsent = () => {
     </div>
   );
 };
+
 export default CookieConsent;

@@ -1,5 +1,5 @@
 import './Toast.css';
-import { createContext, useContext, useState, useCallback } from 'react';
+import { useContext, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import {
   LuCircleCheck as CheckCircle2,
@@ -8,11 +8,14 @@ import {
   LuX as X,
   LuTriangleAlert as AlertTriangle,
 } from 'react-icons/lu';
-const ToastContext = createContext(undefined);
+
+import { ToastContext } from '../../context/contexts';
+
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
   const toast = useCallback(({ title, message, type = 'success' }) => {
     const id = Math.random().toString(36).substring(2, 9);
+
     setToasts((prev) => [
       ...prev.slice(-4),
       {
@@ -29,6 +32,7 @@ export const ToastProvider = ({ children }) => {
   const removeToast = (id) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
+
   return (
     <ToastContext.Provider
       value={{
@@ -39,9 +43,16 @@ export const ToastProvider = ({ children }) => {
 
       {typeof document !== 'undefined' &&
         createPortal(
-          <div className="toast-panel" role="status" aria-live="polite">
+          <div
+            className="toast-panel"
+            role="status"
+            aria-live="polite"
+          >
             {toasts.map((t) => (
-              <div key={t.id} className="toast-panel-2 toast-enter">
+              <div
+                key={t.id}
+                className="toast-panel-2 toast-enter"
+              >
                 <div className="toast-panel-3">
                   {t.type === 'success' && (
                     <div className="toast-panel-4">
@@ -86,8 +97,10 @@ export const ToastProvider = ({ children }) => {
     </ToastContext.Provider>
   );
 };
+
 export const useToast = () => {
   const context = useContext(ToastContext);
   if (!context) throw new Error('useToast must be used within ToastProvider');
+
   return context;
 };

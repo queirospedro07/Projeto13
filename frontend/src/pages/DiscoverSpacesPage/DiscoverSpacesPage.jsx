@@ -20,6 +20,7 @@ import { useAuth } from '../../context/AuthContext';
 import { CourseEnrollModal } from '../../components/CourseEnrollModal';
 import { api } from '../../services/api';
 import { formatCoursePrice, formatCategory } from '../../utils/formatters';
+
 export const DiscoverSpacesPage = () => {
   const { user } = useAuth();
   const [spaces, setSpaces] = useState([]);
@@ -68,6 +69,7 @@ export const DiscoverSpacesPage = () => {
             params: params,
           })
           .then(({ data }) => data);
+
         setSpaces(data || []);
       } catch (err) {
         console.error('Erro ao carregar catálogo de cursos:', err);
@@ -77,6 +79,7 @@ export const DiscoverSpacesPage = () => {
     },
     [selectedCategory, search],
   );
+
   useEffect(() => {
     fetchSpaces();
   }, [selectedCategory, user?.id]);
@@ -84,7 +87,9 @@ export const DiscoverSpacesPage = () => {
     const handleVisibilityOrEnrollmentChange = () => {
       fetchSpaces(true);
     };
+
     window.addEventListener('nexo_courses_visibility_changed', handleVisibilityOrEnrollmentChange);
+
     return () => {
       window.removeEventListener(
         'nexo_courses_visibility_changed',
@@ -92,6 +97,7 @@ export const DiscoverSpacesPage = () => {
       );
     };
   }, [fetchSpaces]);
+
   const filteredSpaces = spaces.filter((space) => {
     const isFree =
       space.isFree || space.price === 0 || space.price === null || space.price === undefined;
@@ -100,14 +106,19 @@ export const DiscoverSpacesPage = () => {
     const hasCommunity = Boolean(space.spaceId || (space.channelsCount && space.channelsCount > 0));
     if (formatFilter === 'community' && !hasCommunity) return false;
     if (formatFilter === 'self-paced' && hasCommunity) return false;
+
     return true;
   });
+
   return (
     <div className="discover-spaces-panel">
       <div className="discover-spaces-panel-2">
         <div>
           <div className="discover-spaces-panel-3">
-            <Badge size="md" variant="primary">
+            <Badge
+              size="md"
+              variant="primary"
+            >
               Catálogo
             </Badge>
           </div>
@@ -120,6 +131,7 @@ export const DiscoverSpacesPage = () => {
         {user?.role === 'CREATOR' || user?.role === 'ADMIN' ? (
           <Link to="/creator/courses/new">
             <Button
+              as="span"
               variant="primary"
               size="md"
               leftIcon={<Plus className="discover-spaces-plus" />}
@@ -131,6 +143,7 @@ export const DiscoverSpacesPage = () => {
         ) : (
           <Link to="/creator/apply">
             <Button
+              as="span"
               variant="secondary"
               size="md"
               leftIcon={<GraduationCap className="discover-spaces-plus" />}
@@ -258,8 +271,12 @@ export const DiscoverSpacesPage = () => {
             const hasCommunity =
               (space.channelsCount && space.channelsCount > 0) || space.hasCommunity !== false;
             const isEnrolledInCourse = Boolean(space.isMember || space.isEnrolled);
+
             return (
-              <div key={space.id} className="discover-spaces-panel-15 ui-group">
+              <div
+                key={space.id}
+                className="discover-spaces-panel-15 ui-group"
+              >
                 <Link
                   to={`/courses/${space.slug || space.id}`}
                   className="discover-spaces-link group/thumb"
@@ -436,10 +453,12 @@ export const DiscoverSpacesPage = () => {
               ),
             );
           }
+
           fetchSpaces(true);
         }}
       />
     </div>
   );
 };
+
 export default DiscoverSpacesPage;

@@ -39,6 +39,7 @@ import { useAuth } from '../../context/AuthContext';
 import { soundEffects } from '../../services/soundEffects';
 import { api } from '../../services/api';
 import { formatCoursePrice, formatCategory } from '../../utils/formatters';
+
 export const QuizLessonEditor = ({ quiz, onChange }) => {
   const currentQuiz = quiz || {
     title: 'Questionário de Avaliação',
@@ -53,8 +54,10 @@ export const QuizLessonEditor = ({ quiz, onChange }) => {
       [field]: value,
     });
   };
+
   const handleAddQuestion = (type = 'single') => {
     soundEffects.play('click');
+
     const newQ = {
       id: `q-${crypto.randomUUID()}-${Math.random().toString(36).substr(2, 4)}`,
       question: '',
@@ -94,8 +97,10 @@ export const QuizLessonEditor = ({ quiz, onChange }) => {
       minWords: type === 'open-ended' ? 10 : undefined,
       expectedAnswer: '',
     };
+
     handleUpdateField('questions', [...currentQuiz.questions, newQ]);
   };
+
   const handleUpdateQuestion = (qId, updates) => {
     const updated = currentQuiz.questions.map((q) => {
       if (q.id !== qId) return q;
@@ -135,10 +140,13 @@ export const QuizLessonEditor = ({ quiz, onChange }) => {
           },
         ];
       }
+
       return nextQ;
     });
+
     handleUpdateField('questions', updated);
   };
+
   const handleRemoveQuestion = (qId) => {
     soundEffects.play('click');
     handleUpdateField(
@@ -146,8 +154,10 @@ export const QuizLessonEditor = ({ quiz, onChange }) => {
       currentQuiz.questions.filter((q) => q.id !== qId),
     );
   };
+
   const handleAddOption = (qId) => {
     soundEffects.play('click');
+
     const question = currentQuiz.questions.find((q) => q.id === qId);
     if (!question) return;
     const optCount = question.options.length + 1;
@@ -156,10 +166,12 @@ export const QuizLessonEditor = ({ quiz, onChange }) => {
       text: `Opção ${optCount}`,
       isCorrect: false,
     };
+
     handleUpdateQuestion(qId, {
       options: [...question.options, newOpt],
     });
   };
+
   const handleUpdateOption = (qId, optId, text) => {
     const question = currentQuiz.questions.find((q) => q.id === qId);
     if (!question) return;
@@ -171,12 +183,15 @@ export const QuizLessonEditor = ({ quiz, onChange }) => {
           }
         : o,
     );
+
     handleUpdateQuestion(qId, {
       options,
     });
   };
+
   const handleToggleOptionCorrect = (qId, optId) => {
     soundEffects.play('click');
+
     const question = currentQuiz.questions.find((q) => q.id === qId);
     if (!question) return;
     let options;
@@ -209,12 +224,15 @@ export const QuizLessonEditor = ({ quiz, onChange }) => {
         );
       }
     }
+
     handleUpdateQuestion(qId, {
       options,
     });
   };
+
   const handleRemoveOption = (qId, optId) => {
     soundEffects.play('click');
+
     const question = currentQuiz.questions.find((q) => q.id === qId);
     if (!question || question.options.length <= 2) return;
     let remaining = question.options.filter((o) => o.id !== optId);
@@ -228,10 +246,12 @@ export const QuizLessonEditor = ({ quiz, onChange }) => {
           : o,
       );
     }
+
     handleUpdateQuestion(qId, {
       options: remaining,
     });
   };
+
   return (
     <div className="course-builder-panel">
       <div className="course-builder-panel-2">
@@ -294,7 +314,10 @@ export const QuizLessonEditor = ({ quiz, onChange }) => {
           </div>
         ) : (
           currentQuiz.questions.map((q, qIdx) => (
-            <div key={q.id} className="course-builder-panel-9">
+            <div
+              key={q.id}
+              className="course-builder-panel-9"
+            >
               <div className="course-builder-panel-10">
                 <div className="course-builder-panel-11">
                   <span className="course-builder-label-2">{qIdx + 1}</span>
@@ -387,6 +410,7 @@ export const QuizLessonEditor = ({ quiz, onChange }) => {
                           .split(',')
                           .map((s) => s.trim())
                           .filter(Boolean);
+
                         handleUpdateQuestion(q.id, {
                           keywords: kw,
                         });
@@ -535,6 +559,7 @@ export const QuizLessonEditor = ({ quiz, onChange }) => {
     </div>
   );
 };
+
 const PRESET_THUMBNAILS = [
   {
     label: 'Programação',
@@ -553,6 +578,7 @@ const PRESET_THUMBNAILS = [
     url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=80',
   },
 ];
+
 export const CourseBuilderPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -616,13 +642,17 @@ export const CourseBuilderPage = () => {
     soundEffects.play('click');
     setLearningOutcomes((prev) => [...prev, '']);
   };
+
   const handleUpdateOutcome = (index, value) => {
     setLearningOutcomes((prev) => {
       const next = [...prev];
+
       next[index] = value;
+
       return next;
     });
   };
+
   const handleRemoveOutcome = (index) => {
     soundEffects.play('click');
     setLearningOutcomes((prev) => prev.filter((_, idx) => idx !== index));
@@ -633,13 +663,17 @@ export const CourseBuilderPage = () => {
     soundEffects.play('click');
     setRequirements((prev) => [...prev, '']);
   };
+
   const handleUpdateRequirement = (index, value) => {
     setRequirements((prev) => {
       const next = [...prev];
+
       next[index] = value;
+
       return next;
     });
   };
+
   const handleRemoveRequirement = (index) => {
     soundEffects.play('click');
     setRequirements((prev) => prev.filter((_, idx) => idx !== index));
@@ -660,6 +694,7 @@ export const CourseBuilderPage = () => {
           });
           continue;
         }
+
         if (
           !['application/pdf', 'image/png', 'image/jpeg', 'image/webp', 'text/plain'].includes(
             file.type,
@@ -672,8 +707,10 @@ export const CourseBuilderPage = () => {
           });
           continue;
         }
+
         const base64Data = await new Promise((resolve, reject) => {
           const reader = new FileReader();
+
           reader.onload = () => resolve(reader.result);
           reader.onerror = reject;
           reader.readAsDataURL(file);
@@ -687,6 +724,7 @@ export const CourseBuilderPage = () => {
           sizeBytes: file.size,
           url: base64Data,
         };
+
         setDocuments((prev) => [...prev, newDoc]);
         toast({
           title: 'Documento Anexado',
@@ -705,13 +743,16 @@ export const CourseBuilderPage = () => {
       if (docInputRef.current) docInputRef.current.value = '';
     }
   };
+
   const handleRemoveDocument = (docId) => {
     soundEffects.play('click');
     setDocuments((prev) => prev.filter((d) => d.id !== docId));
   };
+
   useEffect(() => {
     if (!isEditMode || !editCourseId) return;
     let isMounted = true;
+
     setIsLoadingCourse(true);
     api
       .get(`/creator/courses/${editCourseId}`)
@@ -720,6 +761,7 @@ export const CourseBuilderPage = () => {
         if (!isMounted || !course) return;
         setTitle(course.title || '');
         setDescription(course.description || '');
+
         const catMap = {
           programming: 'Programação & Software',
           programação: 'Programação & Software',
@@ -733,6 +775,7 @@ export const CourseBuilderPage = () => {
         };
         const rawCat = course.category || '';
         const mappedCat = catMap[rawCat.toLowerCase()] || rawCat || 'Programação & Software';
+
         setCategory(mappedCat);
         setDifficulty(course.difficulty || 'Iniciante');
         setLanguage(course.language || 'Português');
@@ -754,12 +797,15 @@ export const CourseBuilderPage = () => {
         if (Array.isArray(course.learningOutcomes)) {
           setLearningOutcomes(course.learningOutcomes.length > 0 ? course.learningOutcomes : ['']);
         }
+
         if (Array.isArray(course.requirements)) {
           setRequirements(course.requirements.length > 0 ? course.requirements : ['']);
         }
+
         if (Array.isArray(course.documents)) {
           setDocuments(course.documents);
         }
+
         if (Array.isArray(course.channels) && course.channels.length > 0) {
           setChannels(
             course.channels.map((c) => ({
@@ -774,6 +820,7 @@ export const CourseBuilderPage = () => {
             })),
           );
         }
+
         if (Array.isArray(course.modules)) {
           setModules(
             course.modules.map((m) => ({
@@ -809,20 +856,25 @@ export const CourseBuilderPage = () => {
       .finally(() => {
         if (isMounted) setIsLoadingCourse(false);
       });
+
     return () => {
       isMounted = false;
     };
   }, [editCourseId, isEditMode, user]);
+
   const toggleChannelExpand = (id) => {
     setExpandedChannelIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
+
       return next;
     });
   };
+
   const handleAddChannel = (type) => {
     soundEffects.play('click');
+
     const count = channels.filter((c) => c.type === type).length + 1;
     const newChan = {
       id: `ch-${crypto.randomUUID()}`,
@@ -834,9 +886,11 @@ export const CourseBuilderPage = () => {
       guidingQuestion: '',
       guidelines: 'Comunique de forma cordial e profissional.',
     };
+
     setChannels((prev) => [...prev, newChan]);
     toggleChannelExpand(newChan.id);
   };
+
   const handleUpdateChannel = (id, field, value) => {
     setChannels((prev) =>
       prev.map((c) => {
@@ -846,11 +900,13 @@ export const CourseBuilderPage = () => {
             .toLowerCase()
             .replace(/\s+/g, '-')
             .replace(/[^a-z0-9-_]/g, '');
+
           return {
             ...c,
             name: formatted,
           };
         }
+
         return {
           ...c,
           [field]: value,
@@ -858,6 +914,7 @@ export const CourseBuilderPage = () => {
       }),
     );
   };
+
   const handleRemoveChannel = (id) => {
     soundEffects.play('click');
     if (channels.length <= 1) {
@@ -866,8 +923,10 @@ export const CourseBuilderPage = () => {
         message: 'O curso deve conter pelo menos 1 canal.',
         type: 'error',
       });
+
       return;
     }
+
     if (
       isEditMode &&
       !String(id).startsWith('ch-') &&
@@ -876,8 +935,10 @@ export const CourseBuilderPage = () => {
       return;
     setChannels((prev) => prev.filter((c) => c.id !== id));
   };
+
   const handleAddModule = () => {
     soundEffects.play('click');
+
     const newMod = {
       id: `mod-${crypto.randomUUID()}`,
       title: `Módulo ${modules.length + 1}`,
@@ -885,8 +946,10 @@ export const CourseBuilderPage = () => {
       dripMode: 'instant',
       lessons: [],
     };
+
     setModules((prev) => [...prev, newMod]);
   };
+
   const handleMoveModule = (mIdx, direction) => {
     soundEffects.play('click');
     setModules((prev) => {
@@ -894,11 +957,14 @@ export const CourseBuilderPage = () => {
       const targetIdx = direction === 'up' ? mIdx - 1 : mIdx + 1;
       if (targetIdx < 0 || targetIdx >= next.length) return prev;
       const temp = next[mIdx];
+
       next[mIdx] = next[targetIdx];
       next[targetIdx] = temp;
+
       return next;
     });
   };
+
   const handleMoveLesson = (modId, lIdx, direction) => {
     soundEffects.play('click');
     setModules((prev) =>
@@ -908,8 +974,10 @@ export const CourseBuilderPage = () => {
         const targetIdx = direction === 'up' ? lIdx - 1 : lIdx + 1;
         if (targetIdx < 0 || targetIdx >= lessons.length) return m;
         const temp = lessons[lIdx];
+
         lessons[lIdx] = lessons[targetIdx];
         lessons[targetIdx] = temp;
+
         return {
           ...m,
           lessons,
@@ -917,14 +985,17 @@ export const CourseBuilderPage = () => {
       }),
     );
   };
+
   const toggleModuleCollapse = (id) => {
     setCollapsedModuleIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
+
       return next;
     });
   };
+
   const handleUpdateModule = (modId, field, value) => {
     setModules((prev) =>
       prev.map((m) =>
@@ -937,10 +1008,12 @@ export const CourseBuilderPage = () => {
       ),
     );
   };
+
   const handleRemoveModule = (modId) => {
     soundEffects.play('click');
     setModules((prev) => prev.filter((m) => m.id !== modId));
   };
+
   const handleAddLesson = (modId, lessonType = 'video') => {
     soundEffects.play('click');
     setModules((prev) =>
@@ -972,6 +1045,7 @@ export const CourseBuilderPage = () => {
             questions: [],
           };
         }
+
         return {
           ...m,
           lessons: [...m.lessons, newLes],
@@ -979,14 +1053,17 @@ export const CourseBuilderPage = () => {
       }),
     );
   };
+
   const handleUpdateLesson = (modId, lesId, field, value) => {
     setModules((prev) =>
       prev.map((m) => {
         if (m.id !== modId) return m;
+
         return {
           ...m,
           lessons: m.lessons.map((l) => {
             if (l.id !== lesId) return l;
+
             return {
               ...l,
               [field]: value,
@@ -996,11 +1073,13 @@ export const CourseBuilderPage = () => {
       }),
     );
   };
+
   const handleRemoveLesson = (modId, lesId) => {
     soundEffects.play('click');
     setModules((prev) =>
       prev.map((m) => {
         if (m.id !== modId) return m;
+
         return {
           ...m,
           lessons: m.lessons.filter((l) => l.id !== lesId),
@@ -1008,6 +1087,7 @@ export const CourseBuilderPage = () => {
       }),
     );
   };
+
   const handleThumbnailFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -1017,14 +1097,18 @@ export const CourseBuilderPage = () => {
         message: 'Selecione uma imagem (JPG, PNG, WebP).',
         type: 'error',
       });
+
       return;
     }
+
     setIsCompressingThumb(true);
     try {
       const base64 = await new Promise((resolve, reject) => {
         const reader = new FileReader();
+
         reader.onload = (ev) => {
           const img = new Image();
+
           img.onload = () => {
             const canvas = document.createElement('canvas');
             let { width, height } = img;
@@ -1038,22 +1122,29 @@ export const CourseBuilderPage = () => {
                 height = max;
               }
             }
+
             canvas.width = width;
             canvas.height = height;
+
             const ctx = canvas.getContext('2d');
             if (!ctx) {
               reject(new Error('canvas'));
+
               return;
             }
+
             ctx.drawImage(img, 0, 0, width, height);
             resolve(canvas.toDataURL('image/jpeg', 0.82));
           };
+
           img.onerror = reject;
           img.src = ev.target?.result;
         };
+
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
+
       setThumbnailUrl(base64);
     } catch {
       toast({
@@ -1066,6 +1157,7 @@ export const CourseBuilderPage = () => {
       if (thumbnailInputRef.current) thumbnailInputRef.current.value = '';
     }
   };
+
   const handlePublish = async (publish = true) => {
     if (savingCourse.current) return;
     if (!title.trim()) {
@@ -1075,8 +1167,10 @@ export const CourseBuilderPage = () => {
         type: 'error',
       });
       setActiveStep(1);
+
       return;
     }
+
     savingCourse.current = true;
     setIsSubmitting(true);
     try {
@@ -1103,10 +1197,13 @@ export const CourseBuilderPage = () => {
       if (resultId) await api.put(`/creator/courses/${resultId}`, payload);
       else {
         const { data } = await api.post('/creator/courses', payload);
+
         resultId = data.id;
         savedCourseId.current = resultId;
       }
+
       const { data: saved } = await api.get(`/creator/courses/${resultId}`);
+
       setPublication(saved);
       if (publish) await api.post(`/creator/courses/${resultId}/submit-review`);
       toast({
@@ -1132,6 +1229,7 @@ export const CourseBuilderPage = () => {
       setIsSubmitting(false);
     }
   };
+
   if (isLoadingCourse) {
     return (
       <div className="course-builder-panel-20">
@@ -1140,12 +1238,17 @@ export const CourseBuilderPage = () => {
       </div>
     );
   }
+
   return (
     <div className="course-builder-panel-21">
       <header className="course-builder-header">
         <div className="course-builder-panel-22">
           <div className="course-builder-panel-23">
-            <Link to="/creator" className="course-builder-link" title="Voltar ao Painel do Criador">
+            <Link
+              to="/creator"
+              className="course-builder-link"
+              title="Voltar ao Painel do Criador"
+            >
               <ArrowLeft className="course-builder-render-badge-icon" />
             </Link>
             <div className="course-builder-panel-24">
@@ -1188,7 +1291,10 @@ export const CourseBuilderPage = () => {
 
       <main className="course-builder-main">
         {publication && <CourseFeedback course={publication} />}
-        <nav aria-label="Progresso da criação do curso" className="course-builder-navigation">
+        <nav
+          aria-label="Progresso da criação do curso"
+          className="course-builder-navigation"
+        >
           <div className="course-builder-panel-26">
             {[
               {
@@ -1213,6 +1319,7 @@ export const CourseBuilderPage = () => {
               },
             ].map((st) => {
               const isCurrent = activeStep === st.num;
+
               return (
                 <button
                   key={st.num}
@@ -1364,6 +1471,7 @@ export const CourseBuilderPage = () => {
                     onDrop={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
+
                       const file = e.dataTransfer.files?.[0];
                       if (file && file.type.startsWith('image/')) {
                         handleThumbnailFileChange({
@@ -1499,7 +1607,10 @@ export const CourseBuilderPage = () => {
 
               <div className="course-builder-panel-5">
                 {learningOutcomes.map((outcome, idx) => (
-                  <div key={idx} className="course-builder-panel-11">
+                  <div
+                    key={idx}
+                    className="course-builder-panel-11"
+                  >
                     <div className="course-builder-panel-46">{idx + 1}</div>
                     <input
                       type="text"
@@ -1549,7 +1660,10 @@ export const CourseBuilderPage = () => {
 
               <div className="course-builder-panel-5">
                 {requirements.map((reqItem, idx) => (
-                  <div key={idx} className="course-builder-panel-11">
+                  <div
+                    key={idx}
+                    className="course-builder-panel-11"
+                  >
                     <div className="course-builder-panel-47">{idx + 1}</div>
                     <input
                       type="text"
@@ -1625,7 +1739,10 @@ export const CourseBuilderPage = () => {
               ) : (
                 <div className="course-builder-panel-49">
                   {documents.map((doc, dIdx) => (
-                    <div key={doc.id || dIdx} className="course-builder-panel-50 subtle-shadow">
+                    <div
+                      key={doc.id || dIdx}
+                      className="course-builder-panel-50 subtle-shadow"
+                    >
                       <div className="course-builder-panel-51">
                         <div className="course-builder-panel-52">{doc.type || 'PDF'}</div>
                         <div className="course-builder-panel-24">
@@ -1634,6 +1751,7 @@ export const CourseBuilderPage = () => {
                             value={doc.title}
                             onChange={(e) => {
                               const val = e.target.value;
+
                               setDocuments((prev) =>
                                 prev.map((d, idx) =>
                                   idx === dIdx
@@ -1766,8 +1884,12 @@ export const CourseBuilderPage = () => {
                   {channels.map((chan) => {
                     const isVoice = chan.type === 'voice';
                     const isAnnouncement = chan.accessMode === 'announcement';
+
                     return (
-                      <div key={chan.id} className="course-builder-panel-56">
+                      <div
+                        key={chan.id}
+                        className="course-builder-panel-56"
+                      >
                         <div className="course-builder-panel-6">
                           <div className="course-builder-panel-51">
                             <div className="course-builder-panel-57">
@@ -1960,8 +2082,12 @@ export const CourseBuilderPage = () => {
             ) : (
               modules.map((mod, mIdx) => {
                 const isCollapsed = collapsedModuleIds.has(mod.id);
+
                 return (
-                  <Card key={mod.id} className="course-builder-card-5">
+                  <Card
+                    key={mod.id}
+                    className="course-builder-card-5"
+                  >
                     <div className="course-builder-panel-55">
                       <div className="course-builder-panel-71">
                         <button
@@ -2050,7 +2176,10 @@ export const CourseBuilderPage = () => {
                           </p>
                         ) : (
                           mod.lessons.map((les, lIdx) => (
-                            <div key={les.id} className="course-builder-panel-75">
+                            <div
+                              key={les.id}
+                              className="course-builder-panel-75"
+                            >
                               <div className="course-builder-panel-76">
                                 <div className="course-builder-panel-77">
                                   <span className="course-builder-label-14">{lIdx + 1}</span>
@@ -2155,6 +2284,7 @@ export const CourseBuilderPage = () => {
                                         calloutText: '',
                                         checklist: [],
                                       };
+
                                       handleUpdateLesson(mod.id, les.id, 'richArticle', {
                                         ...curr,
                                         markdown: e.target.value,
@@ -2348,7 +2478,11 @@ export const CourseBuilderPage = () => {
 
               <div className="course-builder-panel-85">
                 {thumbnailUrl ? (
-                  <img src={thumbnailUrl} alt={title} className="course-builder-image-2" />
+                  <img
+                    src={thumbnailUrl}
+                    alt={title}
+                    className="course-builder-image-2"
+                  />
                 ) : (
                   <div className="course-builder-panel-86">
                     <BookOpen className="course-builder-book-open-2" />

@@ -14,6 +14,7 @@ import { IncomingCallModal } from './components/IncomingCallModal';
 import { CallRoomModal } from './components/CallRoomModal';
 import { useLocation } from 'react-router-dom';
 import { LandingPage } from './pages/LandingPage';
+
 const LoginPage = React.lazy(() => import('./pages/LoginPage'));
 const RegisterPage = React.lazy(() => import('./pages/RegisterPage'));
 const ForgotPasswordPage = React.lazy(() => import('./pages/ForgotPasswordPage'));
@@ -41,13 +42,17 @@ const SearchResultsPage = React.lazy(() => import('./pages/SearchResultsPage'));
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 const PageViewTracker = () => {
   const location = useLocation();
+
   React.useEffect(() => {
     trackPageView(location.pathname + location.search);
   }, [location.pathname, location.search]);
+
   return null;
 };
+
 export const App = () => {
   const [activeDirectCall, setActiveDirectCall] = React.useState(null);
+
   return (
     <ThemeProvider>
       <AuthProvider>
@@ -73,25 +78,67 @@ export const App = () => {
                 )}
                 <React.Suspense
                   fallback={
-                    <div className="app-panel" role="status">
+                    <div
+                      className="app-panel"
+                      role="status"
+                    >
                       A carregar...
                     </div>
                   }
                 >
                   <Routes>
-                    <Route path="/" element={<Layout />}>
-                      <Route index element={<LandingPage />} />
-                      <Route path="login" element={<LoginPage />} />
-                      <Route path="register" element={<RegisterPage />} />
-                      <Route path="forgot-password" element={<ForgotPasswordPage />} />
-                      <Route path="reset-password" element={<ResetPasswordPage />} />
-                      <Route path="explore" element={<DiscoverSpacesPage />} />
-                      <Route path="courses/:id" element={<CourseDetailsPage />} />
-                      <Route path="certificates/verify/:id" element={<CertificateViewPage />} />
-                      <Route path="help" element={<FaqPage />} />
-                      <Route path="support" element={<FaqPage />} />
-                      <Route path="privacy" element={<PrivacyPolicyPage />} />
-                      <Route path="terms" element={<TermsPage />} />
+                    <Route
+                      path="/"
+                      element={<Layout />}
+                    >
+                      <Route
+                        index
+                        element={<LandingPage />}
+                      />
+                      <Route
+                        path="login"
+                        element={<LoginPage />}
+                      />
+                      <Route
+                        path="register"
+                        element={<RegisterPage />}
+                      />
+                      <Route
+                        path="forgot-password"
+                        element={<ForgotPasswordPage />}
+                      />
+                      <Route
+                        path="reset-password"
+                        element={<ResetPasswordPage />}
+                      />
+                      <Route
+                        path="explore"
+                        element={<DiscoverSpacesPage />}
+                      />
+                      <Route
+                        path="courses/:id"
+                        element={<CourseDetailsPage />}
+                      />
+                      <Route
+                        path="certificates/verify/:id"
+                        element={<CertificateViewPage />}
+                      />
+                      <Route
+                        path="help"
+                        element={<FaqPage />}
+                      />
+                      <Route
+                        path="support"
+                        element={<FaqPage />}
+                      />
+                      <Route
+                        path="privacy"
+                        element={<PrivacyPolicyPage />}
+                      />
+                      <Route
+                        path="terms"
+                        element={<TermsPage />}
+                      />
                       <Route
                         path="search"
                         element={
@@ -176,7 +223,12 @@ export const App = () => {
                       />
                       <Route
                         path="creator/dashboard"
-                        element={<Navigate to="/creator" replace />}
+                        element={
+                          <Navigate
+                            to="/creator"
+                            replace
+                          />
+                        }
                       />
                       <Route
                         path="creator/courses/new"
@@ -228,12 +280,47 @@ export const App = () => {
                           </ProtectedRoute>
                         }
                       />
-                      <Route path="community" element={<Navigate to="/explore" replace />} />
-                      <Route path="progress" element={<Navigate to="/library" replace />} />
-                      <Route path="achievements" element={<Navigate to="/profile" replace />} />
-                      <Route path="leaderboard" element={<Navigate to="/explore" replace />} />
+                      <Route
+                        path="community"
+                        element={
+                          <Navigate
+                            to="/explore"
+                            replace
+                          />
+                        }
+                      />
+                      <Route
+                        path="progress"
+                        element={
+                          <Navigate
+                            to="/library"
+                            replace
+                          />
+                        }
+                      />
+                      <Route
+                        path="achievements"
+                        element={
+                          <Navigate
+                            to="/profile"
+                            replace
+                          />
+                        }
+                      />
+                      <Route
+                        path="leaderboard"
+                        element={
+                          <Navigate
+                            to="/explore"
+                            replace
+                          />
+                        }
+                      />
 
-                      <Route path="*" element={<NotFoundPage />} />
+                      <Route
+                        path="*"
+                        element={<NotFoundPage />}
+                      />
                     </Route>
                   </Routes>
                 </React.Suspense>
@@ -245,4 +332,5 @@ export const App = () => {
     </ThemeProvider>
   );
 };
+
 export default App;

@@ -1,4 +1,12 @@
 require('./config/environment.js');
+
+if (process.env.NODE_ENV === 'production') {
+  const { validateProductionEnvironment } = require('./config/production.js');
+  const errors = validateProductionEnvironment(process.env);
+
+  if (errors.length) throw new Error(`Configuração de produção inválida:\n${errors.join('\n')}`);
+}
+
 const http = require('http');
 const { Server } = require('socket.io');
 const app = require('./app.js');
@@ -16,6 +24,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 128 * 1024,
   connectTimeout: 10000,
 });
+
 io.use(authenticateSocket);
 setupSocketIO(io);
 app.set('io', io);
@@ -33,12 +42,15 @@ connectDB()
     console.error('Erro ao ligar à base de dados:', err.message);
     process.exit(1);
   });
+
 let shuttingDown = false;
 const handleShutdown = () => {
   if (shuttingDown) return;
   shuttingDown = true;
   console.log('A encerrar servidor...');
+
   const deadline = setTimeout(() => process.exit(1), 10000);
+
   deadline.unref();
   io.close(async () => {
     await closeDatabase();
@@ -46,5 +58,6 @@ const handleShutdown = () => {
     process.exit(0);
   });
 };
+
 process.on('SIGTERM', handleShutdown);
 process.on('SIGINT', handleShutdown);

@@ -10,14 +10,17 @@ const hasAnalyticsConsent = () => {
     if (!raw || raw === 'rejected') return false;
     if (raw === 'accepted') return true;
     const parsed = JSON.parse(raw);
+
     return parsed?.analytics === true;
   } catch {
     return false;
   }
 };
+
 export const initGA = () => {
   if (!hasAnalyticsConsent()) return;
 };
+
 export const trackPageView = (path = window.location.pathname) => {
   try {
     if (!hasAnalyticsConsent()) return;
@@ -29,6 +32,7 @@ export const trackPageView = (path = window.location.pathname) => {
       screen: `${window.innerWidth}x${window.innerHeight}`,
     };
     const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+
     existing.push(payload);
     // Keep last 50 events in memory/localStorage
     if (existing.length > 50) existing.shift();
@@ -40,6 +44,7 @@ export const trackPageView = (path = window.location.pathname) => {
     // Silent fail for storage restrictions
   }
 };
+
 export const trackEvent = (eventName, properties = {}) => {
   try {
     if (!hasAnalyticsConsent()) return;
@@ -50,6 +55,7 @@ export const trackEvent = (eventName, properties = {}) => {
       timestamp: new Date().toISOString(),
     };
     const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+
     existing.push(payload);
     if (existing.length > 50) existing.shift();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
@@ -60,6 +66,7 @@ export const trackEvent = (eventName, properties = {}) => {
     // Silent fail
   }
 };
+
 export const getStoredAnalytics = () => {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');

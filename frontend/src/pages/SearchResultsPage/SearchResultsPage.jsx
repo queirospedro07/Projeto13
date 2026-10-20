@@ -15,6 +15,7 @@ import { Avatar } from '../../components/Avatar';
 import { api } from '../../services/api';
 import { formatCoursePrice, formatCategory, formatRole } from '../../utils/formatters';
 import { useAuth } from '../../context/AuthContext';
+
 export const SearchResultsPage = () => {
   const { user, isLoading } = useAuth();
   const location = useLocation();
@@ -24,6 +25,7 @@ export const SearchResultsPage = () => {
   const [courses, setCourses] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
+
   useEffect(() => {
     setQuery(rawQuery);
   }, [rawQuery]);
@@ -31,9 +33,12 @@ export const SearchResultsPage = () => {
     if (!rawQuery) {
       setCourses([]);
       setUsers([]);
+
       return;
     }
+
     let isMounted = true;
+
     setLoading(true);
     Promise.allSettled([
       api
@@ -59,6 +64,7 @@ export const SearchResultsPage = () => {
           usersResult.status === 'fulfilled' && Array.isArray(usersResult.value)
             ? usersResult.value
             : [];
+
         setCourses(nextCourses);
         setUsers(nextUsers);
       })
@@ -71,18 +77,22 @@ export const SearchResultsPage = () => {
       .finally(() => {
         if (isMounted) setLoading(false);
       });
+
     return () => {
       isMounted = false;
     };
   }, [rawQuery]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
+
     const trimmed = query.trim();
     if (!trimmed) return;
     setSearchParams({
       q: trimmed,
     });
   };
+
   if (isLoading) {
     return (
       <div className="search-results-page-panel">
@@ -91,6 +101,7 @@ export const SearchResultsPage = () => {
       </div>
     );
   }
+
   if (!user) {
     return (
       <Navigate
@@ -102,10 +113,14 @@ export const SearchResultsPage = () => {
       />
     );
   }
+
   return (
     <div className="search-results-page-panel-3">
       <div className="search-results-page-panel-4">
-        <form onSubmit={handleSubmit} className="search-results-page-form">
+        <form
+          onSubmit={handleSubmit}
+          className="search-results-page-form"
+        >
           <div className="search-results-page-panel-5">
             <Search className="search-results-page-search" />
             <input
@@ -116,7 +131,11 @@ export const SearchResultsPage = () => {
               className="search-results-page-field"
             />
           </div>
-          <button type="submit" disabled={!query.trim()} className="search-results-page-button">
+          <button
+            type="submit"
+            disabled={!query.trim()}
+            className="search-results-page-button"
+          >
             Pesquisar
           </button>
         </form>
@@ -138,7 +157,10 @@ export const SearchResultsPage = () => {
               {Array.from({
                 length: 4,
               }).map((_, index) => (
-                <div key={index} className="search-results-page-panel-11" />
+                <div
+                  key={index}
+                  className="search-results-page-panel-11"
+                />
               ))}
             </div>
           </div>
@@ -172,7 +194,10 @@ export const SearchResultsPage = () => {
               ) : (
                 <div className="search-results-page-panel-16">
                   {courses.map((course) => (
-                    <div key={course.id || course.slug} className="search-results-page-panel-17">
+                    <div
+                      key={course.id || course.slug}
+                      className="search-results-page-panel-17"
+                    >
                       <Link
                         to={`/courses/${course.id || course.slug}`}
                         className="search-results-page-link"
@@ -262,9 +287,17 @@ export const SearchResultsPage = () => {
               ) : (
                 <div className="search-results-page-panel-23">
                   {users.map((user) => (
-                    <div key={user.id || user.username} className="search-results-page-panel-24">
+                    <div
+                      key={user.id || user.username}
+                      className="search-results-page-panel-24"
+                    >
                       <div className="search-results-page-panel-25">
-                        <Avatar src={user.avatarUrl} name={user.name} role={user.role} size="md" />
+                        <Avatar
+                          src={user.avatarUrl}
+                          name={user.name}
+                          role={user.role}
+                          size="md"
+                        />
                         <div className="search-results-page-panel-26">
                           <p className="search-results-page-description-5">{user.name}</p>
                           <p className="search-results-page-description-6">@{user.username}</p>
@@ -274,7 +307,10 @@ export const SearchResultsPage = () => {
                         </div>
                       </div>
 
-                      <Link to={`/profile/${user.username}`} className="search-results-page-link-6">
+                      <Link
+                        to={`/profile/${user.username}`}
+                        className="search-results-page-link-6"
+                      >
                         Ver perfil
                         <ArrowRight className="search-results-page-graduation-cap" />
                       </Link>
@@ -289,4 +325,5 @@ export const SearchResultsPage = () => {
     </div>
   );
 };
+
 export default SearchResultsPage;

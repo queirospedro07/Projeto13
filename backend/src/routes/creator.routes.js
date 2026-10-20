@@ -21,6 +21,7 @@ const {
 } = require('../controllers/creator.controller.js');
 const { asyncHandler } = require('../middleware/asyncHandler.js');
 const router = Router();
+
 router.post(
   '/courses/:courseId/community',
   authenticate,

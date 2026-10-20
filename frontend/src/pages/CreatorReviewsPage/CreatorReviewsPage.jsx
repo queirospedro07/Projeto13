@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ReviewQueue } from '../../components/CreatorTools';
 import './CreatorReviewsPage.css';
+
 export default function CreatorReviewsPage() {
   return (
     <div className="creator-reviews-page">

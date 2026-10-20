@@ -65,23 +65,28 @@ const Course = {
       sql += ` AND (c.title LIKE $1 OR c.description LIKE $2)`;
       params.push(`%${search}%`, `%${search}%`);
     }
+
     if (category && category !== 'all') {
       params.push(aliasesForCategory(category));
       sql += ` AND LOWER(c.category) = ANY($${params.length}::text[])`;
     }
+
     if (difficulty && difficulty !== 'all') {
       sql += ` AND c.difficulty = $${params.length + 1}`;
       params.push(difficulty);
     }
+
     if (isFree === 'true') {
       sql += ` AND c."isFree" = 1`;
     } else if (isFree === 'false') {
       sql += ` AND c."isFree" = 0`;
     }
+
     if (sort === 'popular') sql += ` ORDER BY "studentsCount" DESC`;
     else if (sort === 'price-low') sql += ` ORDER BY c.price ASC`;
     else if (sort === 'price-high') sql += ` ORDER BY c.price DESC`;
     else sql += ` ORDER BY c."createdAt" DESC`;
+
     return queryAll(sql, params);
   },
   findEnrollmentsByUserIdAndCourseId(params = []) {
@@ -279,4 +284,5 @@ const Course = {
     );
   },
 };
+
 module.exports = Course;

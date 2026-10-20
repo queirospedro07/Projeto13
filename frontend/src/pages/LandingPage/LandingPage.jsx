@@ -18,6 +18,7 @@ import {
 import Footer from '../../components/Footer';
 import { useAuth } from '../../context/AuthContext';
 import { SEO } from '../../components/SEO';
+
 export const LandingPage = () => {
   const { user, isLoading } = useAuth();
   const [openFaq, setOpenFaq] = useState(0);
@@ -33,18 +34,21 @@ export const LandingPage = () => {
   const handleHeroMouseMove = (event) => {
     if (!heroRef.current) return;
     const rect = heroRef.current.getBoundingClientRect();
+
     setHeroMouse({
       x: event.clientX - rect.left,
       y: event.clientY - rect.top,
       active: true,
     });
   };
+
   const handleHeroMouseLeave = () => {
     setHeroMouse((current) => ({
       ...current,
       active: false,
     }));
   };
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -55,10 +59,12 @@ export const LandingPage = () => {
       video.pause();
     }
   }, [isMuted, isPlaying]);
+
   const toggleMute = (e) => {
     if (e) e.stopPropagation();
     setIsMuted((current) => !current);
   };
+
   const togglePlay = (e) => {
     if (e) e.stopPropagation();
     const video = videoRef.current;
@@ -71,6 +77,7 @@ export const LandingPage = () => {
       setIsPlaying(false);
     }
   };
+
   const dashboardPath =
     user?.role === 'ADMIN' ? '/admin' : user?.role === 'CREATOR' ? '/creator' : '/dashboard';
   const faqs = [
@@ -91,6 +98,7 @@ export const LandingPage = () => {
       a: 'Depois de concluir as aulas e obter aprovação nas avaliações e projetos exigidos, pode obter um certificado digital com uma credencial pública de verificação.',
     },
   ];
+
   return (
     <>
       <SEO
@@ -146,8 +154,11 @@ export const LandingPage = () => {
                     preload="metadata"
                     aria-label="Vídeo de demonstração da plataforma NEXO"
                   >
-                    <source src="/video.mp4" type="video/mp4" />O seu navegador não suporta a
-                    reprodução de vídeo.
+                    <source
+                      src="/video.mp4"
+                      type="video/mp4"
+                    />
+                    O seu navegador não suporta a reprodução de vídeo.
                   </video>
 
                   <div className="landing-page-panel-11">
@@ -194,14 +205,20 @@ export const LandingPage = () => {
 
                 <div className="landing-page-panel-14">
                   {user ? (
-                    <Link to={dashboardPath} className="landing-page-link">
+                    <Link
+                      to={dashboardPath}
+                      className="landing-page-link"
+                    >
                       <span className="landing-page-button-3 ui-group">
                         <span>Ir para o Meu Painel</span>
                         <ArrowRight className="landing-page-arrow-right" />
                       </span>
                     </Link>
                   ) : (
-                    <Link to="/register" className="landing-page-link">
+                    <Link
+                      to="/register"
+                      className="landing-page-link"
+                    >
                       <span className="landing-page-button-4 ui-group">
                         <span>Criar Conta Gratuita</span>
                         <ArrowRight className="landing-page-arrow-right-2" />
@@ -209,7 +226,10 @@ export const LandingPage = () => {
                     </Link>
                   )}
 
-                  <Link to="/explore" className="landing-page-link">
+                  <Link
+                    to="/explore"
+                    className="landing-page-link"
+                  >
                     <span className="landing-page-button-5">
                       <Compass className="landing-page-compass" />
                       <span>Explorar Catálogo</span>
@@ -257,7 +277,10 @@ export const LandingPage = () => {
         </section>
 
         {/* Secção de Funcionalidades Principais */}
-        <section id="vantagens" className="landing-page-section-2">
+        <section
+          id="vantagens"
+          className="landing-page-section-2"
+        >
           <div className="landing-page-panel-22">
             <h2 className="landing-page-heading">
               Tudo o que precisa para estudar e colaborar num único sítio.
@@ -270,7 +293,10 @@ export const LandingPage = () => {
 
           <div className="landing-page-panel-23">
             {/* Card 1: Aulas Práticas & Código Real */}
-            <Link to="/explore" className="landing-page-link-2 ui-group">
+            <Link
+              to="/explore"
+              className="landing-page-link-2 ui-group"
+            >
               <div>
                 <div className="landing-page-panel-24">
                   <div className="landing-page-panel-25">
@@ -295,7 +321,10 @@ export const LandingPage = () => {
             </Link>
 
             {/* Card 2: Comunidades & de voz e vídeo */}
-            <Link to="/community" className="landing-page-link-2 ui-group">
+            <Link
+              to="/community"
+              className="landing-page-link-2 ui-group"
+            >
               <div>
                 <div className="landing-page-panel-24">
                   <div className="landing-page-panel-25">
@@ -320,7 +349,10 @@ export const LandingPage = () => {
             </Link>
 
             {/* Card 3: Certificados de conclusão */}
-            <Link to="/explore" className="landing-page-link-2 ui-group">
+            <Link
+              to="/explore"
+              className="landing-page-link-2 ui-group"
+            >
               <div>
                 <div className="landing-page-panel-24">
                   <div className="landing-page-panel-25">
@@ -360,10 +392,16 @@ export const LandingPage = () => {
               </p>
 
               <div className="landing-page-panel-30">
-                <Link to="/explore" className="landing-page-link">
+                <Link
+                  to="/explore"
+                  className="landing-page-link"
+                >
                   <span className="landing-page-button-6">Começar Agora</span>
                 </Link>
-                <Link to="/library" className="landing-page-link">
+                <Link
+                  to="/library"
+                  className="landing-page-link"
+                >
                   <span className="landing-page-button-7">Aceder à Minha Biblioteca</span>
                 </Link>
               </div>
@@ -392,7 +430,10 @@ export const LandingPage = () => {
               </p>
             </div>
 
-            <Link to="/creator/apply" className="landing-page-link-3">
+            <Link
+              to="/creator/apply"
+              className="landing-page-link-3"
+            >
               <span className="landing-page-button-8">
                 <Sparkles className="landing-page-sparkles" />
                 <span>Candidatura a Formador</span>
@@ -402,18 +443,27 @@ export const LandingPage = () => {
         </section>
 
         {/* Perguntas Frequentes (FAQ) */}
-        <section id="faq" className="landing-page-section-5">
+        <section
+          id="faq"
+          className="landing-page-section-5"
+        >
           <div className="landing-page-panel-35">
             <span className="landing-page-label-5">Dúvidas Comuns</span>
             <h2 className="landing-page-heading-3">Perguntas Frequentes</h2>
-            <Link to="/help" className="landing-page-faq-link">
+            <Link
+              to="/help"
+              className="landing-page-faq-link"
+            >
               Consultar todas as perguntas <ArrowRight aria-hidden="true" />
             </Link>
           </div>
 
           <div className="landing-page-panel-36">
             {faqs.map((faq, idx) => (
-              <div key={idx} className="landing-page-panel-37">
+              <div
+                key={idx}
+                className="landing-page-panel-37"
+              >
                 <button
                   id={`faq-question-${idx}`}
                   onClick={() => setOpenFaq(openFaq === idx ? -1 : idx)}
@@ -454,13 +504,19 @@ export const LandingPage = () => {
                 nas salas de estudo da comunidade.
               </p>
               <div className="landing-page-panel-41">
-                <Link to="/register" className="landing-page-link">
+                <Link
+                  to="/register"
+                  className="landing-page-link"
+                >
                   <span className="landing-page-button-10">
                     <span>Criar Conta Gratuita</span>
                     <ArrowRight className="landing-page-arrow-right-4" />
                   </span>
                 </Link>
-                <Link to="/explore" className="landing-page-link">
+                <Link
+                  to="/explore"
+                  className="landing-page-link"
+                >
                   <span className="landing-page-button-11">Explorar Cursos</span>
                 </Link>
               </div>
@@ -473,4 +529,5 @@ export const LandingPage = () => {
     </>
   );
 };
+
 export default LandingPage;

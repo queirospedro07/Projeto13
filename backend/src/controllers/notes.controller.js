@@ -16,6 +16,7 @@ const getNotesByLessonId = async (req, res) => {
         error: 'Sem acesso a esta aula.',
       });
     const note = await Notes.findNoteByUserIdAndLessonId([userId, lessonId]);
+
     return res.json(
       note || {
         content: '',
@@ -27,6 +28,7 @@ const getNotesByLessonId = async (req, res) => {
     });
   }
 };
+
 const postNotesByLessonId = async (req, res) => {
   try {
     const { lessonId } = req.params;
@@ -47,13 +49,17 @@ const postNotesByLessonId = async (req, res) => {
         error: 'Aula não encontrada',
       });
     }
+
     const note = await transaction(async () => {
       await lockTransaction(`note:${userId}:${lessonId}`);
+
       const existing = await Notes.findExistingByUserIdAndLessonId([userId, lessonId]);
       if (existing) await Notes.updateNotesByContentAndUpdatedAtAndId([content, now, existing.id]);
       else await Notes.insertNotes([randomUUID(), userId, lessonId, content, now, now]);
+
       return Notes.findNoteByUserIdAndLessonId([userId, lessonId]);
     });
+
     return res.json(note);
   } catch {
     return res.status(500).json({
@@ -61,10 +67,12 @@ const postNotesByLessonId = async (req, res) => {
     });
   }
 };
+
 const getNotes = async (req, res) => {
   try {
     const userId = req.user.id;
     const notes = await Notes.listNotesByUserId([userId]);
+
     return res.json(
       notes.map((n) => ({
         id: n.id,
@@ -89,6 +97,7 @@ const getNotes = async (req, res) => {
     });
   }
 };
+
 exports.getNotesByLessonId = getNotesByLessonId;
 exports.postNotesByLessonId = postNotesByLessonId;
 exports.getNotes = getNotes;

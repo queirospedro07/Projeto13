@@ -10,6 +10,7 @@ import {
 } from 'react-icons/lu';
 import { Card } from '../../components/Card';
 import { SEO } from '../../components/SEO';
+
 export const TermsPage = () => {
   return (
     <>
@@ -23,7 +24,10 @@ export const TermsPage = () => {
         <div className="terms-page-panel-2">
           {/* Header */}
           <div className="terms-page-panel-3">
-            <Link to="/" className="terms-page-link">
+            <Link
+              to="/"
+              className="terms-page-link"
+            >
               <ArrowLeft className="terms-page-arrow-left" />
               <span>Voltar à Página Principal</span>
             </Link>
@@ -183,4 +187,5 @@ export const TermsPage = () => {
     </>
   );
 };
+
 export default TermsPage;

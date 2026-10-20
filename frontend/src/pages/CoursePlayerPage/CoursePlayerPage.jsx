@@ -41,6 +41,7 @@ import { CourseQuizView } from '../../components/CourseQuizView';
 import { CourseDocumentsView } from '../../components/CourseDocumentsView';
 import { LessonNotesTab } from '../../components/LessonNotesTab';
 import { LessonResourcesTab } from '../../components/LessonResourcesTab';
+
 export const CoursePlayerPage = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
@@ -61,6 +62,7 @@ export const CoursePlayerPage = () => {
         return candidate;
       }
     } catch {}
+
     return 'lesson';
   });
   const handleViewChange = (view) => {
@@ -72,6 +74,7 @@ export const CoursePlayerPage = () => {
       } catch {}
     }
   };
+
   const [currentTextChannel, setCurrentTextChannel] = useState(null);
   const [customChannels, setCustomChannels] = useState([]);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -125,6 +128,7 @@ export const CoursePlayerPage = () => {
           console.error(e2);
         }
       }
+
       if (!data) {
         data = {
           id: courseId,
@@ -140,7 +144,9 @@ export const CoursePlayerPage = () => {
           },
         };
       }
+
       let modulesList = data.modules || [];
+
       modulesList.forEach((mod) => {
         if (Array.isArray(mod.lessons)) {
           mod.lessons.forEach((les) => {
@@ -165,20 +171,26 @@ export const CoursePlayerPage = () => {
           });
         }
       });
+
       const canManage =
         user && (user.role === 'ADMIN' || data.creator?.id === user.id || data.isCreator);
       if (!data.isEnrolled && !data.isMember && !data.space?.isMember && !canManage) {
         navigate(`/courses/${data.slug || data.id || courseId}`, { replace: true });
+
         return;
       }
+
       setCourse(data);
+
       const completed = new Set();
+
       data.userEnrollment?.lessonProgresses?.forEach((lp) => {
         if (lp.completed === 1 || lp.completed === true || lp.isCompleted) {
           completed.add(lp.lessonId);
         }
       });
       setCompletedLessonIds(completed);
+
       const allLessons = data.modules?.flatMap((m) => m.lessons) || [];
       if (allLessons.length > 0) {
         let targetLesson = null;
@@ -188,13 +200,16 @@ export const CoursePlayerPage = () => {
             targetLesson = allLessons.find((l) => l.id === savedLessonId);
           }
         } catch {}
+
         if (!targetLesson) {
           targetLesson = allLessons.find((l) => !completed.has(l.id)) || allLessons[0];
         }
+
         setCurrentLesson(targetLesson);
       } else {
         setCurrentLesson(null);
       }
+
       if (data.space?.channels && data.space.channels.length > 0) {
         const mapped = data.space.channels.map((c) => ({
           id: c.id,
@@ -202,7 +217,9 @@ export const CoursePlayerPage = () => {
           type: c.type === 'voice' ? 'voice' : 'text',
           topic: c.topic || 'Canal do espaço da turma',
         }));
+
         setCustomChannels(mapped);
+
         const textChannels = mapped.filter((c) => c.type === 'text');
         let targetChannel = textChannels[0] || mapped[0];
         try {
@@ -212,6 +229,7 @@ export const CoursePlayerPage = () => {
             if (found) targetChannel = found;
           }
         } catch {}
+
         setCurrentTextChannel(targetChannel);
       } else {
         setCustomChannels([]);
@@ -223,12 +241,14 @@ export const CoursePlayerPage = () => {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     setCourse(null);
     setLoading(true);
     setCurrentTextChannel(null);
     setChannelMessages([]);
     setCustomChannels([]);
+
     const isThisCourseCall = Boolean(
       activeCall && String(activeCall.courseId) === String(courseId),
     );
@@ -239,6 +259,7 @@ export const CoursePlayerPage = () => {
     } else {
       setInLiveRoom(false);
       setLiveRoomName('');
+
       let preferred = 'lesson';
       try {
         const savedCourseView = localStorage.getItem(`nexo_player_view_${courseId}`);
@@ -248,8 +269,10 @@ export const CoursePlayerPage = () => {
           preferred = candidate;
         }
       } catch {}
+
       setActiveView(preferred);
     }
+
     setPendingJoinRoom(null);
     fetchCourseData();
   }, [courseId]);
@@ -279,6 +302,7 @@ export const CoursePlayerPage = () => {
             preferred = candidate;
           }
         } catch {}
+
         setActiveView(preferred);
       }
     }
@@ -292,7 +316,9 @@ export const CoursePlayerPage = () => {
         setActiveView('live-room');
       }
     };
+
     window.addEventListener('nexo_focus_call', handleFocusCall);
+
     return () => window.removeEventListener('nexo_focus_call', handleFocusCall);
   }, [courseId, activeCall]);
   useEffect(() => {
@@ -325,6 +351,7 @@ export const CoursePlayerPage = () => {
             ]);
           }
         });
+
       return () => {
         isSubscribed = false;
         leaveChannel(currentTextChannel.id);
@@ -345,24 +372,31 @@ export const CoursePlayerPage = () => {
           );
           if (optimisticIdx !== -1) {
             const next = [...prev];
+
             next[optimisticIdx] = msg;
+
             return next;
           }
+
           return [...prev, msg];
         });
       }
     };
+
     socket.on('new-message', handleNewMessage);
+
     return () => {
       socket.off('new-message', handleNewMessage);
     };
   }, [socket, currentTextChannel?.id]);
+
   const handleMarkComplete = async () => {
     if (!currentLesson || !course) return;
     try {
       const res = await api
         .post(`/courses/${course.id}/lessons/${currentLesson.id}/complete`)
         .then(({ data }) => data);
+
       setCompletedLessonIds((prev) => new Set([...prev, currentLesson.id]));
       setCourse((prev) => {
         if (!prev) return prev;
@@ -377,6 +411,7 @@ export const CoursePlayerPage = () => {
             isCompleted: true,
           },
         ];
+
         return {
           ...prev,
           certificate: res.certificate || prev.certificate,
@@ -397,8 +432,10 @@ export const CoursePlayerPage = () => {
           type: 'success',
         });
         navigate(`/certificates/verify/${encodeURIComponent(res.certificate.id)}`);
+
         return;
       }
+
       toast({
         title: 'Aula Concluída!',
         message: `Progresso: ${res.enrollment?.progressPercent ?? 0}%`,
@@ -412,6 +449,7 @@ export const CoursePlayerPage = () => {
       });
     }
   };
+
   const handleSendChatMessage = async (e) => {
     e.preventDefault();
     if (!chatInput.trim() || !currentTextChannel) return;
@@ -441,6 +479,7 @@ export const CoursePlayerPage = () => {
         : undefined,
       reactions: [],
     };
+
     setChatInput('');
     setReplyingTo(null);
     setChannelMessages((prev) => [...prev, optimisticMsg]);
@@ -452,6 +491,7 @@ export const CoursePlayerPage = () => {
           replyToId: currentReply?.id,
         })
         .then(({ data }) => data);
+
       setChannelMessages((prev) => prev.map((m) => (m.id === tempId ? newMsg : m)));
     } catch (error) {
       setChannelMessages((prev) => prev.filter((m) => m.id !== tempId));
@@ -464,15 +504,18 @@ export const CoursePlayerPage = () => {
       });
     }
   };
+
   const handleSaveChannelSubmit = async (e) => {
     e.preventDefault();
     if (!newChannelName.trim()) return;
     setIsCreatingChannel(true);
+
     let spaceId = course?.spaceId || course?.space?.id;
     const formattedName = newChannelName.toLowerCase().replace(/[^a-z0-9-_]/g, '-');
     try {
       if (!spaceId) {
         const { data } = await api.post(`/creator/courses/${course.id}/community`);
+
         spaceId = data.spaceId;
         setCourse((current) => ({
           ...current,
@@ -481,6 +524,7 @@ export const CoursePlayerPage = () => {
           space: { id: spaceId, channels: [], members: [] },
         }));
       }
+
       const channelData = {
         name: formattedName,
         type: newChannelType,
@@ -497,6 +541,7 @@ export const CoursePlayerPage = () => {
       } else {
         setCustomChannels((prev) => [...prev, newChannel]);
       }
+
       soundEffects.playSuccess();
       toast({
         title: editingChannel ? 'Canal Atualizado!' : 'Canal Criado!',
@@ -510,6 +555,7 @@ export const CoursePlayerPage = () => {
         setCurrentTextChannel(newChannel);
         setActiveView('channel');
       }
+
       setShowCreateChannelModal(false);
       setEditingChannel(null);
       setNewChannelName('');
@@ -525,16 +571,19 @@ export const CoursePlayerPage = () => {
       setIsCreatingChannel(false);
     }
   };
+
   const handleSelectChannel = (ch) => {
     if (currentTextChannel?.id !== ch.id) {
       setChannelMessages([]);
     }
+
     setCurrentTextChannel(ch);
     handleViewChange('channel');
     try {
       localStorage.setItem(`nexo_player_channel_${course?.id || courseId}`, ch.id);
     } catch {}
   };
+
   const isCreatorOrAdmin = Boolean(
     user?.role === 'ADMIN' ||
     user?.id === course?.creatorId ||
@@ -558,10 +607,13 @@ export const CoursePlayerPage = () => {
       </div>
     );
   }
+
   if (!course) {
     return <div className="course-player-panel-2">Curso não encontrado.</div>;
   }
+
   const courseDocs = course.documents || course.resources || [];
+
   return (
     <div className="course-player-panel-3">
       {/* Desktop Sidebar */}
@@ -620,7 +672,10 @@ export const CoursePlayerPage = () => {
       {/* Mobile Drawer */}
       {mobileSidebarOpen && (
         <div className="course-player-panel-5">
-          <div className="course-player-panel-6" onClick={() => setMobileSidebarOpen(false)} />
+          <div
+            className="course-player-panel-6"
+            onClick={() => setMobileSidebarOpen(false)}
+          />
           <div className="course-player-panel-7">
             <CourseServerSidebar
               courseTitle={course.title}
@@ -648,6 +703,7 @@ export const CoursePlayerPage = () => {
                 try {
                   localStorage.setItem(`nexo_last_lesson_${course?.id || courseId}`, les.id);
                 } catch {}
+
                 setMobileSidebarOpen(false);
               }}
               onSelectLiveRoom={(room) => {
@@ -656,6 +712,7 @@ export const CoursePlayerPage = () => {
                 } else {
                   setPendingJoinRoom(room);
                 }
+
                 setMobileSidebarOpen(false);
               }}
               onSelectQuiz={() => {
@@ -693,7 +750,10 @@ export const CoursePlayerPage = () => {
         {(course.certificate ||
           (allLessons.length > 0 &&
             allLessons.every((lesson) => completedLessonIds.has(lesson.id)))) && (
-          <CourseCompletion courseId={course.id} certificate={course.certificate} />
+          <CourseCompletion
+            courseId={course.id}
+            certificate={course.certificate}
+          />
         )}
         <header className="course-player-header">
           <div className="course-player-panel-8">
@@ -809,7 +869,10 @@ export const CoursePlayerPage = () => {
             )}
 
             {inLiveRoom && activeView !== 'live-room' && (
-              <button onClick={() => setActiveView('live-room')} className="course-player-button-8">
+              <button
+                onClick={() => setActiveView('live-room')}
+                className="course-player-button-8"
+              >
                 <Video className="course-player-users" />
                 <span>Ver Transmissão</span>
               </button>
@@ -837,6 +900,7 @@ export const CoursePlayerPage = () => {
               onDisconnect={() => {
                 setInLiveRoom(false);
                 endCall();
+
                 const fallback =
                   customChannels.find((c) => c.type !== 'voice') || customChannels[0];
                 if (fallback) {
@@ -866,6 +930,7 @@ export const CoursePlayerPage = () => {
                       const result = await api
                         .post('/messages/' + msgId + '/resolve')
                         .then(({ data }) => data);
+
                       setChannelMessages((prev) =>
                         prev.map((m) =>
                           m.id === msgId
@@ -1045,7 +1110,10 @@ export const CoursePlayerPage = () => {
                     <ChevronRight className="course-player-chevron-left" />
                   </button>
                 ) : (
-                  <button onClick={handleMarkComplete} className="course-player-button-14">
+                  <button
+                    onClick={handleMarkComplete}
+                    className="course-player-button-14"
+                  >
                     <Award className="course-player-chevron-left" />
                     <span>Concluir última aula</span>
                   </button>
@@ -1118,7 +1186,10 @@ export const CoursePlayerPage = () => {
               : 'Criar Novo Canal no Servidor do Curso'
           }
         >
-          <form onSubmit={handleSaveChannelSubmit} className="course-player-form-2">
+          <form
+            onSubmit={handleSaveChannelSubmit}
+            className="course-player-form-2"
+          >
             {!course?.spaceId && !course?.space?.id && (
               <p>
                 Ao criar o primeiro canal, ativa a comunidade deste curso para chats e chamadas.
@@ -1287,10 +1358,12 @@ export const CoursePlayerPage = () => {
           if (activeCall) {
             endCall();
           }
+
           setLiveRoomPreferences({
             startMuted,
             startVideoOff,
           });
+
           const roomId = customChannels.find(
             (channel) => channel.name === room && channel.type === 'voice',
           )?.id;
@@ -1301,8 +1374,10 @@ export const CoursePlayerPage = () => {
               type: 'error',
             });
             setPendingJoinRoom(null);
+
             return;
           }
+
           setLiveRoomName(room);
           setInLiveRoom(true);
           setActiveView('live-room');
@@ -1320,4 +1395,5 @@ export const CoursePlayerPage = () => {
     </div>
   );
 };
+
 export default CoursePlayerPage;

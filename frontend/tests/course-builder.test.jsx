@@ -2,7 +2,9 @@ import { beforeEach, afterEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import CourseBuilderPage from '../src/pages/CourseBuilderPage';
+
 const { get, post, put } = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), put: vi.fn() }));
+
 vi.mock('../src/services/api', () => ({ api: { get, post, put } }));
 vi.mock('../src/context/AuthContext', () => ({
   useAuth: () => ({ user: { id: 'teacher', name: 'Formador', role: 'CREATOR' } }),
@@ -19,12 +21,19 @@ beforeEach(() => {
   put.mockResolvedValue({ data: { success: true } });
 });
 afterEach(cleanup);
+
 function show() {
   render(
     <MemoryRouter initialEntries={['/creator/courses/new']}>
       <Routes>
-        <Route path="/creator/courses/new" element={<CourseBuilderPage />} />
-        <Route path="/creator" element={<p>Painel do criador</p>} />
+        <Route
+          path="/creator/courses/new"
+          element={<CourseBuilderPage />}
+        />
+        <Route
+          path="/creator"
+          element={<p>Painel do criador</p>}
+        />
       </Routes>
     </MemoryRouter>,
   );
@@ -32,6 +41,7 @@ function show() {
     target: { value: 'Curso de teste' },
   });
 }
+
 it('guarda um rascunho sem o submeter nem enviar opções removidas', async () => {
   post.mockResolvedValue({ data: { id: 'draft' } });
   show();
@@ -47,9 +57,11 @@ it('guarda um rascunho sem o submeter nem enviar opções removidas', async () =
 });
 it('uma falha de submissão conserva o curso criado e a repetição não duplica cursos', async () => {
   let attempts = 0;
+
   post.mockImplementation(async (url) => {
     if (url.endsWith('/submit-review') && attempts++ === 0)
       throw new Error('Adicione aulas antes de submeter.');
+
     return { data: { id: 'draft' } };
   });
   show();

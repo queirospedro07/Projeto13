@@ -18,11 +18,14 @@ const categories = {
   law: ['direito & sociedade'],
   other: ['outras áreas'],
 };
+
 function aliasesForCategory(value) {
   const key = value.trim().toLowerCase();
   const entry = Object.entries(categories).find(
     ([id, aliases]) => id === key || aliases.includes(key),
   );
+
   return entry ? [entry[0], ...entry[1]] : [key];
 }
+
 exports.aliasesForCategory = aliasesForCategory;

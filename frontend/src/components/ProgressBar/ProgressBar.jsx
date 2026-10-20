@@ -1,5 +1,6 @@
 import './ProgressBar.css';
 import { classNames } from '../../utils/classNames';
+
 export const ProgressBar = ({
   value,
   max = 100,
@@ -20,6 +21,7 @@ export const ProgressBar = ({
     success: 'progress-bar-colors-success',
     amber: 'progress-bar-colors-amber',
   };
+
   return (
     <div className={classNames('progress-bar-panel', className)}>
       {showLabel && (

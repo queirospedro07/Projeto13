@@ -13,6 +13,7 @@ const register = async (req, res) => {
       error: errors.array()[0]?.msg || 'Dados de registo inválidos.',
     });
   }
+
   try {
     const { name, username, email, password } = req.body;
     const existingEmail = await User.findByEmail(email);
@@ -22,6 +23,7 @@ const register = async (req, res) => {
         error: 'Email já registado no sistema.',
       });
     }
+
     const existingUser = await User.findByUsername(username);
     if (existingUser) {
       return res.status(409).json({
@@ -40,6 +42,7 @@ const register = async (req, res) => {
       acceptedTerms: true,
     });
     const token = generateToken(newUser);
+
     return res.status(201).json({
       message: 'Utilizador registado com sucesso.',
       token,
@@ -47,12 +50,14 @@ const register = async (req, res) => {
     });
   } catch (err) {
     console.error('Registration error:', err);
+
     return res.status(500).json({
       message: 'Falha ao registar utilizador no servidor.',
       error: 'Falha ao registar utilizador no servidor.',
     });
   }
 };
+
 const login = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -62,6 +67,7 @@ const login = async (req, res) => {
       error: errors.array()[0]?.msg || 'Preencha os dados de início de sessão.',
     });
   }
+
   try {
     const loginIdentifier = (typeof req.body.login === 'string' ? req.body.login : req.body.email)
       .trim()
@@ -78,12 +84,14 @@ const login = async (req, res) => {
         error: 'Credenciais inválidas. Verifique o email/utilizador e palavra-passe.',
       });
     }
+
     if (Number(user.isSuspended) === 1) {
       return res.status(403).json({
         message: 'Esta conta encontra-se suspensa pela administração.',
         error: 'Esta conta encontra-se suspensa pela administração.',
       });
     }
+
     const isMatch = await User.comparePassword(password, user.passwordHash);
     if (!isMatch) {
       return res.status(401).json({
@@ -91,6 +99,7 @@ const login = async (req, res) => {
         error: 'Credenciais inválidas. Verifique o email/utilizador e palavra-passe.',
       });
     }
+
     const tokenUser = {
       id: user.id,
       name: user.name,
@@ -105,6 +114,7 @@ const login = async (req, res) => {
       ...tokenUser,
       authVersion: user.authVersion,
     });
+
     return res.json({
       message: 'Sessão iniciada com sucesso.',
       token,
@@ -112,12 +122,14 @@ const login = async (req, res) => {
     });
   } catch (err) {
     console.error('Login error:', err);
+
     return res.status(500).json({
       message: 'Erro interno ao autenticar utilizador.',
       error: 'Erro interno ao autenticar utilizador.',
     });
   }
 };
+
 const getMe = async (req, res) => {
   try {
     const user = await Auth.findUserById([req.user.id]);
@@ -127,6 +139,7 @@ const getMe = async (req, res) => {
         error: 'Utilizador não encontrado.',
       });
     }
+
     const profile = (await Auth.findPerfisByIdUtilizador([user.id])) || {};
     const safeUser = {
       id: user.id,
@@ -158,18 +171,21 @@ const getMe = async (req, res) => {
         themePreference: profile.themePreference || 'light',
       },
     };
+
     return res.json({
       user: safeUser,
       ...safeUser,
     });
   } catch (err) {
     console.error('getMe error:', err);
+
     return res.status(500).json({
       message: 'Erro ao carregar dados do utilizador.',
       error: 'Erro ao carregar dados do utilizador.',
     });
   }
 };
+
 const demoLogin = async (req, res) => {
   if (process.env.NODE_ENV !== 'development' || process.env.ENABLE_DEMO_LOGIN !== 'true') {
     return res.status(403).json({
@@ -177,6 +193,7 @@ const demoLogin = async (req, res) => {
       error: 'Modo de demonstração desativado.',
     });
   }
+
   const { role = 'student' } = req.params;
   const targetRole = String(role).toUpperCase();
   if (!['STUDENT', 'CREATOR'].includes(targetRole)) {
@@ -185,6 +202,7 @@ const demoLogin = async (req, res) => {
       error: 'Perfil de demonstração inválido.',
     });
   }
+
   const user = await Auth.findUserByPapelAndId([
     targetRole,
     targetRole === 'CREATOR' ? 'demo-creator-sofia' : 'demo-student-marta',
@@ -195,6 +213,7 @@ const demoLogin = async (req, res) => {
       error: 'Conta de demonstração não encontrada.',
     });
   }
+
   const tokenUser = {
     id: user.id,
     name: user.name,
@@ -206,11 +225,13 @@ const demoLogin = async (req, res) => {
     authVersion: user.authVersion,
   };
   const token = generateToken(tokenUser);
+
   return res.json({
     token,
     user: tokenUser,
   });
 };
+
 exports.register = register;
 exports.login = login;
 exports.getMe = getMe;

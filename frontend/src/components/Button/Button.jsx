@@ -1,7 +1,9 @@
 import './Button.css';
 import { classNames } from '../../utils/classNames';
+
 export const Button = ({
   children,
+  as: Element = 'button',
   variant = 'primary',
   size = 'md',
   isLoading = false,
@@ -26,14 +28,19 @@ export const Button = ({
     danger: 'button-variants-danger',
     glow: 'button-variants-glow',
   };
+
   return (
-    <button
+    <Element
       className={classNames(baseStyles, sizes[size], variants[variant], className)}
-      disabled={disabled || isLoading}
+      {...(Element === 'button' ? { disabled: disabled || isLoading } : {})}
       {...props}
     >
       {isLoading ? (
-        <svg className="button-icon" fill="none" viewBox="0 0 24 24">
+        <svg
+          className="button-icon"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
           <circle
             className="button-icon-circle"
             cx="12"
@@ -53,6 +60,6 @@ export const Button = ({
       )}
       {children}
       {!isLoading && rightIcon}
-    </button>
+    </Element>
   );
 };

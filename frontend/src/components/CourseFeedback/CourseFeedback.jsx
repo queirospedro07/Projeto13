@@ -1,8 +1,12 @@
 import './CourseFeedback.css';
 import { publicationLabels } from '../../constants/coursePublication';
+
 export function CourseFeedback({ course }) {
   return (
-    <section className="course-feedback" aria-label="Estado de publicação">
+    <section
+      className="course-feedback"
+      aria-label="Estado de publicação"
+    >
       <strong>
         {publicationLabels[course.approvalStatus] || 'Rascunho'}
         {course.approvalStatus === 'APPROVED' && course.isPublished ? ' · Publicado' : ''}

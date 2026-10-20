@@ -9,6 +9,7 @@ import {
   LuArrowRight as ArrowRight,
 } from 'react-icons/lu';
 import { Avatar } from '../Avatar';
+
 export const SpaceChannelList = ({
   space,
   channels,
@@ -23,9 +24,16 @@ export const SpaceChannelList = ({
   return (
     <aside className="space-channel-list-sidebar">
       <div>
-        <Link to="/explore" className="space-channel-list-link">
+        <Link
+          to="/explore"
+          className="space-channel-list-link"
+        >
           <div className="space-channel-list-panel">
-            <Avatar src={space?.logoUrl} name={space?.name} size="sm" />
+            <Avatar
+              src={space?.logoUrl}
+              name={space?.name}
+              size="sm"
+            />
             <span className="space-channel-list-label">{space?.name || 'Comunidade'}</span>
           </div>
           <ArrowLeft className="space-channel-list-arrow-left" />
@@ -61,6 +69,7 @@ export const SpaceChannelList = ({
             <div className="space-channel-list-panel-6">
               {channels.map((ch) => {
                 const isSelected = ch.id === currentChannel?.id && !inVoiceRoom;
+
                 return (
                   <button
                     key={ch.id}
@@ -82,6 +91,7 @@ export const SpaceChannelList = ({
             <div className="space-channel-list-panel-6">
               {['Sala de Estudo', 'Foco & Silêncio', 'Tira-Dúvidas'].map((roomName) => {
                 const isActive = inVoiceRoom === roomName;
+
                 return (
                   <button
                     key={roomName}
@@ -109,7 +119,10 @@ export const SpaceChannelList = ({
               <span className="space-channel-list-label-3"></span>
               <span className="space-channel-list-label-4">{inVoiceRoom}</span>
             </div>
-            <button onClick={onDisconnectVoiceRoom} className="space-channel-list-button-7">
+            <button
+              onClick={onDisconnectVoiceRoom}
+              className="space-channel-list-button-7"
+            >
               Desconectar
             </button>
           </div>

@@ -21,6 +21,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
 import { useActiveCall } from '../../context/ActiveCallContext';
 import { api } from '../../services/api';
+
 export const MobileBottomNav = () => {
   const { user } = useAuth();
   const { socket } = useSocket();
@@ -29,23 +30,30 @@ export const MobileBottomNav = () => {
   const navigate = useNavigate();
   const [unreadDms, setUnreadDms] = useState(0);
   const [hasInCallClass, setHasInCallClass] = useState(false);
+
   useEffect(() => {
     const checkCallClass = () => {
       const inCall =
         document.body.classList.contains('in-active-call') ||
         Boolean(document.querySelector('[data-call-stage]'));
+
       setHasInCallClass(inCall);
     };
+
     checkCallClass();
+
     const observer = new MutationObserver(checkCallClass);
+
     observer.observe(document.body, {
       attributes: true,
       attributeFilter: ['class'],
       childList: true,
       subtree: true,
     });
+
     return () => observer.disconnect();
   }, []);
+
   const isCreator = canTeach(user);
   const isAdmin = user?.role === 'ADMIN';
   const fetchUnread = () => {
@@ -55,24 +63,29 @@ export const MobileBottomNav = () => {
         .then(({ data }) => data)
         .then((convs) => {
           const total = (convs || []).reduce((acc, c) => acc + (c.unreadCount || 0), 0);
+
           setUnreadDms(total);
         })
         .catch(() => {});
     }
   };
+
   useEffect(() => {
     fetchUnread();
   }, [user?.id, location.pathname]);
   useEffect(() => {
     if (!socket) return;
     const handleNewDm = () => fetchUnread();
+
     socket.on('direct-message', handleNewDm);
     socket.on('new-direct-message', handleNewDm);
+
     return () => {
       socket.off('direct-message', handleNewDm);
       socket.off('new-direct-message', handleNewDm);
     };
   }, [socket]);
+
   const studentItems = [
     {
       to: '/dashboard',
@@ -161,8 +174,12 @@ export const MobileBottomNav = () => {
   if (hasInCallClass) {
     return null;
   }
+
   return createPortal(
-    <nav aria-label="Navegação móvel" className="mobile-bottom-nav-navigation">
+    <nav
+      aria-label="Navegação móvel"
+      className="mobile-bottom-nav-navigation"
+    >
       {Boolean(activeCall) && (
         <div className="mobile-bottom-nav-panel">
           <button
@@ -173,6 +190,7 @@ export const MobileBottomNav = () => {
               } else if (activeCall.peerId) {
                 navigate(`/messages?userId=${activeCall.peerId}`);
               }
+
               try {
                 window.dispatchEvent(
                   new CustomEvent('nexo_focus_call', {

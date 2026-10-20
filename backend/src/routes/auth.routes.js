@@ -44,6 +44,7 @@ const registerValidation = [
     })
     .custom((val) => {
       if (!isSafeImage(val)) throw new Error('Escolha uma imagem JPG, PNG ou WebP válida');
+
       return true;
     }),
 ];
@@ -55,6 +56,7 @@ const loginValidation = [
     ) {
       throw new Error('Email ou nome de utilizador é obrigatório');
     }
+
     return true;
   }),
   body('password')
@@ -67,6 +69,7 @@ const loginValidation = [
     .notEmpty()
     .withMessage('Palavra-passe é obrigatória'),
 ];
+
 // Endpoints
 router.post('/register', registerValidation, asyncHandler(register));
 router.post('/login', loginValidation, asyncHandler(login));

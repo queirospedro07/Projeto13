@@ -25,9 +25,18 @@ export const LogoIcon = ({ className = 'logo-logo-icon-class-name' }) => {
           y2="52"
           gradientUnits="userSpaceOnUse"
         >
-          <stop offset="0%" stopColor="#38bdf8" />
-          <stop offset="35%" stopColor="#2563eb" />
-          <stop offset="100%" stopColor="#1e3a8a" />
+          <stop
+            offset="0%"
+            stopColor="#38bdf8"
+          />
+          <stop
+            offset="35%"
+            stopColor="#2563eb"
+          />
+          <stop
+            offset="100%"
+            stopColor="#1e3a8a"
+          />
         </linearGradient>
 
         {/* Top/Light Bevel Gradient (High-light reflections) */}
@@ -39,9 +48,18 @@ export const LogoIcon = ({ className = 'logo-logo-icon-class-name' }) => {
           y2="28"
           gradientUnits="userSpaceOnUse"
         >
-          <stop offset="0%" stopColor="#bae6fd" />
-          <stop offset="60%" stopColor="#38bdf8" />
-          <stop offset="100%" stopColor="#2563eb" />
+          <stop
+            offset="0%"
+            stopColor="#bae6fd"
+          />
+          <stop
+            offset="60%"
+            stopColor="#38bdf8"
+          />
+          <stop
+            offset="100%"
+            stopColor="#2563eb"
+          />
         </linearGradient>
 
         {/* Deep Shadow / Underside Facet Gradient */}
@@ -53,39 +71,84 @@ export const LogoIcon = ({ className = 'logo-logo-icon-class-name' }) => {
           y2="50"
           gradientUnits="userSpaceOnUse"
         >
-          <stop offset="0%" stopColor="#1d4ed8" />
-          <stop offset="70%" stopColor="#172554" />
-          <stop offset="100%" stopColor="#0f172a" />
+          <stop
+            offset="0%"
+            stopColor="#1d4ed8"
+          />
+          <stop
+            offset="70%"
+            stopColor="#172554"
+          />
+          <stop
+            offset="100%"
+            stopColor="#0f172a"
+          />
         </linearGradient>
 
         {/* Subtle Ambient Glow filter */}
-        <filter id="nexo-glow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#2563eb" floodOpacity="0.35" />
+        <filter
+          id="nexo-glow"
+          x="-20%"
+          y="-20%"
+          width="140%"
+          height="140%"
+        >
+          <feDropShadow
+            dx="0"
+            dy="2"
+            stdDeviation="3"
+            floodColor="#2563eb"
+            floodOpacity="0.35"
+          />
         </filter>
       </defs>
 
       {/* Main Interlocking N Monogram */}
       <g filter="url(#nexo-glow)">
         {/* Left Vertical Pillar - Front Face */}
-        <path d="M12 50V21.5L21.5 14V42.5L12 50Z" fill="url(#nexo-grad-main)" />
+        <path
+          d="M12 50V21.5L21.5 14V42.5L12 50Z"
+          fill="url(#nexo-grad-main)"
+        />
 
         {/* Left Top Bevel / Apex Cap */}
-        <path d="M12 21.5L21.5 14L30.5 21L21 28.5L12 21.5Z" fill="url(#nexo-grad-light)" />
+        <path
+          d="M12 21.5L21.5 14L30.5 21L21 28.5L12 21.5Z"
+          fill="url(#nexo-grad-light)"
+        />
 
         {/* Dynamic Nexus Diagonal Ribbon (Spanning Upper-Left to Lower-Right) */}
-        <path d="M21 28.5L30.5 21L43 42.5L33.5 50L21 28.5Z" fill="url(#nexo-grad-main)" />
+        <path
+          d="M21 28.5L30.5 21L43 42.5L33.5 50L21 28.5Z"
+          fill="url(#nexo-grad-main)"
+        />
 
         {/* Right Vertical Pillar - Front Face */}
-        <path d="M42.5 21.5V50L33 42.5V14L42.5 21.5Z" fill="url(#nexo-grad-light)" />
+        <path
+          d="M42.5 21.5V50L33 42.5V14L42.5 21.5Z"
+          fill="url(#nexo-grad-light)"
+        />
 
         {/* Right Bottom Bevel / Core Connector */}
-        <path d="M42.5 21.5L52 14V42.5L42.5 50V21.5Z" fill="url(#nexo-grad-dark)" />
+        <path
+          d="M42.5 21.5L52 14V42.5L42.5 50V21.5Z"
+          fill="url(#nexo-grad-dark)"
+        />
 
         {/* Central Diamond Nexus Core (Illuminated Focal Point) */}
-        <polygon points="31.8,29.5 36.5,35.5 31.8,41.5 27.1,35.5" fill="#38bdf8" opacity="0.85" />
+        <polygon
+          points="31.8,29.5 36.5,35.5 31.8,41.5 27.1,35.5"
+          fill="#38bdf8"
+          opacity="0.85"
+        />
 
         {/* Micro Light Specular Accent */}
-        <circle cx="31.8" cy="35.5" r="1.5" fill="#ffffff" />
+        <circle
+          cx="31.8"
+          cy="35.5"
+          r="1.5"
+          fill="#ffffff"
+        />
       </g>
     </svg>
   );
@@ -131,11 +194,16 @@ export const Logo = ({ size = 'md', showText = true, to, className = '', iconOnl
   );
   if (to) {
     return (
-      <Link to={to} className="logo-link ui-group">
+      <Link
+        to={to}
+        className="logo-link ui-group"
+      >
         {content}
       </Link>
     );
   }
+
   return content;
 };
+
 export default Logo;

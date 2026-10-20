@@ -14,6 +14,7 @@ import {
 import { Button } from '../Button';
 import { Card } from '../Card';
 import { useToast } from '../Toast';
+
 export const SocialShareModal = ({
   isOpen,
   onClose,
@@ -70,6 +71,7 @@ export const SocialShareModal = ({
       });
     }
   };
+
   const handleNativeShare = async () => {
     if (navigator.share) {
       try {
@@ -84,9 +86,14 @@ export const SocialShareModal = ({
       }
     }
   };
+
   return createPortal(
     <div className="social-share-modal-panel dialog-layer">
-      <div className="social-share-modal-panel-2" onClick={onClose} aria-hidden="true" />
+      <div
+        className="social-share-modal-panel-2"
+        onClick={onClose}
+        aria-hidden="true"
+      />
 
       <div className="social-share-modal-panel-3">
         <Card className="social-share-modal-card">
@@ -98,7 +105,10 @@ export const SocialShareModal = ({
               </div>
               <h3 className="social-share-modal-subheading">Partilhar Conteúdo</h3>
             </div>
-            <button onClick={onClose} className="social-share-modal-button">
+            <button
+              onClick={onClose}
+              className="social-share-modal-button"
+            >
               <X className="social-share-modal-share2" />
             </button>
           </div>
@@ -109,6 +119,7 @@ export const SocialShareModal = ({
           <div className="social-share-modal-panel-7">
             {shareLinks.map((link) => {
               const Icon = link.icon;
+
               return (
                 <a
                   key={link.name}
@@ -128,7 +139,12 @@ export const SocialShareModal = ({
           <div className="social-share-modal-panel-8">
             <label className="social-share-modal-field-label">Copiar Ligação Direta</label>
             <div className="social-share-modal-panel-9">
-              <input type="text" readOnly value={url} className="social-share-modal-field" />
+              <input
+                type="text"
+                readOnly
+                value={url}
+                className="social-share-modal-field"
+              />
               <Button
                 variant={copied ? 'secondary' : 'primary'}
                 size="sm"
@@ -164,4 +180,5 @@ export const SocialShareModal = ({
     document.body,
   );
 };
+
 export default SocialShareModal;

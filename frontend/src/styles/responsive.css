@@ -1,0 +1,38 @@
+/* Shared touch controls and viewport sizing for the application shell. */
+@layer overrides {
+  @media (pointer: coarse) {
+    input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+    textarea,
+    select {
+      font-size: 1rem;
+    }
+
+    .button-base-styles,
+    .custom-select-trigger,
+    .custom-select-option,
+    .navbar-button,
+    .navbar-button-2 {
+      min-height: 44px;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .course-player-panel,
+    .course-player-panel-2,
+    .course-player-panel-3 {
+      height: calc(100dvh - 9rem - env(safe-area-inset-bottom, 0px));
+    }
+  }
+
+  @media (max-width: 479px) {
+    .course-player-panel-39 {
+      flex-wrap: wrap;
+    }
+
+    .course-player-button-15 {
+      flex: 1 1 auto;
+      white-space: normal;
+      min-height: 44px;
+    }
+  }
+}

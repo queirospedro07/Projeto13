@@ -211,4 +211,5 @@ const Social = {
     );
   },
 };
+
 module.exports = Social;

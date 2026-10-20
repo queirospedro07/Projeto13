@@ -1,5 +1,6 @@
 const fs = require('node:fs');
 const { connectDB, getPool, closeDatabase } = require('../src/database/connection.js');
+
 async function main() {
   try {
     if (!process.argv[2]) throw new Error('Utilização: npm run restore -- caminho/do/backup.json');
@@ -11,6 +12,7 @@ async function main() {
     )
       throw new Error('Formato de backup inválido.');
     await connectDB();
+
     const schema = fs.readFileSync(
       require('node:path').resolve(__dirname, '../src/database/migrations/001_initial.sql'),
       'utf8',
@@ -30,6 +32,7 @@ async function main() {
             'O restauro exige uma base de dados vazia. Os dados existentes foram conservados.',
           );
       }
+
       for (const name of names) {
         const rows = snapshot.tables[name] || [];
         if (!Array.isArray(rows)) throw new Error(`Tabela inválida: ${name}`);
@@ -48,9 +51,11 @@ async function main() {
             columns.map((column) => row[column]),
           );
         }
+
         const count = Number((await client.query(`SELECT COUNT(*) AS n FROM "${name}"`)).rows[0].n);
         if (count !== rows.length) throw new Error(`Falhou a verificação de ${name}.`);
       }
+
       await client.query('COMMIT');
       console.log('Backup PostgreSQL restaurado e contagens verificadas.');
     } catch (error) {
@@ -66,6 +71,7 @@ async function main() {
     await closeDatabase();
   }
 }
+
 main().catch((error) => {
   console.error(error.message);
   process.exitCode = 1;

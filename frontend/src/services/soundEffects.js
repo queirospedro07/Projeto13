@@ -10,9 +10,11 @@ class SoundService {
         this.ctx = new AudioCtx();
       }
     }
+
     if (this.ctx && this.ctx.state === 'suspended') {
       this.ctx.resume().catch(() => {});
     }
+
     return this.ctx;
   }
   playTone(freq, type = 'sine', duration = 0.08, volume = 0.05) {
@@ -22,6 +24,7 @@ class SoundService {
       if (!ctx) return;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
+
       osc.type = type;
       osc.frequency.setValueAtTime(freq, ctx.currentTime);
       gain.gain.setValueAtTime(volume, ctx.currentTime);
@@ -108,5 +111,7 @@ class SoundService {
     setTimeout(() => this.playTone(659.25, 'sine', 0.25, 0.08), 260);
   }
 }
+
 export const soundEffects = new SoundService();
+
 export default soundEffects;

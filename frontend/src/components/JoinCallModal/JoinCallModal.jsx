@@ -18,6 +18,7 @@ import { Button } from '../Button';
 import { Avatar } from '../Avatar';
 import { useAuth } from '../../context/AuthContext';
 import { useActiveCall } from '../../context/ActiveCallContext';
+
 export const JoinCallModal = ({
   isOpen,
   onClose,
@@ -38,6 +39,7 @@ export const JoinCallModal = ({
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
   const animationFrameRef = useRef(null);
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -48,24 +50,30 @@ export const JoinCallModal = ({
       mediaStream.getTracks().forEach((t) => t.stop());
       setMediaStream(null);
     }
+
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
     }
+
     if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
       audioContextRef.current.close().catch(() => {});
       audioContextRef.current = null;
     }
+
     setIsSpeaking(false);
   };
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') handleClose();
     };
+
     if (isOpen) {
       document.body.style.overflow = 'hidden';
       window.addEventListener('keydown', handleKeyDown);
     }
+
     return () => {
       document.body.style.overflow = 'unset';
       window.removeEventListener('keydown', handleKeyDown);
@@ -85,13 +93,17 @@ export const JoinCallModal = ({
   useEffect(() => {
     if (!isOpen) return;
     let active = true;
+
     async function setupPreview() {
       if (!isCameraOn && !isMicOn) {
         stopTracks();
+
         return;
       }
+
       try {
         setPermissionError(null);
+
         const constraints = {
           video: isCameraOn
             ? {
@@ -108,11 +120,14 @@ export const JoinCallModal = ({
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
         if (!active) {
           stream.getTracks().forEach((t) => t.stop());
+
           return;
         }
+
         if (mediaStream) {
           mediaStream.getTracks().forEach((t) => t.stop());
         }
+
         setMediaStream(stream);
         if (isCameraOn && videoPreviewRef.current) {
           videoPreviewRef.current.srcObject = stream;
@@ -123,22 +138,29 @@ export const JoinCallModal = ({
           try {
             const AudioCtx = window.AudioContext || window.webkitAudioContext;
             const ctx = new AudioCtx();
+
             audioContextRef.current = ctx;
+
             const source = ctx.createMediaStreamSource(stream);
             const analyser = ctx.createAnalyser();
+
             analyser.fftSize = 64;
             source.connect(analyser);
             analyserRef.current = analyser;
+
             const buffer = new Uint8Array(analyser.frequencyBinCount);
             const checkVoice = () => {
               if (!active) return;
               analyser.getByteFrequencyData(buffer);
+
               let sum = 0;
               for (let i = 0; i < buffer.length; i++) sum += buffer[i];
               const avg = sum / buffer.length;
+
               setIsSpeaking(avg > 18);
               animationFrameRef.current = requestAnimationFrame(checkVoice);
             };
+
             checkVoice();
           } catch (e) {
             console.warn('Medição de áudio indisponível:', e);
@@ -153,7 +175,9 @@ export const JoinCallModal = ({
         if (isMicOn) setIsMicOn(false);
       }
     }
+
     setupPreview();
+
     return () => {
       active = false;
       stopTracks();
@@ -191,18 +215,27 @@ export const JoinCallModal = ({
     });
     onClose();
   };
+
   const handleClose = () => {
     stopTracks();
     onClose();
   };
+
   const modalContent = (
     <div className="join-call-modal-panel dialog-layer">
       {/* Backdrop */}
-      <div className="join-call-modal-panel-2" onClick={handleClose} aria-hidden="true" />
+      <div
+        className="join-call-modal-panel-2"
+        onClick={handleClose}
+        aria-hidden="true"
+      />
 
       {/* Centering container */}
       <div className="join-call-modal-panel-3">
-        <div className="join-call-modal-panel-4" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="join-call-modal-panel-4"
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* Cabeçalho */}
           <div className="join-call-modal-panel-5">
             <div>
@@ -347,6 +380,8 @@ export const JoinCallModal = ({
       </div>
     </div>
   );
+
   return createPortal(modalContent, document.body);
 };
+
 export default JoinCallModal;

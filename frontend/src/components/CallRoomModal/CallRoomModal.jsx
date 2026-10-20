@@ -2,6 +2,7 @@ import './CallRoomModal.css';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { CallStage } from '../CallStage';
+
 export const CallRoomModal = ({
   roomName,
   roomId,
@@ -13,6 +14,7 @@ export const CallRoomModal = ({
   initialCameraOn = false,
 }) => {
   const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -20,6 +22,7 @@ export const CallRoomModal = ({
     if (isOpen) {
       document.body.style.overflow = 'hidden';
     }
+
     return () => {
       document.body.style.overflow = 'unset';
     };
@@ -40,6 +43,8 @@ export const CallRoomModal = ({
       />
     </div>
   );
+
   return createPortal(modalContent, document.body);
 };
+
 export default CallRoomModal;

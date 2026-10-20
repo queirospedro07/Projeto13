@@ -1,0 +1,27 @@
+/* Load in the document head so the link is hidden before JavaScript starts. */
+.skip-link {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link:focus-visible {
+  clip-path: none;
+  width: auto;
+  height: auto;
+  margin: 0;
+  top: 1rem;
+  left: 1rem;
+  z-index: 10050;
+  padding: 0.5rem 1rem;
+  border-radius: 0.75rem;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
+}

@@ -1,4 +1,5 @@
 import './LibraryPage.css';
+import { PageState } from '../../components/PageState';
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
@@ -14,6 +15,7 @@ import { useToast } from '../../components/Toast';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import { formatCategory } from '../../utils/formatters';
+
 export const LibraryPage = () => {
   const { user } = useAuth();
   const [enrollments, setEnrollments] = useState([]);
@@ -21,6 +23,8 @@ export const LibraryPage = () => {
   const initialFilter = searchParams.get('filter') || 'all';
   const [filter, setFilter] = useState(initialFilter);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [revision, setRevision] = useState(0);
   const { toast } = useToast();
   const [hideCompleted, setHideCompleted] = useState(() => {
     return (
@@ -51,6 +55,7 @@ export const LibraryPage = () => {
       e.preventDefault();
       e.stopPropagation();
     }
+
     setPinnedCourseIds((prev) => {
       const isPinned = prev.includes(courseId);
       const next = isPinned ? prev.filter((id) => id !== courseId) : [courseId, ...prev];
@@ -58,6 +63,7 @@ export const LibraryPage = () => {
         localStorage.setItem(`nexo_pinned_courses_${user.id}`, JSON.stringify(next));
         window.dispatchEvent(new Event('nexo_pins_changed'));
       }
+
       toast({
         title: isPinned ? 'Curso Desafixado' : 'Curso Afixado',
         message: isPinned
@@ -65,15 +71,18 @@ export const LibraryPage = () => {
           : `"${title}" foi afixado no topo da sua biblioteca.`,
         type: 'info',
       });
+
       return next;
     });
   };
+
   useEffect(() => {
     const qFilter = searchParams.get('filter');
     if (qFilter && ['all', 'in-progress', 'completed', 'created', 'hidden'].includes(qFilter)) {
       setFilter(qFilter);
     }
   }, [searchParams]);
+
   const toggleHideCourse = (courseId, title = 'Curso') => {
     setHiddenCourseIds((prev) => {
       let next;
@@ -92,14 +101,18 @@ export const LibraryPage = () => {
           type: 'info',
         });
       }
+
       localStorage.setItem('nexo_hidden_courses', JSON.stringify(next));
       window.dispatchEvent(new Event('nexo_courses_visibility_changed'));
+
       return next;
     });
   };
+
   const toggleHideAllCompleted = () => {
     setHideCompleted((prev) => {
       const next = !prev;
+
       localStorage.setItem('nexo_hide_completed', String(next));
       window.dispatchEvent(new Event('nexo_courses_visibility_changed'));
       toast({
@@ -109,22 +122,41 @@ export const LibraryPage = () => {
           : 'Todos os cursos concluídos estão agora visíveis.',
         type: 'info',
       });
+
       return next;
     });
   };
+
   useEffect(() => {
+    let active = true;
+
+    setLoading(true);
+    setError('');
+
     api
       .get('/courses/my-learning')
-      .then(({ data }) => data)
-      .then((data) => setEnrollments(data || []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+      .then(({ data }) => {
+        if (active) setEnrollments(data || []);
+      })
+      .catch((error) => {
+        if (active) setError(error.message || 'Não foi possível carregar os seus cursos.');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [user?.id, revision]);
+
   const isCourseHidden = (e) => {
     const isFinished = e.isCompleted || (e.progressPercent || 0) >= 100;
     const isManuallyHidden = hiddenCourseIds.includes(e.course?.id);
+
     return isManuallyHidden || (hideCompleted && isFinished);
   };
+
   const hiddenEnrollments = enrollments.filter(isCourseHidden);
   const visibleEnrollments = enrollments.filter((e) => !isCourseHidden(e));
   const createdCount = enrollments.filter((e) => e.isCreator).length;
@@ -139,6 +171,7 @@ export const LibraryPage = () => {
       });
     }
   };
+
   const baseFiltered =
     filter === 'hidden'
       ? hiddenEnrollments
@@ -148,6 +181,7 @@ export const LibraryPage = () => {
           if (filter === 'completed')
             return (e.isCompleted || (e.progressPercent || 0) >= 100) && !e.isCreator;
           if (filter === 'created') return e.isCreator;
+
           return true;
         });
   const filtered = [...baseFiltered].sort((a, b) => {
@@ -157,8 +191,18 @@ export const LibraryPage = () => {
     const bPinned = pinnedCourseIds.includes(bId);
     if (aPinned && !bPinned) return -1;
     if (!aPinned && bPinned) return 1;
+
     return 0;
   });
+  if (error)
+    return (
+      <PageState
+        title="Não foi possível carregar a biblioteca"
+        message={error}
+        onRetry={() => setRevision((value) => value + 1)}
+      />
+    );
+
   return (
     <div className="library-page-panel">
       <div className="library-page-panel-2">
@@ -261,7 +305,12 @@ export const LibraryPage = () => {
               salas de dúvidas.
             </p>
             <Link to="/explore">
-              <Button variant="primary" size="lg" className="library-page-button-12">
+              <Button
+                as="span"
+                variant="primary"
+                size="lg"
+                className="library-page-button-12"
+              >
                 Explorar Catálogo de Cursos
               </Button>
             </Link>
@@ -274,9 +323,16 @@ export const LibraryPage = () => {
             if (!course) return null;
             const progress = enrollment.progressPercent || enrollment.progressPercentage || 0;
             const isFinished = enrollment.isCompleted || progress >= 100;
+
             return (
-              <div key={enrollment.id} className="library-page-panel-12 ui-group">
-                <Link to={`/courses/${course.id}`} className="library-page-link group/thumb">
+              <div
+                key={enrollment.id}
+                className="library-page-panel-12 ui-group"
+              >
+                <Link
+                  to={`/courses/${course.id}`}
+                  className="library-page-link group/thumb"
+                >
                   <img
                     src={
                       course.thumbnailUrl ||
@@ -368,7 +424,10 @@ export const LibraryPage = () => {
 
                 <div className="library-page-panel-17">
                   <div>
-                    <Link to={`/courses/${course.id}`} className="library-page-link-2">
+                    <Link
+                      to={`/courses/${course.id}`}
+                      className="library-page-link-2"
+                    >
                       <h3 className="library-page-subheading-2">{course.title}</h3>
                     </Link>
 
@@ -399,7 +458,10 @@ export const LibraryPage = () => {
 
                   <div className="library-page-panel-24">
                     <div className="library-page-panel-25">
-                      <Link to={`/courses/${course.id}`} className="library-page-link-3">
+                      <Link
+                        to={`/courses/${course.id}`}
+                        className="library-page-link-3"
+                      >
                         <button
                           className="library-page-button-18"
                           title="Ver detalhes do curso, currículo e formador"
@@ -408,8 +470,14 @@ export const LibraryPage = () => {
                           <span>Ver Detalhes</span>
                         </button>
                       </Link>
-                      <Link to={`/learn/${course.id}`} className="library-page-link-3">
-                        <button className="library-page-button-19" title="Aceder à sala de aulas">
+                      <Link
+                        to={`/learn/${course.id}`}
+                        className="library-page-link-3"
+                      >
+                        <button
+                          className="library-page-button-19"
+                          title="Aceder à sala de aulas"
+                        >
                           <Play className="library-page-play" />
                           <span>{isFinished ? 'Rever' : 'Aulas'}</span>
                         </button>

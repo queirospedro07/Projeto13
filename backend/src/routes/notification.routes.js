@@ -7,6 +7,7 @@ const {
 } = require('../controllers/notification.controller.js');
 const { asyncHandler } = require('../middleware/asyncHandler.js');
 const router = Router();
+
 router.get('/', authenticate, asyncHandler(getNotification));
 router.put('/read-all', authenticate, asyncHandler(putNotificationReadAll));
 router.put('/:id/read', authenticate, asyncHandler(putNotificationByIdRead));

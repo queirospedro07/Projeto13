@@ -1,8 +1,10 @@
 import { safeDownloadUrl } from '../../utils/safeUrl';
 import './CourseDocumentsView.css';
 import { LuFileText as FileText, LuDownload as Download } from 'react-icons/lu';
+
 export const CourseDocumentsView = ({ documents = [] }) => {
   const docsToRender = Array.isArray(documents) && documents.length > 0 ? documents : [];
+
   return (
     <div className="course-documents-view-panel custom-scrollbar">
       <div>
@@ -25,8 +27,12 @@ export const CourseDocumentsView = ({ documents = [] }) => {
           {docsToRender.map((doc, idx) => {
             const docTitle = doc.title || doc.name || `Documento ${idx + 1}`;
             const fileHref = safeDownloadUrl(doc.url || doc.data);
+
             return (
-              <div key={doc.id || doc.title || idx} className="course-documents-view-panel-4">
+              <div
+                key={doc.id || doc.title || idx}
+                className="course-documents-view-panel-4"
+              >
                 <div className="course-documents-view-panel-5">
                   <FileText className="course-documents-view-file-text-2" />
                   <span className="course-documents-view-label">{docTitle}</span>

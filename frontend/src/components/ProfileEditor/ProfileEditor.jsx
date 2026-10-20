@@ -19,28 +19,35 @@ import { PROFILE_NETWORKS, normalizeProfileLink } from '../../utils/profileSocia
 import { ProfileBanner, BANNER_PRESETS } from '../ProfileBanner';
 import { ProfileSocialLinks, NETWORK_ICONS } from '../ProfileSocialLinks';
 import './ProfileEditor.css';
+
 async function resizeImage(file, maxWidth, maxHeight) {
   const dataUrl = await new Promise((resolve, reject) => {
     const reader = new FileReader();
+
     reader.onload = () => resolve(reader.result);
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
   const image = await new Promise((resolve, reject) => {
     const img = new Image();
+
     img.onload = () => resolve(img);
     img.onerror = reject;
     img.src = dataUrl;
   });
   const scale = Math.min(1, maxWidth / image.width, maxHeight / image.height);
   const canvas = document.createElement('canvas');
+
   canvas.width = Math.max(1, Math.round(image.width * scale));
   canvas.height = Math.max(1, Math.round(image.height * scale));
+
   const context = canvas.getContext('2d');
   if (!context) throw new Error('Não foi possível processar a imagem.');
   context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
   return canvas.toDataURL('image/webp', 0.85);
 }
+
 export function ProfileEditor({ user, onClose, onSave, initialTab = 'details' }) {
   const [tab, setTab] = useState(initialTab);
   const [form, setForm] = useState(() => ({
@@ -62,9 +69,10 @@ export function ProfileEditor({ user, onClose, onSave, initialTab = 'details' })
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [processing, setProcessing] = useState('');
-  const avatarInput = useRef(null),
-    bannerInput = useRef(null);
+  const avatarInput = useRef(null);
+  const bannerInput = useRef(null);
   const busy = saving || Boolean(processing);
+
   useEffect(() => {
     const previousFocus = document.activeElement;
     const frame = requestAnimationFrame(() =>
@@ -78,8 +86,8 @@ export function ProfileEditor({ user, onClose, onSave, initialTab = 'details' })
           'button:not(:disabled), input:not(:disabled):not([hidden]), textarea:not(:disabled), a[href], [tabindex="0"]',
         ) || []),
       ].filter((element) => element.getClientRects().length && element.tabIndex >= 0);
-      const first = elements[0],
-        last = elements[elements.length - 1];
+      const first = elements[0];
+      const last = elements[elements.length - 1];
       if (event.shiftKey && document.activeElement === first) {
         event.preventDefault();
         last?.focus();
@@ -88,13 +96,16 @@ export function ProfileEditor({ user, onClose, onSave, initialTab = 'details' })
         first?.focus();
       }
     };
+
     document.addEventListener('keydown', trapFocus);
+
     return () => {
       cancelAnimationFrame(frame);
       document.removeEventListener('keydown', trapFocus);
       previousFocus?.focus?.();
     };
   }, [initialTab]);
+
   const update = (key, value) => {
     setForm((f) => ({
       ...f,
@@ -106,8 +117,10 @@ export function ProfileEditor({ user, onClose, onSave, initialTab = 'details' })
       submit: '',
     }));
   };
+
   const upload = async (event, key) => {
     const file = event.target.files?.[0];
+
     event.target.value = '';
     if (!file) return;
     if (
@@ -118,8 +131,10 @@ export function ProfileEditor({ user, onClose, onSave, initialTab = 'details' })
         ...e,
         [key]: 'Escolha uma imagem JPG, PNG ou WebP até 5 MB.',
       }));
+
       return;
     }
+
     setProcessing(key);
     try {
       update(
@@ -135,10 +150,12 @@ export function ProfileEditor({ user, onClose, onSave, initialTab = 'details' })
       setProcessing('');
     }
   };
+
   const previewLinks = Object.fromEntries(
     PROFILE_NETWORKS.flatMap((n) => {
       try {
         const url = normalizeProfileLink(n, socials[n.key]);
+
         return url ? [[n.key, url]] : [];
       } catch {
         return [];
@@ -148,8 +165,8 @@ export function ProfileEditor({ user, onClose, onSave, initialTab = 'details' })
   const submit = async (event) => {
     event.preventDefault();
     if (busy) return;
-    const next = {},
-      links = {};
+    const next = {};
+    const links = {};
     if (!form.name.trim()) next.name = 'Introduza o seu nome.';
     for (const [key, limit] of [
       ['name', 100],
@@ -159,6 +176,7 @@ export function ProfileEditor({ user, onClose, onSave, initialTab = 'details' })
     ]) {
       if (form[key].length > limit) next[key] = `Use até ${limit} caracteres.`;
     }
+
     for (const network of PROFILE_NETWORKS) {
       try {
         const url = normalizeProfileLink(network, socials[network.key]);
@@ -167,6 +185,7 @@ export function ProfileEditor({ user, onClose, onSave, initialTab = 'details' })
         next[network.key] = error.message;
       }
     }
+
     for (const key of ['avatarUrl', 'bannerUrl']) {
       if (
         form[key] &&
@@ -181,6 +200,7 @@ export function ProfileEditor({ user, onClose, onSave, initialTab = 'details' })
       )
         next[key] = 'Use uma imagem com link http ou https.';
     }
+
     if (Object.keys(next).length) {
       setErrors(next);
       setTab(
@@ -190,8 +210,10 @@ export function ProfileEditor({ user, onClose, onSave, initialTab = 'details' })
             ? 'appearance'
             : 'socials',
       );
+
       return;
     }
+
     setSaving(true);
     setErrors({});
     try {
@@ -211,6 +233,7 @@ export function ProfileEditor({ user, onClose, onSave, initialTab = 'details' })
       setSaving(false);
     }
   };
+
   const tabs = [
     {
       key: 'details',
@@ -229,7 +252,10 @@ export function ProfileEditor({ user, onClose, onSave, initialTab = 'details' })
     },
   ];
   const field = (key, label, placeholder, limit, multiline = false) => (
-    <div className="profile-editor-field" key={key}>
+    <div
+      className="profile-editor-field"
+      key={key}
+    >
       <label htmlFor={`edit-${key}`}>{label}</label>
       {multiline ? (
         <textarea
@@ -254,7 +280,10 @@ export function ProfileEditor({ user, onClose, onSave, initialTab = 'details' })
           autoComplete={key === 'name' ? 'name' : 'off'}
         />
       )}
-      <div id={`edit-${key}-hint`} className="profile-editor-field-meta">
+      <div
+        id={`edit-${key}-hint`}
+        className="profile-editor-field-meta"
+      >
         <span className="profile-editor-error">{errors[key]}</span>
         <span>
           {form[key].length}/{limit}
@@ -262,6 +291,7 @@ export function ProfileEditor({ user, onClose, onSave, initialTab = 'details' })
       </div>
     </div>
   );
+
   return (
     <Modal
       isOpen
@@ -270,7 +300,11 @@ export function ProfileEditor({ user, onClose, onSave, initialTab = 'details' })
       maxWidth="4xl"
       bodyClassName="profile-editor-modal-body"
     >
-      <form className="profile-editor" onSubmit={submit} noValidate>
+      <form
+        className="profile-editor"
+        onSubmit={submit}
+        noValidate
+      >
         <div className="profile-editor-intro">
           <span className="profile-editor-eyebrow">O SEU ESPAÇO NA NEXO</span>
           <p>Um perfil que conta a sua história.</p>
@@ -278,7 +312,11 @@ export function ProfileEditor({ user, onClose, onSave, initialTab = 'details' })
         </div>
         <div className="profile-editor-content">
           <div className="profile-editor-workspace">
-            <div className="profile-editor-tabs" role="tablist" aria-label="Secções de edição">
+            <div
+              className="profile-editor-tabs"
+              role="tablist"
+              aria-label="Secções de edição"
+            >
               {tabs.map(({ key, label, icon: Icon }) => (
                 <button
                   key={key}
@@ -296,6 +334,7 @@ export function ProfileEditor({ user, onClose, onSave, initialTab = 'details' })
                     };
                     if (!(event.key in directions)) return;
                     event.preventDefault();
+
                     const index =
                       event.key === 'Home'
                         ? 0
@@ -305,9 +344,12 @@ export function ProfileEditor({ user, onClose, onSave, initialTab = 'details' })
                               directions[event.key] +
                               tabs.length) %
                             tabs.length;
+
                     setTab(tabs[index].key);
+
                     const tabButtons =
                       event.currentTarget.parentElement.querySelectorAll('[role="tab"]');
+
                     tabButtons[index]?.focus();
                   }}
                   aria-controls={`profile-editor-panel-${key}`}
@@ -319,7 +361,10 @@ export function ProfileEditor({ user, onClose, onSave, initialTab = 'details' })
                 </button>
               ))}
             </div>
-            <fieldset disabled={busy} className="profile-editor-fields">
+            <fieldset
+              disabled={busy}
+              className="profile-editor-fields"
+            >
               <div
                 role="tabpanel"
                 id={`profile-editor-panel-${tab}`}
@@ -355,7 +400,11 @@ export function ProfileEditor({ user, onClose, onSave, initialTab = 'details' })
                       <p>Escolha uma fotografia e dê personalidade à sua capa.</p>
                     </div>
                     <div className="profile-editor-photo">
-                      <Avatar src={form.avatarUrl} name={form.name} size="xl" />
+                      <Avatar
+                        src={form.avatarUrl}
+                        name={form.name}
+                        size="xl"
+                      />
                       <div>
                         <strong>Fotografia de perfil</strong>
                         <p>JPG, PNG ou WebP, até 5 MB.</p>
@@ -403,13 +452,22 @@ export function ProfileEditor({ user, onClose, onSave, initialTab = 'details' })
                       <h3>Capa do perfil</h3>
                       <p>Aparece no seu perfil e nas chamadas.</p>
                     </div>
-                    <ProfileBanner value={form.bannerUrl} className="profile-editor-cover">
-                      <button type="button" onClick={() => bannerInput.current?.click()}>
+                    <ProfileBanner
+                      value={form.bannerUrl}
+                      className="profile-editor-cover"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => bannerInput.current?.click()}
+                      >
                         <Upload />
                         Carregar imagem
                       </button>
                     </ProfileBanner>
-                    <div className="profile-editor-presets" aria-label="Cores da capa">
+                    <div
+                      className="profile-editor-presets"
+                      aria-label="Cores da capa"
+                    >
                       {BANNER_PRESETS.map((p) => (
                         <button
                           key={p.value}
@@ -436,7 +494,10 @@ export function ProfileEditor({ user, onClose, onSave, initialTab = 'details' })
                         value={/^#[\da-f]{6}$/i.test(form.bannerUrl) ? form.bannerUrl : '#2563eb'}
                         onChange={(e) => update('bannerUrl', e.target.value)}
                       />
-                      <button type="button" onClick={() => update('bannerUrl', '')}>
+                      <button
+                        type="button"
+                        onClick={() => update('bannerUrl', '')}
+                      >
                         Repor capa
                       </button>
                     </div>
@@ -465,8 +526,12 @@ export function ProfileEditor({ user, onClose, onSave, initialTab = 'details' })
                     <div className="profile-editor-social-grid">
                       {PROFILE_NETWORKS.map((n) => {
                         const Icon = NETWORK_ICONS[n.key];
+
                         return (
-                          <div className="profile-editor-field" key={n.key}>
+                          <div
+                            className="profile-editor-field"
+                            key={n.key}
+                          >
                             <label htmlFor={`edit-social-${n.key}`}>
                               <Icon />
                               {n.label}
@@ -520,9 +585,16 @@ export function ProfileEditor({ user, onClose, onSave, initialTab = 'details' })
               <span>PRÉ-VISUALIZAÇÃO</span>
             </div>
             <div className="profile-editor-preview-card">
-              <ProfileBanner value={form.bannerUrl} className="profile-editor-preview-cover" />
+              <ProfileBanner
+                value={form.bannerUrl}
+                className="profile-editor-preview-cover"
+              />
               <div className="profile-editor-preview-info">
-                <Avatar src={form.avatarUrl} name={form.name} size="lg" />
+                <Avatar
+                  src={form.avatarUrl}
+                  name={form.name}
+                  size="lg"
+                />
                 <h3>{form.name.trim() || 'O seu nome'}</h3>
                 <span className="profile-editor-preview-username">@{user?.username}</span>
                 <p className="profile-editor-preview-headline">
@@ -547,7 +619,10 @@ export function ProfileEditor({ user, onClose, onSave, initialTab = 'details' })
           </aside>
         </div>
         {errors.submit && (
-          <p className="profile-editor-submit-error" role="alert">
+          <p
+            className="profile-editor-submit-error"
+            role="alert"
+          >
             <AlertCircle />
             {errors.submit}
           </p>
@@ -555,7 +630,12 @@ export function ProfileEditor({ user, onClose, onSave, initialTab = 'details' })
         <footer className="profile-editor-footer">
           <span>Personalize o perfil ao seu ritmo.</span>
           <div>
-            <Button type="button" variant="outline" onClick={onClose} disabled={busy}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={busy}
+            >
               Cancelar
             </Button>
             <Button

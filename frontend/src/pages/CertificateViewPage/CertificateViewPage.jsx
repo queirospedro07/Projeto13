@@ -14,11 +14,13 @@ import { Logo } from '../../components/Logo';
 import { SEO } from '../../components/SEO';
 import { SocialShareModal } from '../../components/SocialShareModal';
 import { api } from '../../services/api';
+
 export const CertificateViewPage = () => {
   const { id } = useParams();
   const [cert, setCert] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
   useEffect(() => {
     if (!id) return;
     api
@@ -30,12 +32,15 @@ export const CertificateViewPage = () => {
       })
       .finally(() => setLoading(false));
   }, [id]);
+
   const handlePrint = () => {
     window.print();
   };
+
   if (loading) {
     return <div className="certificate-view-panel">A verificar credencial de certificado...</div>;
   }
+
   if (!cert) {
     return (
       <div className="certificate-view-panel-2">
@@ -52,7 +57,12 @@ export const CertificateViewPage = () => {
             O certificado com o identificador informado não existe ou ainda não foi emitido.
           </p>
           <Link to="/library">
-            <Button variant="primary" size="md" className="certificate-view-button">
+            <Button
+              as="span"
+              variant="primary"
+              size="md"
+              className="certificate-view-button"
+            >
               Voltar aos Meus Cursos
             </Button>
           </Link>
@@ -60,6 +70,7 @@ export const CertificateViewPage = () => {
       </div>
     );
   }
+
   return (
     <>
       <SEO
@@ -72,6 +83,7 @@ export const CertificateViewPage = () => {
         <div className="certificate-view-panel-6">
           <Link to="/library">
             <Button
+              as="span"
               variant="secondary"
               size="md"
               leftIcon={<ArrowLeft className="certificate-view-arrow-left" />}
@@ -110,7 +122,10 @@ export const CertificateViewPage = () => {
             <div className="certificate-view-panel-13" />
 
             <div className="certificate-view-panel-14">
-              <Logo size="lg" showText={false} />
+              <Logo
+                size="lg"
+                showText={false}
+              />
               <span className="certificate-view-label">NEXO Autoridade de Certificação</span>
               <div className="certificate-view-panel-15" />
             </div>
@@ -179,4 +194,5 @@ export const CertificateViewPage = () => {
     </>
   );
 };
+
 export default CertificateViewPage;

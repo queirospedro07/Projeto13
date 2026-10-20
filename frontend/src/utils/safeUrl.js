@@ -6,6 +6,7 @@ export function safeExternalUrl(value) {
   if (/^\/(?!\/)/.test(raw) && !raw.includes('\\')) return raw;
   try {
     const url = new URL(raw);
+
     return ['https:', 'http:'].includes(url.protocol) && !url.username && !url.password
       ? url.href
       : '';
@@ -13,9 +14,11 @@ export function safeExternalUrl(value) {
     return '';
   }
 }
+
 export function safeDownloadUrl(value) {
   const external = safeExternalUrl(value);
   if (external) return external;
+
   return typeof value === 'string' &&
     /^data:(application\/pdf|image\/(?:png|jpeg|webp)|text\/plain);base64,[a-z\d+/]+=*$/i.test(
       value,

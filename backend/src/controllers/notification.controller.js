@@ -3,6 +3,7 @@ const getNotification = async (req, res) => {
   try {
     const userId = req.user.id;
     const notifications = await Notification.listNotificationsByUserId([userId]);
+
     return res.json(
       notifications.map((n) => ({
         ...n,
@@ -15,10 +16,13 @@ const getNotification = async (req, res) => {
     });
   }
 };
+
 const putNotificationReadAll = async (req, res) => {
   try {
     const userId = req.user.id;
+
     await Notification.updateNotificationsByUserId([userId]);
+
     return res.json({
       success: true,
     });
@@ -28,11 +32,14 @@ const putNotificationReadAll = async (req, res) => {
     });
   }
 };
+
 const putNotificationByIdRead = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
+
     await Notification.updateNotificationsByIdAndUserId([id, userId]);
+
     return res.json({
       success: true,
     });
@@ -42,6 +49,7 @@ const putNotificationByIdRead = async (req, res) => {
     });
   }
 };
+
 exports.getNotification = getNotification;
 exports.putNotificationReadAll = putNotificationReadAll;
 exports.putNotificationByIdRead = putNotificationByIdRead;

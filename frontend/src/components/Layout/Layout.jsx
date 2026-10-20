@@ -5,10 +5,12 @@ import { useAuth } from '../../context/AuthContext';
 import { Navbar } from '../Navbar';
 import { Sidebar } from '../Sidebar';
 import { MobileBottomNav } from '../MobileBottomNav';
+
 export const Layout = () => {
   const { user } = useAuth();
   const location = useLocation();
   const mainContentRef = React.useRef(null);
+
   React.useEffect(() => {
     window.scrollTo({
       top: 0,
@@ -46,17 +48,22 @@ export const Layout = () => {
         intersectionObserver.observe(element);
       });
     };
+
     observeSections();
+
     const mutationObserver = new MutationObserver(observeSections);
+
     mutationObserver.observe(mainContent, {
       childList: true,
       subtree: true,
     });
+
     return () => {
       mutationObserver.disconnect();
       intersectionObserver.disconnect();
     };
   }, [location.pathname]);
+
   const isLanding = location.pathname === '/';
   const isAuthPage =
     location.pathname === '/login' ||
@@ -67,6 +74,7 @@ export const Layout = () => {
   const isCourseBuilder = location.pathname.startsWith('/creator/courses/');
   const isMessages = location.pathname.startsWith('/messages');
   const showAppSidebar = Boolean(user) && !isLanding && !isAuthPage;
+
   return (
     <div className="app-layout-panel app-shell">
       <Navbar />

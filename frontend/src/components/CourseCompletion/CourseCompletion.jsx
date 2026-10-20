@@ -10,6 +10,7 @@ export default function CourseCompletion({ courseId, certificate }) {
   const [error, setError] = useState('');
   const submitting = useRef(false);
   const navigate = useNavigate();
+
   async function openCertificate() {
     if (submitting.current) return;
     submitting.current = true;
@@ -26,8 +27,12 @@ export default function CourseCompletion({ courseId, certificate }) {
       setBusy(false);
     }
   }
+
   return (
-    <section className="course-completion" aria-label="Curso concluído">
+    <section
+      className="course-completion"
+      aria-label="Curso concluído"
+    >
       <LuAward aria-hidden="true" />
       <div>
         <h2>Parabéns, concluiu o curso!</h2>
@@ -45,7 +50,11 @@ export default function CourseCompletion({ courseId, certificate }) {
           Ver certificado
         </Link>
       ) : (
-        <Button isLoading={busy} disabled={busy} onClick={openCertificate}>
+        <Button
+          isLoading={busy}
+          disabled={busy}
+          onClick={openCertificate}
+        >
           Ver certificado
         </Button>
       )}

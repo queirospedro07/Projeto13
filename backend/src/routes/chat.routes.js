@@ -8,6 +8,7 @@ const {
 } = require('../controllers/chat.controller.js');
 const { asyncHandler } = require('../middleware/asyncHandler.js');
 const router = Router();
+
 router.get(
   '/channels/:channelId/messages',
   authenticate,

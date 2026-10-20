@@ -14,6 +14,7 @@ import { JoinCallModal } from '../../components/JoinCallModal';
 import { SpaceChannelList } from '../../components/SpaceChannelList';
 import { SpaceMessageStream } from '../../components/SpaceMessageStream';
 import { SpaceMembersSidebar } from '../../components/SpaceMembersSidebar';
+
 export const SpaceChatPage = () => {
   const { id } = useParams();
   const { user } = useAuth();
@@ -43,6 +44,7 @@ export const SpaceChatPage = () => {
   const [newChTopic, setNewChTopic] = useState('');
   const [isSavingChannel, setIsSavingChannel] = useState(false);
   const typingTimeoutRef = useRef(null);
+
   useEffect(() => {
     if (activeCall && activeCall.spaceId === (space?.id || id)) {
       setInVoiceRoom(activeCall.roomName);
@@ -72,6 +74,7 @@ export const SpaceChatPage = () => {
       .then(({ data }) => data)
       .then((msgs) => setMessages(msgs || []))
       .catch(() => {});
+
     return () => {
       leaveChannel(currentChannel.id);
     };
@@ -90,13 +93,17 @@ export const SpaceChatPage = () => {
           );
           if (optimisticIdx !== -1) {
             const next = [...prev];
+
             next[optimisticIdx] = msg;
+
             return next;
           }
+
           return [...prev, msg];
         });
       }
     };
+
     const handleTyping = ({ channelId, username }) => {
       if (
         channelId === currentChannel?.id &&
@@ -106,20 +113,24 @@ export const SpaceChatPage = () => {
         setTypingUsers((prev) => Array.from(new Set([...prev, username])));
       }
     };
+
     const handleStopTyping = ({ channelId, username }) => {
       if (channelId === currentChannel?.id) {
         setTypingUsers((prev) => prev.filter((u) => u !== username));
       }
     };
+
     socket.on('new-message', handleNewMessage);
     socket.on('typing', handleTyping);
     socket.on('stop-typing', handleStopTyping);
+
     return () => {
       socket.off('new-message', handleNewMessage);
       socket.off('typing', handleTyping);
       socket.off('stop-typing', handleStopTyping);
     };
   }, [socket, currentChannel?.id, user?.name, user?.username]);
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!inputContent.trim() || !currentChannel) return;
@@ -149,6 +160,7 @@ export const SpaceChatPage = () => {
         : undefined,
       reactions: [],
     };
+
     setInputContent('');
     setReplyingTo(null);
     setMessages((prev) => [...prev, optimisticMsg]);
@@ -161,6 +173,7 @@ export const SpaceChatPage = () => {
           replyToId: currentReply?.id,
         })
         .then(({ data }) => data);
+
       setMessages((prev) => prev.map((m) => (m.id === tempId ? newMsg : m)));
     } catch {
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
@@ -172,6 +185,7 @@ export const SpaceChatPage = () => {
       });
     }
   };
+
   const handleInputChange = (e) => {
     setInputContent(e.target.value);
     if (!currentChannel) return;
@@ -181,10 +195,12 @@ export const SpaceChatPage = () => {
       sendStopTyping(currentChannel.id);
     }, 2000);
   };
+
   const handleCreateChannel = async (e) => {
     e.preventDefault();
     if (!newChName.trim() || !space) return;
     setIsSavingChannel(true);
+
     const formattedName = newChName.toLowerCase().replace(/[^a-z0-9-_]/g, '-');
     try {
       const created = await api
@@ -194,6 +210,7 @@ export const SpaceChatPage = () => {
           topic: newChTopic,
         })
         .then(({ data }) => data);
+
       setChannels((prev) => [...prev, created]);
       setCurrentChannel(created);
       soundEffects.playSuccess();
@@ -215,11 +232,13 @@ export const SpaceChatPage = () => {
       setIsSavingChannel(false);
     }
   };
+
   const isOwnerOrAdmin =
     user?.role === 'ADMIN' || user?.role === 'CREATOR' || space?.ownerId === user?.id;
   const handleTogglePin = async (messageId) => {
     try {
       const res = await api.post(`/messages/${messageId}/pin`).then(({ data }) => data);
+
       setMessages((prev) =>
         prev.map((m) =>
           m.id === messageId
@@ -235,16 +254,22 @@ export const SpaceChatPage = () => {
       });
     } catch {}
   };
+
   const filteredMessages = messages.filter((m) => {
     if (pinnedOnly && !m.isPinned) return false;
     if (searchQuery && !(m.content || '').toLowerCase().includes(searchQuery.toLowerCase()))
       return false;
+
     return true;
   });
+
   return (
     <div className="space-chat-panel">
       {showMobileSidebar && (
-        <div className="space-chat-panel-2" onClick={() => setShowMobileSidebar(false)} />
+        <div
+          className="space-chat-panel-2"
+          onClick={() => setShowMobileSidebar(false)}
+        />
       )}
 
       <div
@@ -349,7 +374,10 @@ export const SpaceChatPage = () => {
           onClose={() => setShowChannelModal(false)}
           title="Criar Novo Canal"
         >
-          <form onSubmit={handleCreateChannel} className="space-chat-form">
+          <form
+            onSubmit={handleCreateChannel}
+            className="space-chat-form"
+          >
             <div>
               <label className="space-chat-field-label">Sugestões Rápidas (1-Clique)</label>
               <div className="space-chat-panel-6">
@@ -492,7 +520,11 @@ export const SpaceChatPage = () => {
               >
                 Cancelar
               </button>
-              <button type="submit" disabled={isSavingChannel} className="space-chat-button-11">
+              <button
+                type="submit"
+                disabled={isSavingChannel}
+                className="space-chat-button-11"
+              >
                 {isSavingChannel ? 'A criar...' : 'Criar Canal'}
               </button>
             </div>
@@ -511,17 +543,20 @@ export const SpaceChatPage = () => {
           if (activeCall) {
             endCall();
           }
+
           setVoiceRoomPreferences({
             startMuted,
             startVideoOff,
           });
           setInVoiceRoom(room);
           soundEffects.playJoinCall();
+
           const cleanRoomId = `space_${space?.id || id || 'community'}_${room
             .toLowerCase()
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '')
             .replace(/[^a-z0-9]/g, '_')}`;
+
           startCall({
             roomId: cleanRoomId,
             roomName: room,
@@ -535,4 +570,5 @@ export const SpaceChatPage = () => {
     </div>
   );
 };
+
 export default SpaceChatPage;

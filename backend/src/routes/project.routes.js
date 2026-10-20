@@ -8,6 +8,7 @@ const {
 } = require('../controllers/project.controller.js');
 const { asyncHandler } = require('../middleware/asyncHandler.js');
 const router = Router();
+
 router.use(authenticate);
 router.get('/reviews', requireTeaching, asyncHandler(getProjectReviews));
 router.put('/reviews/:id', requireTeaching, asyncHandler(putProjectReviewsById));

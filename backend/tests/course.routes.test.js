@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { resolveCourseAccessState } from '../src/controllers/course.controller.js';
+
 test('resolveCourseAccessState separates enrollment from management access', () => {
   const noEnrollment = resolveCourseAccessState({
     user: {
@@ -12,9 +13,11 @@ test('resolveCourseAccessState separates enrollment from management access', () 
     },
     enrollmentRow: null,
   });
+
   assert.equal(noEnrollment.isCreator, false);
   assert.equal(noEnrollment.isEnrolled, false);
   assert.equal(noEnrollment.userProgress, 0);
+
   const isCreator = resolveCourseAccessState({
     user: {
       id: 'user-1',
@@ -25,10 +28,12 @@ test('resolveCourseAccessState separates enrollment from management access', () 
     },
     enrollmentRow: null,
   });
+
   assert.equal(isCreator.isCreator, true);
   assert.equal(isCreator.isEnrolled, false);
   assert.equal(isCreator.canAccess, true);
   assert.equal(isCreator.userProgress, 0);
+
   const hasEnrollment = resolveCourseAccessState({
     user: {
       id: 'user-1',
@@ -42,9 +47,11 @@ test('resolveCourseAccessState separates enrollment from management access', () 
       progressPercent: 24,
     },
   });
+
   assert.equal(hasEnrollment.isCreator, false);
   assert.equal(hasEnrollment.isEnrolled, true);
   assert.equal(hasEnrollment.userProgress, 24);
+
   const isCollaborator = resolveCourseAccessState({
     user: {
       id: 'collab-1',
@@ -56,6 +63,7 @@ test('resolveCourseAccessState separates enrollment from management access', () 
     enrollmentRow: null,
     isCollaborator: true,
   });
+
   assert.equal(isCollaborator.isCreator, true);
   assert.equal(isCollaborator.isEnrolled, false);
   assert.equal(isCollaborator.canAccess, true);
@@ -68,6 +76,7 @@ test('administrator preview does not imply an enrollment or progress', () => {
     course: { creatorId: 'teacher' },
     enrollmentRow: null,
   });
+
   assert.equal(state.isEnrolled, false);
   assert.equal(state.canAccess, true);
   assert.equal(state.userProgress, 0);

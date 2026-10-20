@@ -1,4 +1,5 @@
 const { connectDB, closeDatabase } = require('./connection.js');
+
 async function main() {
   try {
     await connectDB();
@@ -9,6 +10,7 @@ async function main() {
     process.exitCode = 1;
   }
 }
+
 main().catch((error) => {
   console.error(error.message);
   process.exitCode = 1;

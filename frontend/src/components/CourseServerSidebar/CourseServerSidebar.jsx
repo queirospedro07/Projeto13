@@ -13,6 +13,7 @@ import {
   LuX as X,
   LuBookOpen as BookOpen,
 } from 'react-icons/lu';
+
 export const CourseServerSidebar = ({
   courseTitle,
   courseId,
@@ -92,6 +93,7 @@ export const CourseServerSidebar = ({
             if (!hasCommunity) return null;
             const voiceChannels = customChannels.filter((c) => c.type === 'voice' || c.isVoice);
             if (voiceChannels.length === 0 && !isCreatorOrAdmin) return null;
+
             return (
               <div>
                 <div className="course-server-sidebar-panel-9">
@@ -120,6 +122,7 @@ export const CourseServerSidebar = ({
                         Boolean(inLiveRoom) &&
                         activeView === 'live-room' &&
                         liveRoomName === roomName;
+
                       return (
                         <div
                           key={ch.id || roomName}
@@ -184,8 +187,12 @@ export const CourseServerSidebar = ({
                   .filter((c) => c.type !== 'voice')
                   .map((ch) => {
                     const isSelected = activeView === 'channel' && currentTextChannel?.id === ch.id;
+
                     return (
-                      <div key={ch.id} className="course-server-sidebar-panel-11 group/item">
+                      <div
+                        key={ch.id}
+                        className="course-server-sidebar-panel-11 group/item"
+                      >
                         <button
                           onClick={() => onSelectChannel(ch)}
                           className={`course-server-sidebar-button-8 ${isSelected ? 'course-server-sidebar-button-5' : 'course-server-sidebar-button-9'}`}
@@ -253,7 +260,10 @@ export const CourseServerSidebar = ({
             ) : (
               <div className="course-server-sidebar-panel-15">
                 {modules.map((mod, mIdx) => (
-                  <div key={mod.id} className="course-server-sidebar-panel-10">
+                  <div
+                    key={mod.id}
+                    className="course-server-sidebar-panel-10"
+                  >
                     <div className="course-server-sidebar-panel-16">
                       Módulo {mIdx + 1}: {mod.title}
                     </div>
@@ -261,6 +271,7 @@ export const CourseServerSidebar = ({
                     {mod.lessons?.map((les) => {
                       const isSelected = activeView === 'lesson' && currentLessonId === les.id;
                       const isCompleted = completedLessonIds.has(les.id);
+
                       return (
                         <button
                           key={les.id}

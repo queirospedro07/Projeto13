@@ -3,11 +3,14 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { getPool, closeDatabase } = require('../src/database/connection.js');
 const { getDataDirectory } = require('../src/config/storage.js');
+
 async function main() {
   const directory = path.join(getDataDirectory(), 'backups');
+
   fs.mkdirSync(directory, {
     recursive: true,
   });
+
   const destination = path.join(
     directory,
     `nexo-postgresql-${new Date().toISOString().replaceAll(':', '-')}-${randomUUID().slice(0, 8)}.json`,
@@ -16,6 +19,7 @@ async function main() {
   const client = await pool.connect();
   try {
     await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
+
     const names = (
       await client.query(
         "SELECT tablename FROM pg_tables WHERE schemaname = current_schema() AND tablename <> 'nexo_migrations' ORDER BY tablename",
@@ -45,6 +49,7 @@ async function main() {
     await closeDatabase();
   }
 }
+
 main().catch((error) => {
   console.error(error.message);
   process.exitCode = 1;

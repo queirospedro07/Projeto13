@@ -5,13 +5,14 @@ import { Modal } from '../Modal';
 import { Button } from '../Button';
 import { api } from '../../services/api';
 import './Moderation.css';
+
 export function ReportButton({ targetType, targetId }) {
   const { user } = useAuth();
-  const [open, setOpen] = useState(false),
-    [reason, setReason] = useState(''),
-    [busy, setBusy] = useState(false),
-    [error, setError] = useState(''),
-    [sent, setSent] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [sent, setSent] = useState(false);
   if (!user || !targetId || (targetType === 'user' && targetId === user.id)) return null;
   const submit = async (e) => {
     e.preventDefault();
@@ -32,6 +33,7 @@ export function ReportButton({ targetType, targetId }) {
       setBusy(false);
     }
   };
+
   return (
     <>
       <button
@@ -45,14 +47,21 @@ export function ReportButton({ targetType, targetId }) {
         <Flag />
         Denunciar
       </button>
-      <Modal isOpen={open} onClose={() => !busy && setOpen(false)} title="Denunciar conteúdo">
+      <Modal
+        isOpen={open}
+        onClose={() => !busy && setOpen(false)}
+        title="Denunciar conteúdo"
+      >
         {sent ? (
           <div role="status">
             <p>A denúncia foi registada. A administração vai analisar o conteúdo.</p>
             <Button onClick={() => setOpen(false)}>Fechar</Button>
           </div>
         ) : (
-          <form className="report-form" onSubmit={submit}>
+          <form
+            className="report-form"
+            onSubmit={submit}
+          >
             <label htmlFor="report-reason">O que aconteceu?</label>
             <p>Descreva o problema para ajudar a equipa a analisar o conteúdo.</p>
             <textarea
@@ -65,7 +74,10 @@ export function ReportButton({ targetType, targetId }) {
               required
             />
             {error && <p role="alert">{error}</p>}
-            <Button type="submit" isLoading={busy}>
+            <Button
+              type="submit"
+              isLoading={busy}
+            >
               Enviar denúncia
             </Button>
           </form>
@@ -74,10 +86,11 @@ export function ReportButton({ targetType, targetId }) {
     </>
   );
 }
+
 export function ReportQueue() {
-  const [items, setItems] = useState([]),
-    [error, setError] = useState(''),
-    [busy, setBusy] = useState(false);
+  const [items, setItems] = useState([]);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
   const load = async () => {
     setBusy(true);
     try {
@@ -89,9 +102,11 @@ export function ReportQueue() {
       setBusy(false);
     }
   };
+
   useEffect(() => {
     load();
   }, []);
+
   const update = async (id, status) => {
     setBusy(true);
     try {
@@ -107,11 +122,17 @@ export function ReportQueue() {
       setBusy(false);
     }
   };
+
   return (
     <section className="moderation-queue">
       <header>
         <h2>Denúncias da comunidade</h2>
-        <Button size="sm" variant="outline" onClick={load} disabled={busy}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={load}
+          disabled={busy}
+        >
           Atualizar
         </Button>
       </header>
@@ -128,7 +149,11 @@ export function ReportQueue() {
           <p>{item.motivo}</p>
           {item.estado === 'OPEN' && (
             <div>
-              <Button size="sm" onClick={() => update(item.id, 'RESOLVED')} disabled={busy}>
+              <Button
+                size="sm"
+                onClick={() => update(item.id, 'RESOLVED')}
+                disabled={busy}
+              >
                 Marcar como resolvida
               </Button>
               <Button

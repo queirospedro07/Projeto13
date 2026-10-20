@@ -3,31 +3,45 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import UserRoleEditor from '../src/components/UserRoleEditor/UserRoleEditor';
 import { ProtectedRoute } from '../src/components/ProtectedRoute/ProtectedRoute';
+
 const { put, actor } = vi.hoisted(() => ({
   put: vi.fn(),
   actor: { user: { id: 'admin', role: 'ADMIN', isTeacher: true } },
 }));
+
 vi.mock('../src/services/api', () => ({ api: { put } }));
 vi.mock('../src/context/AuthContext', () => ({
   useAuth: () => ({ user: actor.user, isLoading: false }),
 }));
 beforeEach(() => {
+  Element.prototype.scrollIntoView = vi.fn();
   put.mockReset();
   actor.user = { id: 'admin', role: 'ADMIN', isTeacher: true };
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  delete Element.prototype.scrollIntoView;
+});
 it('só altera o cargo de outra conta depois da confirmação', async () => {
   put.mockResolvedValue({ data: {} });
+
   const onChanged = vi.fn();
+
   render(
     <UserRoleEditor
       user={{ id: 'student', name: 'Aluno', role: 'STUDENT', isTeacher: false }}
       onChanged={onChanged}
     />,
   );
+  expect(screen.queryByRole('combobox')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Alterar cargo de Aluno' }));
+  expect(screen.getByRole('button', { name: 'Confirmar cargo' }).disabled).toBe(true);
+  fireEvent.click(screen.getByRole('combobox', { name: 'Cargo de Aluno' }));
+  fireEvent.keyDown(screen.getByRole('combobox', { name: 'Cargo de Aluno' }), { key: 'Escape' });
+  expect(screen.getByRole('dialog', { name: 'Alterar cargo' })).toBeTruthy();
+  expect(screen.queryByRole('listbox')).toBeNull();
   fireEvent.click(screen.getByRole('combobox', { name: 'Cargo de Aluno' }));
   fireEvent.click(screen.getByRole('option', { name: 'Administrador e formador' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Alterar cargo' }));
   expect(put).not.toHaveBeenCalled();
   fireEvent.click(await screen.findByRole('button', { name: 'Confirmar cargo' }));
   await waitFor(() => expect(onChanged).toHaveBeenCalledOnce());
@@ -57,7 +71,10 @@ it.each([false, true])(
               </ProtectedRoute>
             }
           />
-          <Route path="/admin" element={<p>Painel administrativo</p>} />
+          <Route
+            path="/admin"
+            element={<p>Painel administrativo</p>}
+          />
         </Routes>
       </MemoryRouter>,
     );

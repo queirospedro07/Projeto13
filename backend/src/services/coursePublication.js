@@ -12,12 +12,14 @@ const { loadAssessment } = require('./assessments');
 function fail(message, status = 400) {
   throw Object.assign(new Error(message), { status });
 }
+
 function checkVersion(course, expectedUpdatedAt) {
   if (expectedUpdatedAt !== undefined && typeof expectedUpdatedAt !== 'string')
     fail('Versão do curso inválida.');
   if (expectedUpdatedAt && expectedUpdatedAt !== course.updatedAt)
     fail('O curso foi alterado entretanto. Atualize a página e reveja a versão atual.', 409);
 }
+
 async function assertReadyForReview(course) {
   if (!course.title?.trim() || !course.description?.trim() || !course.category?.trim())
     fail('Preencha o título, a descrição e a categoria antes de enviar o curso para revisão.');
@@ -53,15 +55,18 @@ async function assertReadyForReview(course) {
     }
   }
 }
+
 async function notify(userId, title, content, link) {
   await execute(
     "INSERT INTO notificacoes(id,id_utilizador,tipo,titulo,conteudo,ligacao,esta_lida,criado_em) VALUES($1,$2,'system',$3,$4,$5,0,$6)",
     [randomUUID(), userId, title, content, link, new Date().toISOString()],
   );
 }
+
 async function submitCourse(user, id) {
   return transaction(async () => {
     await lockTransaction(`course-community:${id}`);
+
     const course = await queryOne('SELECT * FROM courses WHERE id=$1', [id]);
     if (!course) fail('Curso não encontrado.', 404);
     if (!(await canManageCourse(user, course)))
@@ -73,11 +78,14 @@ async function submitCourse(user, id) {
     if (course.approvalStatus === 'REJECTED')
       fail('Guarde as correções antes de voltar a enviar o curso.', 409);
     await assertReadyForReview(course);
+
     const now = new Date().toISOString();
+
     await execute(
       "UPDATE cursos SET estado_aprovacao='PENDING', e_publicado=0, submetido_para_revisao_em=$1, atualizado_em=$1 WHERE id=$2",
       [now, id],
     );
+
     const admins = await queryAll('SELECT id FROM users WHERE role=\'ADMIN\' AND "isSuspended"=0');
     for (const admin of admins)
       await notify(
@@ -86,15 +94,19 @@ async function submitCourse(user, id) {
         `O curso "${course.title}" aguarda revisão.`,
         '/admin?tab=courses',
       );
+
     return { approvalStatus: 'PENDING', message: 'Curso enviado para revisão.' };
   });
 }
+
 async function reviewCourse(id, action, input = {}) {
   const notes = input.notes ?? (action === 'APPROVED' ? 'Curso aprovado pela administração.' : '');
   if (typeof notes !== 'string' || !notes.trim() || notes.length > 2000)
     fail('Escreva um feedback entre 1 e 2000 caracteres.');
+
   return transaction(async () => {
     await lockTransaction(`course-community:${id}`);
+
     const course = await queryOne('SELECT * FROM courses WHERE id=$1', [id]);
     if (!course) fail('Curso não encontrado.', 404);
     checkVersion(course, input.expectedUpdatedAt);
@@ -105,6 +117,7 @@ async function reviewCourse(id, action, input = {}) {
       fail('O estado do curso mudou. Atualize a lista antes de tomar uma decisão.', 409);
     if (action === 'APPROVED') await assertReadyForReview(course);
     const now = new Date().toISOString();
+
     await execute(
       'UPDATE cursos SET estado_aprovacao=$1,e_publicado=$2,notas_admin=$3,revisto_em=$4,atualizado_em=$4 WHERE id=$5',
       [action, action === 'APPROVED' ? 1 : 0, notes.trim(), now, id],
@@ -115,6 +128,7 @@ async function reviewCourse(id, action, input = {}) {
       `"${course.title}": ${notes.trim()}`,
       `/creator/courses/${id}/edit`,
     );
+
     return {
       success: true,
       approvalStatus: action,
@@ -123,6 +137,7 @@ async function reviewCourse(id, action, input = {}) {
     };
   });
 }
+
 exports.checkVersion = checkVersion;
 exports.submitCourse = submitCourse;
 exports.reviewCourse = reviewCourse;

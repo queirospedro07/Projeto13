@@ -1,6 +1,8 @@
-import { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { useContext, useState, useEffect, useRef } from 'react';
 import { api, setAuthToken, removeAuthToken, getAuthToken } from '../services/api';
-const AuthContext = createContext(undefined);
+
+import { AuthContext } from './contexts';
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(getAuthToken());
@@ -9,6 +11,7 @@ export const AuthProvider = ({ children }) => {
   const sessionRequest = useRef(0);
   const fetchCurrentUser = async () => {
     const requestId = ++sessionRequest.current;
+
     setIsLoading(true);
     setSessionError('');
     try {
@@ -34,33 +37,42 @@ export const AuthProvider = ({ children }) => {
       if (requestId === sessionRequest.current) setIsLoading(false);
     }
   };
+
   useEffect(() => {
     fetchCurrentUser();
   }, []);
+
   const login = async (credentials, remember = false) => {
     const res = await api.post('/auth/login', credentials).then(({ data }) => data);
+
     sessionRequest.current++;
     setSessionError('');
     setIsLoading(false);
     setAuthToken(res.token, remember);
     setToken(res.token);
     setUser(res.user);
+
     return res.user;
   };
+
   const register = async (userData) => {
     const res = await api.post('/auth/register', userData).then(({ data }) => data);
+
     sessionRequest.current++;
     setSessionError('');
     setIsLoading(false);
     setAuthToken(res.token);
     setToken(res.token);
     setUser(res.user);
+
     return res.user;
   };
+
   const demoLogin = async (role) => {
     setIsLoading(true);
     try {
       const res = await api.get(`/auth/demo/${role}`).then(({ data }) => data);
+
       setAuthToken(res.token);
       setToken(res.token);
       setUser(res.user);
@@ -68,6 +80,7 @@ export const AuthProvider = ({ children }) => {
       setIsLoading(false);
     }
   };
+
   const logout = () => {
     sessionRequest.current++;
     setSessionError('');
@@ -76,16 +89,19 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setUser(null);
   };
+
   const refreshUser = async () => {
     if (token) {
       try {
         const userData = await api.get('/auth/me').then(({ data }) => data);
+
         setUser(userData?.user || userData);
       } catch (err) {
         console.error('Erro ao atualizar os dados do utilizador:', err);
       }
     }
   };
+
   return (
     <AuthContext.Provider
       value={{
@@ -105,8 +121,10 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) throw new Error('useAuth must be used within an AuthProvider');
+
   return context;
 };

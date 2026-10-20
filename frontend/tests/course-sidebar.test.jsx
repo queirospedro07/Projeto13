@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { CourseServerSidebar } from '../src/components/CourseServerSidebar/CourseServerSidebar';
 
 afterEach(cleanup);
+
 function show(hasCommunity, isCreatorOrAdmin) {
   render(
     <MemoryRouter>
@@ -20,6 +21,7 @@ function show(hasCommunity, isCreatorOrAdmin) {
     </MemoryRouter>,
   );
 }
+
 it.each([true, false])(
   'oculta toda a comunidade num curso sem comunidade, mesmo com gestão=%s',
   (manager) => {

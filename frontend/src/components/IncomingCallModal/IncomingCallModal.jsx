@@ -6,11 +6,13 @@ import { Avatar } from '../Avatar';
 import { useSocket } from '../../context/SocketContext';
 import { useAuth } from '../../context/AuthContext';
 import { soundEffects } from '../../services/soundEffects';
+
 export const IncomingCallModal = ({ onAcceptCall }) => {
   const { socket } = useSocket();
   const { user } = useAuth();
   const [incomingCall, setIncomingCall] = useState(null);
   const ringtoneIntervalRef = useRef(null);
+
   useEffect(() => {
     if (!socket) return;
     const handleIncoming = ({ caller, roomId }) => {
@@ -26,23 +28,29 @@ export const IncomingCallModal = ({ onAcceptCall }) => {
         soundEffects.playRingtone();
       }, 2500);
     };
+
     const handleEnded = ({ roomId }) => {
       setIncomingCall((current) => {
         if (current && current.roomId === roomId) {
           if (ringtoneIntervalRef.current) clearInterval(ringtoneIntervalRef.current);
+
           return null;
         }
+
         return current;
       });
     };
+
     socket.on('direct-call-incoming', handleIncoming);
     socket.on('direct-call-ended', handleEnded);
+
     return () => {
       socket.off('direct-call-incoming', handleIncoming);
       socket.off('direct-call-ended', handleEnded);
       if (ringtoneIntervalRef.current) clearInterval(ringtoneIntervalRef.current);
     };
   }, [socket, user?.id]);
+
   const handleAccept = () => {
     if (!incomingCall) return;
     if (ringtoneIntervalRef.current) clearInterval(ringtoneIntervalRef.current);
@@ -51,10 +59,13 @@ export const IncomingCallModal = ({ onAcceptCall }) => {
       roomId: incomingCall.roomId,
       acceptor: user,
     });
+
     const callData = incomingCall;
+
     setIncomingCall(null);
     onAcceptCall?.(callData);
   };
+
   const handleReject = () => {
     if (!incomingCall) return;
     if (ringtoneIntervalRef.current) clearInterval(ringtoneIntervalRef.current);
@@ -65,6 +76,7 @@ export const IncomingCallModal = ({ onAcceptCall }) => {
     });
     setIncomingCall(null);
   };
+
   if (!incomingCall) return null;
   const modalContent = (
     <div className="incoming-call-modal-panel dialog-layer">
@@ -88,12 +100,18 @@ export const IncomingCallModal = ({ onAcceptCall }) => {
         </p>
 
         <div className="incoming-call-modal-panel-6">
-          <button onClick={handleReject} className="incoming-call-modal-button">
+          <button
+            onClick={handleReject}
+            className="incoming-call-modal-button"
+          >
             <PhoneOff className="incoming-call-modal-phone-off" />
             <span>Recusar</span>
           </button>
 
-          <button onClick={handleAccept} className="incoming-call-modal-button-2">
+          <button
+            onClick={handleAccept}
+            className="incoming-call-modal-button-2"
+          >
             <Phone className="incoming-call-modal-phone-off" />
             <span>Atender</span>
           </button>
@@ -101,6 +119,8 @@ export const IncomingCallModal = ({ onAcceptCall }) => {
       </div>
     </div>
   );
+
   return createPortal(modalContent, document.body);
 };
+
 export default IncomingCallModal;

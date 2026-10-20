@@ -12,6 +12,7 @@ const getAdminStats = async (req, res) => {
     const totalEnrollments = ((await Admin.countEnrollments()) || {}).c || 0;
     const pendingApplications = ((await Admin.countCreatorApplications()) || {}).c || 0;
     const pendingCourses = ((await Admin.countCoursesForGetAdminStats()) || {}).c || 0;
+
     return res.json({
       totalUsers,
       activeUsers,
@@ -28,9 +29,11 @@ const getAdminStats = async (req, res) => {
     });
   }
 };
+
 const getAdminUsers = async (req, res) => {
   try {
     const users = await Admin.countUsersForGetAdminUsers();
+
     return res.json(
       users.map((u) => ({
         ...u,
@@ -43,20 +46,25 @@ const getAdminUsers = async (req, res) => {
     );
   } catch (err) {
     console.error('Error fetching admin users:', err);
+
     return res.status(500).json({
       error: 'Falha ao carregar lista de utilizadores',
     });
   }
 };
+
 const putAdminUserRole = async (req, res) => {
   const user = await changeUserRole(req.user.id, req.params.id, req.body);
+
   req.app
     .get('io')
     ?.in('user_' + user.id)
     .disconnectSockets(true);
   res.json({ user, message: 'Cargo atualizado. O utilizador deve iniciar sessão novamente.' });
 };
+
 exports.putAdminUserRole = putAdminUserRole;
+
 const putAdminUsersByIdSuspend = async (req, res) => {
   try {
     const { id } = req.params;
@@ -65,6 +73,7 @@ const putAdminUsersByIdSuspend = async (req, res) => {
         error: 'Não pode suspender a sua própria conta.',
       });
     }
+
     const targetUser = await Admin.findTargetUserById([id]);
     if (!targetUser)
       return res.status(404).json({
@@ -75,12 +84,15 @@ const putAdminUsersByIdSuspend = async (req, res) => {
         error: 'Não é permitido suspender contas de administrador.',
       });
     }
+
     const newSuspended = Number(targetUser.isSuspended) === 1 ? 0 : 1;
+
     await Admin.updateUtilizadoresByEstaSuspensoAndId([newSuspended, id]);
     req.app
       .get('io')
       ?.in('user_' + id)
       .disconnectSockets(true);
+
     return res.json({
       isSuspended: newSuspended === 1,
     });
@@ -90,9 +102,11 @@ const putAdminUsersByIdSuspend = async (req, res) => {
     });
   }
 };
+
 const getAdminCreatorApplications = async (req, res) => {
   try {
     const applications = await Admin.listApplications();
+
     return res.json(
       applications.map((app) => ({
         id: app.id,
@@ -125,6 +139,7 @@ const getAdminCreatorApplications = async (req, res) => {
     });
   }
 };
+
 const putAdminCreatorApplicationsByIdApprove = async (req, res) => {
   try {
     const { id } = req.params;
@@ -134,8 +149,10 @@ const putAdminCreatorApplicationsByIdApprove = async (req, res) => {
         error: 'Candidatura não encontrada',
       });
     const now = new Date().toISOString();
+
     await transaction(async () => {
       await lockTransaction(`creator-application:${id}`);
+
       const current = await Admin.findApplicationById([id]);
       if (!current || current.status !== 'PENDING')
         throw Object.assign(new Error('Esta candidatura já foi revista. Atualize a lista.'), {
@@ -154,6 +171,7 @@ const putAdminCreatorApplicationsByIdApprove = async (req, res) => {
         now,
       ]);
     });
+
     return res.json({
       success: true,
       message: 'Candidatura aprovada com sucesso!',
@@ -165,6 +183,7 @@ const putAdminCreatorApplicationsByIdApprove = async (req, res) => {
     });
   }
 };
+
 const putAdminCreatorApplicationsByIdReject = async (req, res) => {
   try {
     const { id } = req.params;
@@ -179,8 +198,10 @@ const putAdminCreatorApplicationsByIdReject = async (req, res) => {
     const now = new Date().toISOString();
     const adminFeedback =
       feedback || 'A sua candidatura não cumpre todos os critérios necessários neste momento.';
+
     await transaction(async () => {
       await lockTransaction(`creator-application:${id}`);
+
       const current = await Admin.findApplicationById([id]);
       if (!current || current.status !== 'PENDING')
         throw Object.assign(new Error('Esta candidatura já foi revista. Atualize a lista.'), {
@@ -194,6 +215,7 @@ const putAdminCreatorApplicationsByIdReject = async (req, res) => {
         now,
       ]);
     });
+
     return res.json({
       success: true,
       message: 'Candidatura rejeitada.',
@@ -205,9 +227,11 @@ const putAdminCreatorApplicationsByIdReject = async (req, res) => {
     });
   }
 };
+
 const getAdminCourses = async (req, res) => {
   try {
     const courses = await Admin.search(req.query);
+
     return res.json(
       courses.map((c) => ({
         id: c.id,
@@ -245,6 +269,7 @@ const getAdminCourses = async (req, res) => {
     });
   }
 };
+
 const putAdminCoursesByIdApprove = async (req, res) => {
   try {
     res.json(await reviewCourse(req.params.id, 'APPROVED', req.body));
@@ -254,6 +279,7 @@ const putAdminCoursesByIdApprove = async (req, res) => {
       .json({ error: error.status ? error.message : 'Falha ao aprovar curso.' });
   }
 };
+
 const putAdminCoursesByIdReject = async (req, res) => {
   try {
     res.json(await reviewCourse(req.params.id, 'REJECTED', req.body));
@@ -263,6 +289,7 @@ const putAdminCoursesByIdReject = async (req, res) => {
       .json({ error: error.status ? error.message : 'Falha ao pedir alterações.' });
   }
 };
+
 const getAdminReports = async (req, res) => res.json(await Admin.listDenuncias());
 const putAdminReportsById = async (req, res) => {
   const { status, feedback = '' } = req.body;
@@ -284,11 +311,13 @@ const putAdminReportsById = async (req, res) => {
     new Date().toISOString(),
     req.params.id,
   ]);
+
   return res.json({
     success: true,
     status,
   });
 };
+
 exports.getAdminStats = getAdminStats;
 exports.getAdminUsers = getAdminUsers;
 exports.putAdminUsersByIdSuspend = putAdminUsersByIdSuspend;

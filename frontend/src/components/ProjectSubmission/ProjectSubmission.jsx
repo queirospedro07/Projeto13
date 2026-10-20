@@ -9,14 +9,17 @@ import { api } from '../../services/api';
 import { Button } from '../Button';
 import { safeExternalUrl } from '../../utils/safeUrl';
 import './ProjectSubmission.css';
+
 export function ProjectSubmission({ lessonId, title, description, onApproved }) {
-  const [submission, setSubmission] = useState(null),
-    [url, setUrl] = useState(''),
-    [busy, setBusy] = useState(true),
-    [error, setError] = useState(''),
-    [reload, setReload] = useState(0);
+  const [submission, setSubmission] = useState(null);
+  const [url, setUrl] = useState('');
+  const [busy, setBusy] = useState(true);
+  const [error, setError] = useState('');
+  const [reload, setReload] = useState(0);
+
   useEffect(() => {
     let active = true;
+
     setBusy(true);
     api
       .get(`/projects/lesson/${lessonId}`)
@@ -33,13 +36,16 @@ export function ProjectSubmission({ lessonId, title, description, onApproved }) 
       .finally(() => {
         if (active) setBusy(false);
       });
+
     return () => {
       active = false;
     };
   }, [lessonId, reload]);
+
   const submit = async (event) => {
     event.preventDefault();
     setError('');
+
     const safe = safeExternalUrl(url);
     if (!safe || safe.startsWith('/')) return setError('Introduza um link completo http ou https.');
     setBusy(true);
@@ -57,6 +63,7 @@ export function ProjectSubmission({ lessonId, title, description, onApproved }) 
       setBusy(false);
     }
   };
+
   return (
     <section className="project-submission">
       <FolderGit2 />
@@ -67,7 +74,10 @@ export function ProjectSubmission({ lessonId, title, description, onApproved }) 
           'Partilhe o link para o seu projeto. O formador vai avaliar o trabalho e enviar-lhe um parecer.'}
       </p>
       {error && (
-        <p role="alert" className="project-error">
+        <p
+          role="alert"
+          className="project-error"
+        >
           {error}
         </p>
       )}
@@ -77,7 +87,10 @@ export function ProjectSubmission({ lessonId, title, description, onApproved }) 
         </p>
       )}
       {submission && (
-        <div className="project-status" role="status">
+        <div
+          className="project-status"
+          role="status"
+        >
           <strong>
             {submission.status === 'APPROVED'
               ? 'Projeto aprovado'
@@ -85,7 +98,11 @@ export function ProjectSubmission({ lessonId, title, description, onApproved }) 
                 ? 'O formador pediu alterações'
                 : 'Projeto enviado para avaliação'}
           </strong>
-          <a href={safeExternalUrl(submission.url)} target="_blank" rel="noopener noreferrer">
+          <a
+            href={safeExternalUrl(submission.url)}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             Ver projeto
             <ExternalLink />
           </a>
@@ -101,7 +118,10 @@ export function ProjectSubmission({ lessonId, title, description, onApproved }) 
         </div>
       )}
       {submission?.status === 'APPROVED' ? (
-        <Button onClick={onApproved} leftIcon={<CheckCircle2 />}>
+        <Button
+          onClick={onApproved}
+          leftIcon={<CheckCircle2 />}
+        >
           Concluir aula
         </Button>
       ) : (
@@ -117,7 +137,10 @@ export function ProjectSubmission({ lessonId, title, description, onApproved }) 
             onChange={(e) => setUrl(e.target.value)}
             disabled={busy}
           />
-          <Button type="submit" isLoading={busy}>
+          <Button
+            type="submit"
+            isLoading={busy}
+          >
             {submission ? 'Enviar nova versão' : 'Submeter projeto'}
           </Button>
         </form>

@@ -19,6 +19,8 @@ A organização segue o [projeto de referência](https://github.com/queirospedro
 
 Requer Node.js 22.16 ou superior, npm e Docker Desktop para a base de dados local.
 
+Para alojamento público, consulte [PUBLICACAO.md](PUBLICACAO.md). A pasta `deployment/` contém a configuração separada de produção; `start.bat` destina-se ao ambiente local.
+
 ```powershell
 .\start.bat
 ```
@@ -31,6 +33,8 @@ O arranque instala dependências em falta com `npm ci`, prepara a configuração
 - Encerrar a API e o frontend: `stop.bat`. O PostgreSQL continua disponível e os dados são conservados.
 
 Para usar uma instalação PostgreSQL própria, configure `DATABASE_URL` e `LOCAL_POSTGRES_DOCKER=false` em `backend/.env`. Conserve as configurações e credenciais existentes.
+
+No PostgreSQL gerido pelo projeto, o arranque também verifica a autenticação. Se um volume existente tiver uma palavra-passe antiga, sincroniza-a com a configuração local através do socket interno do contentor, sem eliminar o volume nem os dados. Esta recuperação não se aplica a bases de dados externas.
 
 ## Execução manual
 
@@ -107,11 +111,15 @@ Os cursos podem ter comunidade opcional, com chats e chamadas normais de voz/ví
 
 Cursos gratuitos e pagos com simulação de pagamento, biblioteca, progresso, notas, avaliações corrigidas no servidor, projetos e certificados verificáveis. Inclui editor de cursos, revisão administrativa, colaboradores, comunidades, mensagens, amigos, chamadas, perfil com privacidade e centro de ajuda com 33 perguntas. Os tickets de suporte foram removidos.
 
-Os pagamentos são demonstrações, sem cobrança real. Anexos diretos no chat não estão disponíveis; podem ser partilhadas ligações. Os vídeos externos exigem internet e algumas redes de chamadas exigem TURN.
+Os pagamentos são demonstrações, sem cobrança real. Anexos diretos no chat não estão disponíveis; podem ser partilhadas ligações. Os vídeos externos exigem internet e as chamadas usam ligação direta com STUN, podendo falhar em redes restritivas.
 
 ## Verificação
 
-Com o PostgreSQL disponível:
+Configure `TEST_DATABASE_URL` com uma base PostgreSQL descartável e separada da base da aplicação. Os testes de integração exigem esta variável explicitamente; não reutilizam `DATABASE_URL` nem as credenciais de `backend/.env` por defeito.
+
+No Windows com Docker, `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-backend.ps1` prepara essa base descartável, executa os testes e remove o contentor no fim.
+
+Com essa ligação disponível:
 
 ```powershell
 npm --prefix backend run check
@@ -132,3 +140,18 @@ npm --prefix backend run restore -- caminho/do/backup.json
 
 A configuração local já foi migrada para PostgreSQL. A cópia SQLite original foi conservada como arquivo e não é utilizada pela aplicação. Os backups contêm dados privados e devem ser guardados fora do servidor.
 
+
+## Legibilidade do código
+
+O backend e o frontend seguem a mesma formatação: duas posições por nível, uma declaração por instrução, linhas em branco entre blocos lógicos e antes dos retornos, e propriedades JSX em linhas separadas. Os ficheiros CSS continuam separados dos componentes.
+
+Para formatar o código e aplicar a separação de blocos:
+
+```powershell
+npm --prefix frontend run lint:fix
+npm --prefix frontend run format
+npm --prefix backend run lint:fix
+npm --prefix backend run format
+```
+
+Use `format:check` e `lint` para verificar o estilo sem modificar os ficheiros. As regras estão em `.prettierrc.json`, `.editorconfig` e nas configurações ESLint de cada pasta.

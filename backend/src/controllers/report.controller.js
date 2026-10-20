@@ -1,6 +1,7 @@
 const Report = require('../models/Report.js');
 const { randomUUID } = require('node:crypto');
 const { canAccessChannel } = require('../middleware/channelAccess.js');
+
 async function createReport(req, res) {
   const { targetType, targetId, reason } = req.body;
   const tables = {
@@ -29,13 +30,16 @@ async function createReport(req, res) {
     return res.status(403).json({
       error: 'Sem acesso ao conteúdo.',
     });
-  const id = randomUUID(),
-    now = new Date().toISOString();
+  const id = randomUUID();
+  const now = new Date().toISOString();
+
   await Report.insertDenuncias([id, req.user.id, targetType, targetId, reason.trim(), now, now]);
+
   return res.status(201).json({
     id,
     status: 'OPEN',
     message: 'Denúncia registada para análise da administração.',
   });
 }
+
 exports.createReport = createReport;

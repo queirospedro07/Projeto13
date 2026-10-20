@@ -1,4 +1,60 @@
 @layer components {
+  .creator-review-filters {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 0.8fr);
+    align-items: end;
+    gap: 1rem;
+    padding: 1rem;
+    margin-block: 1.25rem;
+    border: 1px solid #e5e5e5;
+    border-radius: 0.875rem;
+    background: #fafafa;
+  }
+
+  .creator-review-filters > label {
+    min-width: 0;
+  }
+
+  .creator-review-filters .custom-select-trigger,
+  .creator-review-filters input {
+    width: 100%;
+    min-width: 0;
+    min-height: 2.75rem;
+  }
+
+  .creator-review-filters input,
+  .creator-review textarea,
+  .creator-review input {
+    background: #fff;
+    color: #171717;
+  }
+
+  .creator-review-filters input:focus-visible,
+  .creator-review textarea:focus-visible,
+  .creator-review input:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+  }
+
+  .dark .creator-review-filters {
+    background: #171717;
+    border-color: #333;
+  }
+
+  .dark .creator-review-filters input,
+  .dark .creator-review textarea,
+  .dark .creator-review input {
+    background: #1a1a1a;
+    color: #f5f5f5;
+    border-color: #404040;
+  }
+
+  @media (max-width: 767px) {
+    .creator-review-filters {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
   .creator-tool {
     padding: 1.5rem;
     border: 1px solid #e5e5e5;

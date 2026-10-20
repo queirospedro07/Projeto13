@@ -1,10 +1,13 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useContext, useState, useEffect, useCallback } from 'react';
 import { soundEffects } from '../services/soundEffects';
-const ActiveCallContext = createContext(null);
+
+import { ActiveCallContext } from './contexts';
+
 export const ActiveCallProvider = ({ children }) => {
   const [activeCall, setActiveCall] = useState(() => {
     try {
       const saved = sessionStorage.getItem('nexo_active_call');
+
       return saved ? JSON.parse(saved) : null;
     } catch {
       return null;
@@ -41,18 +44,22 @@ export const ActiveCallProvider = ({ children }) => {
       returnUrl,
       startedAt: Date.now(),
     };
+
     setActiveCall(callData);
     try {
       sessionStorage.setItem('nexo_active_call', JSON.stringify(callData));
     } catch {}
   };
+
   const endCall = () => {
     setActiveCall(null);
     try {
       sessionStorage.removeItem('nexo_active_call');
     } catch {}
+
     window.dispatchEvent(new Event('nexo_call_ended'));
   };
+
   const leaveCall = useCallback(() => {
     soundEffects.playLeaveCall();
     window.dispatchEvent(new CustomEvent('nexo_call_leave'));
@@ -67,6 +74,7 @@ export const ActiveCallProvider = ({ children }) => {
         try {
           localStorage.setItem('nexo_mic_muted', String(next));
         } catch {}
+
         if (next) {
           soundEffects.playMute();
         } else {
@@ -77,6 +85,7 @@ export const ActiveCallProvider = ({ children }) => {
             localStorage.setItem('nexo_deafened', 'false');
           } catch {}
         }
+
         return next;
       });
     }
@@ -90,6 +99,7 @@ export const ActiveCallProvider = ({ children }) => {
         try {
           localStorage.setItem('nexo_deafened', String(next));
         } catch {}
+
         if (next) {
           soundEffects.playDeafen();
           // Ao ficar ensurdecido, o microfone desliga-se automaticamente também!
@@ -100,6 +110,7 @@ export const ActiveCallProvider = ({ children }) => {
         } else {
           soundEffects.playUndeafen();
         }
+
         return next;
       });
     }
@@ -107,19 +118,23 @@ export const ActiveCallProvider = ({ children }) => {
   const updateCallAudioState = useCallback(({ isMuted, isDeafened: deafened }) => {
     if (isMuted !== undefined) {
       const val = Boolean(isMuted);
+
       setIsMicMuted(val);
       try {
         localStorage.setItem('nexo_mic_muted', String(val));
       } catch {}
     }
+
     if (deafened !== undefined) {
       const val = Boolean(deafened);
+
       setIsDeafened(val);
       try {
         localStorage.setItem('nexo_deafened', String(val));
       } catch {}
     }
   }, []);
+
   useEffect(() => {
     const handleStorage = (e) => {
       if (e.key === 'nexo_active_call') {
@@ -128,9 +143,12 @@ export const ActiveCallProvider = ({ children }) => {
         } catch {}
       }
     };
+
     window.addEventListener('storage', handleStorage);
+
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
+
   return (
     <ActiveCallContext.Provider
       value={{
@@ -152,8 +170,10 @@ export const ActiveCallProvider = ({ children }) => {
     </ActiveCallContext.Provider>
   );
 };
+
 export const useActiveCall = () => {
   const context = useContext(ActiveCallContext);
+
   return (
     context || {
       activeCall: null,
@@ -171,4 +191,5 @@ export const useActiveCall = () => {
     }
   );
 };
+
 export default ActiveCallContext;

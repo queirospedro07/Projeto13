@@ -60,6 +60,7 @@ export const PROFILE_NETWORKS = [
     prefix: 'https://www.facebook.com/',
   },
 ];
+
 export function normalizeProfileLink(network, value) {
   const raw = String(value || '').trim();
   if (!raw) return '';
@@ -74,12 +75,14 @@ export function normalizeProfileLink(network, value) {
           ? network.prefix + raw.replace(/^@/, '')
           : `https://${raw}`;
   }
+
   let url;
   try {
     url = new URL(candidate);
   } catch {
     throw new Error('Introduza um link ou nome de utilizador válido.');
   }
+
   if (
     !['https:', 'http:'].includes(url.protocol) ||
     !url.hostname.includes('.') ||
@@ -89,10 +92,13 @@ export function normalizeProfileLink(network, value) {
   ) {
     throw new Error('Introduza um link http ou https válido (até 500 caracteres).');
   }
+
   return url.href;
 }
+
 export function getProfileLinks(profile = {}) {
   profile = profile || {};
+
   return PROFILE_NETWORKS.flatMap((network) => {
     const value = profile.socialLinks?.[network.key] || profile[network.key];
     if (!value) return [];

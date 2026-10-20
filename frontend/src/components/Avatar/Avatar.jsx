@@ -38,9 +38,11 @@ export const Avatar = ({
   className,
 }) => {
   const [imgError, setImgError] = useState(false);
+
   useEffect(() => {
     setImgError(false);
   }, [src]);
+
   const sizes = {
     xs: 'avatar-sizes-xs',
     sm: 'avatar-sizes-sm',
@@ -105,4 +107,5 @@ export const Avatar = ({
     </div>
   );
 };
+
 export default Avatar;

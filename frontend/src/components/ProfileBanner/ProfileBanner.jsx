@@ -1,4 +1,5 @@
 import './ProfileBanner.css';
+
 export const BANNER_PRESETS = [
   {
     value: 'gradient-indigo',
@@ -25,8 +26,10 @@ export const BANNER_PRESETS = [
     label: 'Meia-noite',
   },
 ];
+
 export function ProfileBanner({ value = '', className = '', children }) {
   value = typeof value === 'string' ? value : '';
+
   const preset = BANNER_PRESETS.some((p) => p.value === value) ? value : 'gradient-indigo';
   const isColor =
     /^(?:#[\da-f]{3,8}|(?:rgb|hsl)a?\([^;"'\\]+\)|linear-gradient\([^;"'\\]+\))$/i.test(value);
@@ -41,6 +44,7 @@ export function ProfileBanner({ value = '', className = '', children }) {
           '--banner-image': `url("${safeImage}")`,
         }
       : undefined;
+
   return (
     <div
       className={`profile-banner-surface ${className}`}

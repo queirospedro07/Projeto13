@@ -8,8 +8,9 @@ const postSpaceByIdChannels = async (req, res) => {
     return res.status(403).json({
       error: 'Sem permissão para gerir canais.',
     });
-  const id = randomUUID(),
-    b = req.body;
+  const id = randomUUID();
+  const b = req.body;
+
   await Space.insertChannels([
     id,
     req.params.id,
@@ -19,8 +20,10 @@ const postSpaceByIdChannels = async (req, res) => {
     b.type === 'voice' ? 1 : 0,
     b.guidingQuestion || '',
   ]);
+
   return res.status(201).json(await Space.findChannelsById([id]));
 };
+
 const putSpaceByIdChannelsByChannelId = async (req, res) => {
   if (!(await canModerateSpace(req.user, req.params.id)))
     return res.status(403).json({
@@ -31,6 +34,7 @@ const putSpaceByIdChannelsByChannelId = async (req, res) => {
       error: 'Canal não encontrado.',
     });
   const b = req.body;
+
   await Space.updateChannel([
     b.name.trim(),
     b.type,
@@ -40,8 +44,10 @@ const putSpaceByIdChannelsByChannelId = async (req, res) => {
     req.params.channelId,
     req.params.id,
   ]);
+
   return res.json(await Space.findChannelsById([req.params.channelId]));
 };
+
 const deleteSpaceByIdChannelsByChannelId = async (req, res) => {
   if (!(await canModerateSpace(req.user, req.params.id)))
     return res.status(403).json({
@@ -52,10 +58,12 @@ const deleteSpaceByIdChannelsByChannelId = async (req, res) => {
       error: 'Canal não encontrado.',
     });
   await Space.deleteChannelsByIdAndSpaceId([req.params.channelId, req.params.id]);
+
   return res.json({
     success: true,
   });
 };
+
 const getSpace = async (req, res) => {
   try {
     const rows = await Space.search(req.query);
@@ -69,6 +77,7 @@ const getSpace = async (req, res) => {
           memberRole = mem.role;
         }
       }
+
       return {
         id: s.id,
         name: s.name,
@@ -90,14 +99,17 @@ const getSpace = async (req, res) => {
         memberRole,
       };
     });
+
     return res.json(enriched);
   } catch (err) {
     console.error('Failed to fetch spaces:', err);
+
     return res.status(500).json({
       error: 'Falha ao carregar comunidades',
     });
   }
 };
+
 const getSpaceById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -108,6 +120,7 @@ const getSpaceById = async (req, res) => {
         if (courseRow.spaceId) {
           space = await Space.countMembershipsById([courseRow.spaceId]);
         }
+
         if (!space) {
           space = {
             id: courseRow.id,
@@ -129,11 +142,13 @@ const getSpaceById = async (req, res) => {
         }
       }
     }
+
     if (!space) {
       return res.status(404).json({
         error: 'Comunidade não encontrada',
       });
     }
+
     let channels = await Space.listChannelsBySpaceId([space.id]);
     const courses = await Space.listCoursesBySpaceId([space.id]);
     const members = await Space.listMembersBySpaceIdAndId([
@@ -151,6 +166,7 @@ const getSpaceById = async (req, res) => {
         memberRole = mem.role;
       }
     }
+
     return res.json({
       ...space,
       owner: {
@@ -181,11 +197,13 @@ const getSpaceById = async (req, res) => {
     });
   } catch (err) {
     console.error('Failed to load space details:', err);
+
     return res.status(500).json({
       error: 'Falha ao carregar detalhes do espaço',
     });
   }
 };
+
 const postSpaceByIdJoin = async (req, res) => {
   try {
     const { id } = req.params;
@@ -197,17 +215,20 @@ const postSpaceByIdJoin = async (req, res) => {
         error: 'Comunidade não encontrada',
       });
     }
+
     if (space.isPrivate === 1 && req.user.role !== 'ADMIN' && req.user.id !== space.ownerId) {
       return res.status(403).json({
         error: 'Esta comunidade é privada.',
       });
     }
+
     const pendingCourse = await Space.findPendingCourseBySpaceId([space.id]);
     if (pendingCourse) {
       return res.status(403).json({
         error: 'Este curso ainda aguarda aprovação.',
       });
     }
+
     const lockedCourse = await asyncSome(
       await Space.listCoursesBySpaceIdForPostSpaceByIdJoin([space.id]),
       async (course) => !(await canStudyCourse(req.user, course)),
@@ -218,14 +239,17 @@ const postSpaceByIdJoin = async (req, res) => {
       });
     await transaction(async () => {
       await lockTransaction(`membership:${userId}:${space.id}`);
+
       const existing = await Space.findExistingBySpaceIdAndUserId([space.id, userId]);
       if (!existing) await Space.insertMemberships([randomUUID(), userId, space.id, now]);
       const linkedCourses = await Space.listLinkedCoursesBySpaceIdAndId([space.id, space.id]);
+
       await asyncForEach(linkedCourses, async (c) => {
         await lockTransaction(`enrollment:${userId}:${c.id}`);
         await Space.insertEnrollments([randomUUID(), userId, c.id, now]);
       });
     });
+
     return res.status(201).json({
       message: 'Entrou na comunidade e no curso com sucesso!',
     });
@@ -235,6 +259,7 @@ const postSpaceByIdJoin = async (req, res) => {
     });
   }
 };
+
 exports.postSpaceByIdChannels = postSpaceByIdChannels;
 exports.putSpaceByIdChannelsByChannelId = putSpaceByIdChannelsByChannelId;
 exports.deleteSpaceByIdChannelsByChannelId = deleteSpaceByIdChannelsByChannelId;

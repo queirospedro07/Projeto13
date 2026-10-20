@@ -6,11 +6,13 @@ const normalizeOrigin = (value) => {
   const trimmed = value.trim().replace(/\/$/, '');
   try {
     const url = new URL(trimmed);
+
     return `${url.protocol}//${url.host}`;
   } catch {
     return trimmed;
   }
 };
+
 const allowedOrigins = [
   ...new Set(
     [process.env.CLIENT_URL, process.env.FRONTEND_URL]
@@ -30,11 +32,14 @@ if (process.env.NODE_ENV !== 'production') {
     'http://127.0.0.1:5174',
   );
 }
+
 function isOriginAllowed(origin) {
   if (!origin) return true;
   const normalizedOrigin = normalizeOrigin(origin);
+
   return allowedOrigins.includes(normalizedOrigin);
 }
+
 const helmetMiddleware = helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
@@ -72,6 +77,7 @@ const corsMiddleware = cors({
       callback(null, true);
     } else {
       const error = new Error('Origem não autorizada.');
+
       error.status = 403;
       callback(error);
     }
@@ -110,6 +116,7 @@ const authLimiter = rateLimit({
     error: 'Demasiadas tentativas de autenticação. Por favor, aguarde alguns minutos.',
   },
 });
+
 function sanitizeInputs(req, res, next) {
   if (
     Object.keys(req.query || {}).length > 20 ||
@@ -117,6 +124,7 @@ function sanitizeInputs(req, res, next) {
   ) {
     return res.status(400).json({ error: 'Os filtros devem ser textos com até 500 caracteres.' });
   }
+
   const noTrimKeys = new Set(['password', 'currentPassword', 'newPassword', 'content', 'code']);
   if (Array.isArray(req.body))
     return res.status(400).json({
@@ -126,29 +134,36 @@ function sanitizeInputs(req, res, next) {
   const clean = (obj, depth = 0) => {
     if (depth > 20 || ++visited > 10000) {
       const error = new Error('O pedido é demasiado complexo.');
+
       error.status = 400;
       throw error;
     }
+
     if (!obj || typeof obj !== 'object') return obj;
     for (const key of Object.keys(obj)) {
       if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
         delete obj[key];
         continue;
       }
+
       if (typeof obj[key] === 'string') {
         const withoutNulls = obj[key].replace(/\0/g, '');
+
         obj[key] = noTrimKeys.has(key) ? withoutNulls : withoutNulls.trim();
       } else if (typeof obj[key] === 'object') {
         clean(obj[key], depth + 1);
       }
     }
+
     return obj;
   };
+
   if (req.body) clean(req.body);
   if (req.query) clean(req.query);
   if (req.params) clean(req.params);
   next();
 }
+
 exports.allowedOrigins = allowedOrigins;
 exports.isOriginAllowed = isOriginAllowed;
 exports.helmetMiddleware = helmetMiddleware;

@@ -198,6 +198,7 @@ const demoCourses = [
     ],
   },
 ];
+
 async function seedDemoShowcaseData({ teacherId } = {}) {
   if (process.env.NODE_ENV === 'production')
     throw new Error('Demonstração indisponível em produção.');
@@ -211,6 +212,7 @@ async function seedDemoShowcaseData({ teacherId } = {}) {
     throw new Error('O responsável pelos cursos tem de ser formador ou administrador.');
   const now = new Date().toISOString();
   const passwordHash = bcrypt.hashSync(DEMO_PASSWORD, 12);
+
   return await transaction(async () => {
     const insertUser = async (...params) =>
       await execute(
@@ -224,6 +226,7 @@ async function seedDemoShowcaseData({ teacherId } = {}) {
       VALUES ($1, $2, $3, 1, 1, 'light') ON CONFLICT DO NOTHING`,
         params,
       );
+
     await asyncForEach(demoUsers, async (user) => {
       await insertUser(
         user.id,
@@ -245,6 +248,7 @@ async function seedDemoShowcaseData({ teacherId } = {}) {
       VALUES ('cat-data-demo', 'Dados & Bases de Dados', 'data', 'Consultas, modelação e gestão de bases de dados.', 'Database') ON CONFLICT DO NOTHING`,
       [],
     );
+
     const insertCourse = async (...params) =>
       await execute(
         `INSERT INTO cursos (id, titulo, slug, descricao, categoria, dificuldade, url_miniatura, url_banner, preco, e_gratuito, e_publicado, estado_aprovacao, destaque, duracao_horas, idioma, id_criador, id_espaco, criado_em, atualizado_em)
@@ -263,6 +267,7 @@ async function seedDemoShowcaseData({ teacherId } = {}) {
       VALUES ($1, $2, $3, 'video', $4, $5, $6, $7, 25) ON CONFLICT DO NOTHING`,
         params,
       );
+
     await asyncForEach(demoCourses, async (course) => {
       await insertCourse(
         course.id,
@@ -281,7 +286,9 @@ async function seedDemoShowcaseData({ teacherId } = {}) {
         now,
         now,
       );
+
       const moduleId = `${course.id}-module-1`;
+
       await insertModule(moduleId, course.id, course.module, course.description);
       await asyncForEach(course.lessons, async ([title, youtubeId, durationMin], index) => {
         await insertLesson(
@@ -295,6 +302,7 @@ async function seedDemoShowcaseData({ teacherId } = {}) {
         );
       });
     });
+
     const insertEnrollment = async (...params) =>
       await execute(
         `INSERT INTO inscricoes (id, id_utilizador, id_curso, inscrito_em, percentagem_progresso, id_ultima_aula)
@@ -311,6 +319,7 @@ async function seedDemoShowcaseData({ teacherId } = {}) {
       ['marta', 'demo-course-git'],
       ['diogo', 'demo-course-sql'],
     ];
+
     await asyncForEach(demoEnrollments, async ([student, courseId], index) => {
       await insertEnrollment(
         `demo-enrollment-${index + 1}`,
@@ -322,4 +331,5 @@ async function seedDemoShowcaseData({ teacherId } = {}) {
     });
   });
 }
+
 exports.seedDemoShowcaseData = seedDemoShowcaseData;

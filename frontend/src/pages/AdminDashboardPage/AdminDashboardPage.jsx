@@ -21,6 +21,7 @@ import { Avatar } from '../../components/Avatar';
 import { useToast } from '../../components/Toast';
 import { api } from '../../services/api';
 import { formatCoursePrice, formatCategory } from '../../utils/formatters';
+
 export const AdminDashboardPage = () => {
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
@@ -74,6 +75,7 @@ export const AdminDashboardPage = () => {
           api.get('/admin/creator-applications').then(({ data }) => data),
           api.get('/admin/courses', { params: { status: 'all' } }).then(({ data }) => data),
         ]);
+
         setStats(statsData || null);
         setUsers(usersData || []);
         setApplications(appsData || []);
@@ -100,6 +102,7 @@ export const AdminDashboardPage = () => {
     },
     [toast],
   );
+
   useEffect(() => {
     fetchAdminData();
   }, [fetchAdminData]);
@@ -108,6 +111,7 @@ export const AdminDashboardPage = () => {
   const handleToggleSuspend = async (userId) => {
     try {
       const res = await api.put(`/admin/users/${userId}/suspend`).then(({ data }) => data);
+
       setUsers((prev) =>
         prev.map((u) =>
           u.id === userId
@@ -250,6 +254,7 @@ export const AdminDashboardPage = () => {
   // Ver currículo do curso
   const handleOpenCourseReview = async (course) => {
     const requestId = ++courseReviewRequest.current;
+
     setSelectedCourseDetail(course);
     setCourseDetailLoading(true);
     setCourseReviewError(false);
@@ -284,6 +289,7 @@ export const AdminDashboardPage = () => {
         (app.fullName && app.fullName.toLowerCase().includes(q)) ||
         (app.expertise && app.expertise.toLowerCase().includes(q)) ||
         (app.user?.username && app.user.username.toLowerCase().includes(q));
+
       return matchStatus && matchSearch;
     });
   }, [applications, appFilter, appSearch]);
@@ -295,6 +301,7 @@ export const AdminDashboardPage = () => {
         !q ||
         (course.title && course.title.toLowerCase().includes(q)) ||
         (course.creator?.name && course.creator.name.toLowerCase().includes(q));
+
       return matchStatus && matchSearch;
     });
   }, [courses, courseFilter, courseSearch]);
@@ -317,10 +324,17 @@ export const AdminDashboardPage = () => {
           : userStatusFilter === 'SUSPENDED'
             ? u.isSuspended
             : !u.isSuspended;
+
       return matchSearch && matchRole && matchStatus;
     });
   }, [users, userSearch, userRoleFilter, userStatusFilter]);
-  if (loading) return <PageState loading title="A carregar a administração…" />;
+  if (loading)
+    return (
+      <PageState
+        loading
+        title="A carregar a administração…"
+      />
+    );
   if (loadError)
     return (
       <PageState
@@ -329,6 +343,7 @@ export const AdminDashboardPage = () => {
         onRetry={() => fetchAdminData()}
       />
     );
+
   return (
     <div className="admin-dashboard-panel">
       {/* ── HEADER SÓBRIO & PROFISSIONAL ── */}
@@ -405,7 +420,10 @@ export const AdminDashboardPage = () => {
         <div className="admin-dashboard-panel-5">
           {/* Métricas Principais */}
           <div className="admin-dashboard-panel-6">
-            <div onClick={() => setActiveTab('users')} className="admin-dashboard-panel-7">
+            <div
+              onClick={() => setActiveTab('users')}
+              className="admin-dashboard-panel-7"
+            >
               <div className="admin-dashboard-panel-8">Utilizadores</div>
               <div className="admin-dashboard-panel-9">{users.length}</div>
               <div className="admin-dashboard-panel-10">
@@ -414,7 +432,10 @@ export const AdminDashboardPage = () => {
               </div>
             </div>
 
-            <div onClick={() => setActiveTab('courses')} className="admin-dashboard-panel-7">
+            <div
+              onClick={() => setActiveTab('courses')}
+              className="admin-dashboard-panel-7"
+            >
               <div className="admin-dashboard-panel-8">Cursos Registados</div>
               <div className="admin-dashboard-panel-9">{courses.length}</div>
               <div className="admin-dashboard-panel-10">
@@ -428,7 +449,10 @@ export const AdminDashboardPage = () => {
               </div>
             </div>
 
-            <div onClick={() => setActiveTab('applications')} className="admin-dashboard-panel-7">
+            <div
+              onClick={() => setActiveTab('applications')}
+              className="admin-dashboard-panel-7"
+            >
               <div className="admin-dashboard-panel-8">Candidaturas a Formador</div>
               <div className="admin-dashboard-panel-9">{applications.length}</div>
               <div className="admin-dashboard-panel-10">
@@ -519,9 +543,17 @@ export const AdminDashboardPage = () => {
               </div>
               <div className="admin-dashboard-panel-20">
                 {users.slice(0, 5).map((u) => (
-                  <div key={u.id} className="admin-dashboard-panel-21">
+                  <div
+                    key={u.id}
+                    className="admin-dashboard-panel-21"
+                  >
                     <div className="admin-dashboard-panel-22">
-                      <Avatar src={u.avatarUrl} name={u.name} role={u.role} size="sm" />
+                      <Avatar
+                        src={u.avatarUrl}
+                        name={u.name}
+                        role={u.role}
+                        size="sm"
+                      />
                       <div className="admin-dashboard-panel-23">
                         <div className="admin-dashboard-panel-24">{u.name}</div>
                         <div className="admin-dashboard-panel-25">{u.email}</div>
@@ -565,10 +597,17 @@ export const AdminDashboardPage = () => {
               </div>
               <div className="admin-dashboard-panel-20">
                 {courses.slice(0, 5).map((c) => (
-                  <div key={c.id} className="admin-dashboard-panel-21">
+                  <div
+                    key={c.id}
+                    className="admin-dashboard-panel-21"
+                  >
                     <div className="admin-dashboard-panel-22">
                       <div className="admin-dashboard-panel-26">
-                        <img src={c.thumbnailUrl} alt={c.title} className="admin-dashboard-image" />
+                        <img
+                          src={c.thumbnailUrl}
+                          alt={c.title}
+                          className="admin-dashboard-image"
+                        />
                       </div>
                       <div className="admin-dashboard-panel-23">
                         <div className="admin-dashboard-panel-24">{c.title}</div>
@@ -644,7 +683,10 @@ export const AdminDashboardPage = () => {
           ) : (
             <div className="admin-dashboard-panel-32">
               {filteredApplications.map((app) => (
-                <div key={app.id} className="admin-dashboard-panel-33">
+                <div
+                  key={app.id}
+                  className="admin-dashboard-panel-33"
+                >
                   <div className="admin-dashboard-panel-34">
                     <div className="admin-dashboard-panel-35">
                       <Avatar
@@ -792,7 +834,7 @@ export const AdminDashboardPage = () => {
                 value={courseSearch}
                 onChange={(e) => setCourseSearch(e.target.value)}
                 placeholder="Pesquisar por título ou formador..."
-                className="admin-dashboard-field pl-8.5"
+                className="admin-dashboard-field admin-user-search"
               />
             </div>
           </div>
@@ -802,7 +844,10 @@ export const AdminDashboardPage = () => {
           ) : (
             <div className="admin-dashboard-panel-32">
               {filteredCourses.map((course) => (
-                <div key={course.id} className="admin-dashboard-panel-41">
+                <div
+                  key={course.id}
+                  className="admin-dashboard-panel-41"
+                >
                   <div className="admin-dashboard-panel-42">
                     <div className="admin-dashboard-panel-43">
                       <img
@@ -852,7 +897,12 @@ export const AdminDashboardPage = () => {
                     </Button>
                     {course.approvalStatus === 'APPROVED' && (
                       <Link to={`/courses/${course.id}`}>
-                        <Button variant="secondary" size="sm" className="admin-dashboard-button-5">
+                        <Button
+                          as="span"
+                          variant="secondary"
+                          size="sm"
+                          className="admin-dashboard-button-5"
+                        >
                           Ver Público
                         </Button>
                       </Link>
@@ -912,14 +962,14 @@ export const AdminDashboardPage = () => {
                 value={userSearch}
                 onChange={(e) => setUserSearch(e.target.value)}
                 placeholder="Pesquisar por nome ou email..."
-                className="admin-dashboard-field pl-8.5"
+                className="admin-dashboard-field admin-user-search"
               />
             </div>
           </div>
 
           {/* Tabela de Utilizadores */}
           <div className="admin-dashboard-panel-49">
-            <table className="admin-dashboard-table">
+            <table className="admin-dashboard-table admin-users-table">
               <thead className="admin-dashboard-table-head">
                 <tr>
                   <th className="admin-dashboard-table-heading">Utilizador</th>
@@ -931,16 +981,32 @@ export const AdminDashboardPage = () => {
               </thead>
               <tbody className="admin-dashboard-panel-20">
                 {filteredUsers.map((u) => (
-                  <tr key={u.id} className="admin-dashboard-table-row">
+                  <tr
+                    key={u.id}
+                    className="admin-dashboard-table-row"
+                  >
                     <td className="admin-dashboard-table-cell">
-                      <Avatar src={u.avatarUrl} name={u.name} role={u.role} size="sm" />
+                      <Avatar
+                        src={u.avatarUrl}
+                        name={u.name}
+                        role={u.role}
+                        size="sm"
+                      />
                       <div>
                         <div className="admin-dashboard-panel-15">{u.name}</div>
                         <div className="admin-dashboard-panel-50">@{u.username}</div>
                       </div>
                     </td>
-                    <td className="admin-dashboard-table-cell-2">{u.email}</td>
-                    <td className="admin-dashboard-table-heading">
+                    <td
+                      className="admin-dashboard-table-cell-2"
+                      data-label="Email"
+                    >
+                      {u.email}
+                    </td>
+                    <td
+                      className="admin-dashboard-table-heading"
+                      data-label="Cargo"
+                    >
                       <Badge
                         size="sm"
                         variant={
@@ -952,10 +1018,19 @@ export const AdminDashboardPage = () => {
                         }
                         className="admin-dashboard-badge-2"
                       >
-                        {u.role === 'ADMIN' ? 'Admin' : u.role === 'CREATOR' ? 'Formador' : 'Aluno'}
+                        {u.role === 'ADMIN'
+                          ? u.isTeacher
+                            ? 'Admin · Formador'
+                            : 'Admin'
+                          : u.role === 'CREATOR'
+                            ? 'Formador'
+                            : 'Aluno'}
                       </Badge>
                     </td>
-                    <td className="admin-dashboard-table-heading">
+                    <td
+                      className="admin-dashboard-table-heading"
+                      data-label="Estado"
+                    >
                       <Badge
                         size="sm"
                         variant={u.isSuspended ? 'error' : 'success'}
@@ -964,21 +1039,26 @@ export const AdminDashboardPage = () => {
                         {u.isSuspended ? 'Suspenso' : 'Ativo'}
                       </Badge>
                     </td>
-                    <td className="admin-dashboard-table-heading-2">
-                      <UserRoleEditor
-                        key={`${u.id}:${u.role}:${u.isTeacher}`}
-                        user={u}
-                        onChanged={() => fetchAdminData()}
-                      />
-                      {u.role !== 'ADMIN' && (
-                        <button
-                          type="button"
-                          onClick={() => handleToggleSuspend(u.id)}
-                          className={`admin-dashboard-button-14 ${u.isSuspended ? 'admin-dashboard-button-15' : 'admin-dashboard-button-16'}`}
-                        >
-                          {u.isSuspended ? 'Reativar' : 'Suspender'}
-                        </button>
-                      )}
+                    <td
+                      className="admin-dashboard-table-heading-2"
+                      data-label="Ações"
+                    >
+                      <div className="admin-user-actions">
+                        <UserRoleEditor
+                          key={`${u.id}:${u.role}:${u.isTeacher}`}
+                          user={u}
+                          onChanged={() => fetchAdminData()}
+                        />
+                        {u.role !== 'ADMIN' && (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleSuspend(u.id)}
+                            className={`admin-dashboard-button-14 ${u.isSuspended ? 'admin-dashboard-button-15' : 'admin-dashboard-button-16'}`}
+                          >
+                            {u.isSuspended ? 'Reativar' : 'Suspender'}
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -1057,4 +1137,5 @@ export const AdminDashboardPage = () => {
     </div>
   );
 };
+
 export default AdminDashboardPage;

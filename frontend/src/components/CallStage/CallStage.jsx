@@ -31,6 +31,7 @@ import { useActiveCall } from '../../context/ActiveCallContext';
 import { useToast } from '../Toast';
 import { soundEffects } from '../../services/soundEffects';
 import { formatRole } from '../../utils/formatters';
+
 const RTC_CONFIG = {
   iceServers: [
     {
@@ -39,22 +40,11 @@ const RTC_CONFIG = {
     {
       urls: 'stun:stun1.l.google.com:19302',
     },
-    {
-      urls: 'stun:stun2.l.google.com:19302',
-    },
-    {
-      urls: 'stun:stun3.l.google.com:19302',
-    },
-    {
-      urls: 'stun:stun4.l.google.com:19302',
-    },
-    {
-      urls: 'stun:stun.relay.metered.ca:80',
-    },
   ],
 };
 const VideoPlayer = ({ stream, isMirrored = false, isContain = false }) => {
   const videoRef = useRef(null);
+
   useEffect(() => {
     const el = videoRef.current;
     if (!el) return;
@@ -62,19 +52,24 @@ const VideoPlayer = ({ stream, isMirrored = false, isContain = false }) => {
       if (el.srcObject !== stream) {
         el.srcObject = stream;
       }
+
       el.play().catch(() => {});
+
       const track = stream.getVideoTracks()[0];
       if (track) {
         const handleUnmute = () => {
           el.play().catch(() => {});
         };
+
         track.addEventListener('unmute', handleUnmute);
+
         return () => track.removeEventListener('unmute', handleUnmute);
       }
     } else {
       el.srcObject = null;
     }
   }, [stream]);
+
   return (
     <video
       ref={videoRef}
@@ -86,6 +81,7 @@ const VideoPlayer = ({ stream, isMirrored = false, isContain = false }) => {
     />
   );
 };
+
 export const CallStage = ({
   roomName,
   roomId,
@@ -109,26 +105,33 @@ export const CallStage = ({
   const startDeafenedCalc = Boolean(contextDeafened);
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window === 'undefined') return false;
+
     return window.innerWidth < 768;
   });
+
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
+
     window.addEventListener('resize', handleResize);
+
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   useEffect(() => {
     document.body.classList.add('in-active-call');
+
     const prevOverflow = document.body.style.overflow;
     if (isMobile || isModal) {
       document.body.style.overflow = 'hidden';
     }
+
     return () => {
       document.body.classList.remove('in-active-call');
       document.body.style.overflow = prevOverflow;
     };
   }, [isMobile, isModal]);
+
   const [isMicMuted, setIsMicMuted] = useState(startMutedCalc);
   const [isDeafened, setIsDeafened] = useState(startDeafenedCalc);
   const isDeafenedRef = useRef(startDeafenedCalc);
@@ -142,6 +145,7 @@ export const CallStage = ({
   const [participants, setParticipants] = useState(() => {
     if (initialParticipants.length > 0) return initialParticipants;
     if (!user) return [];
+
     return [
       {
         id: user.id,
@@ -159,6 +163,7 @@ export const CallStage = ({
       },
     ];
   });
+
   useEffect(() => {
     if (socket?.id) {
       setParticipants((prev) =>
@@ -173,6 +178,7 @@ export const CallStage = ({
       );
     }
   }, [socket?.id]);
+
   const [localCameraStream, setLocalCameraStream] = useState(null);
   const [localScreenStream, setLocalScreenStream] = useState(null);
   const [remoteCameraStreams, setRemoteCameraStreams] = useState({});
@@ -216,6 +222,7 @@ export const CallStage = ({
 
   // Keep latest user in ref to avoid stale closures
   const userRef = useRef(user);
+
   useEffect(() => {
     userRef.current = user;
   }, [user]);
@@ -223,15 +230,19 @@ export const CallStage = ({
   // Duration Timer
   useEffect(() => {
     const timer = setInterval(() => setCallDuration((d) => d + 1), 1000);
+
     return () => clearInterval(timer);
   }, []);
+
   const formatTime = (secs) => {
     const m = Math.floor(secs / 60)
       .toString()
       .padStart(2, '0');
     const s = (secs % 60).toString().padStart(2, '0');
+
     return `${m}:${s}`;
   };
+
   const handleUnblockAudio = () => {
     remoteAudioElementsRef.current.forEach((audio) => {
       audio.play().catch(() => {});
@@ -239,23 +250,30 @@ export const CallStage = ({
     if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
       audioContextRef.current.resume().catch(() => {});
     }
+
     setAutoplayBlocked(false);
   };
+
   const setupAudioAnalyser = (stream) => {
     try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (!AudioCtx) return;
       const ctx = new AudioCtx();
+
       audioContextRef.current = ctx;
+
       const src = ctx.createMediaStreamSource(stream);
       const analyser = ctx.createAnalyser();
+
       analyser.fftSize = 128;
       src.connect(analyser);
       analyserRef.current = analyser;
+
       const data = new Uint8Array(analyser.frequencyBinCount);
       const checkAudio = () => {
         if (!analyserRef.current) return;
         analyserRef.current.getByteFrequencyData(data);
+
         let sum = 0;
         for (let i = 0; i < data.length; i++) sum += data[i];
         const avg = sum / data.length;
@@ -265,7 +283,9 @@ export const CallStage = ({
           localAudioStreamRef.current?.getAudioTracks()[0]?.enabled;
         if (lastSpeakingRef.current !== isSpeakingNow) {
           lastSpeakingRef.current = isSpeakingNow;
+
           const currentUserId = userRef.current?.id;
+
           setParticipants((prev) =>
             prev.map((p) =>
               p.id === currentUserId
@@ -284,11 +304,14 @@ export const CallStage = ({
             });
           }
         }
+
         animFrameRef.current = requestAnimationFrame(checkAudio);
       };
+
       checkAudio();
     } catch {}
   };
+
   const initLocalAudio = async () => {
     try {
       if (localAudioStreamRef.current) return localAudioStreamRef.current;
@@ -305,11 +328,14 @@ export const CallStage = ({
           t.enabled = false;
         });
       }
+
       localAudioStreamRef.current = stream;
       setupAudioAnalyser(stream);
+
       return stream;
     } catch (err) {
       console.warn('Microfone não acessível ou sem permissão:', err);
+
       return null;
     }
   };
@@ -323,6 +349,7 @@ export const CallStage = ({
       track,
       streamId: stream.id,
     });
+
     const knownScreenStreamId = peerScreenStreamIdsRef.current.get(targetUserId);
     const knownScreenTrackId = peerScreenTrackIdsRef.current.get(targetUserId);
     let isScreen = false;
@@ -338,14 +365,17 @@ export const CallStage = ({
         if (hasExistingCam) {
           isScreen = true;
         }
+
         return currentCameras;
       });
+
       const label = (track.label || '').toLowerCase();
       const streamId = (stream.id || '').toLowerCase();
       if (label.includes('screen') || label.includes('display') || streamId.includes('screen')) {
         isScreen = true;
       }
     }
+
     if (isScreen) {
       setRemoteScreenStreams((prev) => ({
         ...prev,
@@ -359,6 +389,7 @@ export const CallStage = ({
         [targetUserId]: stream,
       }));
     }
+
     track.onended = () => {
       recentVideoTracksRef.current.delete(track.id);
       if (isScreen) {
@@ -366,7 +397,9 @@ export const CallStage = ({
           const next = {
             ...prev,
           };
+
           delete next[targetUserId];
+
           return next;
         });
       } else {
@@ -374,7 +407,9 @@ export const CallStage = ({
           const next = {
             ...prev,
           };
+
           delete next[targetUserId];
+
           return next;
         });
       }
@@ -387,7 +422,9 @@ export const CallStage = ({
       if (peerConnectionsRef.current.has(targetSocketId)) {
         return peerConnectionsRef.current.get(targetSocketId);
       }
+
       const pc = new RTCPeerConnection(RTC_CONFIG);
+
       peerConnectionsRef.current.set(targetSocketId, pc);
 
       // Add local audio
@@ -395,6 +432,7 @@ export const CallStage = ({
         localAudioStreamRef.current.getAudioTracks().forEach((track) => {
           try {
             const sender = pc.addTrack(track, localAudioStreamRef.current);
+
             audioSendersRef.current.set(targetSocketId, sender);
           } catch {}
         });
@@ -406,6 +444,7 @@ export const CallStage = ({
         if (camTrack) {
           try {
             const sender = pc.addTrack(camTrack, localCameraStreamRef.current);
+
             cameraSendersRef.current.set(targetSocketId, sender);
           } catch {}
         }
@@ -417,17 +456,21 @@ export const CallStage = ({
         if (screenTrack) {
           try {
             const sender = pc.addTrack(screenTrack, localScreenStreamRef.current);
+
             screenSendersRef.current.set(targetSocketId, sender);
           } catch {}
         }
+
         const screenAudioTrack = localScreenStreamRef.current.getAudioTracks()[0];
         if (screenAudioTrack) {
           try {
             const audioSender = pc.addTrack(screenAudioTrack, localScreenStreamRef.current);
+
             screenAudioSendersRef.current.set(targetSocketId, audioSender);
           } catch {}
         }
       }
+
       pc.onicecandidate = (event) => {
         if (event.candidate && socket) {
           socket.emit('voice-signal-ice', {
@@ -436,6 +479,7 @@ export const CallStage = ({
           });
         }
       };
+
       pc.ontrack = (event) => {
         const { track } = event;
         const targetUserId = socketToUserRef.current.get(targetSocketId) || remoteUser?.id;
@@ -453,12 +497,14 @@ export const CallStage = ({
           } else {
             audio.muted = isDeafenedRef.current;
           }
+
           audio.srcObject = stream;
           audio.play().catch(() => setAutoplayBlocked(true));
         } else if (track.kind === 'video') {
           classifyAndStoreVideoTrack(track, stream, targetUserId);
         }
       };
+
       return pc;
     },
     [socket, classifyAndStoreVideoTrack],
@@ -470,6 +516,7 @@ export const CallStage = ({
       try {
         if (makingOfferRef.current.get(targetSocketId)) return;
         makingOfferRef.current.set(targetSocketId, true);
+
         const pc = getOrCreatePeerConnection(targetSocketId, callerUser);
         const offer = await pc.createOffer({
           offerToReceiveAudio: true,
@@ -482,6 +529,7 @@ export const CallStage = ({
             })
             .catch(() => {});
         }
+
         await pc.setLocalDescription(offer);
         socket?.emit('voice-signal-offer', {
           targetSocketId,
@@ -506,8 +554,7 @@ export const CallStage = ({
   // Main Session & WebRTC Lifecycle
   useEffect(() => {
     let isMounted = true;
-
-    // 1. Emit join immediately to enter the room without waiting for microphone permission
+    // Join without waiting for microphone permission; calls use direct connections and STUN.
     if (socket && userRef.current?.id) {
       socket.emit('join-voice-room', {
         roomId: effectiveRoomId,
@@ -532,9 +579,11 @@ export const CallStage = ({
           if (isMicMuted) {
             audioTrack.enabled = false;
           }
+
           for (const [targetSocketId, pc] of peerConnectionsRef.current.entries()) {
             try {
               const sender = pc.addTrack(audioTrack, stream);
+
               audioSendersRef.current.set(targetSocketId, sender);
               sendOfferToPeer(targetSocketId);
             } catch {}
@@ -561,19 +610,24 @@ export const CallStage = ({
         .then((camStream) => {
           if (!isMounted) {
             camStream.getTracks().forEach((t) => t.stop());
+
             return;
           }
+
           localCameraStreamRef.current = camStream;
           setLocalCameraStream(camStream);
           setIsCameraOn(true);
+
           const camTrack = camStream.getVideoTracks()[0];
           for (const [targetSocketId, pc] of peerConnectionsRef.current.entries()) {
             try {
               const sender = pc.addTrack(camTrack, camStream);
+
               cameraSendersRef.current.set(targetSocketId, sender);
               sendOfferToPeer(targetSocketId);
             } catch {}
           }
+
           setParticipants((prev) =>
             prev.map((p) =>
               p.isSelf
@@ -596,6 +650,7 @@ export const CallStage = ({
           console.warn('Erro ao ligar câmara na entrada:', err);
         });
     }
+
     if (socket && userRef.current?.id) {
       // 1. Existing participants in the room
       socket.on('voice-room-existing-users', async (existingList) => {
@@ -611,15 +666,19 @@ export const CallStage = ({
               if (item.screenStreamId) {
                 peerScreenStreamIdsRef.current.set(remoteUser.id, item.screenStreamId);
               }
+
               if (item.cameraStreamId) {
                 peerCameraStreamIdsRef.current.set(remoteUser.id, item.cameraStreamId);
               }
+
               if (item.screenTrackId) {
                 peerScreenTrackIdsRef.current.set(remoteUser.id, item.screenTrackId);
               }
+
               if (item.cameraTrackId) {
                 peerCameraTrackIdsRef.current.set(remoteUser.id, item.cameraTrackId);
               }
+
               const existingIdx = next.findIndex((p) => p.socketId === item.socketId);
               const pData = {
                 id: remoteUser.id,
@@ -647,6 +706,7 @@ export const CallStage = ({
               }
             }
           }
+
           return next;
         });
 
@@ -657,6 +717,7 @@ export const CallStage = ({
               socketToUserRef.current.set(item.socketId, item.user.id);
               userToSocketRef.current.set(item.user.id, item.socketId);
             }
+
             sendOfferToPeer(item.socketId, item.user);
           }
         }
@@ -693,12 +754,15 @@ export const CallStage = ({
             };
             if (existingIdx >= 0) {
               const next = [...prev];
+
               next[existingIdx] = {
                 ...next[existingIdx],
                 ...pData,
               };
+
               return next;
             }
+
             return [...prev, pData];
           });
           toast({
@@ -727,11 +791,13 @@ export const CallStage = ({
                 socketToUserRef.current.set(callerSocketId, callerUser.id);
                 userToSocketRef.current.set(callerUser.id, callerSocketId);
               }
+
               if (screenStreamId) peerScreenStreamIdsRef.current.set(callerUser.id, screenStreamId);
               if (cameraStreamId) peerCameraStreamIdsRef.current.set(callerUser.id, cameraStreamId);
               if (screenTrackId) peerScreenTrackIdsRef.current.set(callerUser.id, screenTrackId);
               if (cameraTrackId) peerCameraTrackIdsRef.current.set(callerUser.id, cameraTrackId);
             }
+
             const pc = getOrCreatePeerConnection(callerSocketId, callerUser);
             const isPolite = (socket.id || '').localeCompare(callerSocketId) > 0;
             const offerCollision =
@@ -739,6 +805,7 @@ export const CallStage = ({
             if (offerCollision && !isPolite) {
               return;
             }
+
             if (offerCollision && isPolite) {
               await pc
                 .setLocalDescription({
@@ -746,6 +813,7 @@ export const CallStage = ({
                 })
                 .catch(() => {});
             }
+
             await pc.setRemoteDescription(new RTCSessionDescription(offer));
 
             // Drain queued ICE candidates
@@ -755,8 +823,11 @@ export const CallStage = ({
                 await pc.addIceCandidate(new RTCIceCandidate(cand));
               } catch {}
             }
+
             pendingIceCandidatesRef.current.delete(callerSocketId);
+
             const answer = await pc.createAnswer();
+
             await pc.setLocalDescription(answer);
             socket.emit('voice-signal-answer', {
               targetSocketId: callerSocketId,
@@ -793,15 +864,18 @@ export const CallStage = ({
               if (screenTrackId) peerScreenTrackIdsRef.current.set(rId, screenTrackId);
               if (cameraTrackId) peerCameraTrackIdsRef.current.set(rId, cameraTrackId);
             }
+
             const pc = peerConnectionsRef.current.get(responderSocketId);
             if (pc && pc.signalingState === 'have-local-offer') {
               await pc.setRemoteDescription(new RTCSessionDescription(answer));
+
               const pending = pendingIceCandidatesRef.current.get(responderSocketId) || [];
               for (const cand of pending) {
                 try {
                   await pc.addIceCandidate(new RTCIceCandidate(cand));
                 } catch {}
               }
+
               pendingIceCandidatesRef.current.delete(responderSocketId);
             }
           } catch (err) {
@@ -818,6 +892,7 @@ export const CallStage = ({
             await pc.addIceCandidate(new RTCIceCandidate(candidate));
           } else {
             const queue = pendingIceCandidatesRef.current.get(fromSocketId) || [];
+
             queue.push(candidate);
             pendingIceCandidatesRef.current.set(fromSocketId, queue);
           }
@@ -843,6 +918,7 @@ export const CallStage = ({
             socketToUserRef.current.set(socketId, userId);
             userToSocketRef.current.set(userId, socketId);
           }
+
           if (screenStreamId) peerScreenStreamIdsRef.current.set(userId, screenStreamId);
           if (cameraStreamId) peerCameraStreamIdsRef.current.set(userId, cameraStreamId);
           if (screenTrackId) peerScreenTrackIdsRef.current.set(userId, screenTrackId);
@@ -854,7 +930,9 @@ export const CallStage = ({
               const next = {
                 ...prev,
               };
+
               delete next[userId];
+
               return next;
             });
             setSelectedScreenUserId((current) => (current === userId ? null : current));
@@ -886,7 +964,9 @@ export const CallStage = ({
               const next = {
                 ...prev,
               };
+
               delete next[userId];
+
               return next;
             });
           }
@@ -904,10 +984,12 @@ export const CallStage = ({
               }
             }
           }
+
           setParticipants((prev) =>
             prev.map((p) => {
               const isTarget = socketId ? p.socketId === socketId : p.id === userId && !p.isSelf;
               if (!isTarget) return p;
+
               return {
                 ...p,
                 socketId: p.socketId || socketId,
@@ -929,6 +1011,7 @@ export const CallStage = ({
         setParticipants((prev) =>
           prev.map((p) => {
             const isTarget = socketId ? p.socketId === socketId : p.id === userId && !p.isSelf;
+
             return isTarget
               ? {
                   ...p,
@@ -944,6 +1027,7 @@ export const CallStage = ({
         setParticipants((prev) =>
           prev.filter((p) => p.isSelf || (socketId ? p.socketId !== socketId : p.id !== userId)),
         );
+
         const sId = socketId || userToSocketRef.current.get(userId);
         if (sId) {
           const pc = peerConnectionsRef.current.get(sId);
@@ -951,10 +1035,12 @@ export const CallStage = ({
             pc.close();
             peerConnectionsRef.current.delete(sId);
           }
+
           cameraSendersRef.current.delete(sId);
           screenSendersRef.current.delete(sId);
           screenAudioSendersRef.current.delete(sId);
           audioSendersRef.current.delete(sId);
+
           const audio = remoteAudioElementsRef.current.get(sId);
           if (audio) {
             audio.srcObject = null;
@@ -962,19 +1048,24 @@ export const CallStage = ({
             remoteAudioElementsRef.current.delete(sId);
           }
         }
+
         if (userId) {
           setRemoteCameraStreams((prev) => {
             const next = {
               ...prev,
             };
+
             delete next[userId];
+
             return next;
           });
           setRemoteScreenStreams((prev) => {
             const next = {
               ...prev,
             };
+
             delete next[userId];
+
             return next;
           });
           setSelectedScreenUserId((current) => (current === userId ? null : current));
@@ -986,10 +1077,12 @@ export const CallStage = ({
         if (!msg) return;
         setChatMessages((prev) => {
           if (prev.some((m) => m.id === msg.id)) return prev;
+
           return [...prev, msg];
         });
       });
     }
+
     return () => {
       isMounted = false;
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
@@ -1008,15 +1101,19 @@ export const CallStage = ({
         socket.off('user-left-voice');
         socket.off('voice-chat-message');
       }
+
       if (localAudioStreamRef.current) {
         localAudioStreamRef.current.getTracks().forEach((t) => t.stop());
       }
+
       if (localCameraStreamRef.current) {
         localCameraStreamRef.current.getTracks().forEach((t) => t.stop());
       }
+
       if (localScreenStreamRef.current) {
         localScreenStreamRef.current.getTracks().forEach((t) => t.stop());
       }
+
       peerConnectionsRef.current.forEach((pc) => pc.close());
       peerConnectionsRef.current.clear();
       cameraSendersRef.current.clear();
@@ -1040,6 +1137,7 @@ export const CallStage = ({
           t.enabled = !nextMuted;
         });
       }
+
       if (nextMuted) {
         soundEffects.playMute();
       } else {
@@ -1056,7 +1154,9 @@ export const CallStage = ({
           audio.muted = false;
         });
       }
+
       const currentUserId = userRef.current?.id;
+
       setParticipants((prev) =>
         prev.map((p) =>
           p.id === currentUserId
@@ -1078,6 +1178,7 @@ export const CallStage = ({
         isMuted: nextMuted,
         isDeafened: nextDeafened,
       });
+
       return nextMuted;
     });
   }, [effectiveRoomId, socket, updateCallAudioState]);
@@ -1085,6 +1186,7 @@ export const CallStage = ({
   // Controls: Toggle Deafen
   const toggleDeafen = useCallback(() => {
     const nextDeafened = !isDeafenedRef.current;
+
     isDeafenedRef.current = nextDeafened;
     setIsDeafened(nextDeafened);
 
@@ -1111,7 +1213,9 @@ export const CallStage = ({
         });
       }
     }
+
     const currentUserId = userRef.current?.id;
+
     setParticipants((prev) =>
       prev.map((p) =>
         p.id === currentUserId
@@ -1148,15 +1252,19 @@ export const CallStage = ({
     const handleRemoteToggleMic = () => {
       toggleMic();
     };
+
     const handleRemoteToggleDeafen = () => {
       toggleDeafen();
     };
+
     const handleRemoteLeave = () => {
       onDisconnect?.();
     };
+
     window.addEventListener('nexo_call_toggle_mic', handleRemoteToggleMic);
     window.addEventListener('nexo_call_toggle_deafen', handleRemoteToggleDeafen);
     window.addEventListener('nexo_call_leave', handleRemoteLeave);
+
     return () => {
       window.removeEventListener('nexo_call_toggle_mic', handleRemoteToggleMic);
       window.removeEventListener('nexo_call_toggle_deafen', handleRemoteToggleDeafen);
@@ -1172,6 +1280,7 @@ export const CallStage = ({
         localCameraStreamRef.current.getTracks().forEach((t) => t.stop());
         localCameraStreamRef.current = null;
       }
+
       setLocalCameraStream(null);
       setIsCameraOn(false);
       for (const [targetSocketId, pc] of peerConnectionsRef.current.entries()) {
@@ -1180,10 +1289,13 @@ export const CallStage = ({
           try {
             pc.removeTrack(sender);
           } catch {}
+
           cameraSendersRef.current.delete(targetSocketId);
         }
+
         sendOfferToPeer(targetSocketId);
       }
+
       setParticipants((prev) =>
         prev.map((p) =>
           p.id === currentUserId
@@ -1213,17 +1325,21 @@ export const CallStage = ({
           },
           audio: false,
         });
+
         localCameraStreamRef.current = stream;
         setLocalCameraStream(stream);
         setIsCameraOn(true);
+
         const camTrack = stream.getVideoTracks()[0];
         for (const [targetSocketId, pc] of peerConnectionsRef.current.entries()) {
           try {
             const sender = pc.addTrack(camTrack, stream);
+
             cameraSendersRef.current.set(targetSocketId, sender);
             sendOfferToPeer(targetSocketId);
           } catch {}
         }
+
         setParticipants((prev) =>
           prev.map((p) =>
             p.id === currentUserId
@@ -1258,6 +1374,7 @@ export const CallStage = ({
       localScreenStreamRef.current.getTracks().forEach((t) => t.stop());
       localScreenStreamRef.current = null;
     }
+
     setLocalScreenStream(null);
     setIsScreenSharing(false);
     for (const [targetSocketId, pc] of peerConnectionsRef.current.entries()) {
@@ -1266,17 +1383,22 @@ export const CallStage = ({
         try {
           pc.removeTrack(sender);
         } catch {}
+
         screenSendersRef.current.delete(targetSocketId);
       }
+
       const audioSender = screenAudioSendersRef.current.get(targetSocketId);
       if (audioSender) {
         try {
           pc.removeTrack(audioSender);
         } catch {}
+
         screenAudioSendersRef.current.delete(targetSocketId);
       }
+
       sendOfferToPeer(targetSocketId);
     }
+
     setParticipants((prev) =>
       prev.map((p) =>
         p.id === currentUserId
@@ -1309,10 +1431,12 @@ export const CallStage = ({
           },
           audio: true,
         });
+
         localScreenStreamRef.current = stream;
         setLocalScreenStream(stream);
         setIsScreenSharing(true);
         setSelectedScreenUserId(currentUserId);
+
         const screenTrack = stream.getVideoTracks()[0];
         const screenAudioTrack = stream.getAudioTracks()[0];
 
@@ -1320,17 +1444,22 @@ export const CallStage = ({
         screenTrack.onended = () => {
           stopLocalScreenShare();
         };
+
         for (const [targetSocketId, pc] of peerConnectionsRef.current.entries()) {
           try {
             const sender = pc.addTrack(screenTrack, stream);
+
             screenSendersRef.current.set(targetSocketId, sender);
             if (screenAudioTrack) {
               const audioSender = pc.addTrack(screenAudioTrack, stream);
+
               screenAudioSendersRef.current.set(targetSocketId, audioSender);
             }
+
             sendOfferToPeer(targetSocketId);
           } catch {}
         }
+
         setParticipants((prev) =>
           prev.map((p) =>
             p.id === currentUserId
@@ -1364,6 +1493,7 @@ export const CallStage = ({
       }
     }
   };
+
   useEffect(() => {
     if (sideDrawer === 'chat') {
       chatMessagesEndRef.current?.scrollIntoView({
@@ -1371,6 +1501,7 @@ export const CallStage = ({
       });
     }
   }, [chatMessages, sideDrawer]);
+
   const handleSendChatMessage = (e) => {
     e.preventDefault();
     if (!chatInput.trim()) return;
@@ -1383,6 +1514,7 @@ export const CallStage = ({
         minute: '2-digit',
       }),
     };
+
     setChatMessages((prev) => (prev.some((m) => m.id === newMsg.id) ? prev : [...prev, newMsg]));
     socket?.emit('voice-chat-message', {
       roomId: effectiveRoomId,
@@ -1390,6 +1522,7 @@ export const CallStage = ({
     });
     setChatInput('');
   };
+
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
     if (!document.fullscreenElement) {
@@ -1411,6 +1544,7 @@ export const CallStage = ({
       stream: localScreenStream,
     });
   }
+
   participants.forEach((p) => {
     if (p.id !== userRef.current?.id && p.isScreenSharing) {
       const stream = remoteScreenStreams[p.id];
@@ -1440,6 +1574,7 @@ export const CallStage = ({
       setSelectedScreenUserId(null);
     }
   }, [activeScreenShares.length, selectedScreenUserId]);
+
   const currentScreenShare = activeScreenShares.find((s) => s.userId === selectedScreenUserId);
   const spotlightStream = currentScreenShare?.stream || null;
   const isViewingScreen = spotlightStream && selectedScreenUserId !== 'none';
@@ -1454,7 +1589,10 @@ export const CallStage = ({
         <div className="call-stage-panel-3">
           <Volume2 className="call-stage-volume2" />
           <span>O áudio foi pausado pelo navegador.</span>
-          <button onClick={handleUnblockAudio} className="call-stage-button">
+          <button
+            onClick={handleUnblockAudio}
+            className="call-stage-button"
+          >
             Ativar Áudio
           </button>
         </div>
@@ -1556,7 +1694,10 @@ export const CallStage = ({
           {isViewingScreen ? (
             <div className="call-stage-panel-11">
               <div className="call-stage-panel-12">
-                <VideoPlayer stream={spotlightStream} isContain={true} />
+                <VideoPlayer
+                  stream={spotlightStream}
+                  isContain={true}
+                />
                 <div className="call-stage-panel-13">
                   <Monitor className="call-stage-monitor-2" />
                   <span>
@@ -1596,17 +1737,31 @@ export const CallStage = ({
                     const isSelf = p.isSelf || p.socketId === socket?.id;
                     const camStream = isSelf ? localCameraStream : remoteCameraStreams[p.id];
                     const hasCamera = !!camStream && (isSelf ? isCameraOn : p.isCameraOn);
+
                     return hasCamera ? (
-                      <div key={p.socketId || p.id} className="call-stage-panel-16">
-                        <VideoPlayer stream={camStream} isMirrored={isSelf} />
+                      <div
+                        key={p.socketId || p.id}
+                        className="call-stage-panel-16"
+                      >
+                        <VideoPlayer
+                          stream={camStream}
+                          isMirrored={isSelf}
+                        />
                         <div className="call-stage-panel-17 backdrop-blur-xs">
                           <span className="call-stage-label-4">{p.name}</span>
                           {p.isMuted && <MicOff className="call-stage-mic-off" />}
                         </div>
                       </div>
                     ) : (
-                      <div key={p.socketId || p.id} className="call-stage-panel-18">
-                        <Avatar src={p.avatarUrl} name={p.name} size="sm" />
+                      <div
+                        key={p.socketId || p.id}
+                        className="call-stage-panel-18"
+                      >
+                        <Avatar
+                          src={p.avatarUrl}
+                          name={p.name}
+                          size="sm"
+                        />
                         <div className="call-stage-panel-19">
                           <div className="call-stage-panel-20">
                             <span className="call-stage-label-5">{p.name}</span>
@@ -1637,13 +1792,17 @@ export const CallStage = ({
                 const isSelf = p.isSelf || p.socketId === socket?.id;
                 const camStream = isSelf ? localCameraStream : remoteCameraStreams[p.id];
                 const hasCamera = !!camStream && (isSelf ? isCameraOn : p.isCameraOn);
+
                 return (
                   <div
                     key={p.socketId || p.id}
                     className={`call-stage-panel-27 ${p.isSpeaking ? 'call-stage-panel-28' : 'call-stage-panel-29'}`}
                   >
                     {hasCamera ? (
-                      <VideoPlayer stream={camStream} isMirrored={isSelf} />
+                      <VideoPlayer
+                        stream={camStream}
+                        isMirrored={isSelf}
+                      />
                     ) : (
                       <div className="call-stage-panel-30">
                         <div className="call-stage-panel-31">
@@ -1689,7 +1848,10 @@ export const CallStage = ({
 
                       <div className="call-stage-panel-34">
                         {p.isDeafened && (
-                          <div className="call-stage-panel-35" title="Ensurdecido">
+                          <div
+                            className="call-stage-panel-35"
+                            title="Ensurdecido"
+                          >
                             <HeadphoneOff className="call-stage-phone-off" />
                           </div>
                         )}
@@ -1819,7 +1981,10 @@ export const CallStage = ({
                   ))}
                   <div ref={chatMessagesEndRef} />
                 </div>
-                <form onSubmit={handleSendChatMessage} className="call-stage-form">
+                <form
+                  onSubmit={handleSendChatMessage}
+                  className="call-stage-form"
+                >
                   <input
                     type="text"
                     value={chatInput}
@@ -1840,9 +2005,16 @@ export const CallStage = ({
             ) : (
               <div className="call-stage-panel-47 custom-scrollbar">
                 {participants.map((p) => (
-                  <div key={p.socketId || p.id} className="call-stage-panel-48">
+                  <div
+                    key={p.socketId || p.id}
+                    className="call-stage-panel-48"
+                  >
                     <div className="call-stage-panel-49">
-                      <Avatar src={p.avatarUrl} name={p.name} size="sm" />
+                      <Avatar
+                        src={p.avatarUrl}
+                        name={p.name}
+                        size="sm"
+                      />
                       <div>
                         <p className="call-stage-description-4">{p.name}</p>
                         <p className="call-stage-description-5">{formatRole(p.role)}</p>
@@ -1984,6 +2156,8 @@ export const CallStage = ({
   if (isMobile && !isModal) {
     return createPortal(stageContent, document.body);
   }
+
   return stageContent;
 };
+
 export default CallStage;

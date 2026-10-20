@@ -25,6 +25,7 @@ import { Avatar } from '../Avatar';
 import { Logo } from '../Logo';
 import { useToast } from '../Toast';
 import { GlobalSearch } from '../GlobalSearch';
+
 export const Navbar = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme, actualTheme } = useTheme();
@@ -42,17 +43,25 @@ export const Navbar = () => {
     });
     navigate('/login');
   };
+
   const isCreator = canTeach(user);
   const isAdmin = user?.role === 'ADMIN';
   const homeTarget = user ? (isAdmin ? '/admin' : isCreator ? '/creator' : '/dashboard') : '/';
+
   return (
     <>
       <header className="navbar-header app-navbar">
         <div className="navbar-panel">
           {/* Logótipo */}
           <div className="navbar-panel-2">
-            <Link to={homeTarget} className="navbar-link ui-group">
-              <Logo size="md" showText={true} />
+            <Link
+              to={homeTarget}
+              className="navbar-link ui-group"
+            >
+              <Logo
+                size="md"
+                showText={true}
+              />
             </Link>
           </div>
 
@@ -92,10 +101,16 @@ export const Navbar = () => {
 
             {!user ? (
               <div className="navbar-panel-4">
-                <Link to="/login" className="navbar-link-2">
+                <Link
+                  to="/login"
+                  className="navbar-link-2"
+                >
                   Iniciar Sessão
                 </Link>
-                <Link to="/register" className="navbar-link-3">
+                <Link
+                  to="/register"
+                  className="navbar-link-3"
+                >
                   <span>Criar Conta</span>
                   <ArrowRight className="navbar-arrow-right" />
                 </Link>
@@ -104,7 +119,10 @@ export const Navbar = () => {
               <div className="navbar-panel-5">
                 <Notifications key={user.id} />
                 {isCreator && (
-                  <Link to="/creator/courses/new" className="navbar-link-4">
+                  <Link
+                    to="/creator/courses/new"
+                    className="navbar-link-4"
+                  >
                     <Plus className="navbar-search" />
                     <span>Novo Curso</span>
                   </Link>
@@ -128,7 +146,10 @@ export const Navbar = () => {
 
                   {showProfileMenu && (
                     <>
-                      <div className="navbar-panel-7" onClick={() => setShowProfileMenu(false)} />
+                      <div
+                        className="navbar-panel-7"
+                        onClick={() => setShowProfileMenu(false)}
+                      />
                       <div className="navbar-panel-8">
                         {/* User card */}
                         <div className="navbar-panel-9">
@@ -226,7 +247,10 @@ export const Navbar = () => {
 
                         <div className="navbar-panel-11" />
 
-                        <button onClick={handleLogout} className="navbar-button-4">
+                        <button
+                          onClick={handleLogout}
+                          className="navbar-button-4"
+                        >
                           <LogOut className="navbar-search" />
                           <span>Terminar Sessão</span>
                         </button>
@@ -249,4 +273,5 @@ export const Navbar = () => {
     </>
   );
 };
+
 export default Navbar;

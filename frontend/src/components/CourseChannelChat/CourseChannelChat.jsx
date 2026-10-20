@@ -14,6 +14,7 @@ import {
 } from 'react-icons/lu';
 import { Avatar } from '../Avatar';
 import { formatRole } from '../../utils/formatters';
+
 export const CourseChannelChat = ({
   channel,
   messages,
@@ -34,13 +35,16 @@ export const CourseChannelChat = ({
   classmates = [],
 }) => {
   const messagesEndRef = useRef(null);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({
       behavior: 'smooth',
     });
   }, [messages.length]);
+
   const isAnnouncement = channel.accessMode === 'announcement' || channel.name.includes('anuncio');
   const canPost = isCreatorOrAdmin || !isAnnouncement;
+
   return (
     <div className="course-channel-chat-panel">
       <div className="course-channel-chat-panel-2">
@@ -81,6 +85,7 @@ export const CourseChannelChat = ({
             messages.map((m) => {
               const isResolved = resolvedMessageIds.has(m.id);
               const isSenderCreator = m.sender?.role === 'CREATOR' || m.sender?.role === 'ADMIN';
+
               return (
                 <div
                   key={m.id}
@@ -91,7 +96,11 @@ export const CourseChannelChat = ({
                     className="course-channel-chat-link"
                     title={m.sender?.name ? `Ver perfil de ${m.sender.name}` : 'Ver perfil'}
                   >
-                    <Avatar src={m.sender?.avatarUrl} name={m.sender?.name || 'Aluno'} size="md" />
+                    <Avatar
+                      src={m.sender?.avatarUrl}
+                      name={m.sender?.name || 'Aluno'}
+                      size="md"
+                    />
                   </Link>
 
                   <div className="course-channel-chat-panel-12">
@@ -180,7 +189,10 @@ export const CourseChannelChat = ({
                 A responder a <strong>{replyingTo.sender?.name}</strong>: "{replyingTo.content}"
               </span>
             </div>
-            <button onClick={() => onSetReplyingTo(null)} className="course-channel-chat-button-9">
+            <button
+              onClick={() => onSetReplyingTo(null)}
+              className="course-channel-chat-button-9"
+            >
               <X className="course-channel-chat-sparkles" />
             </button>
           </div>
@@ -197,7 +209,10 @@ export const CourseChannelChat = ({
           </div>
         ) : (
           <div className="course-channel-chat-panel-20">
-            <form onSubmit={onSendMessage} className="course-channel-chat-form">
+            <form
+              onSubmit={onSendMessage}
+              className="course-channel-chat-form"
+            >
               <input
                 type="text"
                 placeholder={`Enviar mensagem em #${channel.name}...`}

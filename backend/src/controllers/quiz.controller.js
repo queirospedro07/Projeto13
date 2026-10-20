@@ -11,6 +11,7 @@ const {
 } = require('../services/assessments.js');
 const getQuizReviews = async (req, res) => {
   const rows = await Quiz.listSubmissoesQuestionario([req.user.id, req.user.role === 'ADMIN']);
+
   return res.json(
     await asyncMap(
       await asyncFilter(
@@ -30,6 +31,7 @@ const getQuizReviews = async (req, res) => {
     ),
   );
 };
+
 const putQuizReviewsById = async (req, res) => {
   const attempt = await Quiz.findAttemptById([req.params.id]);
   if (!attempt)
@@ -52,6 +54,7 @@ const putQuizReviewsById = async (req, res) => {
     passed: score >= quiz.passingScore,
     pendingTeacherReviewCount: 0,
   };
+
   await transaction(async () => {
     await Quiz.reviewQuizSubmission([
       score,
@@ -70,8 +73,10 @@ const putQuizReviewsById = async (req, res) => {
         quiz.lessonId,
       );
   });
+
   return res.json(result);
 };
+
 const getQuizLessonByLessonId = async (req, res) => {
   const quiz = await loadAssessment(req.params.lessonId);
   if (!quiz)
@@ -83,11 +88,13 @@ const getQuizLessonByLessonId = async (req, res) => {
       error: 'Inscreva-se no curso para aceder ao questionário.',
     });
   const latest = await Quiz.findLatestByIdUtilizadorAndIdAula([req.user.id, quiz.lessonId]);
+
   return res.json({
     ...publicAssessment(quiz),
     latestAttempt: latest ? JSON.parse(latest.resultado) : null,
   });
 };
+
 const postQuizByQuizIdSubmit = async (req, res) => {
   const stored = await Quiz.findStoredById([req.params.quizId]);
   const quiz = await loadAssessment(stored?.lessonId || req.params.quizId);
@@ -102,6 +109,7 @@ const postQuizByQuizIdSubmit = async (req, res) => {
   try {
     const result = gradeAssessment(quiz, req.body.answers);
     const attemptId = await recordAssessment(req.user.id, quiz, req.body.answers, result);
+
     return res.json({
       ...result,
       attemptId,
@@ -112,6 +120,7 @@ const postQuizByQuizIdSubmit = async (req, res) => {
     });
   }
 };
+
 exports.getQuizReviews = getQuizReviews;
 exports.putQuizReviewsById = putQuizReviewsById;
 exports.getQuizLessonByLessonId = getQuizLessonByLessonId;

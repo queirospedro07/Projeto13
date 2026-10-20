@@ -9,6 +9,7 @@ const getCertificateVerifyByCertificateId = async (req, res) => {
         error: 'Certificado não encontrado ou identificador inválido',
       });
     }
+
     return res.json({
       id: cert.id,
       recipientName: cert.recipientName,
@@ -35,10 +36,12 @@ const getCertificateVerifyByCertificateId = async (req, res) => {
     });
   }
 };
+
 const getCertificateMy = async (req, res) => {
   try {
     const userId = req.user.id;
     const certs = await Certificate.listCertsByUserId([userId]);
+
     return res.json(
       certs.map((c) => ({
         ...c,
@@ -54,6 +57,7 @@ const getCertificateMy = async (req, res) => {
     });
   }
 };
+
 const postCertificateGenerateByCourseId = async (req, res) => {
   try {
     return res.json({
@@ -66,6 +70,7 @@ const postCertificateGenerateByCourseId = async (req, res) => {
     });
   }
 };
+
 exports.getCertificateVerifyByCertificateId = getCertificateVerifyByCertificateId;
 exports.getCertificateMy = getCertificateMy;
 exports.postCertificateGenerateByCourseId = postCertificateGenerateByCourseId;

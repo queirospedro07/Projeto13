@@ -23,6 +23,7 @@ import { Badge } from '../../components/Badge';
 import { useToast } from '../../components/Toast';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
+
 const EXPERTISE_OPTIONS = [
   {
     id: 'web',
@@ -83,6 +84,7 @@ const EXPERIENCE_LEVELS = [
     badge: 'Veterano da Indústria',
   },
 ];
+
 export const ApplyCreatorPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -128,16 +130,20 @@ export const ApplyCreatorPage = () => {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     fetchStatus();
   }, []);
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+
     setFormData((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
   };
+
   const validateStep = (step) => {
     if (step === 1) {
       if (!formData.fullName.trim() || formData.fullName.trim().length < 3) {
@@ -146,17 +152,21 @@ export const ApplyCreatorPage = () => {
           message: 'Indique o seu nome completo com pelo menos 3 caracteres.',
           type: 'error',
         });
+
         return false;
       }
+
       if (!formData.bio.trim() || formData.bio.trim().length < 20) {
         toast({
           title: 'Biografia Curta',
           message: 'Descreva resumidamente o seu percurso profissional (mínimo 20 caracteres).',
           type: 'error',
         });
+
         return false;
       }
     }
+
     if (step === 2) {
       if (!formData.expertise.trim()) {
         toast({
@@ -164,9 +174,11 @@ export const ApplyCreatorPage = () => {
           message: 'Selecione ou indique a sua área principal de especialização.',
           type: 'error',
         });
+
         return false;
       }
     }
+
     if (step === 3) {
       if (!formData.motivation.trim() || formData.motivation.trim().length < 20) {
         toast({
@@ -174,8 +186,10 @@ export const ApplyCreatorPage = () => {
           message: 'Partilhe a sua motivação para lecionar no NEXO (mínimo 20 caracteres).',
           type: 'error',
         });
+
         return false;
       }
+
       if (!formData.proposedCourses.trim() || formData.proposedCourses.trim().length < 30) {
         toast({
           title: 'Proposta Incompleta',
@@ -183,11 +197,14 @@ export const ApplyCreatorPage = () => {
             'Apresente os detalhes da proposta pedagógica (título do curso e tópicos previstos).',
           type: 'error',
         });
+
         return false;
       }
     }
+
     return true;
   };
+
   const nextStep = () => {
     if (validateStep(currentStep)) {
       setCurrentStep((prev) => Math.min(4, prev + 1));
@@ -197,6 +214,7 @@ export const ApplyCreatorPage = () => {
       });
     }
   };
+
   const prevStep = () => {
     setCurrentStep((prev) => Math.max(1, prev - 1));
     window.scrollTo({
@@ -204,6 +222,7 @@ export const ApplyCreatorPage = () => {
       behavior: 'smooth',
     });
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateStep(1) || !validateStep(2) || !validateStep(3)) return;
@@ -214,11 +233,14 @@ export const ApplyCreatorPage = () => {
           'Por favor, assinale o compromisso de rigor pedagógico e ética da plataforma NEXO.',
         type: 'error',
       });
+
       return;
     }
+
     setSubmitting(true);
     try {
       const res = await api.post('/creator/apply', formData).then(({ data }) => data);
+
       toast({
         title: 'Inquérito Submetido!',
         message:
@@ -241,6 +263,7 @@ export const ApplyCreatorPage = () => {
       setSubmitting(false);
     }
   };
+
   if (loading) {
     return (
       <div className="apply-creator-panel">
@@ -258,7 +281,11 @@ export const ApplyCreatorPage = () => {
           <div className="apply-creator-panel-4">
             <UserCheck className="apply-creator-user-check" />
           </div>
-          <Badge size="md" variant="primary" className="apply-creator-badge">
+          <Badge
+            size="md"
+            variant="primary"
+            className="apply-creator-badge"
+          >
             Estatuto Ativo
           </Badge>
           <h2 className="apply-creator-heading">
@@ -270,7 +297,12 @@ export const ApplyCreatorPage = () => {
             mentoria WebRTC e emissão de certificados oficiais.
           </p>
           <Link to="/creator">
-            <Button variant="primary" size="lg" className="apply-creator-button">
+            <Button
+              as="span"
+              variant="primary"
+              size="lg"
+              className="apply-creator-button"
+            >
               Aceder ao Painel do Criador
               <ArrowRight className="apply-creator-arrow-right" />
             </Button>
@@ -363,7 +395,12 @@ export const ApplyCreatorPage = () => {
 
           <div className="apply-creator-panel-16">
             <Link to="/dashboard">
-              <Button variant="secondary" size="md" className="apply-creator-button-2">
+              <Button
+                as="span"
+                variant="secondary"
+                size="md"
+                className="apply-creator-button-2"
+              >
                 Voltar ao Painel do Aluno
               </Button>
             </Link>
@@ -436,6 +473,7 @@ export const ApplyCreatorPage = () => {
           ].map((s) => {
             const isActive = currentStep === s.step;
             const isCompleted = currentStep > s.step;
+
             return (
               <button
                 key={s.step}
@@ -566,6 +604,7 @@ export const ApplyCreatorPage = () => {
                   {EXPERTISE_OPTIONS.map((opt) => {
                     const isSelected = formData.expertise === opt.label;
                     const Icon = opt.icon;
+
                     return (
                       <button
                         key={opt.id}
@@ -601,6 +640,7 @@ export const ApplyCreatorPage = () => {
                 <div className="apply-creator-panel-38">
                   {EXPERIENCE_LEVELS.map((lvl) => {
                     const isSelected = Number(formData.experienceYears) === lvl.value;
+
                     return (
                       <button
                         key={lvl.value}
@@ -854,4 +894,5 @@ export const ApplyCreatorPage = () => {
     </div>
   );
 };
+
 export default ApplyCreatorPage;

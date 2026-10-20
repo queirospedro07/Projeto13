@@ -9,8 +9,10 @@ import {
 import { Button } from '../../components/Button';
 import { Logo } from '../../components/Logo';
 import { SEO } from '../../components/SEO';
+
 export const NotFoundPage = () => {
   const navigate = useNavigate();
+
   return (
     <>
       <SEO
@@ -20,7 +22,10 @@ export const NotFoundPage = () => {
 
       <div className="not-found-page-panel">
         <div className="not-found-page-panel-2">
-          <Logo size="lg" showText={false} />
+          <Logo
+            size="lg"
+            showText={false}
+          />
 
           <div className="not-found-page-panel-3">
             <span className="not-found-page-label">404</span>
@@ -59,12 +64,18 @@ export const NotFoundPage = () => {
 
           {/* Additional helpful links */}
           <div className="not-found-page-panel-6">
-            <Link to="/help" className="not-found-page-link">
+            <Link
+              to="/help"
+              className="not-found-page-link"
+            >
               <HelpCircle className="not-found-page-help-circle" />
               <span>Centro de Ajuda & FAQ</span>
             </Link>
             <span>•</span>
-            <button onClick={() => navigate(-1)} className="not-found-page-button-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="not-found-page-button-3"
+            >
               <ArrowLeft className="not-found-page-help-circle" />
               <span>Voltar atrás</span>
             </button>
@@ -74,4 +85,5 @@ export const NotFoundPage = () => {
     </>
   );
 };
+
 export default NotFoundPage;

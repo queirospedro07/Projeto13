@@ -26,6 +26,7 @@ import { useSocket } from '../../context/SocketContext';
 import { useActiveCall } from '../../context/ActiveCallContext';
 import { Avatar } from '../Avatar';
 import { api } from '../../services/api';
+
 export const Sidebar = () => {
   const { user } = useAuth();
   const { socket, onlineUsers = [] } = useSocket();
@@ -55,13 +56,16 @@ export const Sidebar = () => {
         .then(({ data }) => data)
         .then((convs) => {
           const total = (convs || []).reduce((acc, c) => acc + (c.unreadCount || 0), 0);
+
           setUnreadDms(total);
+
           const peers = (convs || [])
             .map((c) => ({
               ...c.peer,
               unreadCount: c.unreadCount || 0,
             }))
             .filter((p) => p && p.id);
+
           setRecentPeers(peers);
         })
         .catch(() => {});
@@ -74,6 +78,7 @@ export const Sidebar = () => {
         .catch(() => {});
     }
   };
+
   useEffect(() => {
     fetchSidebarData();
   }, [user?.id, isCreator, location.pathname]);
@@ -98,15 +103,18 @@ export const Sidebar = () => {
         setPinnedCourseIds([]);
         setHiddenCourseIds([]);
       }
+
       setHideCompleted(
         (localStorage.getItem('nexo_hide_completed') ??
           localStorage.getItem('learnspace_hide_completed')) === 'true',
       );
     };
+
     handleSync();
     window.addEventListener('storage', handleSync);
     window.addEventListener('nexo_courses_visibility_changed', handleSync);
     window.addEventListener('nexo_pins_changed', handleSync);
+
     return () => {
       window.removeEventListener('storage', handleSync);
       window.removeEventListener('nexo_courses_visibility_changed', handleSync);
@@ -118,8 +126,10 @@ export const Sidebar = () => {
     const handleNewDm = () => {
       fetchSidebarData();
     };
+
     socket.on('direct-message', handleNewDm);
     socket.on('new-direct-message', handleNewDm);
+
     return () => {
       socket.off('direct-message', handleNewDm);
       socket.off('new-direct-message', handleNewDm);
@@ -137,20 +147,25 @@ export const Sidebar = () => {
         e.isCompleted || Math.round(e.progressPercent || e.progressPercentage || 0) >= 100;
       if (hiddenCourseIds.includes(courseId)) return false;
       if (hideCompleted && isFinished) return false;
+
       return true;
     });
+
     return [...visibleCourses].sort((a, b) => {
       const idA = a.course?.id || a.courseId;
       const idB = b.course?.id || b.courseId;
+
       return pinnedCourseIds.indexOf(idA) - pinnedCourseIds.indexOf(idB);
     });
   }, [enrolledCourses, hiddenCourseIds, hideCompleted, pinnedCourseIds]);
   const hiddenCoursesCount = useMemo(() => {
     if (!enrolledCourses || enrolledCourses.length === 0) return 0;
+
     return enrolledCourses.filter((e) => {
       const courseId = e.course?.id || e.courseId;
       const isFinished =
         e.isCompleted || Math.round(e.progressPercent || e.progressPercentage || 0) >= 100;
+
       return (courseId && hiddenCourseIds.includes(courseId)) || (hideCompleted && isFinished);
     }).length;
   }, [enrolledCourses, hiddenCourseIds, hideCompleted]);
@@ -165,6 +180,7 @@ export const Sidebar = () => {
     `sidebar-get-icon-class ${isActive ? 'sidebar-get-icon-class-2' : 'sidebar-get-icon-class-3'}`;
   const navClass = ({ isActive }) => getNavItemClass(isActive);
   const iconClass = (isActive) => getIconClass(isActive);
+
   return (
     <aside
       className={`sidebar-sidebar app-sidebar ${collapsed ? 'sidebar-sidebar-2' : 'sidebar-sidebar-3'}`}
@@ -186,7 +202,10 @@ export const Sidebar = () => {
         </div>
 
         <div className="sidebar-panel-3">
-          <NavLink to="/dashboard" className={navClass}>
+          <NavLink
+            to="/dashboard"
+            className={navClass}
+          >
             {({ isActive }) => (
               <div className="sidebar-panel-4">
                 <Home className={iconClass(isActive)} />
@@ -195,7 +214,10 @@ export const Sidebar = () => {
             )}
           </NavLink>
 
-          <NavLink to="/explore" className={navClass}>
+          <NavLink
+            to="/explore"
+            className={navClass}
+          >
             {({ isActive }) => (
               <div className="sidebar-panel-4">
                 <Compass className={iconClass(isActive)} />
@@ -204,7 +226,10 @@ export const Sidebar = () => {
             )}
           </NavLink>
 
-          <NavLink to="/library" className={navClass}>
+          <NavLink
+            to="/library"
+            className={navClass}
+          >
             {({ isActive }) => (
               <>
                 <div className="sidebar-panel-4">
@@ -227,13 +252,20 @@ export const Sidebar = () => {
           {!collapsed && (
             <div className="sidebar-panel-6">
               <span className="sidebar-label">Social & Mensagens</span>
-              <Link to="/messages?tab=add" className="sidebar-link" title="Adicionar Amigo">
+              <Link
+                to="/messages?tab=add"
+                className="sidebar-link"
+                title="Adicionar Amigo"
+              >
                 <UserPlus className="sidebar-chevron-right" />
               </Link>
             </div>
           )}
 
-          <Link to="/messages" className={getNavItemClass(isMessagesActive)}>
+          <Link
+            to="/messages"
+            className={getNavItemClass(isMessagesActive)}
+          >
             <div className="sidebar-panel-4">
               <MessageSquare className={getIconClass(isMessagesActive)} />
               {!collapsed && <span className="sidebar-label-2">Mensagens</span>}
@@ -241,7 +273,10 @@ export const Sidebar = () => {
             {unreadDms > 0 && <span className="sidebar-label-6">{unreadDms}</span>}
           </Link>
 
-          <Link to="/messages?tab=friends" className={getNavItemClass(isFriendsActive)}>
+          <Link
+            to="/messages?tab=friends"
+            className={getNavItemClass(isFriendsActive)}
+          >
             <div className="sidebar-panel-4">
               <Users className={getIconClass(isFriendsActive)} />
               {!collapsed && <span className="sidebar-label-2">Redes & Amigos</span>}
@@ -266,6 +301,7 @@ export const Sidebar = () => {
                             String(typeof u === 'string' ? u : u?.userId || u?.id) === String(p.id),
                         ),
                 );
+
                 return (
                   <Link
                     key={p.id}
@@ -274,7 +310,11 @@ export const Sidebar = () => {
                   >
                     <div className="sidebar-panel-8">
                       <div className="sidebar-panel-9">
-                        <Avatar src={p.avatarUrl} name={p.name} size="xs" />
+                        <Avatar
+                          src={p.avatarUrl}
+                          name={p.name}
+                          size="xs"
+                        />
                         <span
                           className={`sidebar-label-8 ${isOnline ? 'sidebar-label-10' : 'sidebar-label-11'} sidebar-label-9`}
                         />
@@ -293,7 +333,11 @@ export const Sidebar = () => {
           <div className="sidebar-panel-5">
             {!collapsed && <span className="sidebar-label-14">Área de Criador</span>}
 
-            <NavLink to="/creator" end className={navClass}>
+            <NavLink
+              to="/creator"
+              end
+              className={navClass}
+            >
               {({ isActive }) => (
                 <div className="sidebar-panel-4">
                   <BarChart3 className={iconClass(isActive)} />
@@ -302,7 +346,10 @@ export const Sidebar = () => {
               )}
             </NavLink>
 
-            <NavLink to="/creator/courses/new" className={navClass}>
+            <NavLink
+              to="/creator/courses/new"
+              className={navClass}
+            >
               {({ isActive }) => (
                 <div className="sidebar-panel-4">
                   <PlusCircle className={iconClass(isActive)} />
@@ -311,7 +358,10 @@ export const Sidebar = () => {
               )}
             </NavLink>
 
-            <NavLink to="/creator/reviews" className={navClass}>
+            <NavLink
+              to="/creator/reviews"
+              className={navClass}
+            >
               {({ isActive }) => (
                 <div className="sidebar-panel-4">
                   <BookOpen className={iconClass(isActive)} />
@@ -319,7 +369,10 @@ export const Sidebar = () => {
                 </div>
               )}
             </NavLink>
-            <NavLink to="/creator/members" className={navClass}>
+            <NavLink
+              to="/creator/members"
+              className={navClass}
+            >
               {({ isActive }) => (
                 <div className="sidebar-panel-4">
                   <Users className={iconClass(isActive)} />
@@ -334,7 +387,10 @@ export const Sidebar = () => {
           <div className="sidebar-panel-5">
             {!collapsed && <span className="sidebar-label-14">Administração</span>}
 
-            <NavLink to="/admin" className={navClass}>
+            <NavLink
+              to="/admin"
+              className={navClass}
+            >
               {({ isActive }) => (
                 <div className="sidebar-panel-4">
                   <ShieldCheck className="sidebar-shield-check" />
@@ -363,6 +419,7 @@ export const Sidebar = () => {
                   : location.pathname.startsWith('/courses/')
                     ? `/courses/${course.id}`
                     : `/learn/${course.id}`;
+
                 return (
                   <NavLink
                     key={course.id}
@@ -452,7 +509,10 @@ export const Sidebar = () => {
       {user && (
         <div className="sidebar-panel-22">
           <div className="sidebar-panel-23">
-            <Link to="/profile" className="sidebar-link-5">
+            <Link
+              to="/profile"
+              className="sidebar-link-5"
+            >
               <Avatar
                 src={user.avatarUrl}
                 name={user.name}
@@ -523,7 +583,11 @@ export const Sidebar = () => {
                   </button>
                 )}
 
-                <Link to="/settings" className="sidebar-link-6" title="Definições da conta">
+                <Link
+                  to="/settings"
+                  className="sidebar-link-6"
+                  title="Definições da conta"
+                >
                   <Settings className="sidebar-chevron-right" />
                 </Link>
               </div>
@@ -534,4 +598,5 @@ export const Sidebar = () => {
     </aside>
   );
 };
+
 export default Sidebar;

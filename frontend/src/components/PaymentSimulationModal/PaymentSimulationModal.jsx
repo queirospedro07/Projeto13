@@ -12,6 +12,31 @@ export function PaymentSimulationModal({ course, onClose, onSuccess }) {
   const [result, setResult] = useState(null);
   const submitting = useRef(false);
 
+  if (import.meta.env.PROD) {
+    return (
+      <Modal
+        isOpen
+        title="Inscrição no curso"
+        onClose={onClose}
+        maxWidth="md"
+      >
+        <div className="payment-simulation">
+          <h4>{course.title || course.name}</h4>
+          <p>
+            Os pagamentos online ainda não estão disponíveis. Contacte o formador para obter acesso
+            a este curso.
+          </p>
+          <Button
+            variant="secondary"
+            onClick={onClose}
+          >
+            Fechar
+          </Button>
+        </div>
+      </Modal>
+    );
+  }
+
   async function confirmPurchase(event) {
     event.preventDefault();
     if (submitting.current || result) return;
@@ -27,6 +52,7 @@ export function PaymentSimulationModal({ course, onClose, onSuccess }) {
       if (data.status !== 'approved' && !data.alreadyEnrolled) {
         throw new Error('Não foi possível confirmar o pagamento. Tente novamente.');
       }
+
       setResult(data);
       window.dispatchEvent(new Event('nexo_courses_visibility_changed'));
     } catch (err) {
@@ -54,7 +80,10 @@ export function PaymentSimulationModal({ course, onClose, onSuccess }) {
           <strong>{formatCoursePrice(course)}</strong>
         </div>
         {result ? (
-          <div className="payment-simulation__result" role="status">
+          <div
+            className="payment-simulation__result"
+            role="status"
+          >
             <CheckCircle2 aria-hidden="true" />
             <p>
               {result.alreadyEnrolled
@@ -64,18 +93,36 @@ export function PaymentSimulationModal({ course, onClose, onSuccess }) {
             <Button onClick={onSuccess}>Continuar para o curso</Button>
           </div>
         ) : (
-          <form onSubmit={confirmPurchase} className="payment-simulation__form" aria-busy={busy}>
-            <p>Ao confirmar, a inscrição fica guardada na sua conta.</p>
+          <form
+            onSubmit={confirmPurchase}
+            className="payment-simulation__form"
+            aria-busy={busy}
+          >
+            <p>
+              Simulação de demonstração, sem cobrança real. Ao confirmar, a inscrição fica guardada
+              na sua conta.
+            </p>
             {error && (
-              <p className="payment-simulation__error" role="alert">
+              <p
+                className="payment-simulation__error"
+                role="alert"
+              >
                 {error}
               </p>
             )}
             <div className="payment-simulation__actions">
-              <Button type="button" variant="secondary" disabled={busy} onClick={onClose}>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={busy}
+                onClick={onClose}
+              >
                 Cancelar
               </Button>
-              <Button type="submit" isLoading={busy}>
+              <Button
+                type="submit"
+                isLoading={busy}
+              >
                 Pagar
               </Button>
             </div>

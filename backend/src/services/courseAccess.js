@@ -1,7 +1,9 @@
 const { asyncSome } = require('../utils/asyncCollections.js');
 const { queryOne, queryAll } = require('../database/connection.js');
+
 async function canManageCourse(user, course) {
   if (!user?.id || !course) return false;
+
   return (
     user.role === 'ADMIN' ||
     user.id === course.creatorId ||
@@ -13,9 +15,11 @@ async function canManageCourse(user, course) {
     )
   );
 }
+
 async function canStudyCourse(user, course) {
   if (!user?.id || !course) return false;
   if (await canManageCourse(user, course)) return true;
+
   return Boolean(
     await queryOne('SELECT id FROM enrollments WHERE "courseId" = $1 AND "userId" = $2', [
       course.id,
@@ -23,12 +27,14 @@ async function canStudyCourse(user, course) {
     ]),
   );
 }
+
 async function lessonWithCourse(lessonId) {
   return await queryOne(
     'SELECT l.*, m."courseId" FROM lessons l JOIN course_modules m ON m.id = l."moduleId" WHERE l.id = $1',
     [lessonId],
   );
 }
+
 async function canAccessSpace(user, spaceId) {
   if (!user?.id) return false;
   const space = await queryOne('SELECT id, "ownerId", "isPrivate" FROM spaces WHERE id = $1', [
@@ -39,6 +45,7 @@ async function canAccessSpace(user, spaceId) {
   const courses = await queryAll('SELECT * FROM courses WHERE "spaceId" = $1', [space.id]);
   if (courses.length)
     return await asyncSome(courses, async (course) => await canStudyCourse(user, course));
+
   return Boolean(
     await queryOne('SELECT id FROM memberships WHERE "spaceId" = $1 AND "userId" = $2', [
       space.id,
@@ -46,10 +53,12 @@ async function canAccessSpace(user, spaceId) {
     ]),
   );
 }
+
 async function canModerateSpace(user, spaceId) {
   if (!user?.id) return false;
   const space = await queryOne('SELECT "ownerId" FROM spaces WHERE id = $1', [spaceId]);
   if (!space) return false;
+
   return (
     user.role === 'ADMIN' ||
     user.id === space.ownerId ||
@@ -59,6 +68,7 @@ async function canModerateSpace(user, spaceId) {
     ))
   );
 }
+
 exports.canManageCourse = canManageCourse;
 exports.canStudyCourse = canStudyCourse;
 exports.lessonWithCourse = lessonWithCourse;

@@ -80,4 +80,5 @@ const Chat = {
     );
   },
 };
+
 module.exports = Chat;

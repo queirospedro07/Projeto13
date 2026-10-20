@@ -15,13 +15,16 @@ const {
 } = require('../config/email.js');
 const recoveryMessage =
   'Se existir uma conta associada a este email, receberá instruções para redefinir a palavra-passe.';
+
 function getFrontendUrl() {
   const configuredUrl = (process.env.CLIENT_URL || process.env.FRONTEND_URL || '')
     .split(',')[0]
     .trim();
   if (configuredUrl) return configuredUrl.replace(/\/+$/, '');
+
   return process.env.NODE_ENV === 'production' ? null : 'http://localhost:5173';
 }
+
 const hashResetToken = (token) => createHash('sha256').update(token).digest('hex');
 
 // GET /auth/user/:identifier — Perfil público de um utilizador
@@ -59,6 +62,7 @@ const getProfileUserByIdentifier = async (req, res) => {
         createdAt: user.createdAt,
       });
     }
+
     return res.json({
       id: user.id,
       name: user.name,
@@ -89,6 +93,7 @@ const getProfileUserByIdentifier = async (req, res) => {
         const showCourses = user.showCourses !== 0;
         if (!isSelf && !showCourses) return [];
         const enrollmentRows = await Profile.listEnrollmentRowsByUserId([user.id]);
+
         return enrollmentRows
           .filter((r) => isSelf || r.isHidden !== 1)
           .map((r) => ({
@@ -117,6 +122,7 @@ const getProfileUserByIdentifier = async (req, res) => {
     });
   }
 };
+
 const putProfileProfile = async (req, res) => {
   try {
     const {
@@ -148,6 +154,7 @@ const putProfileProfile = async (req, res) => {
         });
       }
     }
+
     if (
       name !== undefined &&
       (typeof name !== 'string' || !name.trim() || name.trim().length > 100)
@@ -156,6 +163,7 @@ const putProfileProfile = async (req, res) => {
         error: 'O nome deve ter entre 1 e 100 caracteres.',
       });
     }
+
     for (const [label, value, limit] of [
       ['Biografia', bio, 500],
       ['Título', headline, 120],
@@ -166,6 +174,7 @@ const putProfileProfile = async (req, res) => {
           error: label + ': limite de ' + limit + ' caracteres.',
         });
     }
+
     const now = new Date().toISOString();
     if (avatarUrl !== undefined && !isSafeImage(avatarUrl))
       return res.status(400).json({
@@ -192,6 +201,7 @@ const putProfileProfile = async (req, res) => {
         now,
         req.user.id,
       ]);
+
       const profileExists = await Profile.findProfileExistsByIdUtilizador([req.user.id]);
       if (profileExists) {
         await Profile.updatePerfisByIdUtilizador([
@@ -232,10 +242,13 @@ const putProfileProfile = async (req, res) => {
           showCourses !== undefined ? (showCourses ? 1 : 0) : 1,
         ]);
       }
+
       if (cleanSocialLinks !== undefined)
         await saveProfileSocialLinks(req.user.id, cleanSocialLinks);
     });
+
     const updated = await Profile.findUpdatedById([req.user.id]);
+
     return res.json({
       user: {
         ...updated,
@@ -258,11 +271,13 @@ const putProfileProfile = async (req, res) => {
     });
   } catch (err) {
     console.error('Falha ao atualizar perfil:', err.message);
+
     return res.status(500).json({
       error: 'Falha ao atualizar perfil',
     });
   }
 };
+
 const postProfileProfileClearField = async (req, res) => {
   try {
     const { field } = req.body;
@@ -279,6 +294,7 @@ const postProfileProfileClearField = async (req, res) => {
     } else {
       await Profile.updatePerfisByIdUtilizadorForPostProfileProfileClearField([req.user.id]);
     }
+
     return res.json({
       success: true,
     });
@@ -288,6 +304,7 @@ const postProfileProfileClearField = async (req, res) => {
     });
   }
 };
+
 const postProfileForgotPassword = async (req, res) => {
   const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
   if (!email || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -295,6 +312,7 @@ const postProfileForgotPassword = async (req, res) => {
       message: 'Introduza um endereço de email válido.',
     });
   }
+
   const frontendUrl = getFrontendUrl();
   const smtpConfigured = hasEmailTransport();
   const localDevelopmentReset =
@@ -306,16 +324,19 @@ const postProfileForgotPassword = async (req, res) => {
       message: 'A recuperação de palavra-passe está temporariamente indisponível.',
     });
   }
+
   if (smtpConfigured) {
     try {
       await verifyEmailTransport();
     } catch (error) {
       console.error('SMTP transport verification failed:', error.message);
+
       return res.status(503).json({
         message: 'O serviço de email está indisponível. Verifique a configuração SMTP.',
       });
     }
   }
+
   try {
     const userResult = await Profile.findUserResult([email]);
     const user = userResult.rows?.[0];
@@ -328,6 +349,7 @@ const postProfileForgotPassword = async (req, res) => {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 30 * 60 * 1000).toISOString();
     const resetUrl = `${frontendUrl}/reset-password?token=${encodeURIComponent(token)}`;
+
     await Profile.findPasswordResetTokensByUserId([user.id]);
     await Profile.findPasswordResetTokens([
       `reset-${randomBytes(12).toString('hex')}`,
@@ -342,6 +364,7 @@ const postProfileForgotPassword = async (req, res) => {
         devResetUrl: resetUrl,
       });
     }
+
     try {
       await sendPasswordResetEmail({
         to: user.email,
@@ -351,20 +374,24 @@ const postProfileForgotPassword = async (req, res) => {
     } catch (error) {
       console.error('Password reset email failed:', error.message);
       await Profile.findPasswordResetTokensByTokenHash([tokenHash]);
+
       return res.status(503).json({
         message: 'Não foi possível enviar o email de recuperação. Tente novamente mais tarde.',
       });
     }
+
     return res.json({
       message: recoveryMessage,
     });
   } catch (error) {
     console.error('Password reset request failed:', error.message);
+
     return res.status(500).json({
       message: 'Não foi possível processar o pedido. Tente novamente mais tarde.',
     });
   }
 };
+
 const postProfileResetPassword = async (req, res) => {
   const { token, password } = req.body || {};
   if (typeof token !== 'string' || !/^[a-f\d]{64}$/i.test(token)) {
@@ -372,6 +399,7 @@ const postProfileResetPassword = async (req, res) => {
       message: 'A ligação é inválida ou expirou. Peça uma nova ligação.',
     });
   }
+
   if (
     typeof password !== 'string' ||
     password.length < 12 ||
@@ -381,6 +409,7 @@ const postProfileResetPassword = async (req, res) => {
       message: 'A palavra-passe deve ter pelo menos 12 caracteres e não exceder 72 bytes.',
     });
   }
+
   try {
     const tokenHash = hashResetToken(token);
     const tokenResult = await Profile.findTokenResultByTokenHash([tokenHash]);
@@ -391,10 +420,12 @@ const postProfileResetPassword = async (req, res) => {
       Date.parse(resetRecord.expires_at) <= Date.now()
     ) {
       if (resetRecord) await Profile.findPasswordResetTokensByTokenHash([tokenHash]);
+
       return res.status(400).json({
         message: 'A ligação é inválida ou expirou. Peça uma nova ligação.',
       });
     }
+
     const passwordHash = await bcrypt.hash(password, 10);
     const changed = await transaction(async () => {
       const consumed = await Profile.deleteConsumedByHashToken([
@@ -407,6 +438,7 @@ const postProfileResetPassword = async (req, res) => {
         new Date().toISOString(),
         resetRecord.user_id,
       ]);
+
       return true;
     });
     if (!changed)
@@ -417,16 +449,19 @@ const postProfileResetPassword = async (req, res) => {
       .get('io')
       ?.in('user_' + resetRecord.user_id)
       .disconnectSockets(true);
+
     return res.json({
       message: 'Palavra-passe atualizada. Já pode iniciar sessão.',
     });
   } catch (error) {
     console.error('Password reset failed:', error.message);
+
     return res.status(500).json({
       message: 'Não foi possível redefinir a palavra-passe. Tente novamente.',
     });
   }
 };
+
 exports.getProfileUserByIdentifier = getProfileUserByIdentifier;
 exports.putProfileProfile = putProfileProfile;
 exports.postProfileProfileClearField = postProfileProfileClearField;

@@ -14,6 +14,7 @@ function LessonPreview({ lesson }) {
   const article = lesson.richArticle;
   const quiz = lesson.quiz;
   const content = article?.markdown || article?.content || (quiz ? '' : lesson.content) || '';
+
   return (
     <article className="course-review__lesson">
       <span>
@@ -22,9 +23,18 @@ function LessonPreview({ lesson }) {
       <h3>{lesson.title}</h3>
       {video &&
         (youtube ? (
-          <iframe title={`Vídeo: ${lesson.title}`} src={youtube} allowFullScreen />
+          <iframe
+            title={`Vídeo: ${lesson.title}`}
+            src={youtube}
+            allowFullScreen
+          />
         ) : (
-          <video controls preload="metadata" src={video} aria-label={lesson.title} />
+          <video
+            controls
+            preload="metadata"
+            src={video}
+            aria-label={lesson.title}
+          />
         ))}
       {content && typeof content === 'string' && (
         <div className="course-review__content">{content}</div>
@@ -70,8 +80,14 @@ export default function CourseReview({
   const [reviewed, setReviewed] = useState(false);
   const lessons = course.modules?.flatMap((module) => module.lessons || []) || [];
   const lesson = lessons.find((item) => item.id === lessonId) || lessons[0];
+
   return (
-    <Modal isOpen title="Revisão para publicação" maxWidth="4xl" onClose={() => !busy && onClose()}>
+    <Modal
+      isOpen
+      title="Revisão para publicação"
+      maxWidth="4xl"
+      onClose={() => !busy && onClose()}
+    >
       {loading ? (
         <p role="status">A carregar o conteúdo do curso…</p>
       ) : error ? (
@@ -82,7 +98,12 @@ export default function CourseReview({
       ) : (
         <div className="course-review">
           <header className="course-review__header">
-            {course.thumbnailUrl && <img src={course.thumbnailUrl} alt="Capa do curso" />}
+            {course.thumbnailUrl && (
+              <img
+                src={course.thumbnailUrl}
+                alt="Capa do curso"
+              />
+            )}
             <div>
               <span>
                 {formatCategory(course.category)} · {course.difficulty} · {course.language}
@@ -140,7 +161,10 @@ export default function CourseReview({
                 </section>
               ))}
             </nav>
-            <LessonPreview key={lesson?.id} lesson={lesson} />
+            <LessonPreview
+              key={lesson?.id}
+              lesson={lesson}
+            />
           </div>
           <section>
             <h3>Recursos e comunidade</h3>
@@ -148,10 +172,15 @@ export default function CourseReview({
               <ul>
                 {course.documents.map((document, index) => {
                   const url = safeDownloadUrl(document.url || document.data);
+
                   return (
                     <li key={document.id || index}>
                       {url ? (
-                        <a href={url} target="_blank" rel="noreferrer">
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
                           {document.name || document.title || 'Abrir recurso'}
                         </a>
                       ) : (
@@ -170,7 +199,11 @@ export default function CourseReview({
                 #{channel.name} · {channel.type === 'voice' ? 'Chamada ao vivo' : 'Chat'}
               </p>
             ))}
-            <Link to={`/learn/${course.id}`} target="_blank" rel="noreferrer">
+            <Link
+              to={`/learn/${course.id}`}
+              target="_blank"
+              rel="noreferrer"
+            >
               Abrir sala de aula numa nova página
             </Link>
           </section>
@@ -192,10 +225,18 @@ export default function CourseReview({
             </label>
           )}
           <footer className="course-review__actions">
-            <Button variant="secondary" disabled={busy} onClick={onClose}>
+            <Button
+              variant="secondary"
+              disabled={busy}
+              onClick={onClose}
+            >
               Fechar
             </Button>
-            <Button variant="secondary" disabled={busy} onClick={onRequestChanges}>
+            <Button
+              variant="secondary"
+              disabled={busy}
+              onClick={onRequestChanges}
+            >
               Pedir alterações
             </Button>
             {course.approvalStatus !== 'APPROVED' && (

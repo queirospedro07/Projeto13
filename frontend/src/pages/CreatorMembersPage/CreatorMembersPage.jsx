@@ -18,6 +18,7 @@ import { Avatar } from '../../components/Avatar';
 import { Select } from '../../components/Select';
 import { useToast } from '../../components/Toast';
 import { api } from '../../services/api';
+
 export const CreatorMembersPage = () => {
   const [activeTab, setActiveTab] = useState('members'); // 'members' | 'collaborators'
   const [members, setMembers] = useState([]);
@@ -39,16 +40,19 @@ export const CreatorMembersPage = () => {
   const [loadError, setLoadError] = useState(false);
   const [deletingMemberId, setDeletingMemberId] = useState(null);
   const { toast } = useToast();
+
   useEffect(() => {
     if (isAddCollabModalOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
     }
+
     return () => {
       document.body.style.overflow = 'unset';
     };
   }, [isAddCollabModalOpen]);
+
   const loadData = async () => {
     setLoading(true);
     setLoadError(false);
@@ -57,6 +61,7 @@ export const CreatorMembersPage = () => {
         api.get('/creator/members').then(({ data }) => data),
         api.get('/creator/courses').then(({ data }) => data),
       ]);
+
       setMembers(membersData || []);
       setCourses(coursesData || []);
       if (coursesData && coursesData.length > 0 && !selectedCollabCourseId) {
@@ -68,9 +73,11 @@ export const CreatorMembersPage = () => {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     loadData();
   }, []);
+
   const loadCollaborators = async (courseId) => {
     if (!courseId) return;
     setLoadingCollabs(true);
@@ -78,6 +85,7 @@ export const CreatorMembersPage = () => {
       const data = await api
         .get(`/creator/courses/${courseId}/collaborators`)
         .then(({ data }) => data);
+
       setCollaborators(data || []);
     } catch {
       setCollaborators([]);
@@ -85,11 +93,13 @@ export const CreatorMembersPage = () => {
       setLoadingCollabs(false);
     }
   };
+
   useEffect(() => {
     if (selectedCollabCourseId) {
       loadCollaborators(selectedCollabCourseId);
     }
   }, [selectedCollabCourseId]);
+
   const courseOptions = useMemo(() => {
     if (courses && courses.length > 0) {
       return courses.map((c) => ({
@@ -97,12 +107,15 @@ export const CreatorMembersPage = () => {
         title: c.title,
       }));
     }
+
     const map = new Map();
+
     members.forEach((m) => {
       if (m.course?.id && m.course?.title) {
         map.set(m.course.id, m.course.title);
       }
     });
+
     return Array.from(map.entries()).map(([id, title]) => ({
       id,
       title,
@@ -114,6 +127,7 @@ export const CreatorMembersPage = () => {
       m.user?.username?.toLowerCase().includes(search.toLowerCase()) ||
       m.course?.title?.toLowerCase().includes(search.toLowerCase());
     const matchesCourse = selectedCourseFilter === 'ALL' || m.course?.id === selectedCourseFilter;
+
     return matchesSearch && matchesCourse;
   });
   const handleAddCollaborator = async (e) => {
@@ -126,6 +140,7 @@ export const CreatorMembersPage = () => {
           identifier: collabIdentifier.trim(),
         })
         .then(({ data }) => data);
+
       setCollaborators((prev) => [...prev, newCollab]);
       toast({
         title: 'Colaborador Adicionado!',
@@ -150,6 +165,7 @@ export const CreatorMembersPage = () => {
       setAddingCollab(false);
     }
   };
+
   const handleRemoveCollaborator = async (collab) => {
     if (
       !window.confirm(
@@ -158,6 +174,7 @@ export const CreatorMembersPage = () => {
     ) {
       return;
     }
+
     setRemovingCollabId(collab.userId);
     try {
       await api
@@ -185,6 +202,7 @@ export const CreatorMembersPage = () => {
       setRemovingCollabId(null);
     }
   };
+
   const handleRemoveMember = async (member) => {
     if (
       !window.confirm(
@@ -193,6 +211,7 @@ export const CreatorMembersPage = () => {
     ) {
       return;
     }
+
     setDeletingMemberId(member.id);
     try {
       await api
@@ -214,6 +233,7 @@ export const CreatorMembersPage = () => {
       setDeletingMemberId(null);
     }
   };
+
   if (loadError)
     return (
       <PageState
@@ -222,6 +242,7 @@ export const CreatorMembersPage = () => {
         onRetry={loadData}
       />
     );
+
   return (
     <div className="creator-members-panel">
       {/* Header */}
@@ -229,7 +250,10 @@ export const CreatorMembersPage = () => {
         <div className="creator-members-panel-3">
           <div>
             <div className="creator-members-panel-4">
-              <Badge size="md" variant="primary">
+              <Badge
+                size="md"
+                variant="primary"
+              >
                 Gestão da Turma
               </Badge>
               <span className="creator-members-label">
@@ -296,7 +320,10 @@ export const CreatorMembersPage = () => {
               >
                 <option value="ALL">Todos os Cursos ({members.length})</option>
                 {courseOptions.map((c) => (
-                  <option key={c.id} value={c.id}>
+                  <option
+                    key={c.id}
+                    value={c.id}
+                  >
                     {c.title}
                   </option>
                 ))}
@@ -317,7 +344,10 @@ export const CreatorMembersPage = () => {
                 className="creator-members-select-2"
               >
                 {courseOptions.map((c) => (
-                  <option key={c.id} value={c.id}>
+                  <option
+                    key={c.id}
+                    value={c.id}
+                  >
                     {c.title}
                   </option>
                 ))}
@@ -350,7 +380,10 @@ export const CreatorMembersPage = () => {
                 </thead>
                 <tbody className="creator-members-table-body">
                   {filteredMembers.map((m) => (
-                    <tr key={m.id} className="creator-members-table-row-2">
+                    <tr
+                      key={m.id}
+                      className="creator-members-table-row-2"
+                    >
                       <td className="creator-members-table-heading">
                         <div className="creator-members-panel-13">
                           <Avatar
@@ -386,6 +419,7 @@ export const CreatorMembersPage = () => {
                         <div className="creator-members-panel-15">
                           <Link to="/messages">
                             <Button
+                              as="span"
                               variant="secondary"
                               size="sm"
                               leftIcon={
@@ -453,9 +487,17 @@ export const CreatorMembersPage = () => {
           ) : (
             <div className="creator-members-panel-22">
               {collaborators.map((c) => (
-                <div key={c.id || c.userId} className="creator-members-panel-23">
+                <div
+                  key={c.id || c.userId}
+                  className="creator-members-panel-23"
+                >
                   <div className="creator-members-panel-24">
-                    <Avatar src={c.avatarUrl} name={c.name} size="md" status="online" />
+                    <Avatar
+                      src={c.avatarUrl}
+                      name={c.name}
+                      size="md"
+                      status="online"
+                    />
                     <div className="creator-members-panel-14">
                       <h4 className="creator-members-caption">{c.name}</h4>
                       <p className="creator-members-description-3">
@@ -488,7 +530,10 @@ export const CreatorMembersPage = () => {
               className="creator-members-panel-26"
               onClick={() => setIsAddCollabModalOpen(false)}
             />
-            <div className="creator-members-panel-27" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="creator-members-panel-27"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="creator-members-panel-28">
                 <div className="creator-members-panel-29">
                   <UserPlus className="creator-members-user-plus-2" />
@@ -499,7 +544,10 @@ export const CreatorMembersPage = () => {
                 </div>
               </div>
 
-              <form onSubmit={handleAddCollaborator} className="creator-members-panel-16">
+              <form
+                onSubmit={handleAddCollaborator}
+                className="creator-members-panel-16"
+              >
                 <div>
                   <label className="creator-members-field-label">Curso</label>
                   <Select
@@ -508,7 +556,10 @@ export const CreatorMembersPage = () => {
                     className="creator-members-select-3"
                   >
                     {courseOptions.map((c) => (
-                      <option key={c.id} value={c.id}>
+                      <option
+                        key={c.id}
+                        value={c.id}
+                      >
                         {c.title}
                       </option>
                     ))}
@@ -556,4 +607,5 @@ export const CreatorMembersPage = () => {
     </div>
   );
 };
+
 export default CreatorMembersPage;

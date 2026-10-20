@@ -7,6 +7,7 @@ const {
 } = require('../controllers/notes.controller.js');
 const { asyncHandler } = require('../middleware/asyncHandler.js');
 const router = Router();
+
 router.get('/:lessonId', authenticate, asyncHandler(getNotesByLessonId));
 router.post('/:lessonId', authenticate, asyncHandler(postNotesByLessonId));
 router.get('/', authenticate, asyncHandler(getNotes));

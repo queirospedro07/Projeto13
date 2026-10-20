@@ -6,7 +6,15 @@ const {
   transaction,
   lockTransaction,
 } = require('../database/connection.js');
+
 async function simulatePayment(user, courseId, input = {}) {
+  if (process.env.NODE_ENV === 'production') {
+    throw Object.assign(
+      new Error('A compra de cursos está indisponível. Contacte o formador para obter acesso.'),
+      { status: 503 },
+    );
+  }
+
   const { method, outcome, expectedAmountCents } = input && typeof input === 'object' ? input : {};
   if (
     !['card', 'mbway', 'multibanco'].includes(method) ||
@@ -16,12 +24,14 @@ async function simulatePayment(user, courseId, input = {}) {
       status: 400,
     });
   }
+
   if (
     expectedAmountCents !== undefined &&
     (!Number.isSafeInteger(expectedAmountCents) || expectedAmountCents <= 0)
   ) {
     throw Object.assign(new Error('O montante de confirmação é inválido.'), { status: 400 });
   }
+
   return await transaction(async () => {
     const course = await queryOne('SELECT * FROM courses WHERE id = $1 OR slug = $2 FOR SHARE', [
       courseId,
@@ -36,12 +46,15 @@ async function simulatePayment(user, courseId, input = {}) {
         status: 404,
       });
     }
+
     if (course.isFree === 1 || !(Number(course.price) > 0)) {
       throw Object.assign(new Error('Este curso não necessita de pagamento.'), {
         status: 400,
       });
     }
+
     await lockTransaction(`enrollment:${user.id}:${course.id}`);
+
     const existing = await queryOne(
       'SELECT id FROM enrollments WHERE "userId" = $1 AND "courseId" = $2',
       [user.id, course.id],
@@ -69,12 +82,14 @@ async function simulatePayment(user, courseId, input = {}) {
         { status: 409 },
       );
     }
+
     if (expectedAmountCents !== undefined && expectedAmountCents !== currentAmountCents) {
       throw Object.assign(
         new Error('O preço do curso mudou. Atualize a página e confirme novamente o valor.'),
         { status: 409 },
       );
     }
+
     const payment = {
       id: randomUUID(),
       courseId: course.id,
@@ -85,6 +100,7 @@ async function simulatePayment(user, courseId, input = {}) {
       createdAt: new Date().toISOString(),
       simulated: true,
     };
+
     await execute(
       `INSERT INTO simulacoes_pagamento
       (id, id_utilizador, id_curso, montante_centimos, metodo, estado, criado_em)
@@ -109,9 +125,11 @@ async function simulatePayment(user, courseId, input = {}) {
         );
       }
     }
+
     return payment;
   });
 }
+
 async function getPaymentHistory(userId) {
   return await queryAll(
     `SELECT p.id, p.id_curso AS "courseId", c.titulo AS "courseTitle",
@@ -122,5 +140,6 @@ async function getPaymentHistory(userId) {
     [userId],
   );
 }
+
 exports.simulatePayment = simulatePayment;
 exports.getPaymentHistory = getPaymentHistory;

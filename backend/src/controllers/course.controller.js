@@ -15,6 +15,7 @@ const resolveCourseAccessState = ({ user, course, enrollmentRow, isCollaborator 
       isCollaborator),
   );
   const userEnrollment = enrollmentRow || null;
+
   return {
     isCreator,
     isEnrolled: Boolean(userEnrollment),
@@ -23,6 +24,7 @@ const resolveCourseAccessState = ({ user, course, enrollmentRow, isCollaborator 
     userProgress: userEnrollment ? (userEnrollment.progressPercent ?? 0) : 0,
   };
 };
+
 const getCourseMyLearning = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -36,6 +38,7 @@ const getCourseMyLearning = async (req, res) => {
       const modules = await Course.listModulesByCourseId([courseId]);
       const modulesWithLessons = await asyncMap(modules, async (m) => {
         const lessons = await Course.listLessonsByModuleId([m.id]);
+
         return {
           ...m,
           lessons,
@@ -47,6 +50,7 @@ const getCourseMyLearning = async (req, res) => {
           isCompleted: Boolean(lp.completed),
         }),
       );
+
       return {
         id: enrollmentId,
         userId: userId,
@@ -81,14 +85,17 @@ const getCourseMyLearning = async (req, res) => {
         lessonProgresses,
       };
     });
+
     return res.json(formatted);
   } catch (err) {
     console.error('Failed to fetch my-learning:', err);
+
     return res.status(500).json({
       error: 'Falha ao carregar cursos inscritos',
     });
   }
 };
+
 const postCourseByCourseIdToggleHide = async (req, res) => {
   try {
     const { courseId } = req.params;
@@ -103,8 +110,11 @@ const postCourseByCourseIdToggleHide = async (req, res) => {
         error: 'Inscrição não encontrada',
       });
     }
+
     const nextHidden = enrollment.isHidden === 1 ? 0 : 1;
+
     await Course.updateEnrollmentsByIsHiddenAndId([nextHidden, enrollment.id]);
+
     return res.json({
       success: true,
       isHidden: nextHidden === 1,
@@ -112,11 +122,13 @@ const postCourseByCourseIdToggleHide = async (req, res) => {
     });
   } catch (err) {
     console.error('Failed to toggle hide course:', err);
+
     return res.status(500).json({
       error: 'Falha ao alterar visibilidade do curso',
     });
   }
 };
+
 const getCourse = async (req, res) => {
   try {
     const rows = await Course.search(req.query);
@@ -127,8 +139,10 @@ const getCourse = async (req, res) => {
         userEnrollment = await Course.findEnrollmentsByUserIdAndCourseId([req.user.id, course.id]);
         isCreator = course.creatorId === req.user.id;
       }
+
       const isEnrolled = Boolean(userEnrollment);
       const userProgress = userEnrollment ? userEnrollment.progressPercent : 0;
+
       return {
         id: course.id,
         title: course.title,
@@ -172,14 +186,17 @@ const getCourse = async (req, res) => {
         userProgress,
       };
     });
+
     return res.json(coursesWithStats);
   } catch (err) {
     console.error('Failed to load courses:', err);
+
     return res.status(500).json({
       error: 'Falha ao carregar catálogo de cursos',
     });
   }
 };
+
 const getCourseById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -220,11 +237,13 @@ const getCourseById = async (req, res) => {
         }
       }
     }
+
     if (!course) {
       return res.status(404).json({
         error: 'Curso não encontrado',
       });
     }
+
     const isCollab = Boolean(
       req.user &&
       (await Course.findCourseCollaboratorsByCourseIdAndUserId([course.id, req.user.id])),
@@ -246,6 +265,7 @@ const getCourseById = async (req, res) => {
           'Este curso está atualmente a aguardar validação e aprovação pela administração NEXO.',
       });
     }
+
     const modules = await Course.listModulesByCourseIdForGetCourseById([course.id]);
     let modulesWithLessons = await asyncMap(modules, async (m) => {
       const lessons = await Course.listLessonsByModuleIdForLessons([m.id]);
@@ -265,8 +285,10 @@ const getCourseById = async (req, res) => {
               }
             } catch (_) {}
           }
+
           if (!quizObj && l.quiz_id) {
             const questions = await Course.listQuestionsByQuizId([l.quiz_id]);
+
             quizObj = {
               id: l.quiz_id,
               title: l.quiz_title,
@@ -278,6 +300,7 @@ const getCourseById = async (req, res) => {
                 } catch (_) {
                   parsedOptions = [];
                 }
+
                 const formattedOptions = Array.isArray(parsedOptions)
                   ? parsedOptions.map((opt, idx) => ({
                       id: `opt-${q.id}-${idx}`,
@@ -285,6 +308,7 @@ const getCourseById = async (req, res) => {
                       isCorrect: idx === q.correctOptionIndex,
                     }))
                   : [];
+
                 return {
                   id: q.id,
                   question: q.question,
@@ -311,6 +335,7 @@ const getCourseById = async (req, res) => {
             } catch (_) {}
           }
         }
+
         return {
           id: l.id,
           title: l.title,
@@ -324,6 +349,7 @@ const getCourseById = async (req, res) => {
           richArticle: richArticleObj,
         };
       });
+
       return {
         ...m,
         lessons: formattedLessons,
@@ -343,11 +369,13 @@ const getCourseById = async (req, res) => {
         isSharedSpace = true;
       }
     }
+
     if (targetSpaceId && !isSharedSpace) {
       const spaceRow = await Course.findSpaceRowById([targetSpaceId]);
       if (spaceRow) {
         let channels = await Course.listChannelsBySpaceId([spaceRow.id]);
         const members = await Course.listMembersBySpaceId([spaceRow.id]);
+
         space = {
           ...spaceRow,
           channels,
@@ -364,6 +392,7 @@ const getCourseById = async (req, res) => {
         };
       }
     }
+
     let userEnrollment = null;
     if (req.user) {
       let enrollmentRow = await Course.findEnrollmentRowByUserIdAndCourseId([
@@ -377,12 +406,14 @@ const getCourseById = async (req, res) => {
           ...lp,
           isCompleted: Boolean(lp.completed),
         }));
+
         userEnrollment = {
           ...enrollmentRow,
           lessonProgresses: progresses,
         };
       }
     }
+
     const isCollaborator = Boolean(
       req.user &&
       (await Course.findCourseCollaboratorsByCourseIdAndUserId([course.id, req.user.id])),
@@ -401,6 +432,7 @@ const getCourseById = async (req, res) => {
     let reviewsList = [];
     try {
       const reviewsRows = await Course.listReviewsRowsByCourseId([course.id]);
+
       reviewsList = reviewsRows.map((r) => ({
         id: r.id,
         rating: r.rating,
@@ -413,6 +445,7 @@ const getCourseById = async (req, res) => {
         },
       }));
     } catch (_) {}
+
     const avgRating =
       reviewsList.length > 0
         ? (reviewsList.reduce((acc, r) => acc + r.rating, 0) / reviewsList.length).toFixed(1)
@@ -427,6 +460,7 @@ const getCourseById = async (req, res) => {
     } catch (_) {
       parsedOutcomes = course.learningOutcomes ? [course.learningOutcomes] : [];
     }
+
     let parsedRequirements = [];
     try {
       parsedRequirements = course.requirements
@@ -437,6 +471,7 @@ const getCourseById = async (req, res) => {
     } catch (_) {
       parsedRequirements = course.requirements ? [course.requirements] : [];
     }
+
     let parsedDocuments = [];
     try {
       parsedDocuments = course.documents
@@ -447,6 +482,7 @@ const getCourseById = async (req, res) => {
     } catch (_) {
       parsedDocuments = [];
     }
+
     return res.json({
       id: course.id,
       title: course.title,
@@ -496,12 +532,14 @@ const getCourseById = async (req, res) => {
             };
           if (lesson.type === 'quiz') {
             const quiz = publicAssessment(await loadAssessment(lesson.id));
+
             return {
               ...lesson,
               content: quiz?.description || '',
               quiz,
             };
           }
+
           return lesson;
         }),
       })),
@@ -520,11 +558,13 @@ const getCourseById = async (req, res) => {
     });
   } catch (err) {
     console.error('Course details error:', err);
+
     return res.status(500).json({
       error: 'Falha ao carregar detalhes do curso',
     });
   }
 };
+
 const getCourseByIdClassmates = async (req, res) => {
   try {
     const { id } = req.params;
@@ -543,14 +583,17 @@ const getCourseByIdClassmates = async (req, res) => {
       course.id,
       course.creatorId || '',
     ]);
+
     return res.json(classmates);
   } catch (err) {
     console.error('Failed to load classmates:', err);
+
     return res.status(500).json({
       error: 'Falha ao carregar colegas de turma',
     });
   }
 };
+
 const postCourseByIdEnroll = async (req, res) => {
   try {
     const { id } = req.params;
@@ -562,6 +605,7 @@ const postCourseByIdEnroll = async (req, res) => {
         error: 'Curso não encontrado',
       });
     }
+
     if (
       (course.isPublished !== 1 ||
         (course.approvalStatus && course.approvalStatus !== 'APPROVED')) &&
@@ -572,6 +616,7 @@ const postCourseByIdEnroll = async (req, res) => {
         error: 'Este curso não se encontra disponível para inscrição de momento.',
       });
     }
+
     if (
       course.isFree !== 1 &&
       Number(course.price) > 0 &&
@@ -588,9 +633,11 @@ const postCourseByIdEnroll = async (req, res) => {
         enrollment: existing,
       });
     }
+
     const enrollmentId = `enr-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
     const storedEnrollmentId = await transaction(async () => {
       await lockTransaction(`enrollment:${userId}:${course.id}`);
+
       const concurrent = await Course.findEnrollmentRowByUserIdAndCourseId([userId, course.id]);
       if (concurrent) return concurrent.id;
       await Course.insertEnrollments([enrollmentId, userId, course.id, now]);
@@ -600,6 +647,7 @@ const postCourseByIdEnroll = async (req, res) => {
           await Course.insertMemberships([`mem-${randomUUID()}`, userId, course.spaceId, now]);
         }
       }
+
       await Course.insertNotifications([
         `notif-${randomUUID()}`,
         userId,
@@ -608,20 +656,24 @@ const postCourseByIdEnroll = async (req, res) => {
         `/learn/${course.id}`,
         now,
       ]);
+
       return enrollmentId;
     });
     const newEnrollment = await Course.findNewEnrollmentById([storedEnrollmentId]);
+
     return res.status(storedEnrollmentId === enrollmentId ? 201 : 200).json({
       message: 'Inscrição realizada com sucesso',
       enrollment: newEnrollment,
     });
   } catch (err) {
     console.error('Enrollment error:', err);
+
     return res.status(500).json({
       error: 'Falha ao inscrever no curso',
     });
   }
 };
+
 const postCourseByIdLessonsByLessonIdComplete = async (req, res) => {
   try {
     return res.json(await completeLesson(req.user, req.params.id, req.params.lessonId));
@@ -631,6 +683,7 @@ const postCourseByIdLessonsByLessonIdComplete = async (req, res) => {
     });
   }
 };
+
 const postCourseByCourseIdReviews = async (req, res) => {
   try {
     const { courseId } = req.params;
@@ -641,11 +694,13 @@ const postCourseByCourseIdReviews = async (req, res) => {
         error: 'Classificação inválida (1 a 5 estrelas)',
       });
     }
+
     if (typeof comment !== 'string' || !comment.trim() || comment.length > 2000) {
       return res.status(400).json({
         error: 'O comentário da avaliação é obrigatório',
       });
     }
+
     const course = await Course.findCourseByIdAndSlugForPostCourseByCourseIdReviews([
       courseId,
       courseId,
@@ -655,6 +710,7 @@ const postCourseByCourseIdReviews = async (req, res) => {
         error: 'Curso não encontrado',
       });
     }
+
     const isEnrolledOrOwner =
       req.user.role === 'ADMIN' ||
       req.user.id === course.creatorId ||
@@ -669,6 +725,7 @@ const postCourseByCourseIdReviews = async (req, res) => {
         error: 'Apenas estudantes inscritos podem avaliar este curso',
       });
     }
+
     const now = new Date().toISOString();
     const existingReview = await Course.findExistingReviewByCourseIdAndUserId([course.id, userId]);
     if (existingReview) {
@@ -677,6 +734,7 @@ const postCourseByCourseIdReviews = async (req, res) => {
         comment.trim(),
         existingReview.id,
       ]);
+
       return res.json({
         message: 'Avaliação atualizada com sucesso',
         review: {
@@ -687,8 +745,11 @@ const postCourseByCourseIdReviews = async (req, res) => {
         },
       });
     }
+
     const revId = `rev-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+
     await Course.insertReviews([revId, course.id, userId, Number(rating), comment.trim(), now]);
+
     return res.status(201).json({
       message: 'Avaliação publicada com sucesso',
       review: {
@@ -704,6 +765,7 @@ const postCourseByCourseIdReviews = async (req, res) => {
     });
   }
 };
+
 exports.resolveCourseAccessState = resolveCourseAccessState;
 exports.getCourseMyLearning = getCourseMyLearning;
 exports.postCourseByCourseIdToggleHide = postCourseByCourseIdToggleHide;

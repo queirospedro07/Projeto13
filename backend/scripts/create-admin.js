@@ -1,10 +1,11 @@
 const { connectDB, execute, transaction, closeDatabase } = require('../src/database/connection.js');
 const User = require('../src/models/User.js');
+
 async function main() {
-  const email = process.env.ADMIN_EMAIL,
-    username = process.env.ADMIN_USERNAME,
-    password = process.env.ADMIN_PASSWORD,
-    name = process.env.ADMIN_NAME || 'Administração';
+  const email = process.env.ADMIN_EMAIL;
+  const username = process.env.ADMIN_USERNAME;
+  const password = process.env.ADMIN_PASSWORD;
+  const name = process.env.ADMIN_NAME || 'Administração';
   try {
     if (
       !email ||
@@ -27,6 +28,7 @@ async function main() {
       email,
       password,
     });
+
     await transaction(
       async () => await execute("UPDATE utilizadores SET papel = 'ADMIN' WHERE id = $1", [user.id]),
     );
@@ -38,6 +40,7 @@ async function main() {
     await closeDatabase();
   }
 }
+
 main().catch((error) => {
   console.error(error.message);
   process.exitCode = 1;

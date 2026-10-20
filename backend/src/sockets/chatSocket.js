@@ -5,6 +5,7 @@ const { canAccessChannel } = require('../middleware/channelAccess.js');
 const onlineUsers = new Map();
 const voiceRooms = new Map();
 const directCalls = new Map();
+
 async function canModerateVoiceRoom(user, roomId) {
   if (!user?.id || !roomId) return false;
   if (user.role === 'ADMIN') return true;
@@ -29,36 +30,44 @@ async function canModerateVoiceRoom(user, roomId) {
      LIMIT 1`,
     [spaceId, roomId, user.id, user.id],
   );
+
   return Boolean(courseOwnerOrCollab);
 }
+
 function setupSocketIO(io) {
   io.on('connection', (socket) => {
     if (!socket.data?.user) return socket.disconnect(true);
-    let packetCount = 0,
-      packetWindow = Date.now();
+    let packetCount = 0;
+    let packetWindow = Date.now();
     const joinedVoice = (roomId) => Boolean(voiceRooms.get(roomId)?.has(socket.id));
     const roomIdentifier = (value) =>
       typeof value === 'string' && value.length <= 180 && /^[a-zA-Z0-9_-]+$/.test(value);
+
     socket.use(async (packet, next) => {
       try {
         if (Date.now() - packetWindow > 10000) {
           packetCount = 0;
           packetWindow = Date.now();
         }
+
         if (++packetCount > 250)
           return next(new Error('Demasiados eventos. Aguarde alguns segundos.'));
         for (const [id, call] of directCalls)
           if (Date.now() - call.created > 600000 && !voiceRooms.has(id)) directCalls.delete(id);
         const actor = await socketUser(socket);
+
         socket.data.user = actor;
+
         const [event, data] = packet;
         if (['send-message', 'direct-message', 'reaction-updated'].includes(event))
           return next(new Error('Envie mensagens pela API autenticada.'));
         if (['join-channel', 'leave-channel'].includes(event)) {
           if (!roomIdentifier(data) || !(await canAccessChannel(actor, data)))
             return next(new Error('Sem acesso ao canal.'));
+
           return next();
         }
+
         if (!data || typeof data !== 'object' || Array.isArray(data))
           return next(new Error('Evento inválido.'));
         if (
@@ -109,6 +118,7 @@ function setupSocketIO(io) {
             voiceRooms.delete(data.roomId);
           }
         }
+
         if (event === 'join-voice-room') {
           if (!roomIdentifier(data.roomId)) return next(new Error('Sala inválida.'));
           const call = directCalls.get(data.roomId);
@@ -149,6 +159,7 @@ function setupSocketIO(io) {
             }),
           };
         }
+
         Object.assign(data, {
           userId: actor.id,
           username: actor.username,
@@ -169,6 +180,7 @@ function setupSocketIO(io) {
         message: 'Operação não autorizada ou temporariamente limitada.',
       }),
     );
+
     const authUser = socket.data.user;
     if (authUser?.id) {
       onlineUsers.set(authUser.id, {
@@ -180,6 +192,7 @@ function setupSocketIO(io) {
       socket.join(`user_${authUser.id}`);
       broadcastPresence(io);
     }
+
     socket.on('user-connected', (userData) => {
       const effectiveUserId = socket.data?.user?.id || userData?.userId;
       const effectiveUsername = socket.data?.user?.username || userData?.username;
@@ -198,6 +211,7 @@ function setupSocketIO(io) {
       if (socket.data?.user && !(await canAccessChannel(socket.data.user, channelId))) {
         return;
       }
+
       socket.join(`channel_${channelId}`);
     });
     socket.on('leave-channel', (channelId) => {
@@ -220,6 +234,7 @@ function setupSocketIO(io) {
       for (const [prevRoomId, prevRoom] of voiceRooms.entries()) {
         if (prevRoom.has(socket.id)) {
           const prevUser = prevRoom.get(socket.id);
+
           prevRoom.delete(socket.id);
           socket.leave(`voice_${prevRoomId}`);
           socket.to(`voice_${prevRoomId}`).emit('user-left-voice', {
@@ -231,10 +246,12 @@ function setupSocketIO(io) {
           }
         }
       }
+
       socket.join(`voice_${roomId}`);
       if (!voiceRooms.has(roomId)) {
         voiceRooms.set(roomId, new Map());
       }
+
       const roomMap = voiceRooms.get(roomId);
       const existingParticipants = Array.from(roomMap.values()).map((p) => ({
         user: p.user,
@@ -249,6 +266,7 @@ function setupSocketIO(io) {
         screenStreamId: p.screenStreamId,
         bannerUrl: p.user?.bannerUrl,
       }));
+
       socket.emit('voice-room-existing-users', existingParticipants);
       roomMap.set(socket.id, {
         socketId: socket.id,
@@ -274,11 +292,13 @@ function setupSocketIO(io) {
     });
     socket.on('leave-voice-room', ({ roomId, userId }) => {
       socket.leave(`voice_${roomId}`);
+
       const room = voiceRooms.get(roomId);
       if (room) {
         room.delete(socket.id);
         if (room.size === 0) voiceRooms.delete(roomId);
       }
+
       socket.to(`voice_${roomId}`).emit('user-left-voice', {
         userId,
         socketId: socket.id,
@@ -310,6 +330,7 @@ function setupSocketIO(io) {
           if (cameraStreamId !== undefined) current.cameraStreamId = cameraStreamId;
           if (screenStreamId !== undefined) current.screenStreamId = screenStreamId;
         }
+
         socket.to(`voice_${roomId}`).emit('user-voice-state-changed', {
           userId,
           socketId: socket.id,
@@ -392,6 +413,7 @@ function setupSocketIO(io) {
             io.sockets.sockets.get(targetSocketId)?.leave('voice_' + roomId);
           }
         }
+
       io.to(`voice_${roomId}`).emit('voice-user-kicked', {
         targetUserId,
       });
@@ -439,14 +461,17 @@ function setupSocketIO(io) {
           if (room.size === 0) voiceRooms.delete(roomId);
         }
       }
+
       for (const [userId, user] of onlineUsers.entries()) {
         if (user.socketId === socket.id) {
           onlineUsers.delete(userId);
           break;
         }
       }
+
       broadcastPresence(io);
     });
   });
 }
+
 exports.setupSocketIO = setupSocketIO;

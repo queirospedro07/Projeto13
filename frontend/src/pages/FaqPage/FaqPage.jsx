@@ -14,6 +14,7 @@ import { api } from '../../services/api';
 import { Button } from '../../components/Button';
 import { SEO } from '../../components/SEO';
 import { filterFaq } from '../../utils/searchFaq';
+
 const manual = [
   [
     'Começar a estudar',
@@ -32,6 +33,7 @@ const manual = [
     'As contas de formador podem organizar módulos, aulas, avaliações e canais. A publicação exige aprovação administrativa. No painel do formador, reveja avaliações e projetos ou conceda acesso a alunos por email ou nome de utilizador.',
   ],
 ];
+
 export function FaqPage() {
   const [params, setParams] = useSearchParams();
   const tab = params.get('tab') === 'manual' ? 'manual' : 'faq';
@@ -41,8 +43,10 @@ export function FaqPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [revision, setRevision] = useState(0);
+
   useEffect(() => {
     let active = true;
+
     setLoading(true);
     setError(false);
     api
@@ -57,10 +61,12 @@ export function FaqPage() {
       .finally(() => {
         if (active) setLoading(false);
       });
+
     return () => {
       active = false;
     };
   }, [revision]);
+
   const visible = filterFaq(categories, query, category);
   const resultCount = visible.reduce((count, group) => count + group.items.length, 0);
   const totalQuestions = categories.reduce((count, group) => count + group.items.length, 0);
@@ -68,6 +74,7 @@ export function FaqPage() {
     setQuery('');
     setCategory('all');
   };
+
   return (
     <>
       <SEO
@@ -98,7 +105,10 @@ export function FaqPage() {
             )}
           </div>
         </header>
-        <nav className="help-center-tabs" aria-label="Conteúdo de ajuda">
+        <nav
+          className="help-center-tabs"
+          aria-label="Conteúdo de ajuda"
+        >
           <button
             type="button"
             aria-current={tab === 'faq' ? 'page' : undefined}
@@ -127,9 +137,15 @@ export function FaqPage() {
         <section aria-label={tab === 'faq' ? 'Perguntas frequentes' : 'Guia de utilização'}>
           {tab === 'faq' ? (
             <>
-              <div className="help-center-search" role="search">
+              <div
+                className="help-center-search"
+                role="search"
+              >
                 <Search aria-hidden="true" />
-                <label className="sr-only" htmlFor="help-search">
+                <label
+                  className="sr-only"
+                  htmlFor="help-search"
+                >
                   Pesquisar nas perguntas e respostas
                 </label>
                 <input
@@ -141,12 +157,19 @@ export function FaqPage() {
                   maxLength={160}
                 />
                 {query && (
-                  <button type="button" onClick={() => setQuery('')} aria-label="Limpar pesquisa">
+                  <button
+                    type="button"
+                    onClick={() => setQuery('')}
+                    aria-label="Limpar pesquisa"
+                  >
                     <X aria-hidden="true" />
                   </button>
                 )}
               </div>
-              <div className="help-center-filters" aria-label="Filtrar por tema">
+              <div
+                className="help-center-filters"
+                aria-label="Filtrar por tema"
+              >
                 <button
                   type="button"
                   aria-pressed={category === 'all'}
@@ -166,21 +189,34 @@ export function FaqPage() {
                 ))}
               </div>
               {loading ? (
-                <div className="help-center-state" role="status">
+                <div
+                  className="help-center-state"
+                  role="status"
+                >
                   <BookOpen aria-hidden="true" />
                   <p>A preparar as respostas…</p>
                 </div>
               ) : error ? (
-                <div className="help-center-state" role="alert">
+                <div
+                  className="help-center-state"
+                  role="alert"
+                >
                   <h2>Não foi possível carregar a ajuda</h2>
                   <p>Verifique a ligação e tente novamente.</p>
-                  <Button variant="outline" onClick={() => setRevision((value) => value + 1)}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setRevision((value) => value + 1)}
+                  >
                     Tentar novamente
                   </Button>
                 </div>
               ) : (
                 <>
-                  <p className="help-center-count" role="status" aria-live="polite">
+                  <p
+                    className="help-center-count"
+                    role="status"
+                    aria-live="polite"
+                  >
                     {resultCount}{' '}
                     {resultCount === 1 ? 'resposta encontrada' : 'respostas encontradas'}
                   </p>
@@ -189,14 +225,20 @@ export function FaqPage() {
                       <SearchX aria-hidden="true" />
                       <h2>Ainda não encontrámos essa resposta</h2>
                       <p>Experimente palavras mais curtas ou consulte todos os temas.</p>
-                      <Button variant="outline" onClick={reset}>
+                      <Button
+                        variant="outline"
+                        onClick={reset}
+                      >
                         Limpar filtros
                       </Button>
                     </div>
                   ) : (
                     <div className="help-center-groups">
                       {visible.map((group) => (
-                        <section className="help-center-group" key={group.category}>
+                        <section
+                          className="help-center-group"
+                          key={group.category}
+                        >
                           <header>
                             <h2>{group.category}</h2>
                             <p>{group.description}</p>
@@ -249,4 +291,5 @@ export function FaqPage() {
     </>
   );
 }
+
 export default FaqPage;

@@ -11,6 +11,7 @@ import { Card } from '../../components/Card';
 import { Logo } from '../../components/Logo';
 import { SEO } from '../../components/SEO';
 import { api } from '../../services/api';
+
 export const ResetPasswordPage = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') || '';
@@ -24,8 +25,10 @@ export const ResetPasswordPage = () => {
     setError('');
     if (password !== confirmPassword) {
       setError('As palavras-passe não coincidem.');
+
       return;
     }
+
     setIsLoading(true);
     try {
       await api
@@ -41,6 +44,7 @@ export const ResetPasswordPage = () => {
       setIsLoading(false);
     }
   };
+
   return (
     <>
       <SEO
@@ -52,7 +56,10 @@ export const ResetPasswordPage = () => {
         <div className="reset-password-panel-2">
           <div className="reset-password-panel-3">
             <div className="reset-password-panel-4">
-              <Logo size="lg" to="/" />
+              <Logo
+                size="lg"
+                to="/"
+              />
             </div>
             <h1 className="reset-password-title">Criar nova palavra-passe</h1>
             <p className="reset-password-description">
@@ -69,7 +76,12 @@ export const ResetPasswordPage = () => {
                   Já pode iniciar sessão com a nova palavra-passe.
                 </p>
                 <Link to="/login">
-                  <Button variant="primary" size="lg" className="reset-password-button">
+                  <Button
+                    as="span"
+                    variant="primary"
+                    size="lg"
+                    className="reset-password-button"
+                  >
                     Ir para início de sessão
                   </Button>
                 </Link>
@@ -82,21 +94,35 @@ export const ResetPasswordPage = () => {
                   Peça uma nova ligação de recuperação para continuar.
                 </p>
                 <Link to="/forgot-password">
-                  <Button variant="primary" size="lg" className="reset-password-button">
+                  <Button
+                    as="span"
+                    variant="primary"
+                    size="lg"
+                    className="reset-password-button"
+                  >
                     Pedir nova ligação
                   </Button>
                 </Link>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="reset-password-form">
+              <form
+                onSubmit={handleSubmit}
+                className="reset-password-form"
+              >
                 {error && (
-                  <div role="alert" className="reset-password-panel-6">
+                  <div
+                    role="alert"
+                    className="reset-password-panel-6"
+                  >
                     <AlertCircle className="reset-password-alert-circle-2" />
                     <span>{error}</span>
                   </div>
                 )}
                 <div>
-                  <label htmlFor="new-password" className="reset-password-field-label">
+                  <label
+                    htmlFor="new-password"
+                    className="reset-password-field-label"
+                  >
                     Nova palavra-passe
                   </label>
                   <div className="reset-password-panel-7">
@@ -117,7 +143,10 @@ export const ResetPasswordPage = () => {
                   <p className="reset-password-description-3">Pelo menos 12 caracteres.</p>
                 </div>
                 <div>
-                  <label htmlFor="confirm-password" className="reset-password-field-label">
+                  <label
+                    htmlFor="confirm-password"
+                    className="reset-password-field-label"
+                  >
                     Confirmar palavra-passe
                   </label>
                   <input

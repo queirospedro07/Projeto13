@@ -2,7 +2,9 @@ import { beforeEach, afterEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import Notifications from '../src/components/Notifications/Notifications';
+
 const { get, put } = vi.hoisted(() => ({ get: vi.fn(), put: vi.fn() }));
+
 vi.mock('../src/services/api', () => ({ api: { get, put } }));
 beforeEach(() => {
   get.mockReset();
@@ -26,8 +28,14 @@ it('mostra o feedback por ler e abre o editor após marcar a notificação como 
   render(
     <MemoryRouter>
       <Routes>
-        <Route path="/" element={<Notifications />} />
-        <Route path="/creator/courses/course/edit" element={<p>Editor com feedback</p>} />
+        <Route
+          path="/"
+          element={<Notifications />}
+        />
+        <Route
+          path="/creator/courses/course/edit"
+          element={<p>Editor com feedback</p>}
+        />
       </Routes>
     </MemoryRouter>,
   );
@@ -52,8 +60,14 @@ it('não navega para ligações externas presentes numa notificação', async ()
   render(
     <MemoryRouter>
       <Routes>
-        <Route path="/" element={<Notifications />} />
-        <Route path="/dashboard" element={<p>Painel seguro</p>} />
+        <Route
+          path="/"
+          element={<Notifications />}
+        />
+        <Route
+          path="/dashboard"
+          element={<p>Painel seguro</p>}
+        />
       </Routes>
     </MemoryRouter>,
   );

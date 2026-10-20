@@ -11,6 +11,7 @@ import {
   LuX as X,
 } from 'react-icons/lu';
 import { Avatar } from '../Avatar';
+
 export const SpaceMessageStream = ({
   currentChannel,
   messages,
@@ -30,11 +31,13 @@ export const SpaceMessageStream = ({
   onTogglePin,
 }) => {
   const messagesEndRef = useRef(null);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({
       behavior: 'smooth',
     });
   }, [messages.length]);
+
   return (
     <div className="space-message-stream-panel">
       <div className="space-message-stream-panel-2">
@@ -103,7 +106,11 @@ export const SpaceMessageStream = ({
                 className="space-message-stream-link"
                 title={m.sender?.name ? `Ver perfil de ${m.sender.name}` : 'Ver perfil'}
               >
-                <Avatar src={m.sender?.avatarUrl} name={m.sender?.name || 'Membro'} size="md" />
+                <Avatar
+                  src={m.sender?.avatarUrl}
+                  name={m.sender?.name || 'Membro'}
+                  size="md"
+                />
               </Link>
 
               <div className="space-message-stream-panel-11">
@@ -179,7 +186,10 @@ export const SpaceMessageStream = ({
               A responder a <strong>{replyingTo.sender?.name}</strong>: "{replyingTo.content}"
             </span>
           </div>
-          <button onClick={() => onSetReplyingTo(null)} className="space-message-stream-button-9">
+          <button
+            onClick={() => onSetReplyingTo(null)}
+            className="space-message-stream-button-9"
+          >
             <X className="space-message-stream-pin" />
           </button>
         </div>
@@ -193,7 +203,10 @@ export const SpaceMessageStream = ({
       )}
 
       <div className="space-message-stream-panel-18">
-        <form onSubmit={onSendMessage} className="space-message-stream-form">
+        <form
+          onSubmit={onSendMessage}
+          className="space-message-stream-form"
+        >
           <input
             type="text"
             placeholder={`Enviar mensagem em #${currentChannel?.name || 'geral'}...`}

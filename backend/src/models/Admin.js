@@ -105,7 +105,9 @@ const Admin = {
       sql += ` WHERE c."approvalStatus" = $1`;
       params.push(status);
     }
+
     sql += ` ORDER BY CASE WHEN c."approvalStatus" = 'PENDING' THEN 0 ELSE 1 END, c."createdAt" DESC`;
+
     return queryAll(sql, params);
   },
   findCourseById(params = []) {
@@ -151,4 +153,5 @@ const Admin = {
     );
   },
 };
+
 module.exports = Admin;

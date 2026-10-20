@@ -25,6 +25,7 @@ import { soundEffects } from '../../services/soundEffects';
 import { api } from '../../services/api';
 import { CallStage } from '../../components/CallStage';
 import { FriendsManager } from '../../components/FriendsManager';
+
 export const MessagesPage = () => {
   const { user } = useAuth();
   const { socket, onlineUsers } = useSocket();
@@ -75,6 +76,7 @@ export const MessagesPage = () => {
       ? localStorage.getItem(`nexo_read_receipts_${user?.id}`) !== 'false'
       : true;
   });
+
   useEffect(() => {
     if (!user?.id) return;
     try {
@@ -82,15 +84,18 @@ export const MessagesPage = () => {
     } catch {
       setPinnedPeerIds([]);
     }
+
     setOnlyShowPinned(localStorage.getItem(`nexo_only_pinned_${user.id}`) === 'true');
     setShowReadReceipts(localStorage.getItem(`nexo_read_receipts_${user.id}`) !== 'false');
   }, [user?.id]);
+
   const messagesEndRef = useRef(null);
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({
       behavior: 'smooth',
     });
   };
+
   const isUserOnline = (id) =>
     Boolean(
       id &&
@@ -110,6 +115,7 @@ export const MessagesPage = () => {
         localStorage.setItem(`nexo_pinned_peers_${user.id}`, JSON.stringify(next));
         window.dispatchEvent(new Event('nexo_pins_changed'));
       }
+
       toast({
         title: isPinned ? 'Contacto Desafixado' : 'Contacto Afixado',
         message: isPinned
@@ -117,26 +123,33 @@ export const MessagesPage = () => {
           : 'O contacto foi afixado no topo da lista de mensagens.',
         type: 'info',
       });
+
       return next;
     });
   };
+
   const toggleOnlyShowPinned = () => {
     setOnlyShowPinned((prev) => {
       const next = !prev;
       if (user?.id) {
         localStorage.setItem(`nexo_only_pinned_${user.id}`, String(next));
       }
+
       return next;
     });
   };
+
   const loadConversations = async () => {
     try {
       const data = await api.get('/social/dm/conversations').then(({ data }) => data);
       const list = data || [];
+
       setConversations(list);
+
       const targetUserId = searchParams.get('userId');
       if (targetUserId) {
         setMainTab('chat');
+
         const found = list.find((c) => c.peer?.id === targetUserId);
         if (found) {
           setActivePeer(found.peer);
@@ -161,9 +174,11 @@ export const MessagesPage = () => {
       }
     } catch {}
   };
+
   const loadFriendsData = async () => {
     try {
       const data = await api.get('/social/friends').then(({ data }) => data);
+
       setFriendsData(
         data || {
           friends: [],
@@ -173,6 +188,7 @@ export const MessagesPage = () => {
       );
     } catch {}
   };
+
   useEffect(() => {
     loadConversations();
     loadFriendsData();
@@ -232,18 +248,24 @@ export const MessagesPage = () => {
           );
           if (optIdx !== -1) {
             const next = [...prev];
+
             next[optIdx] = msg;
+
             return next;
           }
+
           return [...prev, msg];
         });
         if (isFromActive) {
           soundEffects.playMessage();
         }
       }
+
       loadConversations();
     };
+
     socket.on('direct-message', handleDM);
+
     const handleCallRejected = ({ rejector }) => {
       toast({
         title: 'Chamada Recusada',
@@ -252,7 +274,9 @@ export const MessagesPage = () => {
       });
       setIsCallOpen(false);
     };
+
     socket.on('direct-call-rejected', handleCallRejected);
+
     return () => {
       socket.off('direct-message', handleDM);
       socket.off('direct-call-rejected', handleCallRejected);
@@ -262,28 +286,36 @@ export const MessagesPage = () => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
       setIsSearchingUsers(false);
+
       return;
     }
+
     const clean = searchQuery.replace(/^@/, '').trim().toLowerCase();
+
     setIsSearchingUsers(true);
+
     const timer = setTimeout(() => {
       api
         .get(`/social/users/search?query=${encodeURIComponent(clean === undefined ? '' : clean)}`)
         .then(({ data }) => data)
         .then((users) => {
           const filtered = (users || []).filter((u) => u.id !== user?.id);
+
           setSearchResults(filtered);
         })
         .catch(() => setSearchResults([]))
         .finally(() => setIsSearchingUsers(false));
     }, 200);
+
     return () => clearTimeout(timer);
   }, [searchQuery, user?.id]);
   useEffect(() => {
     if (!newChatSearch.trim()) {
       setNewChatResults([]);
+
       return;
     }
+
     const timer = setTimeout(() => {
       api
         .get(
@@ -295,8 +327,10 @@ export const MessagesPage = () => {
         })
         .catch(() => setNewChatResults([]));
     }, 200);
+
     return () => clearTimeout(timer);
   }, [newChatSearch, isNewChatModalOpen, user?.id]);
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!draft.trim() || !activePeer) return;
@@ -311,6 +345,7 @@ export const MessagesPage = () => {
       createdAt: new Date().toISOString(),
       sender: user,
     };
+
     setDraft('');
     setMessages((prev) => [...prev, optimistic]);
     soundEffects.playMessage();
@@ -321,6 +356,7 @@ export const MessagesPage = () => {
           content,
         })
         .then(({ data }) => data);
+
       setMessages((prev) => prev.map((m) => (m.id === tempId ? res : m)));
       loadConversations();
     } catch (err) {
@@ -333,6 +369,7 @@ export const MessagesPage = () => {
       });
     }
   };
+
   const handleSelectPeer = (peer) => {
     soundEffects.play('click');
     setIsCallOpen(false);
@@ -355,6 +392,7 @@ export const MessagesPage = () => {
           ...prev,
         ];
       }
+
       return prev.map((c) =>
         c.peer?.id === peer.id
           ? {
@@ -365,6 +403,7 @@ export const MessagesPage = () => {
       );
     });
   };
+
   const handleSearchAndAddFriend = async (e) => {
     e.preventDefault();
     if (!addFriendQuery.trim()) return;
@@ -401,6 +440,7 @@ export const MessagesPage = () => {
       });
     }
   };
+
   const handleSendFriendRequest = async (targetUserId) => {
     try {
       await api.post(`/social/friends/request/${targetUserId}`).then(({ data }) => data);
@@ -419,6 +459,7 @@ export const MessagesPage = () => {
       });
     }
   };
+
   const handleAcceptFriendRequest = async (friendshipId) => {
     try {
       await api.post(`/social/friends/accept/${friendshipId}`).then(({ data }) => data);
@@ -437,6 +478,7 @@ export const MessagesPage = () => {
       });
     }
   };
+
   const handleRejectFriendRequest = async (friendshipId) => {
     try {
       await api.post(`/social/friends/reject/${friendshipId}`).then(({ data }) => data);
@@ -447,6 +489,7 @@ export const MessagesPage = () => {
       loadFriendsData();
     } catch {}
   };
+
   const handleRemoveFriend = async (targetUserId) => {
     try {
       await api.delete(`/social/friends/remove/${targetUserId}`).then(({ data }) => data);
@@ -468,6 +511,7 @@ export const MessagesPage = () => {
       if (onlyShowPinned) {
         return pinnedPeerIds.includes(c.peer?.id);
       }
+
       return true;
     })
     .sort((a, b) => {
@@ -477,8 +521,10 @@ export const MessagesPage = () => {
       if (!aPinned && bPinned) return 1;
       const tA = new Date(a.lastMessage?.createdAt || 0).getTime();
       const tB = new Date(b.lastMessage?.createdAt || 0).getTime();
+
       return tB - tA;
     });
+
   return (
     <div className="messages-page-panel">
       {/* SIDEBAR (CONVERSATIONS / FRIENDS) */}
@@ -539,7 +585,10 @@ export const MessagesPage = () => {
               className="messages-page-field"
             />
             {searchQuery && (
-              <button onClick={() => setSearchQuery('')} className="messages-page-button-6">
+              <button
+                onClick={() => setSearchQuery('')}
+                className="messages-page-button-6"
+              >
                 <X className="messages-page-x" />
               </button>
             )}
@@ -639,6 +688,7 @@ export const MessagesPage = () => {
             filteredConversations.map((c) => {
               const isSelected = c.peer?.id === activePeer?.id && mainTab === 'chat' && !isCallOpen;
               const isPinned = pinnedPeerIds.includes(c.peer?.id);
+
               return (
                 <div
                   key={c.peer.id}
@@ -828,7 +878,9 @@ export const MessagesPage = () => {
                   <button
                     onClick={() => {
                       soundEffects.playJoinCall();
+
                       const dmRoomId = `call_dm_${[user?.id || 'me', activePeer.id].sort().join('_')}`;
+
                       socket?.emit('direct-call-start', {
                         targetUserId: activePeer.id,
                         caller: {
@@ -849,7 +901,12 @@ export const MessagesPage = () => {
                   </button>
 
                   <Link to={`/profile/${activePeer.username || activePeer.id}`}>
-                    <Button variant="secondary" size="sm" className="messages-page-button-22">
+                    <Button
+                      as="span"
+                      variant="secondary"
+                      size="sm"
+                      className="messages-page-button-22"
+                    >
                       Perfil
                     </Button>
                   </Link>
@@ -878,6 +935,7 @@ export const MessagesPage = () => {
                   messages.map((m, idx) => {
                     const isMe = m.senderId === user?.id;
                     const isSeen = m.isRead === true || m.isRead === 1;
+
                     return (
                       <div
                         key={m.id || idx}
@@ -916,12 +974,18 @@ export const MessagesPage = () => {
                             {isMe &&
                               showReadReceipts &&
                               (isSeen ? (
-                                <span className="messages-page-label-16" title="Visto">
+                                <span
+                                  className="messages-page-label-16"
+                                  title="Visto"
+                                >
                                   <CheckCheck className="messages-page-check-check" />
                                   <span className="messages-page-label-17">Visto</span>
                                 </span>
                               ) : (
-                                <span className="messages-page-label-18" title="Enviado">
+                                <span
+                                  className="messages-page-label-18"
+                                  title="Enviado"
+                                >
                                   <Check className="messages-page-message-square" />
                                 </span>
                               ))}
@@ -935,7 +999,10 @@ export const MessagesPage = () => {
               </div>
 
               {/* Message Input Form */}
-              <form onSubmit={handleSendMessage} className="messages-page-form pb-safe">
+              <form
+                onSubmit={handleSendMessage}
+                className="messages-page-form pb-safe"
+              >
                 <input
                   type="text"
                   required
@@ -944,7 +1011,11 @@ export const MessagesPage = () => {
                   onChange={(e) => setDraft(e.target.value)}
                   className="messages-page-field-2"
                 />
-                <button type="submit" disabled={!draft.trim()} className="messages-page-button-23">
+                <button
+                  type="submit"
+                  disabled={!draft.trim()}
+                  className="messages-page-button-23"
+                >
                   <Send className="messages-page-message-square" />
                 </button>
               </form>
@@ -996,7 +1067,10 @@ export const MessagesPage = () => {
               aria-hidden="true"
             />
             <div className="messages-page-panel-39">
-              <div className="messages-page-panel-40" onClick={(e) => e.stopPropagation()}>
+              <div
+                className="messages-page-panel-40"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <div className="messages-page-panel-41">
                   <h3 className="messages-page-subheading-3">Iniciar Nova Conversa</h3>
                   <button
@@ -1060,4 +1134,5 @@ export const MessagesPage = () => {
     </div>
   );
 };
+
 export default MessagesPage;

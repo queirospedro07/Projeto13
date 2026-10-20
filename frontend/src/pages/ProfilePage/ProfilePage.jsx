@@ -1,6 +1,7 @@
 import { ReportButton } from '../../components/Moderation';
 import './ProfilePage.css';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { PageState } from '../../components/PageState';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   LuMapPin as MapPin,
@@ -31,6 +32,7 @@ import { useToast } from '../../components/Toast';
 import { soundEffects } from '../../services/soundEffects';
 import { api } from '../../services/api';
 import { formatCategory, formatRole } from '../../utils/formatters';
+
 export const ProfilePage = () => {
   const { username } = useParams();
   const { user: currentUser, refreshUser } = useAuth();
@@ -51,124 +53,89 @@ export const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('courses');
   const [courseFilter, setCourseFilter] = useState('all');
   const [myCourses, setMyCourses] = useState([]);
-  const [hiddenCourseIds, setHiddenCourseIds] = useState(() => {
-    try {
-      return JSON.parse(
-        localStorage.getItem('nexo_hidden_courses') ||
-          localStorage.getItem('learnspace_hidden_courses') ||
-          '[]',
-      );
-    } catch {
-      return [];
-    }
-  });
-  useEffect(() => {
-    const handleVisChange = () => {
-      try {
-        const stored = JSON.parse(
-          localStorage.getItem('nexo_hidden_courses') ||
-            localStorage.getItem('learnspace_hidden_courses') ||
-            '[]',
-        );
-        setHiddenCourseIds(stored);
-      } catch {}
-    };
-    window.addEventListener('nexo_courses_visibility_changed', handleVisChange);
-    return () => window.removeEventListener('nexo_courses_visibility_changed', handleVisChange);
-  }, []);
-  const toggleHideCourse = async (courseId, courseTitle = 'Curso') => {
-    const isCurrentlyHidden = hiddenCourseIds.includes(courseId);
-    const nextHidden = !isCurrentlyHidden;
-    setHiddenCourseIds((prev) => {
-      const next = prev.includes(courseId)
-        ? prev.filter((id) => id !== courseId)
-        : [...prev, courseId];
-      localStorage.setItem('nexo_hidden_courses', JSON.stringify(next));
-      localStorage.setItem('learnspace_hidden_courses', JSON.stringify(next));
-      window.dispatchEvent(new Event('nexo_courses_visibility_changed'));
-      return next;
-    });
-    setMyCourses((prev) =>
-      prev.map((e) => {
-        if (e.course?.id === courseId || e.courseId === courseId) {
-          return {
-            ...e,
-            isHidden: nextHidden,
-          };
-        }
-        return e;
-      }),
-    );
-    toast({
-      title: nextHidden ? 'Curso Ocultado dos Outros' : 'Curso Visível no Perfil',
-      message: nextHidden
-        ? `"${courseTitle}" está agora ocultado para outros utilizadores. Apenas você consegue visualizá-lo aqui no seu perfil.`
-        : `"${courseTitle}" está agora visível para quem visitar o seu perfil público.`,
-      type: nextHidden ? 'info' : 'success',
-    });
-    try {
-      await api.post(`/courses/${courseId}/toggle-hide`).then(({ data }) => data);
-    } catch {}
-  };
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editSection, setEditSection] = useState('details');
-  useEffect(() => {
-    if (isMe && currentUser) {
-      setProfileUser(currentUser);
-      setLoading(false);
-      setNotFound(false);
-      api
-        .get('/courses/my-learning')
-        .then(({ data }) => data)
-        .then((d) => {
-          setMyCourses(d || []);
-          const serverHidden = (d || [])
-            .filter((e) => e.isHidden)
-            .map((e) => e.course?.id || e.courseId)
-            .filter(Boolean);
-          if (serverHidden.length > 0) {
-            setHiddenCourseIds((prev) => {
-              const merged = Array.from(new Set([...prev, ...serverHidden]));
-              localStorage.setItem('nexo_hidden_courses', JSON.stringify(merged));
-              localStorage.setItem('learnspace_hidden_courses', JSON.stringify(merged));
-              return merged;
-            });
-          }
-        })
-        .catch(() => {});
-      api
-        .get(`/social/status/${currentUser.id}`)
-        .then(({ data }) => data)
-        .then((st) => setSocialStatus(st))
-        .catch(() => {});
-    } else if (!isMe && username) {
-      setLoading(true);
-      setNotFound(false);
-      api
-        .get(`/auth/user/${encodeURIComponent(username)}`)
-        .then(({ data }) => data)
-        .then((userData) => {
-          setProfileUser(userData);
-          setMyCourses(userData?.courses || []);
-          setLoading(false);
-          if (userData?.id) {
-            api
-              .get(`/social/status/${userData.id}`)
-              .then(({ data }) => data)
-              .then((st) => setSocialStatus(st))
-              .catch(() => {});
-          }
-        })
-        .catch(() => {
-          setNotFound(true);
-          setLoading(false);
-        });
+  const visibilityRequests = useRef(new Set());
+  const [loadError, setLoadError] = useState('');
+  const [revision, setRevision] = useState(0);
+
+  const toggleHideCourse = async (courseId, courseTitle = 'Curso') => {
+    if (visibilityRequests.current.has(courseId)) return;
+    visibilityRequests.current.add(courseId);
+
+    try {
+      const { data } = await api.post('/courses/' + encodeURIComponent(courseId) + '/toggle-hide');
+
+      setMyCourses((courses) =>
+        courses.map((enrollment) =>
+          (enrollment.course?.id || enrollment.courseId) === courseId
+            ? { ...enrollment, isHidden: data.isHidden }
+            : enrollment,
+        ),
+      );
+      toast({
+        title: data.isHidden ? 'Curso ocultado no perfil' : 'Curso visível no perfil',
+        message: data.isHidden
+          ? '"' + courseTitle + '" deixou de aparecer no seu perfil público.'
+          : '"' + courseTitle + '" está visível no seu perfil público.',
+        type: 'success',
+      });
+    } catch (error) {
+      toast({
+        title: 'Não foi possível alterar a visibilidade',
+        message: error.message,
+        type: 'error',
+      });
+    } finally {
+      visibilityRequests.current.delete(courseId);
     }
-  }, [username, currentUser, isMe]);
+  };
+
+  useEffect(() => {
+    let active = true;
+
+    setLoading(true);
+    setLoadError('');
+    setNotFound(false);
+    setMyCourses([]);
+
+    const loadProfile = async () => {
+      try {
+        const person = isMe
+          ? currentUser
+          : (await api.get('/auth/user/' + encodeURIComponent(username))).data;
+        if (!active) return;
+        setProfileUser(person);
+
+        const courses = isMe ? (await api.get('/courses/my-learning')).data : person?.courses;
+        if (!active) return;
+        setMyCourses(courses || []);
+
+        if (person?.id) {
+          const { data } = await api.get('/social/status/' + encodeURIComponent(person.id));
+          if (active) setSocialStatus(data);
+        }
+      } catch (error) {
+        if (!active) return;
+        if (error.status === 404) setNotFound(true);
+        else setLoadError(error.message || 'Não foi possível carregar o perfil.');
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    loadProfile();
+
+    return () => {
+      active = false;
+    };
+  }, [username, currentUser, isMe, revision]);
+
   const openEditModal = (section = 'details') => {
     setEditSection(typeof section === 'string' ? section : 'details');
     setIsEditOpen(true);
   };
+
   const handleSaveProfile = async (values) => {
     const result = await api.put('/auth/profile', values).then(({ data }) => data);
     if (result?.user) setProfileUser(result.user);
@@ -180,6 +147,7 @@ export const ProfilePage = () => {
       type: 'success',
     });
   };
+
   const handleToggleFollow = async () => {
     if (!profileUser) return;
     soundEffects.play('click');
@@ -206,6 +174,7 @@ export const ProfilePage = () => {
       });
     }
   };
+
   const handleFriendAction = async () => {
     if (!profileUser) return;
     soundEffects.play('click');
@@ -236,6 +205,7 @@ export const ProfilePage = () => {
       });
     }
   };
+
   if (loading) {
     return (
       <div className="profile-page-panel">
@@ -243,6 +213,16 @@ export const ProfilePage = () => {
       </div>
     );
   }
+
+  if (loadError)
+    return (
+      <PageState
+        title="Não foi possível carregar o perfil"
+        message={loadError}
+        onRetry={() => setRevision((value) => value + 1)}
+      />
+    );
+
   if (notFound || (!isMe && !profileUser)) {
     return (
       <div className="profile-page-panel-2">
@@ -251,23 +231,32 @@ export const ProfilePage = () => {
         <p className="profile-page-description">
           O perfil solicitado não existe ou pode ter sido alterado.
         </p>
-        <Button onClick={() => navigate(-1)} variant="secondary">
+        <Button
+          onClick={() => navigate(-1)}
+          variant="secondary"
+        >
           Voltar
         </Button>
       </div>
     );
   }
+
   const u = isMe ? currentUser : profileUser;
   const socialLinks = getProfileLinks(u?.profile);
+
   return (
     <div className="profile-page-panel-3">
       <div className="profile-page-panel-4">
-        <ProfileBanner value={u?.profile?.bannerUrl} className="profile-page-panel-5">
+        <ProfileBanner
+          value={u?.profile?.bannerUrl}
+          className="profile-page-panel-5"
+        >
           {isMe && (
             <div className="profile-page-panel-8">
               <button
                 type="button"
                 onClick={() => openEditModal('appearance')}
+                aria-label="Alterar capa do perfil"
                 className="profile-page-button"
               >
                 <ImagePlus className="profile-page-image-plus" />
@@ -364,7 +353,10 @@ export const ProfilePage = () => {
           <div className="profile-page-panel-13">
             <h1 className="profile-page-title">{u?.name}</h1>
             <span className="profile-page-label-3">@{u?.username}</span>
-            <Badge variant="brand" size="sm">
+            <Badge
+              variant="brand"
+              size="sm"
+            >
               {formatRole(u?.role)}
             </Badge>
           </div>
@@ -389,17 +381,29 @@ export const ProfilePage = () => {
             <ProfileSocialLinks profile={u?.profile} />
           )}
 
-          <ReportButton targetType="user" targetId={u?.id} />
+          <ReportButton
+            targetType="user"
+            targetId={u?.id}
+          />
           <div className="profile-page-panel-15">
-            <button onClick={() => setActiveTab('friends')} className="profile-page-button-5">
+            <button
+              onClick={() => setActiveTab('friends')}
+              className="profile-page-button-5"
+            >
               <Users className="profile-page-users-2" />
               <span className="profile-page-label-5">{socialStatus.friendsCount || 0}</span> Amigos
             </button>
-            <button onClick={() => setActiveTab('friends')} className="profile-page-button-6">
+            <button
+              onClick={() => setActiveTab('friends')}
+              className="profile-page-button-6"
+            >
               <span className="profile-page-label-5">{socialStatus.followersCount || 0}</span>{' '}
               Seguidores
             </button>
-            <button onClick={() => setActiveTab('friends')} className="profile-page-button-6">
+            <button
+              onClick={() => setActiveTab('friends')}
+              className="profile-page-button-6"
+            >
               <span className="profile-page-label-5">{socialStatus.followingCount || 0}</span> A
               Seguir
             </button>
@@ -437,9 +441,9 @@ export const ProfilePage = () => {
       {activeTab === 'courses' &&
         (() => {
           const isCourseHidden = (e) => {
-            const courseId = e.course?.id || e.courseId;
-            return Boolean(e.isHidden || hiddenCourseIds.includes(courseId));
+            return Boolean(e.isHidden);
           };
+
           const totalCourses = !isMe && u?.profile?.showCourses === false ? 0 : myCourses.length;
           const hiddenCoursesList = myCourses.filter(isCourseHidden);
           const visibleCoursesList = myCourses.filter((e) => !isCourseHidden(e));
@@ -453,6 +457,7 @@ export const ProfilePage = () => {
           } else if (courseFilter === 'hidden') {
             displayCourses = hiddenCoursesList;
           }
+
           return (
             <div className="profile-page-panel-17">
               <div className="profile-page-panel-18">
@@ -528,7 +533,12 @@ export const ProfilePage = () => {
                       </p>
                       {isMe && (
                         <Link to="/explore">
-                          <Button variant="primary" size="sm" className="profile-page-button-18">
+                          <Button
+                            as="span"
+                            variant="primary"
+                            size="sm"
+                            className="profile-page-button-18"
+                          >
                             Explorar Catálogo
                           </Button>
                         </Link>
@@ -542,8 +552,13 @@ export const ProfilePage = () => {
                     const courseId = e.course?.id || e.courseId;
                     const isHidden = isCourseHidden(e);
                     const isFinished = (e.progressPercent || 0) >= 100;
+
                     return (
-                      <Card key={e.id || courseId} hover className="profile-page-card-2">
+                      <Card
+                        key={e.id || courseId}
+                        hover
+                        className="profile-page-card-2"
+                      >
                         <div className="profile-page-panel-22">
                           <div className="profile-page-panel-23">
                             <img
@@ -642,8 +657,16 @@ export const ProfilePage = () => {
                             <span />
                           )}
 
-                          <Link to={`/learn/${courseId}`} className="profile-page-link-4">
-                            <Button variant="primary" size="sm" className="profile-page-button-22">
+                          <Link
+                            to={`/learn/${courseId}`}
+                            className="profile-page-link-4"
+                          >
+                            <Button
+                              as="span"
+                              variant="primary"
+                              size="sm"
+                              className="profile-page-button-22"
+                            >
                               Aceder
                             </Button>
                           </Link>
@@ -666,6 +689,7 @@ export const ProfilePage = () => {
           </p>
           <Link to="/messages">
             <Button
+              as="span"
               variant="primary"
               size="md"
               leftIcon={<MessageSquare className="profile-page-edit3" />}
@@ -687,4 +711,5 @@ export const ProfilePage = () => {
     </div>
   );
 };
+
 export default ProfilePage;

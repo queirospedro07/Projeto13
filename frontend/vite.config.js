@@ -1,10 +1,21 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
+import { siteMetadata } from './scripts/site-metadata.js';
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode, command }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
   const configuredApi = env.VITE_API_URL;
+  if (
+    command === 'build' &&
+    env.VITE_SITE_URL &&
+    !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(env.VITE_CONTACT_EMAIL || '')
+  ) {
+    throw new Error(
+      'Configure VITE_CONTACT_EMAIL com o contacto público de privacidade antes de publicar.',
+    );
+  }
+  const devProxy = process.env.NEXO_DEV_API_PROXY || 'http://localhost:5000';
   let apiOrigin = '';
   if (configuredApi && /^https?:\/\//.test(configuredApi))
     apiOrigin = new URL(configuredApi).origin;
@@ -26,6 +37,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       react(),
+      siteMetadata(env.VITE_SITE_URL),
       {
         name: 'production-content-security-policy',
         apply: 'build',
@@ -58,8 +70,8 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       strictPort: true,
       proxy: {
-        '/api': { target: 'http://localhost:5000', changeOrigin: true },
-        '/socket.io': { target: 'http://localhost:5000', ws: true },
+        '/api': { target: devProxy, changeOrigin: true },
+        '/socket.io': { target: devProxy, ws: true },
       },
     },
   };

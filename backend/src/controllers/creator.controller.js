@@ -9,6 +9,7 @@ const getCreatorApplicationStatus = async (req, res) => {
   try {
     const userId = req.user.id;
     const application = await Creator.findApplicationByUserId([userId]);
+
     return res.json({
       role: req.user.role,
       hasApplication: !!application,
@@ -20,6 +21,7 @@ const getCreatorApplicationStatus = async (req, res) => {
     });
   }
 };
+
 const postCreatorApply = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -28,12 +30,14 @@ const postCreatorApply = async (req, res) => {
         error: 'A sua conta já tem estatuto de Formador ou Administrador.',
       });
     }
+
     const existingPending = await Creator.findExistingPendingByUserId([userId]);
     if (existingPending) {
       return res.status(400).json({
         error: 'Já tem uma candidatura pendente em análise pela administração.',
       });
     }
+
     const {
       fullName,
       bio,
@@ -49,6 +53,7 @@ const postCreatorApply = async (req, res) => {
         error: 'Nome completo, especialização, motivação e proposta de cursos são obrigatórios.',
       });
     }
+
     if (
       [fullName, bio, expertise, portfolioUrl, motivation, proposedCourses, sampleVideoUrl].some(
         (value) => value !== undefined && (typeof value !== 'string' || value.length > 10000),
@@ -61,6 +66,7 @@ const postCreatorApply = async (req, res) => {
       return res.status(400).json({ error: 'Dados da candidatura inválidos.' });
     const appId = `app-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
     const now = new Date().toISOString();
+
     await Creator.insertCreatorApplications([
       appId,
       userId,
@@ -86,18 +92,22 @@ const postCreatorApply = async (req, res) => {
         now,
       ]);
     }
+
     const application = await Creator.findApplicationById([appId]);
+
     return res.status(201).json({
       message: 'Candidatura submetida com sucesso! A aguardar revisão do Administrador.',
       application,
     });
   } catch (err) {
     console.error('Error submitting creator application:', err);
+
     return res.status(500).json({
       error: 'Falha ao submeter candidatura a criador',
     });
   }
 };
+
 const getCreatorStats = async (req, res) => {
   try {
     const creatorId = req.user.id;
@@ -118,6 +128,7 @@ const getCreatorStats = async (req, res) => {
     const averageRating = ratingRow?.avgRating ? Number(ratingRow.avgRating).toFixed(1) : '0.0';
     const quizRow = await Creator.findQuizRowByCreatorId([creatorId]);
     const averageQuizScore = quizRow?.avgScore ? Math.round(Number(quizRow.avgScore)) : 0;
+
     return res.json({
       totalRevenue,
       totalRevenueCents,
@@ -144,11 +155,13 @@ const getCreatorStats = async (req, res) => {
     });
   } catch (err) {
     console.error('Creator stats error:', err);
+
     return res.status(500).json({
       error: 'Falha ao carregar estatísticas do criador',
     });
   }
 };
+
 const getCreatorCoursesByCourseId = async (req, res) => {
   try {
     const { courseId } = req.params;
@@ -178,10 +191,12 @@ const getCreatorCoursesByCourseId = async (req, res) => {
             else les.customData = parsed;
           } catch {}
         }
+
         if (les.type === 'quiz' && !les.quiz) {
           const q = await Creator.findQByLessonId([les.id]);
           if (q) {
             const questions = await Creator.listQuestionsByQuizId([q.id]);
+
             q.questions = questions.map((qq) => ({
               ...qq,
               options: (() => {
@@ -197,6 +212,7 @@ const getCreatorCoursesByCourseId = async (req, res) => {
         }
       }
     }
+
     const spaceId = course.spaceId;
     const channels = spaceId ? await Creator.listChannelsBySpaceId([spaceId]) : [];
     let parsedOutcomes = [];
@@ -209,6 +225,7 @@ const getCreatorCoursesByCourseId = async (req, res) => {
     } catch (_) {
       parsedOutcomes = course.learningOutcomes ? [course.learningOutcomes] : [];
     }
+
     let parsedRequirements = [];
     try {
       parsedRequirements = course.requirements
@@ -219,6 +236,7 @@ const getCreatorCoursesByCourseId = async (req, res) => {
     } catch (_) {
       parsedRequirements = course.requirements ? [course.requirements] : [];
     }
+
     let parsedDocuments = [];
     try {
       parsedDocuments = course.documents
@@ -229,6 +247,7 @@ const getCreatorCoursesByCourseId = async (req, res) => {
     } catch (_) {
       parsedDocuments = [];
     }
+
     return res.json({
       ...course,
       hasCommunity: Boolean(course.spaceId),
@@ -248,6 +267,7 @@ const getCreatorCoursesByCourseId = async (req, res) => {
     });
   }
 };
+
 const putCreatorCoursesByCourseId = async (req, res) => {
   try {
     const { courseId } = req.params;
@@ -271,6 +291,7 @@ const putCreatorCoursesByCourseId = async (req, res) => {
           error: 'Curso não encontrado',
         });
     }
+
     const {
       title,
       description,
@@ -313,8 +334,10 @@ const putCreatorCoursesByCourseId = async (req, res) => {
           : JSON.stringify(documents)
         : null;
     const safeIsPublished = 0;
+
     await transaction(async () => {
       await lockTransaction(`course-community:${courseId}`);
+
       const current = await Creator.findCoursesById([courseId]);
       if (!current) throw Object.assign(new Error('Curso não encontrado.'), { status: 404 });
       checkVersion(current, req.body.expectedUpdatedAt);
@@ -353,6 +376,7 @@ const putCreatorCoursesByCourseId = async (req, res) => {
       ) {
         owned.spaceId = await ensureCourseCommunity(req.user, courseId);
       }
+
       if (owned?.spaceId && title) {
         await Creator.updateSpacesByNameAndDescriptionAndId([
           title.trim(),
@@ -360,6 +384,7 @@ const putCreatorCoursesByCourseId = async (req, res) => {
           owned.spaceId,
         ]);
       }
+
       if (Array.isArray(modules)) {
         const existingModules = await Creator.listExistingModulesByCourseId([courseId]);
         const incomingModIds = new Set(
@@ -374,10 +399,12 @@ const putCreatorCoursesByCourseId = async (req, res) => {
               await Creator.deleteLessonProgressByLessonId([el.id]);
               await Creator.deleteNotesByLessonId([el.id]);
             }
+
             await Creator.deleteLessonsByModuleId([exMod.id]);
             await Creator.deleteCourseModulesById([exMod.id]);
           }
         }
+
         await asyncForEach(modules, async (mod, mIdx) => {
           let modId = mod.id;
           const drip = mod.dripMode === 'sequential' ? 'sequential' : 'instant';
@@ -404,6 +431,7 @@ const putCreatorCoursesByCourseId = async (req, res) => {
               drip,
             ]);
           }
+
           if (Array.isArray(mod.lessons)) {
             const existingLessons = await Creator.listExLessonsByModuleId([modId]);
             const incomingLesIds = new Set(
@@ -420,6 +448,7 @@ const putCreatorCoursesByCourseId = async (req, res) => {
                 await Creator.deleteLessonsById([exLes.id]);
               }
             }
+
             await asyncForEach(mod.lessons, async (les, lIdx) => {
               let lesId = les.id;
               const contentToStore = les.quiz
@@ -460,6 +489,7 @@ const putCreatorCoursesByCourseId = async (req, res) => {
                   Number(les.xpReward || 25),
                 ]);
               }
+
               if (les.quiz) {
                 const quizId = `quiz-${lesId}`;
                 const qExists = await Creator.findQExistsByLessonId([lesId]);
@@ -482,6 +512,7 @@ const putCreatorCoursesByCourseId = async (req, res) => {
                     Number(les.quiz.xpReward || 50),
                   ]);
                 }
+
                 const activeQuizId = qExists ? qExists.id : quizId;
                 if (Array.isArray(les.quiz.questions)) {
                   await asyncForEach(les.quiz.questions, async (q, qIdx) => {
@@ -496,6 +527,7 @@ const putCreatorCoursesByCourseId = async (req, res) => {
                     } else if (q.correctOptionIndex !== undefined) {
                       correctOptionIndex = Number(q.correctOptionIndex);
                     }
+
                     await Creator.insertQuizQuestions([
                       qId,
                       activeQuizId,
@@ -512,6 +544,7 @@ const putCreatorCoursesByCourseId = async (req, res) => {
           }
         });
       }
+
       if (req.body.hasCommunity !== false && Array.isArray(channels) && owned?.spaceId) {
         const existingChannels = await Creator.listChannelsBySpaceId([owned.spaceId]);
         const retainedIds = new Set(channels.map((channel) => channel.id));
@@ -519,6 +552,7 @@ const putCreatorCoursesByCourseId = async (req, res) => {
           if (!retainedIds.has(channel.id))
             await Creator.deleteChannelByIdAndSpaceId([channel.id, owned.spaceId]);
         }
+
         await asyncForEach(channels, async (ch, chIdx) => {
           const isVoiceChan = ch.type === 'voice' || ch.isVoice ? 1 : 0;
           const chanAccess =
@@ -540,6 +574,7 @@ const putCreatorCoursesByCourseId = async (req, res) => {
             ]);
           } else {
             const newChId = randomUUID();
+
             await Creator.insertChannels([
               newChId,
               owned.spaceId,
@@ -557,17 +592,20 @@ const putCreatorCoursesByCourseId = async (req, res) => {
         });
       }
     });
+
     return res.json({
       success: true,
       id: courseId,
     });
   } catch (err) {
     if (!err.status || err.status >= 500) console.error('Update course error:', err);
+
     return res
       .status(err.status || 500)
       .json({ error: err.status ? err.message : 'Falha ao atualizar curso' });
   }
 };
+
 const getCreatorCourses = async (req, res) => {
   try {
     const creatorId = req.user.id;
@@ -576,6 +614,7 @@ const getCreatorCourses = async (req, res) => {
       creatorId,
       creatorId,
     ]);
+
     return res.json(
       courses.map((c) => ({
         ...c,
@@ -595,6 +634,7 @@ const getCreatorCourses = async (req, res) => {
     });
   }
 };
+
 const deleteCreatorCoursesByCourseId = async (req, res) => {
   try {
     const { courseId } = req.params;
@@ -604,32 +644,38 @@ const deleteCreatorCoursesByCourseId = async (req, res) => {
         error: 'Curso não encontrado',
       });
     }
+
     if (req.user.role !== 'ADMIN' && course.creatorId !== req.user.id) {
       return res.status(403).json({
         error: 'Só pode eliminar cursos que criou',
       });
     }
+
     const otherCourseUsesSpace =
       course.spaceId && (await Creator.findCoursesBySpaceId([course.spaceId, courseId]));
     const deleteOwnedSpace =
       course.spaceId && course.spaceOwnerId === course.creatorId && !otherCourseUsesSpace;
+
     await transaction(async () => {
       await Creator.deleteCoursesById([courseId]);
       if (deleteOwnedSpace) {
         await Creator.deleteSpacesByIdAndOwnerId([course.spaceId, course.creatorId]);
       }
     });
+
     return res.json({
       success: true,
       id: courseId,
     });
   } catch (err) {
     console.error('Delete course error:', err);
+
     return res.status(500).json({
       error: 'Falha ao eliminar curso',
     });
   }
 };
+
 const postCreatorCourses = async (req, res) => {
   try {
     const creatorId = req.user.id;
@@ -662,6 +708,7 @@ const postCreatorCourses = async (req, res) => {
         error: 'Título e categoria são obrigatórios',
       });
     }
+
     const courseId = randomUUID();
     const slug = `${title
       .toLowerCase()
@@ -680,6 +727,7 @@ const postCreatorCourses = async (req, res) => {
           error: 'Esta comunidade já pertence a outro curso.',
         });
     }
+
     const outcomesStr = learningOutcomes
       ? typeof learningOutcomes === 'string'
         ? learningOutcomes
@@ -695,10 +743,13 @@ const postCreatorCourses = async (req, res) => {
         ? documents
         : JSON.stringify(documents)
       : null;
+
     await transaction(async () => {
       if (!resolvedSpaceId && req.body.hasCommunity !== false) {
         resolvedSpaceId = randomUUID();
+
         const spaceSlug = `${slug}-comunidade`;
+
         await Creator.insertSpaces([
           resolvedSpaceId,
           `Comunidade ${title}`,
@@ -713,6 +764,7 @@ const postCreatorCourses = async (req, res) => {
           now,
         ]);
         await Creator.insertMemberships([randomUUID(), creatorId, resolvedSpaceId, now]);
+
         const channelsToInsert =
           Array.isArray(channels) && channels.length > 0
             ? channels
@@ -725,12 +777,14 @@ const postCreatorCourses = async (req, res) => {
                   guidelines: '',
                 },
               ];
+
         await asyncForEach(channelsToInsert, async (ch, chIdx) => {
           const chId = randomUUID();
           const isVoiceChan = ch.type === 'voice' || ch.isVoice ? 1 : 0;
           const chanAccess =
             ch.accessMode || (ch.type === 'announcement' ? 'announcement' : 'discussion');
           const chanVoiceMode = ch.voiceMode || defaultCallMode || 'open';
+
           await Creator.insertChannelsForLookup([
             chId,
             resolvedSpaceId,
@@ -746,11 +800,13 @@ const postCreatorCourses = async (req, res) => {
           ]);
         });
       }
+
       const defCallMode = defaultCallMode || 'open';
       const allowScreen = allowStudentScreenShare !== false ? 1 : 0;
       const allowCam = allowStudentCamera !== false ? 1 : 0;
       const approvalStatus = req.user.role === 'ADMIN' && isPublished ? 'APPROVED' : 'DRAFT';
       const isPub = req.user.role === 'ADMIN' && isPublished ? 1 : 0;
+
       await Creator.insertCourses([
         courseId,
         title,
@@ -785,6 +841,7 @@ const postCreatorCourses = async (req, res) => {
         await asyncForEach(modules, async (mod, mIdx) => {
           const modId = randomUUID();
           const drip = mod.dripMode === 'sequential' ? 'sequential' : 'instant';
+
           await Creator.insertCourseModulesForLookup([
             modId,
             courseId,
@@ -805,6 +862,7 @@ const postCreatorCourses = async (req, res) => {
                     : les.customData
                       ? JSON.stringify(les.customData)
                       : les.content || '';
+
               await Creator.insertLessonsForLookup([
                 lesId,
                 modId,
@@ -818,6 +876,7 @@ const postCreatorCourses = async (req, res) => {
               ]);
               if (les.quiz) {
                 const quizId = randomUUID();
+
                 await Creator.insertQuizzesForLookup([
                   quizId,
                   lesId,
@@ -839,6 +898,7 @@ const postCreatorCourses = async (req, res) => {
                     } else if (q.correctOptionIndex !== undefined) {
                       correctOptionIndex = Number(q.correctOptionIndex);
                     }
+
                     await Creator.insertQuizQuestionsForLookup([
                       qId,
                       quizId,
@@ -855,17 +915,22 @@ const postCreatorCourses = async (req, res) => {
           }
         });
       }
+
       await Creator.insertEnrollments([randomUUID(), creatorId, courseId, now]);
     });
+
     const createdCourse = await Creator.findCoursesById([courseId]);
+
     return res.status(201).json(createdCourse);
   } catch (err) {
     console.error('Create course error:', err);
+
     return res.status(500).json({
       error: 'Falha ao criar curso',
     });
   }
 };
+
 const getCreatorMembers = async (req, res) => {
   try {
     const creatorId = req.user.id;
@@ -896,14 +961,17 @@ const getCreatorMembers = async (req, res) => {
         xp: m.xp,
       },
     }));
+
     return res.json(formatted);
   } catch (err) {
     console.error('Get creator members error:', err);
+
     return res.status(500).json({
       error: 'Falha ao carregar lista de membros',
     });
   }
 };
+
 const getCreatorCoursesByCourseIdCollaborators = async (req, res) => {
   try {
     const { courseId } = req.params;
@@ -915,15 +983,19 @@ const getCreatorCoursesByCourseIdCollaborators = async (req, res) => {
           error: 'Acesso negado a este curso',
         });
     }
+
     const collaborators = await Creator.listCollaboratorsByCourseId([courseId]);
+
     return res.json(collaborators);
   } catch (err) {
     console.error('Get collaborators error:', err);
+
     return res.status(500).json({
       error: 'Falha ao carregar colaboradores do curso',
     });
   }
 };
+
 const postCreatorCoursesByCourseIdCollaborators = async (req, res) => {
   try {
     const { courseId } = req.params;
@@ -940,12 +1012,14 @@ const postCreatorCoursesByCourseIdCollaborators = async (req, res) => {
         error: 'Apenas o proprietário do curso pode adicionar colaboradores',
       });
     }
+
     const { identifier } = req.body;
     if (!identifier || typeof identifier !== 'string' || !identifier.trim()) {
       return res.status(400).json({
         error: 'Indique o nome de utilizador ou email do colaborador',
       });
     }
+
     const cleanIdent = identifier.trim().toLowerCase();
     const targetUser = await Creator.findTargetUser([cleanIdent, cleanIdent]);
     if (!targetUser) {
@@ -953,20 +1027,25 @@ const postCreatorCoursesByCourseIdCollaborators = async (req, res) => {
         error: 'Utilizador não encontrado com este email/username',
       });
     }
+
     if (targetUser.id === course.creatorId) {
       return res.status(400).json({
         error: 'O criador já é o proprietário do curso',
       });
     }
+
     const existing = await Creator.findExistingByCourseIdAndUserId([courseId, targetUser.id]);
     if (existing) {
       return res.status(400).json({
         error: 'Este utilizador já é colaborador deste curso',
       });
     }
+
     const collabId = `collab-${Date.now()}`;
     const now = new Date().toISOString();
+
     await Creator.insertCourseCollaborators([collabId, courseId, targetUser.id, now]);
+
     const enrolled = await Creator.findEnrolledByCourseIdAndUserId([courseId, targetUser.id]);
     if (!enrolled) {
       await Creator.insertEnrollmentsForPostCreatorCoursesByCourseIdCollaborators([
@@ -976,6 +1055,7 @@ const postCreatorCoursesByCourseIdCollaborators = async (req, res) => {
         now,
       ]);
     }
+
     await Creator.insertNotificationsForPostCreatorCoursesByCourseIdCollaborators([
       `notif-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
       targetUser.id,
@@ -983,6 +1063,7 @@ const postCreatorCoursesByCourseIdCollaborators = async (req, res) => {
       `/creator/courses/${courseId}/edit`,
       now,
     ]);
+
     return res.status(201).json({
       id: collabId,
       courseId,
@@ -996,11 +1077,13 @@ const postCreatorCoursesByCourseIdCollaborators = async (req, res) => {
     });
   } catch (err) {
     console.error('Add collaborator error:', err);
+
     return res.status(500).json({
       error: 'Falha ao adicionar colaborador',
     });
   }
 };
+
 const deleteCreatorCoursesByCourseIdCollaboratorsByTargetUserId = async (req, res) => {
   try {
     const { courseId, targetUserId } = req.params;
@@ -1015,18 +1098,22 @@ const deleteCreatorCoursesByCourseIdCollaboratorsByTargetUserId = async (req, re
         error: 'Sem permissão para remover este colaborador',
       });
     }
+
     await Creator.deleteCourseCollaboratorsByCourseIdAndUserId([courseId, targetUserId]);
+
     return res.json({
       success: true,
       message: 'Colaborador removido com sucesso',
     });
   } catch (err) {
     console.error('Delete collaborator error:', err);
+
     return res.status(500).json({
       error: 'Falha ao remover colaborador',
     });
   }
 };
+
 const deleteCreatorCoursesByCourseIdMembersByUserId = async (req, res) => {
   try {
     const { courseId, userId } = req.params;
@@ -1042,11 +1129,13 @@ const deleteCreatorCoursesByCourseIdMembersByUserId = async (req, res) => {
           error: 'Acesso negado a este curso',
         });
     }
+
     await Creator.deleteEnrollmentsByCourseIdAndUserId([courseId, userId]);
     req.app
       .get('io')
       ?.in('user_' + userId)
       .disconnectSockets(true);
+
     return res.json({
       success: true,
       message: 'Membro removido do curso com sucesso',
@@ -1057,6 +1146,7 @@ const deleteCreatorCoursesByCourseIdMembersByUserId = async (req, res) => {
     });
   }
 };
+
 const postCreatorCoursesByCourseIdEnrollments = async (req, res) => {
   const course = await Creator.findCoursesById([req.params.courseId]);
   if (!course)
@@ -1100,12 +1190,14 @@ const postCreatorCoursesByCourseIdEnrollments = async (req, res) => {
         new Date().toISOString(),
       ]);
   });
+
   return res.json({
     message: 'Acesso concedido.',
     userId: student.id,
     courseId: course.id,
   });
 };
+
 const postCreatorCoursesByCourseIdSubmitReview = async (req, res) => {
   try {
     res.json(await submitCourse(req.user, req.params.courseId));
@@ -1115,11 +1207,14 @@ const postCreatorCoursesByCourseIdSubmitReview = async (req, res) => {
       .json({ error: error.status ? error.message : 'Falha ao enviar curso para revisão.' });
   }
 };
+
 exports.getCreatorApplicationStatus = getCreatorApplicationStatus;
 exports.postCreatorCourseCommunity = async (req, res) => {
   const spaceId = await ensureCourseCommunity(req.user, req.params.courseId);
+
   res.json({ spaceId });
 };
+
 exports.postCreatorApply = postCreatorApply;
 exports.getCreatorStats = getCreatorStats;
 exports.getCreatorCoursesByCourseId = getCreatorCoursesByCourseId;

@@ -1,0 +1,52 @@
+@layer components {
+  .user-role-editor {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .user-role-editor-account,
+  .user-role-editor label {
+    display: grid;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .user-role-editor-account span,
+  .user-role-editor p {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  .user-role-editor .custom-select-trigger {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .user-role-editor-actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding-top: 0.5rem;
+  }
+
+  .user-role-editor [role='alert'] {
+    color: #dc2626;
+  }
+
+  .dark .user-role-editor [role='alert'] {
+    color: #fca5a5;
+  }
+
+  @media (max-width: 479px) {
+    .user-role-editor-actions {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .user-role-editor-actions > button {
+      min-height: 44px;
+    }
+  }
+}

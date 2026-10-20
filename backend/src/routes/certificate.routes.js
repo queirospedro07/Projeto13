@@ -7,6 +7,7 @@ const {
 } = require('../controllers/certificate.controller.js');
 const { asyncHandler } = require('../middleware/asyncHandler.js');
 const router = Router();
+
 router.get(
   '/verify/:certificateId',
   optionalAuth,

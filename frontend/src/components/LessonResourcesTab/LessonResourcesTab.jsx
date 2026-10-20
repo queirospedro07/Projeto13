@@ -1,6 +1,7 @@
 import { safeDownloadUrl } from '../../utils/safeUrl';
 import './LessonResourcesTab.css';
 import { LuFileText as FileText, LuDownload as Download } from 'react-icons/lu';
+
 export const LessonResourcesTab = ({ resources = [] }) => {
   if (resources.length === 0) {
     return (
@@ -9,13 +10,18 @@ export const LessonResourcesTab = ({ resources = [] }) => {
       </div>
     );
   }
+
   return (
     <div className="lesson-resources-tab-panel-2">
       {resources.map((res, idx) => {
         const docTitle = res.title || res.name || `Recurso ${idx + 1}`;
         const fileHref = safeDownloadUrl(res.url || res.data);
+
         return (
-          <div key={res.id || docTitle || idx} className="lesson-resources-tab-panel-3">
+          <div
+            key={res.id || docTitle || idx}
+            className="lesson-resources-tab-panel-3"
+          >
             <div className="lesson-resources-tab-panel-4">
               <FileText className="lesson-resources-tab-file-text" />
               <span className="lesson-resources-tab-label">{docTitle}</span>

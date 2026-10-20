@@ -26,6 +26,7 @@ export const SEO = ({
         element.setAttribute(attribute, value);
         document.head.appendChild(element);
       }
+
       element.setAttribute('content', content);
     };
 
@@ -43,9 +44,16 @@ export const SEO = ({
       const fullImageUrl = ogImage.startsWith('http')
         ? ogImage
         : `${window.location.origin}${ogImage}`;
+
       setMetaTag('property', 'og:image', fullImageUrl);
     }
-    const currentUrl = canonical || window.location.href;
+
+    const siteOrigin = import.meta.env.VITE_SITE_URL || window.location.origin;
+    const canonicalPath = canonical
+      ? new URL(canonical, siteOrigin).pathname
+      : window.location.pathname;
+    const currentUrl = new URL(canonicalPath, siteOrigin).href;
+
     setMetaTag('property', 'og:url', currentUrl);
 
     // 5. Twitter Card
@@ -56,6 +64,7 @@ export const SEO = ({
       const fullImageUrl = ogImage.startsWith('http')
         ? ogImage
         : `${window.location.origin}${ogImage}`;
+
       setMetaTag('name', 'twitter:image', fullImageUrl);
     }
 
@@ -67,9 +76,10 @@ export const SEO = ({
         canonicalLink.setAttribute('rel', 'canonical');
         document.head.appendChild(canonicalLink);
       }
-      canonicalLink.setAttribute('href', canonical);
+
+      canonicalLink.setAttribute('href', currentUrl);
     } else if (canonicalLink) {
-      canonicalLink.setAttribute('href', window.location.href.split('?')[0]);
+      canonicalLink.setAttribute('href', currentUrl);
     }
 
     // 7. Structured Data (JSON-LD)
@@ -81,9 +91,12 @@ export const SEO = ({
         script.type = 'application/ld+json';
         document.head.appendChild(script);
       }
+
       script.textContent = JSON.stringify(structuredData);
     }
   }, [title, description, canonical, ogType, ogImage, keywords, structuredData]);
+
   return null;
 };
+
 export default SEO;

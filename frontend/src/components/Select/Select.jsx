@@ -2,6 +2,7 @@ import './Select.css';
 import { Children, isValidElement, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { LuCheck as Check, LuChevronDown as ChevronDown } from 'react-icons/lu';
+
 export const Select = ({
   value,
   defaultValue,
@@ -35,6 +36,7 @@ export const Select = ({
     (option) => String(option.value) === String(selectedValue),
   );
   const selectedOption = options[selectedIndex];
+
   useEffect(() => {
     if (!isOpen) return undefined;
     const updatePosition = () => {
@@ -55,6 +57,7 @@ export const Select = ({
       const placement = spaceBelow < 220 && spaceAbove > spaceBelow ? 'above' : 'below';
       const availableSpace = placement === 'above' ? spaceAbove : spaceBelow;
       const maxHeight = Math.max(120, Math.min(280, availableSpace - 8));
+
       setMenuPosition({
         '--menu-left': `${left}px`,
         '--menu-width': `${menuWidth}px`,
@@ -62,15 +65,18 @@ export const Select = ({
         '--menu-max-height': `${maxHeight}px`,
       });
     };
+
     const handlePointerDown = (event) => {
       if (!triggerRef.current?.contains(event.target) && !menuRef.current?.contains(event.target)) {
         setIsOpen(false);
       }
     };
+
     updatePosition();
     document.addEventListener('pointerdown', handlePointerDown);
     window.addEventListener('resize', updatePosition);
     window.addEventListener('scroll', updatePosition, true);
+
     return () => {
       document.removeEventListener('pointerdown', handlePointerDown);
       window.removeEventListener('resize', updatePosition);
@@ -84,6 +90,7 @@ export const Select = ({
       });
     }
   }, [activeIndex, isOpen]);
+
   const selectOption = (option) => {
     if (option.disabled) return;
     onChange?.({
@@ -95,44 +102,62 @@ export const Select = ({
     setIsOpen(false);
     triggerRef.current?.focus();
   };
+
   const handleKeyDown = (event) => {
     if (event.key === 'Escape' && isOpen) {
       event.preventDefault();
+      event.stopPropagation();
       setIsOpen(false);
+
       return;
     }
+
+    if (event.key === 'Tab' && isOpen) setIsOpen(false);
+
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
+
       const direction = event.key === 'ArrowDown' ? 1 : -1;
       if (!isOpen) {
         const startingIndex = selectedIndex >= 0 ? selectedIndex : 0;
+
         setActiveIndex(Math.max(0, startingIndex));
         setIsOpen(true);
+
         return;
       }
+
       setActiveIndex((current) => (current + direction + options.length) % options.length);
+
       return;
     }
+
     if ((event.key === 'Enter' || event.key === ' ') && !isOpen) {
       event.preventDefault();
       setActiveIndex(Math.max(0, selectedIndex));
       setIsOpen(true);
+
       return;
     }
+
     if (event.key === 'Home' && isOpen) {
       event.preventDefault();
       setActiveIndex(0);
     }
+
     if (event.key === 'End' && isOpen) {
       event.preventDefault();
       setActiveIndex(options.length - 1);
     }
+
     if (event.key === 'Enter' && isOpen) {
       event.preventDefault();
+
       const option = options[activeIndex];
       if (option) selectOption(option);
     }
   };
+
   return (
     <>
       <button
@@ -178,6 +203,7 @@ export const Select = ({
             {options.map((option, index) => {
               const isSelected = index === selectedIndex;
               const isActive = index === activeIndex;
+
               return (
                 <button
                   key={`${option.value}-${index}`}
@@ -192,7 +218,10 @@ export const Select = ({
                 >
                   <span className="custom-select-option-label">{option.label}</span>
                   {isSelected && (
-                    <Check className="custom-select-option-check" aria-hidden="true" />
+                    <Check
+                      className="custom-select-option-check"
+                      aria-hidden="true"
+                    />
                   )}
                 </button>
               );
@@ -203,4 +232,5 @@ export const Select = ({
     </>
   );
 };
+
 export default Select;

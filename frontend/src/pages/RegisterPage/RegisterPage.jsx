@@ -10,6 +10,7 @@ import {
 import { Logo } from '../../components/Logo';
 import { SEO } from '../../components/SEO';
 import { useAuth } from '../../context/AuthContext';
+
 export const RegisterPage = () => {
   const { register, user } = useAuth();
   const [name, setName] = useState('');
@@ -22,23 +23,35 @@ export const RegisterPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   if (user) {
-    return <Navigate to="/dashboard" replace />;
+    return (
+      <Navigate
+        to="/dashboard"
+        replace
+      />
+    );
   }
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     if (password !== confirmPassword) {
       setError('As palavras-passe não coincidem');
+
       return;
     }
+
     if (password.length < 12) {
       setError('A palavra-passe deve ter pelo menos 12 caracteres');
+
       return;
     }
+
     if (!acceptTerms) {
       setError('Por favor, aceite os Termos de Utilização e Política de Privacidade');
+
       return;
     }
+
     setIsLoading(true);
     try {
       await register({
@@ -55,6 +68,7 @@ export const RegisterPage = () => {
       setIsLoading(false);
     }
   };
+
   return (
     <>
       <SEO
@@ -66,7 +80,10 @@ export const RegisterPage = () => {
         <div className="register-panel-2">
           <div className="register-panel-3">
             <div className="register-panel-4">
-              <Logo size="lg" to="/" />
+              <Logo
+                size="lg"
+                to="/"
+              />
             </div>
             <h2 className="register-heading">Criar Conta</h2>
             <p className="register-description">
@@ -82,12 +99,23 @@ export const RegisterPage = () => {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="register-form">
+            <form
+              onSubmit={handleSubmit}
+              className="register-form"
+            >
               <div>
-                <label className="register-field-label">Nome Completo</label>
+                <label
+                  htmlFor="register-name"
+                  className="register-field-label"
+                >
+                  Nome Completo
+                </label>
                 <div className="register-panel-7">
                   <User className="register-user" />
                   <input
+                    id="register-name"
+                    name="name"
+                    autoComplete="name"
                     type="text"
                     required
                     placeholder="Ex.: João Silva"
@@ -99,8 +127,16 @@ export const RegisterPage = () => {
               </div>
 
               <div>
-                <label className="register-field-label">Nome de Utilizador</label>
+                <label
+                  htmlFor="register-username"
+                  className="register-field-label"
+                >
+                  Nome de Utilizador
+                </label>
                 <input
+                  id="register-username"
+                  name="username"
+                  autoComplete="username"
                   type="text"
                   required
                   placeholder="ex.: joaosilva"
@@ -111,10 +147,18 @@ export const RegisterPage = () => {
               </div>
 
               <div>
-                <label className="register-field-label">E-mail</label>
+                <label
+                  htmlFor="register-email"
+                  className="register-field-label"
+                >
+                  E-mail
+                </label>
                 <div className="register-panel-7">
                   <Mail className="register-user" />
                   <input
+                    id="register-email"
+                    name="email"
+                    autoComplete="email"
                     type="email"
                     required
                     placeholder="exemplo@dominio.com"
@@ -127,10 +171,18 @@ export const RegisterPage = () => {
 
               <div className="register-panel-8">
                 <div>
-                  <label className="register-field-label">Palavra-passe</label>
+                  <label
+                    htmlFor="register-password"
+                    className="register-field-label"
+                  >
+                    Palavra-passe
+                  </label>
                   <div className="register-panel-7">
                     <Lock className="register-user" />
                     <input
+                      id="register-password"
+                      name="password"
+                      autoComplete="new-password"
                       type="password"
                       required
                       placeholder="••••••••"
@@ -142,8 +194,16 @@ export const RegisterPage = () => {
                 </div>
 
                 <div>
-                  <label className="register-field-label">Confirmar Palavra-passe</label>
+                  <label
+                    htmlFor="register-confirmPassword"
+                    className="register-field-label"
+                  >
+                    Confirmar Palavra-passe
+                  </label>
                   <input
+                    id="register-confirmPassword"
+                    name="confirmPassword"
+                    autoComplete="new-password"
                     type="password"
                     required
                     placeholder="••••••••"
@@ -162,27 +222,45 @@ export const RegisterPage = () => {
                   onChange={(e) => setAcceptTerms(e.target.checked)}
                   className="register-field-3"
                 />
-                <label htmlFor="accept-terms" className="register-field-label-2">
+                <label
+                  htmlFor="accept-terms"
+                  className="register-field-label-2"
+                >
                   Li e aceito os{' '}
-                  <Link to="/terms" target="_blank" className="register-link">
+                  <Link
+                    to="/terms"
+                    target="_blank"
+                    className="register-link"
+                  >
                     Termos de Utilização
                   </Link>{' '}
                   e a{' '}
-                  <Link to="/privacy" target="_blank" className="register-link">
+                  <Link
+                    to="/privacy"
+                    target="_blank"
+                    className="register-link"
+                  >
                     Política de Privacidade
                   </Link>{' '}
                   da plataforma NEXO.
                 </label>
               </div>
 
-              <button type="submit" disabled={isLoading} className="register-button">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="register-button"
+              >
                 {isLoading ? 'A criar conta...' : 'Criar Conta'}
               </button>
             </form>
 
             <div className="register-panel-10">
               Já possui uma conta?{' '}
-              <Link to="/login" className="register-link-2">
+              <Link
+                to="/login"
+                className="register-link-2"
+              >
                 Iniciar sessão
               </Link>
             </div>

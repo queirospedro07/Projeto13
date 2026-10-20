@@ -32,4 +32,5 @@ const Quiz = {
     return queryOne('SELECT "lessonId" FROM quizzes WHERE id = $1', params);
   },
 };
+
 module.exports = Quiz;

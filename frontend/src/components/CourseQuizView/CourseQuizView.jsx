@@ -11,18 +11,21 @@ import {
 import { api } from '../../services/api';
 import { Button } from '../Button';
 import { Select } from '../Select';
+
 export function CourseQuizView({ lessonId, lessons = [], onCompleteQuiz, onNextLesson }) {
-  const [quiz, setQuiz] = useState(null),
-    [answers, setAnswers] = useState({}),
-    [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(Boolean(lessonId)),
-    [submitting, setSubmitting] = useState(false),
-    [error, setError] = useState('');
+  const [quiz, setQuiz] = useState(null);
+  const [answers, setAnswers] = useState({});
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(Boolean(lessonId));
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
   const [selectedLessonId, setSelectedLessonId] = useState(lessons[0]?.id || '');
   const [reload, setReload] = useState(0);
+
   useEffect(() => {
     if (!lessonId) return;
     let active = true;
+
     setLoading(true);
     setError('');
     setAnswers({});
@@ -42,6 +45,7 @@ export function CourseQuizView({ lessonId, lessons = [], onCompleteQuiz, onNextL
       .finally(() => {
         if (active) setLoading(false);
       });
+
     return () => {
       active = false;
     };
@@ -62,12 +66,18 @@ export function CourseQuizView({ lessonId, lessons = [], onCompleteQuiz, onNextL
               onChange={(e) => setSelectedLessonId(e.target.value)}
             >
               {lessons.map((l) => (
-                <option key={l.id} value={l.id}>
+                <option
+                  key={l.id}
+                  value={l.id}
+                >
                   {l.title}
                 </option>
               ))}
             </Select>
-            <CourseQuizView key={selectedLessonId} lessonId={selectedLessonId} />
+            <CourseQuizView
+              key={selectedLessonId}
+              lessonId={selectedLessonId}
+            />
           </>
         ) : (
           <p>Este curso ainda não tem questionários publicados.</p>
@@ -84,6 +94,7 @@ export function CourseQuizView({ lessonId, lessons = [], onCompleteQuiz, onNextL
           answers,
         })
         .then(({ data }) => data);
+
       setResult(response);
       if (response.passed && onCompleteQuiz) await onCompleteQuiz();
     } catch (err) {
@@ -92,9 +103,11 @@ export function CourseQuizView({ lessonId, lessons = [], onCompleteQuiz, onNextL
       setSubmitting(false);
     }
   };
+
   const toggle = (question, id) =>
     setAnswers((prev) => {
       const list = prev[question.id] || [];
+
       return {
         ...prev,
         [question.id]:
@@ -107,7 +120,10 @@ export function CourseQuizView({ lessonId, lessons = [], onCompleteQuiz, onNextL
     });
   if (loading)
     return (
-      <div className="assessment-loading" role="status">
+      <div
+        className="assessment-loading"
+        role="status"
+      >
         <Loader2 />A carregar o questionário…
       </div>
     );
@@ -118,6 +134,7 @@ export function CourseQuizView({ lessonId, lessons = [], onCompleteQuiz, onNextL
         <Button onClick={() => setReload((n) => n + 1)}>Tentar novamente</Button>
       </div>
     );
+
   return (
     <section className="assessment-view">
       <header className="assessment-heading">
@@ -159,7 +176,10 @@ export function CourseQuizView({ lessonId, lessons = [], onCompleteQuiz, onNextL
         </div>
       )}
       {error && (
-        <p role="alert" className="assessment-error">
+        <p
+          role="alert"
+          className="assessment-error"
+        >
           {error}
         </p>
       )}
@@ -169,6 +189,7 @@ export function CourseQuizView({ lessonId, lessons = [], onCompleteQuiz, onNextL
         <form onSubmit={submit}>
           {quiz.questions.map((q, index) => {
             const feedback = result?.results?.find((item) => item.questionId === q.id);
+
             return (
               <fieldset
                 className="assessment-question"
@@ -181,7 +202,10 @@ export function CourseQuizView({ lessonId, lessons = [], onCompleteQuiz, onNextL
                 </legend>
                 {q.type === 'open-ended' ? (
                   <>
-                    <label className="assessment-answer-label" htmlFor={`answer-${q.id}`}>
+                    <label
+                      className="assessment-answer-label"
+                      htmlFor={`answer-${q.id}`}
+                    >
                       A sua resposta
                     </label>
                     <textarea
@@ -244,7 +268,10 @@ export function CourseQuizView({ lessonId, lessons = [], onCompleteQuiz, onNextL
           })}
           <footer className="assessment-actions">
             {!result ? (
-              <Button type="submit" isLoading={submitting}>
+              <Button
+                type="submit"
+                isLoading={submitting}
+              >
                 Submeter respostas
               </Button>
             ) : (
@@ -264,17 +291,28 @@ export function CourseQuizView({ lessonId, lessons = [], onCompleteQuiz, onNextL
                   </Button>
                 )}
                 {result.passed && onCompleteQuiz && (
-                  <Button type="button" onClick={onCompleteQuiz}>
+                  <Button
+                    type="button"
+                    onClick={onCompleteQuiz}
+                  >
                     Concluir aula
                   </Button>
                 )}
                 {result.passed && onNextLesson && (
-                  <Button type="button" variant="outline" onClick={onNextLesson}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onNextLesson}
+                  >
                     Próxima aula
                   </Button>
                 )}
                 {Boolean(result.pendingTeacherReviewCount) && (
-                  <Button type="button" variant="outline" onClick={() => setReload((n) => n + 1)}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setReload((n) => n + 1)}
+                  >
                     Atualizar avaliação
                   </Button>
                 )}

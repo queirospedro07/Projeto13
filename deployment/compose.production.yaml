@@ -1,0 +1,87 @@
+name: nexo-production
+services:
+  database:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nexo_owner
+      POSTGRES_DB: nexo
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?Configure POSTGRES_ADMIN_PASSWORD}
+      POSTGRES_APP_PASSWORD: ${POSTGRES_PASSWORD:?Configure POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-database.sql:/docker-entrypoint-initdb.d/10-application-role.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U nexo_owner -d nexo']
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    networks: [private]
+
+  api:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile.api
+    restart: unless-stopped
+    init: true
+    env_file: .env.production
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 5000
+      DATABASE_URL: postgresql://nexo:${POSTGRES_PASSWORD:?Configure POSTGRES_PASSWORD}@database:5432/nexo
+      PGSSL: 'false'
+      LOCAL_POSTGRES_DOCKER: 'false'
+      DATA_DIRECTORY: /app/data
+      CLIENT_URL: https://${APP_DOMAIN:?Configure APP_DOMAIN}
+      FRONTEND_URL: https://${APP_DOMAIN:?Configure APP_DOMAIN}
+      TRUST_PROXY_HOPS: '1'
+      ENABLE_DEMO_LOGIN: 'false'
+      ENABLE_DEV_PASSWORD_RESET: 'false'
+      ENABLE_PAYMENT_SIMULATION: 'false'
+    depends_on:
+      database:
+        condition: service_healthy
+    volumes:
+      - app-data:/app/data
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:5000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks: [private, edge]
+
+  web:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile.web
+      args:
+        PUBLIC_URL: https://${APP_DOMAIN:?Configure APP_DOMAIN}
+        CONTACT_EMAIL: ${CONTACT_EMAIL:?Configure CONTACT_EMAIL}
+    restart: unless-stopped
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?Configure APP_DOMAIN}
+    ports: ['80:80', '443:443', '443:443/udp']
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+    networks: [edge]
+
+volumes:
+  postgres-data:
+  app-data:
+  caddy-data:
+  caddy-config:
+
+networks:
+  private:
+    internal: true
+  edge:

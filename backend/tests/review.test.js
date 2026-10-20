@@ -10,6 +10,7 @@ import { io as clientIO } from 'socket.io-client';
 import { prepareTestDatabase, cleanupTestDatabase } from './helpers/database.js';
 
 const directory = mkdtempSync(path.join(tmpdir(), 'nexo-review-'));
+
 Object.assign(process.env, {
   NODE_ENV: 'test',
   DATA_DIRECTORY: directory,
@@ -21,15 +22,18 @@ Object.assign(process.env, {
   ENABLE_DEV_PASSWORD_RESET: 'false',
 });
 await prepareTestDatabase();
+
 const db = await import('../src/database/connection.js');
 const { default: app } = await import('../src/app.js');
 const { signJwtToken, verifyJwtToken } = await import('../src/middleware/auth.js');
 const { getSessionSecret } = await import('../src/config/sessionSecret.js');
 const { authenticateSocket } = await import('../src/sockets/security.js');
 const { setupSocketIO } = await import('../src/sockets/chatSocket.js');
-let server, io, origin;
-const tokens = {},
-  clients = [];
+let server;
+let io;
+let origin;
+const tokens = {};
+const clients = [];
 const password = 'TestPassword2026!';
 
 async function request(
@@ -44,12 +48,15 @@ async function request(
     },
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
   });
+
   return { status: response.status, body: await response.json() };
 }
+
 test.before(async () => {
   await db.connectDB();
-  const now = new Date().toISOString(),
-    hash = await bcrypt.hash(password, 10);
+
+  const now = new Date().toISOString();
+  const hash = await bcrypt.hash(password, 10);
   for (const [id, role] of [
     ['owner', 'CREATOR'],
     ['admin', 'ADMIN'],
@@ -62,6 +69,7 @@ test.before(async () => {
     );
     tokens[id] = signJwtToken({ id, role });
   }
+
   await db.execute(
     'INSERT INTO espacos(id,nome,slug,categoria,id_proprietario,criado_em) VALUES ($1,$2,$3,$4,$5,$6)',
     ['space', 'Space', 'space', 'custom', 'owner', now],
@@ -76,6 +84,7 @@ test.before(async () => {
       ['enrollment-' + id, 'student', id, now, id === 'hidden' ? 1 : 0],
     );
   }
+
   await db.execute('INSERT INTO modulos_curso(id,id_curso,titulo) VALUES ($1,$2,$3)', [
     'module',
     'paid',
@@ -112,12 +121,16 @@ test('login issues JWT and API rejects altered, expired, unsigned and stale toke
     body: { login: 'student', password },
     user: null,
   });
+
   assert.equal(login.status, 200);
+
   const payload = verifyJwtToken(login.body.token);
+
   assert.equal(payload.id, 'student');
   assert.ok(payload.exp > payload.iat);
   assert.equal(jwt.decode(login.body.token, { complete: true }).header.alg, 'HS256');
   assert.equal((await request('/auth/me', { token: login.body.token })).status, 200);
+
   const [header, body, signature] = login.body.token.split('.');
   const altered = `${header}.${body}.${signature[0] === 'a' ? 'b' : 'a'}${signature.slice(1)}`;
   for (const token of [
@@ -128,6 +141,7 @@ test('login issues JWT and API rejects altered, expired, unsigned and stale toke
   ]) {
     assert.equal((await request('/auth/me', { token })).status, 401);
   }
+
   assert.equal(
     (await request('/admin/stats', { token: signJwtToken({ id: 'student', role: 'ADMIN' }) }))
       .status,
@@ -152,6 +166,7 @@ test('protected domain routes require JWT even when requested directly', async (
   ]) {
     assert.equal((await request(route, { user: null })).status, 401, route);
   }
+
   assert.equal((await request('/courses', { user: null })).status, 200);
 });
 
@@ -163,6 +178,7 @@ test('malformed filters are rejected and administration counts real records', as
   ]) {
     assert.equal((await request(route)).status, 400);
   }
+
   await request('/reports', {
     method: 'POST',
     body: {
@@ -171,7 +187,9 @@ test('malformed filters are rejected and administration counts real records', as
       reason: 'Conteúdo para revisão da administração.',
     },
   });
+
   const stats = await request('/admin/stats', { user: 'admin' });
+
   assert.equal(stats.status, 200);
   assert.equal(stats.body.activeUsers, 4);
   assert.equal(stats.body.pendingReports, 1);
@@ -183,22 +201,26 @@ test('password recovery never exposes reset tokens without an explicitly enabled
     method: 'POST',
     body: { email: 'student@example.test' },
   });
+
   assert.equal(result.status, 503);
   assert.equal(result.body.devResetUrl, undefined);
 });
 
 test('database failures return service errors without invalidating JWT sessions', async () => {
-  const pool = db.getPool(),
-    original = pool.query;
+  const pool = db.getPool();
+  const original = pool.query;
+
   pool.query = async () => {
     throw Object.assign(new Error('simulated database outage'), { code: 'ECONNRESET' });
   };
+
   try {
     assert.equal((await request('/auth/me')).status, 503);
     assert.equal((await request('/courses')).status, 503);
   } finally {
     pool.query = original;
   }
+
   assert.equal((await request('/auth/me')).status, 200);
 });
 
@@ -207,14 +229,19 @@ test('profiles return course arrays and hide private courses and biographies acr
     method: 'PUT',
     body: { bio: 'private-biography-marker', showBio: false, isPublic: true },
   });
+
   assert.equal(update.status, 200);
+
   const publicProfile = await request('/auth/user/student', { user: null });
+
   assert.ok(Array.isArray(publicProfile.body.courses));
   assert.deepEqual(
     publicProfile.body.courses.map((item) => item.courseId),
     ['paid'],
   );
+
   const ownProfile = await request('/auth/user/student');
+
   assert.equal(ownProfile.body.courses.length, 2);
   assert.equal(ownProfile.body.bio, 'private-biography-marker');
   for (const [route, user] of [
@@ -222,10 +249,13 @@ test('profiles return course arrays and hide private courses and biographies acr
     ['/social/dm/messages/student', 'other'],
   ]) {
     const result = await request(route, { user });
+
     assert.equal(result.status, 200);
     assert.ok(!JSON.stringify(result.body).includes('private-biography-marker'));
   }
+
   const learning = await request('/courses/my-learning');
+
   assert.ok(!JSON.stringify(learning.body).includes('correctOptionIndex'));
 });
 
@@ -234,9 +264,11 @@ test('paid community membership checks access asynchronously and repeated joins 
     (await request('/spaces/space/join', { user: 'other', method: 'POST', body: {} })).status,
     403,
   );
+
   const joined = await Promise.all(
     Array.from({ length: 4 }, () => request('/spaces/space/join', { method: 'POST', body: {} })),
   );
+
   assert.ok(joined.every((result) => result.status === 201));
   assert.equal(
     (
@@ -255,6 +287,7 @@ test('concurrent note saves persist one note and do not cross user permissions',
       request('/notes/lesson', { method: 'POST', body: { content: `Note ${index}` } }),
     ),
   );
+
   assert.ok(results.every((result) => result.status === 200));
   assert.equal(
     (
@@ -271,6 +304,7 @@ test('concurrent note saves persist one note and do not cross user permissions',
 
 test('viewing a free course does not enroll and completing a lesson requires explicit enrollment', async () => {
   const now = new Date().toISOString();
+
   await db.execute(
     'INSERT INTO cursos(id,titulo,slug,descricao,categoria,e_gratuito,preco,id_criador,criado_em,atualizado_em) VALUES ($1,$1,$1,$2,$3,1,0,$4,$5,$5)',
     ['free-preview', 'Free preview', 'custom', 'owner', now],
@@ -289,20 +323,26 @@ test('viewing a free course does not enroll and completing a lesson requires exp
   ]);
   for (let index = 0; index < 2; index++) {
     const preview = await request('/courses/free-preview', { user: 'other' });
+
     assert.equal(preview.status, 200);
     assert.equal(preview.body.isEnrolled, false);
   }
+
   for (const user of ['admin', 'owner']) {
     const preview = await request('/courses/free-preview', { user });
+
     assert.equal(preview.status, 200);
     assert.equal(preview.body.isEnrolled, false);
     assert.equal(preview.body.isCreator, true);
     assert.equal(preview.body.userProgress, 0);
+
     const catalog = await request('/courses', { user });
     const course = catalog.body.find((item) => item.id === 'free-preview');
+
     assert.equal(course.isEnrolled, false);
     assert.equal(course.isMember, false);
   }
+
   const count = async () =>
     (
       await db.queryOne(
@@ -310,6 +350,7 @@ test('viewing a free course does not enroll and completing a lesson requires exp
         ['other', 'free-preview'],
       )
     ).count;
+
   assert.equal(await count(), 0);
   assert.equal(
     (
@@ -348,6 +389,7 @@ test('checkout rejects changed prices and repeated purchases after revoked enrol
       method: 'POST',
       body: { method: 'card', outcome: 'approved', ...body },
     });
+
   assert.equal((await pay({ expectedAmountCents: 999 })).status, 409);
   assert.equal((await pay({ expectedAmountCents: 19.99 })).status, 400);
   assert.equal((await db.queryOne('SELECT COUNT(*) AS count FROM simulacoes_pagamento')).count, 0);
@@ -364,12 +406,15 @@ test('checkout rejects changed prices and repeated purchases after revoked enrol
 test('creator earnings sum approved historical payments only for their own courses', async () => {
   const now = new Date().toISOString();
   const id = 'revenue-teacher';
+
   await db.execute(
     'INSERT INTO utilizadores(id,email,nome_utilizador,hash_palavra_passe,nome,papel,criado_em,atualizado_em) VALUES ($1,$2,$1,$3,$1,$4,$5,$5)',
     [id, 'revenue@example.test', 'unused', 'CREATOR', now],
   );
+
   const token = signJwtToken({ id, role: 'CREATOR' });
   const initial = await request('/creator/stats', { token });
+
   assert.equal(initial.status, 200);
   assert.equal(initial.body.totalRevenueCents, 0);
   await db.execute(
@@ -387,7 +432,9 @@ test('creator earnings sum approved historical payments only for their own cours
       [paymentId, buyer, courseId, amount, state, now],
     );
   }
+
   const result = await request('/creator/stats', { token });
+
   assert.equal(result.status, 200);
   assert.equal(result.body.totalRevenueCents, 2250);
   assert.equal(result.body.totalRevenue, 22.5);
@@ -411,20 +458,28 @@ test('courses support optional communities and existing students retain access a
       },
     });
   const withCommunity = await create('Curso com comunidade', true);
+
   assert.equal(withCommunity.status, 201);
+
   const withDetails = await request(`/creator/courses/${withCommunity.body.id}`, { user: 'owner' });
+
   assert.equal(withDetails.body.hasCommunity, true);
   assert.equal(withDetails.body.channels.length, 2);
+
   const without = await create('Curso sem comunidade', false);
+
   assert.equal(without.status, 201);
+
   const id = without.body.id;
   const details = await request(`/creator/courses/${id}`, { user: 'owner' });
+
   assert.equal(details.body.hasCommunity, false);
   assert.equal(details.body.channels.length, 0);
   await db.execute(
     'INSERT INTO inscricoes(id,id_utilizador,id_curso,inscrito_em) VALUES($1,$2,$3,$4)',
     ['community-student', 'student', id, new Date().toISOString()],
   );
+
   const saved = await request(`/creator/courses/${id}`, {
     user: 'owner',
     method: 'PUT',
@@ -436,8 +491,11 @@ test('courses support optional communities and existing students retain access a
       ],
     },
   });
+
   assert.equal(saved.status, 200);
+
   const enabled = await request(`/creator/courses/${id}`, { user: 'owner' });
+
   assert.equal(enabled.body.hasCommunity, true);
   assert.equal(enabled.body.channels.length, 2);
   assert.ok(
@@ -446,22 +504,29 @@ test('courses support optional communities and existing students retain access a
       enabled.body.spaceId,
     ]),
   );
+
   const preview = await request(`/courses/${id}`, { user: 'admin' });
+
   assert.equal(preview.body.spaceId, enabled.body.spaceId);
   assert.equal(preview.body.space.channels.length, 2);
 
   const lazy = await create('Comunidade ativada na sala de aula', false);
   const route = `/creator/courses/${lazy.body.id}/community`;
+
   assert.equal((await request(route, { user: 'student', method: 'POST', body: {} })).status, 403);
+
   const outsiderToken = signJwtToken({ id: 'revenue-teacher', role: 'CREATOR' });
+
   assert.equal(
     (await request(route, { token: outsiderToken, method: 'POST', body: {} })).status,
     403,
   );
+
   const results = await Promise.all([
     request(route, { user: 'owner', method: 'POST', body: {} }),
     request(route, { user: 'owner', method: 'POST', body: {} }),
   ]);
+
   assert.ok(results.every((result) => result.status === 200));
   assert.equal(results[0].body.spaceId, results[1].body.spaceId);
   for (const type of ['text', 'voice']) {
@@ -470,8 +535,10 @@ test('courses support optional communities and existing students retain access a
       method: 'POST',
       body: { name: `canal-${type}`, type },
     });
+
     assert.equal(channel.status, 201);
   }
+
   assert.equal((await create('Modo inválido', 'false')).status, 400);
 });
 
@@ -482,11 +549,14 @@ test('idle WebSocket sessions disconnect when their JWT expires', { timeout: 500
     transports: ['websocket'],
     reconnection: false,
   });
+
   clients.push(client);
   await new Promise((resolve, reject) => {
     client.once('connect', resolve);
     client.once('connect_error', reject);
   });
+
   const reason = await new Promise((resolve) => client.once('disconnect', resolve));
+
   assert.equal(reason, 'io server disconnect');
 });

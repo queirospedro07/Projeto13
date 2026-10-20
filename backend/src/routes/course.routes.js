@@ -12,6 +12,7 @@ const {
 } = require('../controllers/course.controller.js');
 const { asyncHandler } = require('../middleware/asyncHandler.js');
 const router = Router();
+
 router.get('/my-learning', authenticate, asyncHandler(getCourseMyLearning));
 router.post('/:courseId/toggle-hide', authenticate, asyncHandler(postCourseByCourseIdToggleHide));
 router.get('/', optionalAuth, asyncHandler(getCourse));

@@ -26,6 +26,7 @@ import { useToast } from '../../components/Toast';
 import { useActiveCall } from '../../context/ActiveCallContext';
 import { api } from '../../services/api';
 import { formatCoursePrice, formatCategory } from '../../utils/formatters';
+
 export const CourseDetailsPage = () => {
   const { id } = useParams();
   const { user } = useAuth();
@@ -39,6 +40,7 @@ export const CourseDetailsPage = () => {
   const [activeTab, setActiveTab] = useState(() => {
     try {
       const saved = localStorage.getItem('nexo_course_details_tab');
+
       return saved && saved !== 'resources' ? saved : 'overview';
     } catch {
       return 'overview';
@@ -50,6 +52,7 @@ export const CourseDetailsPage = () => {
       localStorage.setItem('nexo_course_details_tab', tabId);
     } catch {}
   };
+
   const isInstructorOfThisCourse = Boolean(
     user &&
     (user.id === course?.creator?.id ||
@@ -112,6 +115,7 @@ export const CourseDetailsPage = () => {
           console.error(e2);
         }
       }
+
       setCourse(data);
     } catch (err) {
       console.error(err);
@@ -119,9 +123,11 @@ export const CourseDetailsPage = () => {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     fetchCourse();
   }, [id, user?.id]);
+
   const handleEnrollSuccess = () => {
     setShowEnrollModal(false);
     setCourse((prev) =>
@@ -136,6 +142,7 @@ export const CourseDetailsPage = () => {
     window.dispatchEvent(new Event('nexo_courses_visibility_changed'));
     fetchCourse();
   };
+
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
     if (!reviewComment.trim()) return;
@@ -164,6 +171,7 @@ export const CourseDetailsPage = () => {
       setIsSubmittingReview(false);
     }
   };
+
   if (loading) {
     return (
       <div className="course-details-panel">
@@ -172,6 +180,7 @@ export const CourseDetailsPage = () => {
       </div>
     );
   }
+
   if (!course) {
     return (
       <div className="course-details-panel-3">
@@ -180,13 +189,19 @@ export const CourseDetailsPage = () => {
           O curso solicitado não existe ou foi temporariamente arquivado.
         </p>
         <Link to="/explore">
-          <Button variant="secondary" size="md" className="course-details-button">
+          <Button
+            as="span"
+            variant="secondary"
+            size="md"
+            className="course-details-button"
+          >
             Explorar Outros Cursos
           </Button>
         </Link>
       </div>
     );
   }
+
   const isEnrolled = Boolean(course?.isEnrolled || course?.userEnrollment);
   const userProgress = Math.round(
     course?.userProgress ?? course?.userEnrollment?.progressPercent ?? 0,
@@ -198,6 +213,7 @@ export const CourseDetailsPage = () => {
     Intermediate: 'Intermédio',
     Advanced: 'Avançado',
   };
+
   return (
     <>
       <SEO
@@ -214,7 +230,10 @@ export const CourseDetailsPage = () => {
         {/* Breadcrumb & Voltar */}
         <div className="course-details-panel-5">
           <div className="course-details-panel-6">
-            <Link to="/explore" className="course-details-link">
+            <Link
+              to="/explore"
+              className="course-details-link"
+            >
               <ArrowLeft className="course-details-arrow-left" />
               <span>Catálogo de Cursos</span>
             </Link>
@@ -295,7 +314,10 @@ export const CourseDetailsPage = () => {
                 <div>
                   <div className="course-details-panel-6">
                     <span className="course-details-label-9">Formador Oficial</span>
-                    <Badge variant="outline" size="sm">
+                    <Badge
+                      variant="outline"
+                      size="sm"
+                    >
                       Verificado
                     </Badge>
                   </div>
@@ -372,7 +394,10 @@ export const CourseDetailsPage = () => {
                   {/* Botões de Ação */}
                   {isCreatorOrAdmin ? (
                     <div className="course-details-panel-19">
-                      <Link to={`/learn/${course.id}`} className="course-details-link-3">
+                      <Link
+                        to={`/learn/${course.id}`}
+                        className="course-details-link-3"
+                      >
                         <button className="course-details-button-2">
                           <Play className="course-details-play" />
                           <span>Abrir Sala de Aula</span>
@@ -392,7 +417,10 @@ export const CourseDetailsPage = () => {
                     </div>
                   ) : isEnrolled ? (
                     <div className="course-details-panel-19">
-                      <Link to={`/learn/${course.id}`} className="course-details-link-3">
+                      <Link
+                        to={`/learn/${course.id}`}
+                        className="course-details-link-3"
+                      >
                         <button className="course-details-button-4">
                           <CheckCircle2 className="course-details-check-circle2-2" />
                           <span>Já estou no curso • Continuar Aulas ({userProgress}%)</span>
@@ -482,6 +510,7 @@ export const CourseDetailsPage = () => {
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
+
             return (
               <button
                 key={tab.id}
@@ -515,7 +544,10 @@ export const CourseDetailsPage = () => {
                   </h4>
                   <div className="course-details-panel-27">
                     {outcomes.map((item, idx) => (
-                      <div key={idx} className="course-details-panel-28 subtle-shadow">
+                      <div
+                        key={idx}
+                        className="course-details-panel-28 subtle-shadow"
+                      >
                         <CheckCircle2 className="course-details-check-circle2-4" />
                         <span className="course-details-label-15">{item}</span>
                       </div>
@@ -528,7 +560,10 @@ export const CourseDetailsPage = () => {
                   <h4 className="course-details-caption-2">Requisitos e Pré-requisitos</h4>
                   <ul className="course-details-list">
                     {reqs.map((rItem, idx) => (
-                      <li key={idx} className="course-details-list-item">
+                      <li
+                        key={idx}
+                        className="course-details-list-item"
+                      >
                         {rItem}
                       </li>
                     ))}
@@ -607,8 +642,12 @@ export const CourseDetailsPage = () => {
                     (acc, l) => acc + (l.durationMin || 10),
                     0,
                   );
+
                   return (
-                    <div key={mod.id || index} className="course-details-panel-37">
+                    <div
+                      key={mod.id || index}
+                      className="course-details-panel-37"
+                    >
                       <button
                         onClick={() => setOpenModuleIndex(openModuleIndex === index ? null : index)}
                         className="course-details-button-11"
@@ -638,7 +677,10 @@ export const CourseDetailsPage = () => {
                       {isOpen && (
                         <div className="course-details-panel-42">
                           {mod.lessons?.map((les, lIdx) => (
-                            <div key={les.id || lIdx} className="course-details-panel-43">
+                            <div
+                              key={les.id || lIdx}
+                              className="course-details-panel-43"
+                            >
                               <div className="course-details-panel-38">
                                 <div className="course-details-panel-44">{lIdx + 1}</div>
                                 <div className="course-details-panel-40">
@@ -681,7 +723,10 @@ export const CourseDetailsPage = () => {
               {user ? (
                 <div className="course-details-panel-47">
                   <h4 className="course-details-caption-7">Publicar a sua Avaliação</h4>
-                  <form onSubmit={handleReviewSubmit} className="course-details-form">
+                  <form
+                    onSubmit={handleReviewSubmit}
+                    className="course-details-form"
+                  >
                     <div className="course-details-panel-33">
                       <span className="course-details-label-23">Classificação:</span>
                       <div className="course-details-panel-48">
@@ -723,7 +768,12 @@ export const CourseDetailsPage = () => {
                     Inicie sessão para poder partilhar a sua avaliação sobre este curso.
                   </p>
                   <Link to="/login">
-                    <Button variant="outline" size="sm" className="course-details-button">
+                    <Button
+                      as="span"
+                      variant="outline"
+                      size="sm"
+                      className="course-details-button"
+                    >
                       Iniciar Sessão
                     </Button>
                   </Link>
@@ -738,10 +788,17 @@ export const CourseDetailsPage = () => {
                   </div>
                 ) : (
                   course.reviews.map((r) => (
-                    <div key={r.id} className="course-details-panel-32">
+                    <div
+                      key={r.id}
+                      className="course-details-panel-32"
+                    >
                       <div className="course-details-panel-16">
                         <div className="course-details-panel-33">
-                          <Avatar src={r.user?.avatarUrl} name={r.user?.name} size="sm" />
+                          <Avatar
+                            src={r.user?.avatarUrl}
+                            name={r.user?.name}
+                            size="sm"
+                          />
                           <div>
                             <span className="course-details-label-24">
                               {r.user?.name || 'Aluno NEXO'}
@@ -755,7 +812,10 @@ export const CourseDetailsPage = () => {
                           {Array.from({
                             length: r.rating || 5,
                           }).map((_, i) => (
-                            <Star key={i} className="course-details-play" />
+                            <Star
+                              key={i}
+                              className="course-details-play"
+                            />
                           ))}
                         </div>
                       </div>
@@ -779,4 +839,5 @@ export const CourseDetailsPage = () => {
     </>
   );
 };
+
 export default CourseDetailsPage;

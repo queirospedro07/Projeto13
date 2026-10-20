@@ -9,6 +9,7 @@ const {
   postSpaceByIdJoin,
 } = require('../controllers/space.controller.js');
 const { asyncHandler } = require('../middleware/asyncHandler.js');
+
 function channelBody(req, res, next) {
   const body = req.body;
   if (
@@ -23,9 +24,12 @@ function channelBody(req, res, next) {
     return res.status(400).json({
       error: 'Dados de canal inválidos.',
     });
+
   return next();
 }
+
 const router = Router();
+
 router.post('/:id/channels', authenticate, channelBody, asyncHandler(postSpaceByIdChannels));
 router.put(
   '/:id/channels/:channelId',

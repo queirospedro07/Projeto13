@@ -4,6 +4,7 @@ const { Router } = require('express');
 const rateLimit = require('express-rate-limit');
 const { authenticate } = require('../middleware/auth.js');
 const router = Router();
+
 router.post(
   '/',
   authenticate,

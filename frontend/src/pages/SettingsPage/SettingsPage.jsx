@@ -24,6 +24,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useToast } from '../../components/Toast';
 import { api } from '../../services/api';
+
 export const SettingsPage = () => {
   const { user, logout, refreshUser } = useAuth();
   const { theme, setTheme } = useTheme();
@@ -64,6 +65,7 @@ export const SettingsPage = () => {
   });
   const [isSavingPrivacy, setIsSavingPrivacy] = useState(false);
   const [isSavingMessaging, setIsSavingMessaging] = useState(false);
+
   useEffect(() => {
     if (user?.id) {
       setDmPermission(localStorage.getItem(`nexo_dm_permission_${user.id}`) || 'FRIENDS_ONLY');
@@ -79,6 +81,7 @@ export const SettingsPage = () => {
       setCourseUpdates(localStorage.getItem(`nexo_notif_course_${user.id}`) !== 'false');
       setChatMentions(localStorage.getItem(`nexo_notif_mentions_${user.id}`) !== 'false');
     }
+
     if (user?.profile) {
       setIsPublic(user.profile.isPublic !== false);
       setShowBio(user.profile.showBio !== false);
@@ -88,6 +91,7 @@ export const SettingsPage = () => {
       setShowCourses(user.profile.showCourses !== false);
     }
   }, [user]);
+
   const handleSavePrivacy = async () => {
     setIsSavingPrivacy(true);
     try {
@@ -117,6 +121,7 @@ export const SettingsPage = () => {
       setIsSavingPrivacy(false);
     }
   };
+
   const handleSaveMessagingPermissions = () => {
     setIsSavingMessaging(true);
     try {
@@ -127,6 +132,7 @@ export const SettingsPage = () => {
         localStorage.setItem(`nexo_online_visibility_${user.id}`, onlineStatusVisibility);
         localStorage.setItem(`nexo_read_receipts_${user.id}`, String(showReadReceipts));
       }
+
       toast({
         title: 'Permissões Guardadas',
         message:
@@ -143,23 +149,29 @@ export const SettingsPage = () => {
       setIsSavingMessaging(false);
     }
   };
+
   const handleSavePreferences = () => {
     if (user?.id) {
       localStorage.setItem(`nexo_notif_email_${user.id}`, String(emailNotifs));
       localStorage.setItem(`nexo_notif_course_${user.id}`, String(courseUpdates));
       localStorage.setItem(`nexo_notif_mentions_${user.id}`, String(chatMentions));
     }
+
     toast({
       title: 'Notificações Atualizadas',
       message: 'As suas preferências de notificações foram atualizadas com sucesso.',
       type: 'success',
     });
   };
+
   return (
     <div className="settings-page-panel">
       <div className="settings-page-panel-2">
         <div className="settings-page-panel-3">
-          <Badge size="md" variant="primary">
+          <Badge
+            size="md"
+            variant="primary"
+          >
             Definições
           </Badge>
         </div>
@@ -238,7 +250,10 @@ export const SettingsPage = () => {
           {/* Quem pode enviar DMs */}
           <div className="settings-page-panel-8">
             <div className="settings-page-panel-9">
-              <label htmlFor="dm-permission" className="settings-page-field-label">
+              <label
+                htmlFor="dm-permission"
+                className="settings-page-field-label"
+              >
                 Quem me pode enviar Mensagens Diretas
               </label>
               <p className="settings-page-description-6">
@@ -253,16 +268,28 @@ export const SettingsPage = () => {
                 onChange={(e) => setDmPermission(e.target.value)}
                 className="settings-page-select"
               >
-                <option value="FRIENDS_ONLY" className="settings-page-option">
+                <option
+                  value="FRIENDS_ONLY"
+                  className="settings-page-option"
+                >
                   Apenas Amigos e Conexões Aceites
                 </option>
-                <option value="CLASSMATES" className="settings-page-option">
+                <option
+                  value="CLASSMATES"
+                  className="settings-page-option"
+                >
                   Amigos, Colegas de Curso e Formadores
                 </option>
-                <option value="ALL" className="settings-page-option">
+                <option
+                  value="ALL"
+                  className="settings-page-option"
+                >
                   Todos os utilizadores registados
                 </option>
-                <option value="NONE" className="settings-page-option">
+                <option
+                  value="NONE"
+                  className="settings-page-option"
+                >
                   Ninguém (Desativar DMs privadas)
                 </option>
               </Select>
@@ -272,7 +299,10 @@ export const SettingsPage = () => {
           {/* Modo Pedido de Mensagem */}
           <div className="settings-page-panel-11">
             <div className="settings-page-panel-12">
-              <label htmlFor="req-msg-toggle" className="settings-page-field-label-2">
+              <label
+                htmlFor="req-msg-toggle"
+                className="settings-page-field-label-2"
+              >
                 Exigir Pedido Prévio para não-amigos
               </label>
               <p className="settings-page-description-6">
@@ -293,7 +323,10 @@ export const SettingsPage = () => {
           {/* Visibilidade da Lista de Amigos */}
           <div className="settings-page-panel-13">
             <div className="settings-page-panel-9">
-              <label htmlFor="friends-vis" className="settings-page-field-label">
+              <label
+                htmlFor="friends-vis"
+                className="settings-page-field-label"
+              >
                 Visibilidade da Lista de Amigos e Conexões
               </label>
               <p className="settings-page-description-6">
@@ -308,13 +341,22 @@ export const SettingsPage = () => {
                 onChange={(e) => setFriendsListVisibility(e.target.value)}
                 className="settings-page-select"
               >
-                <option value="PUBLIC" className="settings-page-option">
+                <option
+                  value="PUBLIC"
+                  className="settings-page-option"
+                >
                   Público (Todos os utilizadores)
                 </option>
-                <option value="FRIENDS" className="settings-page-option">
+                <option
+                  value="FRIENDS"
+                  className="settings-page-option"
+                >
                   Apenas os Meus Amigos
                 </option>
-                <option value="PRIVATE" className="settings-page-option">
+                <option
+                  value="PRIVATE"
+                  className="settings-page-option"
+                >
                   Privado (Apenas eu)
                 </option>
               </Select>
@@ -324,7 +366,10 @@ export const SettingsPage = () => {
           {/* Estado de Presença / Atividade */}
           <div className="settings-page-panel-13">
             <div className="settings-page-panel-9">
-              <label htmlFor="online-vis" className="settings-page-field-label">
+              <label
+                htmlFor="online-vis"
+                className="settings-page-field-label"
+              >
                 Estado de Presença (Online / Atividade)
               </label>
               <p className="settings-page-description-6">
@@ -339,13 +384,22 @@ export const SettingsPage = () => {
                 onChange={(e) => setOnlineStatusVisibility(e.target.value)}
                 className="settings-page-select"
               >
-                <option value="PUBLIC" className="settings-page-option">
+                <option
+                  value="PUBLIC"
+                  className="settings-page-option"
+                >
                   Mostrar a Todos (Online)
                 </option>
-                <option value="FRIENDS" className="settings-page-option">
+                <option
+                  value="FRIENDS"
+                  className="settings-page-option"
+                >
                   Apenas para Amigos
                 </option>
-                <option value="HIDDEN" className="settings-page-option">
+                <option
+                  value="HIDDEN"
+                  className="settings-page-option"
+                >
                   Invisível / Ocultar Sempre
                 </option>
               </Select>
@@ -355,7 +409,10 @@ export const SettingsPage = () => {
           {/* Recibos de Leitura ("Dar Vista") */}
           <div className="settings-page-panel-11">
             <div className="settings-page-panel-12">
-              <label htmlFor="read-receipts-toggle" className="settings-page-field-label-2">
+              <label
+                htmlFor="read-receipts-toggle"
+                className="settings-page-field-label-2"
+              >
                 Recibos de Leitura (&quot;Dar Vista&quot;)
               </label>
               <p className="settings-page-description-6">
@@ -397,8 +454,12 @@ export const SettingsPage = () => {
               perfil.
             </p>
           </div>
-          <Link to={`/profile/${user?.username || user?.id}`} className="settings-page-link">
+          <Link
+            to={`/profile/${user?.username || user?.id}`}
+            className="settings-page-link"
+          >
             <Button
+              as="span"
               variant="outline"
               size="sm"
               leftIcon={<Eye className="settings-page-eye" />}
@@ -602,8 +663,12 @@ export const SettingsPage = () => {
                 </p>
               </div>
             </div>
-            <Link to="/creator/apply" className="settings-page-link-2">
+            <Link
+              to="/creator/apply"
+              className="settings-page-link-2"
+            >
               <Button
+                as="span"
                 variant="secondary"
                 size="sm"
                 rightIcon={<ArrowRight className="settings-page-arrow-right" />}
@@ -644,4 +709,5 @@ export const SettingsPage = () => {
     </div>
   );
 };
+
 export default SettingsPage;

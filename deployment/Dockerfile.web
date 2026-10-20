@@ -1,0 +1,16 @@
+FROM node:22-alpine AS build
+WORKDIR /app
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci --ignore-scripts
+COPY frontend/ ./
+ARG PUBLIC_URL
+ARG CONTACT_EMAIL
+ENV VITE_API_URL=/api
+ENV VITE_SOCKET_URL=$PUBLIC_URL
+ENV VITE_SITE_URL=$PUBLIC_URL
+ENV VITE_CONTACT_EMAIL=$CONTACT_EMAIL
+RUN npm run build
+
+FROM caddy:2-alpine
+COPY deployment/Caddyfile /etc/caddy/Caddyfile
+COPY --from=build /app/dist /srv

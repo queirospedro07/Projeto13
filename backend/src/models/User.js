@@ -44,6 +44,7 @@ const User = {
     const now = new Date().toISOString();
     const selectedAvatarUrl = null;
     const targetRole = role === 'CREATOR' ? 'CREATOR' : 'STUDENT';
+
     await transaction(async () => {
       await execute(
         `INSERT INTO utilizadores (id, email, nome_utilizador, hash_palavra_passe, nome, papel, url_avatar, biografia, localizacao, meta_diaria_minutos, minutos_hoje, minutos_totais, esta_suspenso, criado_em, atualizado_em)
@@ -76,6 +77,7 @@ const User = {
         [`notif-${Date.now()}`, userId, now],
       );
     });
+
     return {
       id: userId,
       name: name.trim(),
@@ -104,10 +106,12 @@ const User = {
     if (safeKeys.length === 0) return;
     const setClauses = safeKeys.map((k, index) => `${COLUMN_MAP[k]} = $${index + 1}`).join(', ');
     const values = safeKeys.map((k) => fields[k]);
+
     await execute(
       `UPDATE utilizadores SET ${setClauses}, atualizado_em = $${safeKeys.length + 1} WHERE id = $${safeKeys.length + 2}`,
       [...values, new Date().toISOString(), id],
     );
+
     return this.findById(id);
   },
   async listAll(limit = 100, offset = 0) {
@@ -121,4 +125,5 @@ const User = {
     );
   },
 };
+
 module.exports = User;

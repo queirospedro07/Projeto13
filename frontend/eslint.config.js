@@ -38,6 +38,17 @@ export default [
     },
     rules: {
       ...js.configs.recommended.rules,
+      'one-var': ['error', 'never'],
+      'padding-line-between-statements': [
+        'error',
+        { blankLine: 'always', prev: '*', next: 'return' },
+        { blankLine: 'always', prev: 'block-like', next: '*' },
+        { blankLine: 'always', prev: '*', next: ['function', 'class', 'export'] },
+        { blankLine: 'always', prev: ['const', 'let', 'var'], next: 'expression' },
+        { blankLine: 'always', prev: 'expression', next: ['const', 'let', 'var'] },
+        { blankLine: 'always', prev: 'import', next: '*' },
+        { blankLine: 'any', prev: 'import', next: 'import' },
+      ],
       'local/jsx-references': 'error',
       'no-empty': ['error', { allowEmptyCatch: true }],
       'no-unused-vars': ['warn', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^_' }],

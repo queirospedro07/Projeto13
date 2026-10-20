@@ -13,6 +13,7 @@ const failure = (status, message) =>
   Object.assign(new Error(message), {
     status,
   });
+
 async function eligibleForCertificate(userId, courseId) {
   const enrollment = await queryOne(
     'SELECT id FROM enrollments WHERE "userId" = $1 AND "courseId" = $2',
@@ -23,6 +24,7 @@ async function eligibleForCertificate(userId, courseId) {
     'SELECT l.id, l.type FROM lessons l JOIN course_modules m ON m.id = l."moduleId" WHERE m."courseId" = $1',
     [courseId],
   );
+
   return (
     lessons.length > 0 &&
     (await asyncEvery(
@@ -43,6 +45,7 @@ async function eligibleForCertificate(userId, courseId) {
     ))
   );
 }
+
 async function issueCertificate(userId, courseId) {
   return await transaction(async () => {
     await lockTransaction(`certificate:${userId}:${courseId}`);
@@ -56,6 +59,7 @@ async function issueCertificate(userId, courseId) {
     const user = await queryOne('SELECT name FROM users WHERE id = $1', [userId]);
     const course = await queryOne('SELECT title FROM courses WHERE id = $1', [courseId]);
     const id = randomUUID();
+
     await execute(
       'INSERT INTO certificados (id, id_utilizador, id_curso, nome_destinatario, titulo_curso, id_credencial, emitido_em, pontuacao) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
       [
@@ -69,9 +73,11 @@ async function issueCertificate(userId, courseId) {
         100,
       ],
     );
+
     return await queryOne('SELECT * FROM certificates WHERE id = $1', [id]);
   });
 }
+
 async function completeLesson(user, courseIdentifier, lessonId) {
   return await transaction(async () => {
     const course = await queryOne('SELECT * FROM courses WHERE id = $1 OR slug = $2', [
@@ -80,6 +86,7 @@ async function completeLesson(user, courseIdentifier, lessonId) {
     ]);
     if (!course) throw failure(404, 'Curso não encontrado.');
     await lockTransaction(`enrollment:${user.id}:${course.id}`);
+
     const lesson = await queryOne(
       'SELECT l.* FROM lessons l JOIN course_modules m ON m.id = l."moduleId" WHERE l.id = $1 AND m."courseId" = $2',
       [lessonId, course.id],
@@ -112,6 +119,7 @@ async function completeLesson(user, courseIdentifier, lessonId) {
         [user.id, course.id],
       );
     }
+
     const progress = await queryOne(
       'SELECT * FROM lesson_progress WHERE "enrollmentId" = $1 AND "lessonId" = $2',
       [enrollment.id, lessonId],
@@ -128,6 +136,7 @@ async function completeLesson(user, courseIdentifier, lessonId) {
           [randomUUID(), enrollment.id, lessonId, now],
         );
     }
+
     const lessons = await queryAll(
       'SELECT l.id FROM lessons l JOIN course_modules m ON m.id = l."moduleId" WHERE m."courseId" = $1',
       [course.id],
@@ -145,14 +154,17 @@ async function completeLesson(user, courseIdentifier, lessonId) {
       : lessons.length
         ? Math.min(99, Math.round((completedCount / lessons.length) * 100))
         : 0;
+
     await execute(
       'UPDATE inscricoes SET percentagem_progresso = $1, concluido_em = $2, id_ultima_aula = $3 WHERE id = $4',
       [percent, percent === 100 ? now : null, lessonId, enrollment.id],
     );
+
     const certificate =
       allCompleted && (await eligibleForCertificate(user.id, course.id))
         ? await issueCertificate(user.id, course.id)
         : null;
+
     return {
       certificate,
       enrollment: {
@@ -168,6 +180,7 @@ async function completeLesson(user, courseIdentifier, lessonId) {
     };
   });
 }
+
 exports.eligibleForCertificate = eligibleForCertificate;
 exports.issueCertificate = issueCertificate;
 exports.completeLesson = completeLesson;

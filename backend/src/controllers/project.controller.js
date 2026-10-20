@@ -10,6 +10,7 @@ const {
 const { completeLesson } = require('../services/progress.js');
 const getProjectReviews = async (req, res) => {
   const rows = await Project.listSubmissoesProjeto([req.user.id, req.user.role === 'ADMIN']);
+
   return res.json(
     await asyncFilter(
       rows,
@@ -17,6 +18,7 @@ const getProjectReviews = async (req, res) => {
     ),
   );
 };
+
 const putProjectReviewsById = async (req, res) => {
   const row = await Project.findSubmissoesProjetoById([req.params.id]);
   const lesson = row && (await lessonWithCourse(row.id_aula));
@@ -55,11 +57,13 @@ const putProjectReviewsById = async (req, res) => {
         lesson.id,
       );
   });
+
   return res.json({
     status: req.body.status,
     feedback: req.body.feedback.trim(),
   });
 };
+
 const getProjectLessonById = async (req, res) => {
   const lesson = await lessonWithCourse(req.params.id);
   if (!lesson || lesson.type !== 'project')
@@ -70,10 +74,12 @@ const getProjectLessonById = async (req, res) => {
     return res.status(403).json({
       error: 'Sem acesso ao projeto.',
     });
+
   return res.json(
     (await Project.findSubmissoesProjetoByIdUtilizadorAndIdAula([req.user.id, lesson.id])) || null,
   );
 };
+
 const postProjectLessonById = async (req, res) => {
   const lesson = await lessonWithCourse(req.params.id);
   if (!lesson || lesson.type !== 'project')
@@ -92,6 +98,7 @@ const postProjectLessonById = async (req, res) => {
       error: 'Use um link http ou https para o seu projeto.',
     });
   }
+
   if (
     !['https:', 'http:'].includes(url.protocol) ||
     url.username ||
@@ -102,6 +109,7 @@ const postProjectLessonById = async (req, res) => {
       error: 'Link de projeto inválido.',
     });
   const id = randomUUID();
+
   await Project.insertSubmissoesProjeto([
     id,
     req.user.id,
@@ -109,6 +117,7 @@ const postProjectLessonById = async (req, res) => {
     url.href,
     new Date().toISOString(),
   ]);
+
   return res.status(201).json({
     id,
     url: url.href,
@@ -116,6 +125,7 @@ const postProjectLessonById = async (req, res) => {
     feedback: '',
   });
 };
+
 exports.getProjectReviews = getProjectReviews;
 exports.putProjectReviewsById = putProjectReviewsById;
 exports.getProjectLessonById = getProjectLessonById;

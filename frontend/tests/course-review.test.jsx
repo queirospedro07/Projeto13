@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import CourseReview from '../src/components/CourseReview/CourseReview';
 
 afterEach(cleanup);
+
 const course = {
   id: 'pending',
   title: 'Curso para revisão',
@@ -42,6 +43,7 @@ const course = {
     },
   ],
 };
+
 function show(props = {}) {
   render(
     <MemoryRouter>
@@ -55,10 +57,14 @@ function show(props = {}) {
     </MemoryRouter>,
   );
 }
+
 it('permite rever as aulas e só aprovar após confirmação explícita', async () => {
   const onApprove = vi.fn();
+
   show({ onApprove });
+
   const approve = await screen.findByRole('button', { name: 'Aprovar e publicar' });
+
   expect(approve.disabled).toBe(true);
   expect(screen.getByText('Texto para o administrador rever.')).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: /Aula com questionário/ }));
@@ -70,8 +76,11 @@ it('permite rever as aulas e só aprovar após confirmação explícita', async 
 });
 it('permite pedir alterações e impede aprovar um curso sem aulas', async () => {
   const onRequestChanges = vi.fn();
+
   show({ course: { ...course, modules: [] }, onRequestChanges });
+
   const approve = await screen.findByRole('button', { name: 'Aprovar e publicar' });
+
   fireEvent.click(screen.getByRole('checkbox'));
   expect(approve.disabled).toBe(true);
   fireEvent.click(screen.getByRole('button', { name: 'Pedir alterações' }));
@@ -79,6 +88,7 @@ it('permite pedir alterações e impede aprovar um curso sem aulas', async () =>
 });
 it('não disponibiliza a aprovação quando o carregamento falha', async () => {
   const onRetry = vi.fn();
+
   show({ error: true, onRetry });
   fireEvent.click(await screen.findByRole('button', { name: 'Tentar novamente' }));
   expect(onRetry).toHaveBeenCalledOnce();

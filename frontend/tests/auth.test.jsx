@@ -7,6 +7,7 @@ import { api, getAuthToken, setAuthToken } from '../src/services/api';
 const { auth } = vi.hoisted(() => ({
   auth: { user: null, isLoading: false, sessionError: '', retrySession: vi.fn() },
 }));
+
 vi.mock('../src/context/AuthContext', () => ({ useAuth: () => auth }));
 beforeEach(() => {
   Object.assign(auth, { user: null, isLoading: false, sessionError: '' });
@@ -15,6 +16,7 @@ beforeEach(() => {
   sessionStorage.clear();
 });
 afterEach(cleanup);
+
 function show(requiredRole) {
   render(
     <MemoryRouter initialEntries={['/private']}>
@@ -27,13 +29,23 @@ function show(requiredRole) {
             </ProtectedRoute>
           }
         />
-        <Route path="/login" element={<p>Iniciar sessão</p>} />
-        <Route path="/dashboard" element={<p>Painel do aluno</p>} />
-        <Route path="/creator/apply" element={<p>Candidatura a formador</p>} />
+        <Route
+          path="/login"
+          element={<p>Iniciar sessão</p>}
+        />
+        <Route
+          path="/dashboard"
+          element={<p>Painel do aluno</p>}
+        />
+        <Route
+          path="/creator/apply"
+          element={<p>Candidatura a formador</p>}
+        />
       </Routes>
     </MemoryRouter>,
   );
 }
+
 it('redireciona visitantes para o login sem apresentar conteúdo privado', () => {
   show();
   expect(screen.getByText('Iniciar sessão')).toBeTruthy();
@@ -68,10 +80,13 @@ it('envia o JWT em Authorization e mantém a preferência de persistência', asy
   expect(localStorage.getItem('nexo_token')).toBeNull();
   setAuthToken('persistent-jwt', true);
   expect(sessionStorage.getItem('nexo_token')).toBeNull();
+
   let authorization;
+
   await api.get('/auth/me', {
     adapter: async (config) => {
       authorization = config.headers.Authorization;
+
       return { data: {}, status: 200, statusText: 'OK', headers: {}, config };
     },
   });
@@ -80,8 +95,10 @@ it('envia o JWT em Authorization e mantém a preferência de persistência', asy
 it('preserva o JWT quando há falhas do serviço e remove-o quando a sessão é inválida', async () => {
   window.history.replaceState({}, '', '/login');
   setAuthToken('jwt', true);
+
   const rejected = (status) => (config) =>
     Promise.reject({ response: { status, data: { message: 'Erro de teste' } }, config });
+
   await expect(api.get('/auth/me', { adapter: rejected(503) })).rejects.toMatchObject({
     status: 503,
   });

@@ -168,4 +168,5 @@ const helpFaq = [
     ],
   },
 ];
+
 exports.helpFaq = helpFaq;

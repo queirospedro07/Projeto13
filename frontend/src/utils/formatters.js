@@ -1,18 +1,23 @@
 export const formatDuration = (seconds) => {
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
+
   return `${m}:${s < 10 ? '0' : ''}${s}`;
 };
+
 export const formatBytes = (bytes) => {
   if (!bytes || bytes === 0) return '0 B';
   const k = 1024;
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
+
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 };
+
 export const formatXP = (xp) => {
   return `${(xp || 0).toLocaleString('pt-PT')} XP`;
 };
+
 export const formatDifficulty = (difficulty) => {
   switch (difficulty?.toLowerCase()) {
     case 'beginner':
@@ -30,6 +35,7 @@ export const formatDifficulty = (difficulty) => {
       return difficulty || 'Geral';
   }
 };
+
 export const formatCoursePrice = (value) => {
   if (typeof value === 'object' && value !== null) {
     const rawPrice = Number(value.price ?? 0);
@@ -41,18 +47,22 @@ export const formatCoursePrice = (value) => {
       Number.isNaN(rawPrice) ||
       rawPrice <= 0;
     if (isFreeCourse) return 'Grátis';
+
     return `€${rawPrice
       .toFixed(2)
       .replace(/\.00$/, '')
       .replace(/(\.\d)0$/, '$1')}`;
   }
+
   const rawPrice = Number(value ?? 0);
   if (Number.isNaN(rawPrice) || rawPrice <= 0) return 'Grátis';
+
   return `€${rawPrice
     .toFixed(2)
     .replace(/\.00$/, '')
     .replace(/(\.\d)0$/, '$1')}`;
 };
+
 export const formatCategory = (category) => {
   if (!category) return 'Geral';
   const raw = String(category).trim();
@@ -93,6 +103,7 @@ export const formatCategory = (category) => {
       return raw;
   }
 };
+
 export const formatRole = (role) => {
   switch (String(role || '').toUpperCase()) {
     case 'ADMIN':
@@ -113,6 +124,7 @@ export const formatRole = (role) => {
       return 'Aluno';
   }
 };
+
 export const formatLessonType = (type) => {
   switch (String(type || '').toLowerCase()) {
     case 'video':
@@ -130,6 +142,7 @@ export const formatLessonType = (type) => {
       return 'Vídeo';
   }
 };
+
 export const formatRelativeTime = (isoString) => {
   if (!isoString) return '';
   const date = new Date(isoString);
@@ -143,6 +156,7 @@ export const formatRelativeTime = (isoString) => {
   if (diffHours < 24) return `Há ${diffHours}h`;
   if (diffDays === 1) return 'Ontem';
   if (diffDays < 7) return `Há ${diffDays} dias`;
+
   return date.toLocaleDateString('pt-PT', {
     day: '2-digit',
     month: '2-digit',

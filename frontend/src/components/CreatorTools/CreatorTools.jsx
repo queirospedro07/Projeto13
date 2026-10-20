@@ -4,23 +4,31 @@ import { Button } from '../Button';
 import { Select } from '../Select';
 import { safeExternalUrl } from '../../utils/safeUrl';
 import './CreatorTools.css';
+
 export function ReviewQueue() {
   const [kind, setKind] = useState('all');
   const [courseFilter, setCourseFilter] = useState('all');
   const [search, setSearch] = useState('');
-  const [items, setItems] = useState([]),
-    [error, setError] = useState(''),
-    [busy, setBusy] = useState(true),
-    [scores, setScores] = useState({}),
-    [feedback, setFeedback] = useState({});
+  const [items, setItems] = useState([]);
+  const [courseCatalog, setCourseCatalog] = useState([]);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(true);
+  const [scores, setScores] = useState({});
+  const [feedback, setFeedback] = useState({});
   const load = async () => {
     setBusy(true);
     setError('');
     try {
-      const [quizzes, projects] = await Promise.all([
+      const [quizzes, projects, catalog] = await Promise.all([
         api.get('/quizzes/reviews').then(({ data }) => data),
         api.get('/projects/reviews').then(({ data }) => data),
+        api
+          .get('/creator/courses')
+          .then(({ data }) => data)
+          .catch(() => []),
       ]);
+
+      setCourseCatalog((previous) => (catalog.length ? catalog : previous));
       setItems([
         ...quizzes.map((q) => ({
           ...q,
@@ -37,9 +45,11 @@ export function ReviewQueue() {
       setBusy(false);
     }
   };
+
   useEffect(() => {
     load();
   }, []);
+
   const review = async (item, status) => {
     if (busy) return;
     setBusy(true);
@@ -69,12 +79,14 @@ export function ReviewQueue() {
           })
           .then(({ data }) => data);
       }
+
       await load();
     } catch (e) {
       setError(e.message);
       setBusy(false);
     }
   };
+
   const normalize = (value) =>
     String(value || '')
       .normalize('NFD')
@@ -89,8 +101,16 @@ export function ReviewQueue() {
       ),
   );
   const courses = [
-    ...new Map(items.map((item) => [item.courseId, item.courseTitle || 'Curso'])).entries(),
-  ];
+    ...new Map([
+      ...items.map((item) => [item.courseId, item.courseTitle || 'Curso']),
+      ...courseCatalog.map((course) => [course.id, course.title]),
+    ]).entries(),
+  ].sort((a, b) => a[1].localeCompare(b[1], 'pt'));
+  const courseOptions =
+    courses.some(([id]) => id === courseFilter) || courseFilter === 'all'
+      ? courses
+      : [...courses, [courseFilter, 'Curso selecionado']];
+
   return (
     <section className="creator-tool">
       <header>
@@ -99,11 +119,37 @@ export function ReviewQueue() {
           <h2>Trabalhos para rever</h2>
           <p>Respostas de desenvolvimento e projetos dos seus alunos.</p>
         </div>
-        <Button variant="outline" size="sm" onClick={load} disabled={busy}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={load}
+          disabled={busy}
+        >
           Atualizar
         </Button>
       </header>
       <div className="creator-review-filters">
+        <label
+          htmlFor="review-course"
+          className="creator-review-course-filter"
+        >
+          Curso a avaliar
+          <Select
+            id="review-course"
+            value={courseFilter}
+            onChange={(event) => setCourseFilter(event.target.value)}
+          >
+            <option value="all">Todos os cursos</option>
+            {courseOptions.map(([id, title]) => (
+              <option
+                key={id}
+                value={id}
+              >
+                {title}
+              </option>
+            ))}
+          </Select>
+        </label>
         <label htmlFor="review-search">
           Pesquisar aluno ou trabalho
           <input
@@ -116,41 +162,41 @@ export function ReviewQueue() {
         </label>
         <label htmlFor="review-kind">
           Tipo de trabalho
-          <select id="review-kind" value={kind} onChange={(event) => setKind(event.target.value)}>
+          <Select
+            id="review-kind"
+            value={kind}
+            onChange={(event) => setKind(event.target.value)}
+          >
             <option value="all">Todos</option>
             <option value="project">Projetos</option>
             <option value="quiz">Questionários</option>
-          </select>
-        </label>
-        <label htmlFor="review-course">
-          Curso
-          <select
-            id="review-course"
-            value={courseFilter}
-            onChange={(event) => setCourseFilter(event.target.value)}
-          >
-            <option value="all">Todos os cursos</option>
-            {courses.map(([id, title]) => (
-              <option key={id} value={id}>
-                {title}
-              </option>
-            ))}
-          </select>
+          </Select>
         </label>
       </div>
-      {!busy && <p>{filtered.length} trabalho(s) pendente(s) neste filtro.</p>}
+      {!busy && !error && (
+        <p role="status">
+          {filtered.length} {filtered.length === 1 ? 'trabalho pendente' : 'trabalhos pendentes'}{' '}
+          {courseFilter === 'all' ? 'em todos os cursos' : 'no curso selecionado'}.
+        </p>
+      )}
       {error && (
-        <p role="alert" className="creator-tool-error">
+        <p
+          role="alert"
+          className="creator-tool-error"
+        >
           {error}
         </p>
       )}
       {!filtered.length && !error && (
         <p role="status">
-          {busy ? 'A carregar…' : 'Não existem trabalhos pendentes de avaliação.'}
+          {busy ? 'A carregar…' : 'Não existem trabalhos pendentes para os filtros selecionados.'}
         </p>
       )}
       {filtered.map((item) => (
-        <article key={`${item.kind}:${item.id}`} className="creator-review">
+        <article
+          key={`${item.kind}:${item.id}`}
+          className="creator-review"
+        >
           <h3>{item.lessonTitle}</h3>
           <p>
             {item.studentName} · {item.kind === 'quiz' ? 'Questionário' : 'Projeto'}
@@ -196,13 +242,21 @@ export function ReviewQueue() {
                   }))
                 }
               />
-              <Button size="sm" onClick={() => review(item)} disabled={busy}>
+              <Button
+                size="sm"
+                onClick={() => review(item)}
+                disabled={busy}
+              >
                 Guardar avaliação
               </Button>
             </>
           ) : (
             <>
-              <a href={safeExternalUrl(item.url)} target="_blank" rel="noopener noreferrer">
+              <a
+                href={safeExternalUrl(item.url)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 Abrir projeto
               </a>
               <label htmlFor={`feedback-${item.id}`}>Parecer para o aluno</label>
@@ -219,7 +273,11 @@ export function ReviewQueue() {
                 }
               />
               <div className="creator-tool-actions">
-                <Button size="sm" onClick={() => review(item, 'APPROVED')} disabled={busy}>
+                <Button
+                  size="sm"
+                  onClick={() => review(item, 'APPROVED')}
+                  disabled={busy}
+                >
                   Aprovar projeto
                 </Button>
                 <Button
@@ -238,15 +296,18 @@ export function ReviewQueue() {
     </section>
   );
 }
+
 export function CourseAccessManager() {
-  const [courses, setCourses] = useState([]),
-    [courseId, setCourseId] = useState(''),
-    [identifier, setIdentifier] = useState(''),
-    [busy, setBusy] = useState(false),
-    [message, setMessage] = useState(''),
-    [error, setError] = useState('');
+  const [courses, setCourses] = useState([]);
+  const [courseId, setCourseId] = useState('');
+  const [identifier, setIdentifier] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+
   useEffect(() => {
     let active = true;
+
     api
       .get('/creator/courses')
       .then(({ data }) => data)
@@ -259,10 +320,12 @@ export function CourseAccessManager() {
       .catch((e) => {
         if (active) setError(e.message);
       });
+
     return () => {
       active = false;
     };
   }, []);
+
   const submit = async (e) => {
     e.preventDefault();
     setBusy(true);
@@ -282,6 +345,7 @@ export function CourseAccessManager() {
       setBusy(false);
     }
   };
+
   return (
     <section className="creator-tool">
       <header>
@@ -295,13 +359,19 @@ export function CourseAccessManager() {
         </div>
       </header>
       {error && (
-        <p className="creator-tool-error" role="alert">
+        <p
+          className="creator-tool-error"
+          role="alert"
+        >
           {error}
         </p>
       )}
       {message && <p role="status">{message}</p>}
       {courses.length > 0 ? (
-        <form className="creator-access-form" onSubmit={submit}>
+        <form
+          className="creator-access-form"
+          onSubmit={submit}
+        >
           <label htmlFor="access-course">
             Curso
             <Select
@@ -311,7 +381,10 @@ export function CourseAccessManager() {
               disabled={busy}
             >
               {courses.map((c) => (
-                <option key={c.id} value={c.id}>
+                <option
+                  key={c.id}
+                  value={c.id}
+                >
                   {c.title}
                 </option>
               ))}
@@ -328,7 +401,10 @@ export function CourseAccessManager() {
               disabled={busy}
             />
           </label>
-          <Button type="submit" isLoading={busy}>
+          <Button
+            type="submit"
+            isLoading={busy}
+          >
             Conceder acesso
           </Button>
         </form>

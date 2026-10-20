@@ -12,11 +12,14 @@ function isSafeImage(value, { allowEmpty = true } = {}) {
       return bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
     if (match[1].toLowerCase() === 'jpeg')
       return bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255;
+
     return bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP';
   }
+
   if (value.startsWith('/') && !value.startsWith('//') && !value.includes('\\')) return true;
   try {
     const url = new URL(value);
+
     return (
       ['http:', 'https:'].includes(url.protocol) &&
       !url.username &&
@@ -27,6 +30,7 @@ function isSafeImage(value, { allowEmpty = true } = {}) {
     return false;
   }
 }
+
 function isSafeBanner(value) {
   return (
     isSafeImage(value) ||
@@ -36,6 +40,7 @@ function isSafeBanner(value) {
         /^(rgb|hsl)a?\([\d\s.,%/+-]+\)$/i.test(value)))
   );
 }
+
 function validateCourseBody(req, res, next) {
   const body = req.body || {};
   if (
@@ -113,6 +118,7 @@ function validateCourseBody(req, res, next) {
         error: 'Dados de curso inválidos.',
       });
   }
+
   for (const key of ['learningOutcomes', 'requirements'])
     if (
       body[key] !== undefined &&
@@ -126,6 +132,7 @@ function validateCourseBody(req, res, next) {
   const safeUrl = (value) => {
     try {
       const url = new URL(value);
+
       return (
         ['http:', 'https:'].includes(url.protocol) &&
         !url.username &&
@@ -136,6 +143,7 @@ function validateCourseBody(req, res, next) {
       return false;
     }
   };
+
   const lessons = (body.modules || []).flatMap((module) => module.lessons);
   for (const list of [body.modules || [], lessons, body.channels || []]) {
     if (!Array.isArray(list)) continue;
@@ -148,6 +156,7 @@ function validateCourseBody(req, res, next) {
         error: 'Os identificadores dos módulos, aulas e canais devem ser válidos e únicos.',
       });
   }
+
   if (
     lessons.length > 500 ||
     lessons.some(
@@ -222,6 +231,7 @@ function validateCourseBody(req, res, next) {
           error: 'Use PDF, TXT, JPG, PNG ou WebP, ou uma ligação http/https.',
         });
       const bytes = Buffer.from(match[3], 'base64');
+
       total += bytes.length;
       if (
         bytes.length > 2 * 1024 * 1024 ||
@@ -234,8 +244,10 @@ function validateCourseBody(req, res, next) {
         });
     }
   }
+
   return next();
 }
+
 exports.isSafeImage = isSafeImage;
 exports.isSafeBanner = isSafeBanner;
 exports.validateCourseBody = validateCourseBody;

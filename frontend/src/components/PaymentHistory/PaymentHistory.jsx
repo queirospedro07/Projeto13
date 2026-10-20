@@ -2,17 +2,21 @@ import { useEffect, useState } from 'react';
 import { api } from '../../services/api';
 import { Button } from '../Button';
 import './PaymentHistory.css';
+
 const methods = {
   card: 'Cartão',
   mbway: 'MB WAY',
   multibanco: 'Multibanco',
 };
+
 export function PaymentHistory() {
   const [payments, setPayments] = useState([]);
   const [status, setStatus] = useState('loading');
   const [revision, setRevision] = useState(0);
+
   useEffect(() => {
     let active = true;
+
     api
       .get('/payments')
       .then(({ data }) => data)
@@ -25,12 +29,17 @@ export function PaymentHistory() {
       .catch(() => {
         if (active) setStatus('error');
       });
+
     return () => {
       active = false;
     };
   }, [revision]);
+
   return (
-    <section className="payment-history" aria-label="Histórico de pagamentos">
+    <section
+      className="payment-history"
+      aria-label="Histórico de pagamentos"
+    >
       <h3>Pagamentos</h3>
       <p>Consulte os pagamentos associados à sua conta.</p>
       {status === 'loading' && <p role="status">A carregar…</p>}
