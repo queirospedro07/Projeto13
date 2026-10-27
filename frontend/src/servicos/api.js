@@ -12,7 +12,7 @@ const API_BASE = resolverApiBase(ambienteApiUrl);
 // Instância HTTP partilhada pela aplicação.
 export const api = axios.create({
   baseURL: API_BASE,
-  timeout: 15000,
+  timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -69,10 +69,12 @@ api.interceptors.response.use(
     }
 
     const mensagem =
-      erro.response?.data?.message ||
-      erro.response?.data?.error ||
-      erro.message ||
-      'Erro no pedido';
+      erro.code === 'ECONNABORTED'
+        ? 'O servidor está a iniciar (acordar do plano gratuito). Por favor tente novamente dentro de instantes.'
+        : erro.response?.data?.message ||
+          erro.response?.data?.error ||
+          erro.message ||
+          'Erro no pedido';
     const requestErro = new Error(mensagem);
 
     requestErro.status = erro.response?.status;
