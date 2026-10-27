@@ -91,15 +91,13 @@ const corsMiddleware = cors({
     if (isOrigemPermitido(origem)) {
       funcaoRetorno(null, true);
     } else {
-      const erro = new Error('Origem não autorizada.');
-
-      erro.status = 403;
-      funcaoRetorno(erro);
+      funcaoRetorno(null, false);
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  optionsSuccessStatus: 200,
   maxAge: 86400,
 });
 const socketCorsConfig = {

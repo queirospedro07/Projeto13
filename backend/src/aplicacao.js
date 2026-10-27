@@ -38,6 +38,7 @@ if (process.env.NODE_ENV === 'production' && !process.env.CLIENT_URL && !process
 // Middlewares de segurança e parsing
 aplicacao.use(helmetMiddleware);
 aplicacao.use(corsMiddleware);
+aplicacao.options('*', corsMiddleware);
 aplicacao.use(['/api', '/autenticacao', '/auth', '/cursos', '/courses', '/pagamentos', '/payments', '/questionarios', '/quizzes', '/projetos', '/projects', '/espacos', '/spaces', '/conversas', '/mensagens', '/formador', '/creator', '/administracao', '/admin', '/notas', '/notes', '/certificados', '/certificates', '/notificacoes', '/notifications', '/social', '/ajuda', '/help'], apiLimiter);
 aplicacao.use(
   [
