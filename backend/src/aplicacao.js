@@ -38,19 +38,29 @@ if (process.env.NODE_ENV === 'production' && !process.env.CLIENT_URL && !process
 // Middlewares de segurança e parsing
 aplicacao.use(helmetMiddleware);
 aplicacao.use(corsMiddleware);
-aplicacao.use('/api', apiLimiter);
+aplicacao.use(['/api', '/autenticacao', '/auth', '/cursos', '/courses', '/pagamentos', '/payments', '/questionarios', '/quizzes', '/projetos', '/projects', '/espacos', '/spaces', '/conversas', '/mensagens', '/formador', '/creator', '/administracao', '/admin', '/notas', '/notes', '/certificados', '/certificates', '/notificacoes', '/notifications', '/social', '/ajuda', '/help'], apiLimiter);
 aplicacao.use(
   [
     '/api/auth/entrar',
     '/api/auth/login',
     '/api/autenticacao/entrar',
     '/api/autenticacao/login',
+    '/auth/entrar',
+    '/auth/login',
+    '/autenticacao/entrar',
+    '/autenticacao/login',
     '/api/auth/registar',
     '/api/auth/register',
     '/api/autenticacao/registar',
     '/api/autenticacao/register',
+    '/auth/registar',
+    '/auth/register',
+    '/autenticacao/registar',
+    '/autenticacao/register',
     '/api/auth/demo',
     '/api/autenticacao/demo',
+    '/auth/demo',
+    '/autenticacao/demo',
   ],
   autenticacaoLimiter,
 );
@@ -68,7 +78,7 @@ aplicacao.use(
 aplicacao.use(higienizarInputs);
 
 // Rota de estado do servidor
-aplicacao.get(['/api/estado', '/api/health'], async (_Pedido, resposta) => {
+aplicacao.get(['/api/estado', '/api/health', '/estado', '/health'], async (_Pedido, resposta) => {
   try {
     await consultarUm('SELECT 1 AS available');
     resposta.json({
@@ -87,28 +97,28 @@ aplicacao.get(['/api/estado', '/api/health'], async (_Pedido, resposta) => {
 });
 
 // Servidores STUN para chamadas WebRTC
-aplicacao.get(['/api/servidores-ice', '/api/ice-servers'], autenticar, (pedido, resposta) => {
+aplicacao.get(['/api/servidores-ice', '/api/ice-servers', '/servidores-ice', '/ice-servers'], autenticar, (pedido, resposta) => {
   resposta.setHeader('Cache-Control', 'no-store');
   resposta.json({
     iceServers: obterServidoresIce(),
   });
 });
 
-// Rotas da API
-aplicacao.use(['/api/autenticacao', '/api/auth'], autenticacaoRotas);
-aplicacao.use(['/api/cursos', '/api/courses'], cursoRotas);
-aplicacao.use(['/api/pagamentos', '/api/payments'], pagamentoRotas);
-aplicacao.use(['/api/questionarios', '/api/quizzes'], questionarioRotas);
-aplicacao.use(['/api/projetos', '/api/projects'], projetoRotas);
-aplicacao.use(['/api/espacos', '/api/spaces'], espacoRotas);
-aplicacao.use('/api', conversaRotas);
-aplicacao.use(['/api/formador', '/api/creator'], formadorRotas);
-aplicacao.use(['/api/administracao', '/api/admin'], administracaoRotas);
-aplicacao.use(['/api/notas', '/api/notes'], notasRotas);
-aplicacao.use(['/api/certificados', '/api/certificates'], certificadoRotas);
-aplicacao.use(['/api/notificacoes', '/api/notifications'], notificacaoRotas);
-aplicacao.use('/api/social', socialRotas);
-aplicacao.use(['/api/ajuda', '/api/help'], ajudaRotas);
+// Rotas da API (suporta prefixos /api e chamadas diretas)
+aplicacao.use(['/api/autenticacao', '/api/auth', '/autenticacao', '/auth'], autenticacaoRotas);
+aplicacao.use(['/api/cursos', '/api/courses', '/cursos', '/courses'], cursoRotas);
+aplicacao.use(['/api/pagamentos', '/api/payments', '/pagamentos', '/payments'], pagamentoRotas);
+aplicacao.use(['/api/questionarios', '/api/quizzes', '/questionarios', '/quizzes'], questionarioRotas);
+aplicacao.use(['/api/projetos', '/api/projects', '/projetos', '/projects'], projetoRotas);
+aplicacao.use(['/api/espacos', '/api/spaces', '/espacos', '/spaces'], espacoRotas);
+aplicacao.use(['/api', '/'], conversaRotas);
+aplicacao.use(['/api/formador', '/api/creator', '/formador', '/creator'], formadorRotas);
+aplicacao.use(['/api/administracao', '/api/admin', '/administracao', '/admin'], administracaoRotas);
+aplicacao.use(['/api/notas', '/api/notes', '/notas', '/notes'], notasRotas);
+aplicacao.use(['/api/certificados', '/api/certificates', '/certificados', '/certificates'], certificadoRotas);
+aplicacao.use(['/api/notificacoes', '/api/notifications', '/notificacoes', '/notifications'], notificacaoRotas);
+aplicacao.use(['/api/social', '/social'], socialRotas);
+aplicacao.use(['/api/ajuda', '/api/help', '/ajuda', '/help'], ajudaRotas);
 aplicacao.use((pedido, resposta) => {
   resposta.status(404).json({
     message: 'Rota não encontrada',

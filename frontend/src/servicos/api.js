@@ -1,7 +1,13 @@
 import axios from 'axios';
 
+function resolverApiBase(url) {
+  if (!url) return '/api';
+  const limpo = url.trim().replace(/\/+$/, '');
+  return limpo.endsWith('/api') ? limpo : `${limpo}/api`;
+}
+
 const ambienteApiUrl = import.meta.env?.VITE_API_URL;
-const API_BASE = ambienteApiUrl ? `${ambienteApiUrl.replace(/\/$/, '')}` : '/api';
+const API_BASE = resolverApiBase(ambienteApiUrl);
 
 // Instância HTTP partilhada pela aplicação.
 export const api = axios.create({
