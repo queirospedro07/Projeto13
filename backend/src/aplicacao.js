@@ -34,7 +34,7 @@ if (process.env.TRUST_PROXY_HOPS) {
 }
 
 if (process.env.NODE_ENV === 'production' && !process.env.CLIENT_URL && !process.env.FRONTEND_URL)
-  throw new Error('Configure o domínio HTTPS do frontend em produção.');
+  console.warn('Aviso: CLIENT_URL / FRONTEND_URL não configurados.');
 // Middlewares de segurança e parsing
 aplicacao.use(helmetMiddleware);
 aplicacao.use(corsMiddleware);

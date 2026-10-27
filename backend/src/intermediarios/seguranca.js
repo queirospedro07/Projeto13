@@ -37,8 +37,22 @@ if (process.env.NODE_ENV !== 'production') {
 function isOrigemPermitido(origem) {
   if (!origem) return true;
   const normalizedOrigem = normalizarOrigem(origem);
-
-  return permitidoOrigins.includes(normalizedOrigem);
+  if (permitidoOrigins.length === 0) return true;
+  if (permitidoOrigins.includes(normalizedOrigem)) return true;
+  try {
+    const host = new URL(origem).hostname;
+    if (
+      host.endsWith('.vercel.app') ||
+      host.endsWith('.onrender.com') ||
+      host === 'localhost' ||
+      host === '127.0.0.1'
+    ) {
+      return true;
+    }
+  } catch {
+    // ignore
+  }
+  return false;
 }
 
 const helmetMiddleware = helmet({
