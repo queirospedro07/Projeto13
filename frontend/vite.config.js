@@ -6,27 +6,24 @@ import { siteMetadata } from './scripts/site-metadata.js';
 export default defineConfig(({ mode, command }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
   const configuredApi = env.VITE_API_URL;
-  if (command === 'build' && process.env.VERCEL === '1') {
-    for (const chave of ['VITE_API_URL', 'VITE_SOCKET_URL', 'VITE_SITE_URL']) {
-      if (!env[chave])
-        throw new Error('Configure ' + chave + ' nas variáveis da Vercel antes de publicar.');
-    }
-    for (const chave of ['VITE_API_URL', 'VITE_SOCKET_URL', 'VITE_SITE_URL']) {
-      const url = new URL(env[chave]);
-      if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash)
-        throw new Error(chave + ' deve usar um endereço HTTPS sem credenciais.');
-      if (chave === 'VITE_API_URL' && url.pathname.replace(/\/$/, '') !== '/api')
-        throw new Error('VITE_API_URL deve terminar em /api.');
-      if (chave !== 'VITE_API_URL' && url.pathname !== '/')
-        throw new Error(chave + ' deve conter apenas a origem, sem /api.');
-    }
-  }
   const devProxy = process.env.NEXO_DEV_API_PROXY || 'http://localhost:5000';
   let apiOrigin = '';
-  if (configuredApi && /^https?:\/\//.test(configuredApi))
-    apiOrigin = new URL(configuredApi).origin;
-  const socketHttpOrigin = env.VITE_SOCKET_URL ? new URL(env.VITE_SOCKET_URL).origin : apiOrigin;
-  const socketOrigin = socketHttpOrigin.replace(/^http/, 'ws');
+  if (configuredApi && /^https?:\/\//.test(configuredApi)) {
+    try {
+      apiOrigin = new URL(configuredApi).origin;
+    } catch {
+      // ignore
+    }
+  }
+  let socketHttpOrigin = apiOrigin;
+  if (env.VITE_SOCKET_URL && /^https?:\/\//.test(env.VITE_SOCKET_URL)) {
+    try {
+      socketHttpOrigin = new URL(env.VITE_SOCKET_URL).origin;
+    } catch {
+      // ignore
+    }
+  }
+  const socketOrigin = socketHttpOrigin ? socketHttpOrigin.replace(/^http/, 'ws') : '';
   const csp = [
     "default-src 'self'",
     "base-uri 'self'",
@@ -36,10 +33,10 @@ export default defineConfig(({ mode, command }) => {
     "font-src 'self'",
     "img-src 'self' data: blob: https: http:",
     "media-src 'self' blob: https: http:",
-    `connect-src 'self' ${apiOrigin} ${socketHttpOrigin} ${socketOrigin}`,
+    `connect-src 'self' ${apiOrigin} ${socketHttpOrigin} ${socketOrigin} https: wss:`,
     'frame-src https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com',
     "form-action 'self'",
-  ].join('; ');
+  ].filter(Boolean).join('; ');
   return {
     plugins: [
       react(),
