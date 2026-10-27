@@ -1,8 +1,2 @@
 User-agent: *
-Allow: /
-Disallow: /admin
-Disallow: /creator/dashboard
-Disallow: /settings
-Disallow: /messages
-
-Sitemap: https://nexo.pt/sitemap.xml
+Disallow: /

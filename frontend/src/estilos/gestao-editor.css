@@ -1,0 +1,1183 @@
+/* Editor e administração usam os mesmos materiais da aplicação. */
+@layer overrides {
+  :root .interface-interna .course-builder-panel-21 {
+    background: transparent;
+    color: var(--interface-texto);
+    min-height: 0;
+    padding-bottom: 40px;
+  }
+  :root .interface-interna .course-builder-header {
+    position: static;
+    background: transparent;
+    backdrop-filter: none;
+    border-color: var(--interface-linha);
+    padding: 28px 32px 24px;
+  }
+  :root .interface-interna .course-builder-panel-22 {
+    max-width: 1180px;
+    gap: 20px;
+  }
+  :root .interface-interna .course-builder-title {
+    font-size: clamp(24px, 2.2vw, 30px);
+    font-weight: 600;
+    letter-spacing: -0.025em;
+  }
+  :root .interface-interna .course-builder-description-5 {
+    font-size: 13px;
+    line-height: 1.6;
+    margin-top: 6px;
+    color: var(--text-secondary);
+  }
+  :root .interface-interna .course-builder-main {
+    max-width: 1244px;
+    padding: 28px 32px;
+  }
+  .editor-workspace {
+    display: grid;
+    grid-template-columns: 205px minmax(0, 1fr);
+    align-items: start;
+    gap: 32px;
+  }
+  .editor-content {
+    min-width: 0;
+  }
+  :root .interface-interna .course-builder-navigation {
+    position: sticky;
+    top: 88px;
+    margin: 0;
+  }
+  .editor-nav-title {
+    padding: 0 12px;
+    margin: 0 0 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+  :root .interface-interna .course-builder-panel-26 {
+    display: grid;
+    grid-template-columns: 1fr;
+    max-width: none;
+    border: 0;
+    padding: 0;
+    gap: 6px;
+    background: transparent;
+    box-shadow: none;
+  }
+  :root .interface-interna .course-builder-button-12 {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 12px;
+    border: 0;
+    border-radius: 8px;
+    text-align: left;
+    box-shadow: none;
+  }
+  :root .interface-interna .course-builder-button-13 {
+    color: var(--interface-destaque);
+    background: var(--interface-selecao);
+  }
+  :root .interface-interna .course-builder-button-14 {
+    background: transparent;
+    color: var(--text-secondary);
+  }
+  :root .interface-interna .course-builder-button-14:hover {
+    background: var(--interface-selecao);
+    color: var(--interface-destaque);
+  }
+  .editor-step-number {
+    padding-top: 1px;
+    font-size: 12px;
+    line-height: 20px;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.7;
+  }
+  .editor-step-text {
+    display: grid;
+    gap: 4px;
+  }
+  .editor-step-text strong {
+    font-size: 13px;
+    line-height: 20px;
+    font-weight: 500;
+  }
+  .editor-step-text small {
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+  :root .interface-interna .course-builder-panel-27 {
+    gap: 20px;
+    animation: none;
+  }
+  :root
+    .interface-interna
+    .editor-content
+    :is(.course-builder-card, .course-builder-card-2, .course-builder-card-3) {
+    padding: 24px;
+    gap: 24px;
+    background: var(--interface-superficie);
+    border: 1px solid var(--interface-linha);
+    border-radius: 10px;
+    box-shadow: none;
+  }
+  :root .interface-interna .editor-content :is(.course-builder-heading, .course-builder-heading-2) {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: -0.015em;
+  }
+  :root
+    .interface-interna
+    .editor-content
+    :is(.course-builder-heading, .course-builder-heading-2)
+    > svg {
+    display: none;
+  }
+  :root .interface-interna .editor-content .course-builder-description-6 {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    margin-top: 6px;
+  }
+  :root .interface-interna .editor-content .course-builder-panel-29 {
+    gap: 20px;
+  }
+  :root .interface-interna .editor-content :is(.course-builder-panel-30, .course-builder-panel-31) {
+    gap: 8px;
+  }
+  :root .interface-interna .editor-content .course-builder-field-label-2 {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--interface-texto);
+  }
+  :root .interface-interna .editor-content .course-builder-field-7 {
+    padding: 11px 12px;
+    line-height: 1.5;
+    background: var(--interface-superficie);
+    color: var(--interface-texto);
+  }
+  :root .interface-interna .editor-content textarea.course-builder-field-7 {
+    min-height: 120px;
+    resize: vertical;
+  }
+  :root .interface-interna .editor-content .course-builder-panel-84 {
+    background: transparent;
+    border: 0;
+    border-left: 1px solid var(--interface-linha);
+    border-radius: 0;
+    padding: 8px 16px;
+  }
+  :root .interface-interna .editor-content .course-builder-label-20 {
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+    color: var(--text-secondary);
+  }
+  :root .interface-interna .editor-content .course-builder-description-14 {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--interface-texto);
+  }
+  :root .interface-interna .area-administracao {
+    --gestao-texto: var(--interface-texto);
+    --gestao-linha: var(--interface-linha);
+    --gestao-fundo: var(--interface-superficie);
+    --gestao-secundario: var(--text-secondary);
+    --gestao-suave: var(--interface-selecao);
+    --gestao-hover: var(--interface-selecao);
+    max-width: 1180px;
+    gap: 24px;
+  }
+  :root .interface-interna .area-administracao .admin-dashboard-panel-4 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    border-bottom: 1px solid var(--interface-linha);
+  }
+  :root .interface-interna .area-administracao .admin-dashboard-button-2 {
+    padding: 12px 0;
+    border-radius: 0;
+    box-shadow: none;
+    font-size: 13px;
+  }
+  :root .interface-interna .area-administracao .admin-dashboard-button-3 {
+    color: var(--interface-destaque);
+    border-color: var(--interface-azul);
+    background: transparent;
+  }
+  :root .interface-interna .area-administracao .admin-dashboard-button-4:hover {
+    color: var(--interface-destaque);
+  }
+  :root
+    .area-administracao
+    :is(.admin-dashboard-panel-18, .admin-dashboard-panel-33, .admin-dashboard-panel-41) {
+    border: 1px solid var(--interface-linha);
+    border-radius: 10px;
+    background: var(--interface-superficie);
+    box-shadow: none;
+  }
+  :root
+    .interface-interna
+    .area-administracao
+    :is(.admin-dashboard-panel-19, .admin-dashboard-panel-47) {
+    padding: 18px 20px;
+    border-color: var(--interface-linha);
+    background: transparent;
+  }
+  :root .interface-interna .area-administracao .admin-dashboard-panel-33 {
+    padding: 20px;
+  }
+  :root .interface-interna .area-administracao .admin-dashboard-panel-41 {
+    padding: 20px;
+    gap: 16px;
+  }
+  :root .interface-interna .area-administracao .admin-dashboard-panel-12 {
+    border: 1px solid var(--interface-linha);
+    padding: 20px;
+    border-radius: 10px;
+    background: var(--interface-superficie);
+  }
+  :root .interface-interna .area-administracao .admin-dashboard-subheading {
+    font-size: 15px;
+    font-weight: 600;
+  }
+  :root .interface-interna .area-administracao .admin-dashboard-field {
+    background: var(--interface-superficie);
+    color: var(--interface-texto);
+    border: 1px solid var(--interface-linha);
+    border-radius: 8px;
+    font-size: 14px;
+    padding: 10px 12px;
+  }
+  :root .interface-interna .area-administracao .admin-dashboard-table {
+    font-size: 13px;
+  }
+  :root .interface-interna .area-administracao .admin-dashboard-table-head {
+    background: transparent;
+    color: var(--text-secondary);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  :root .interface-interna .area-administracao :is(th, td) {
+    padding: 14px 20px;
+    border-color: var(--interface-linha);
+  }
+  :root .interface-interna .area-administracao .admin-dashboard-panel-49 {
+    overflow-x: auto;
+  }
+  :root .interface-interna .area-administracao .admin-dashboard-label {
+    border-radius: 0;
+    background: transparent;
+    color: var(--text-secondary);
+  }
+  @media (max-width: 1050px) {
+    .editor-workspace {
+      grid-template-columns: 165px minmax(0, 1fr);
+      gap: 20px;
+    }
+    .editor-step-text small {
+      display: none;
+    }
+    :root .interface-interna .course-builder-panel-22 {
+      flex-wrap: wrap;
+    }
+  }
+  @media (max-width: 760px) {
+    :root .interface-interna .course-builder-header {
+      padding: 20px 16px;
+    }
+    :root .interface-interna .course-builder-main {
+      padding: 20px 16px;
+    }
+    .editor-workspace {
+      display: block;
+    }
+    :root .interface-interna .course-builder-navigation {
+      position: static;
+      margin-bottom: 20px;
+    }
+    .editor-nav-title {
+      display: none;
+    }
+    :root .interface-interna .course-builder-panel-26 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 4px;
+    }
+    :root .interface-interna .course-builder-button-12 {
+      padding: 10px;
+    }
+    :root
+      .editor-content
+      :is(.course-builder-card, .course-builder-card-2, .course-builder-card-3) {
+      padding: 18px;
+    }
+    :root .interface-interna .area-administracao .admin-dashboard-panel-4 {
+      gap: 16px;
+    }
+    :root .interface-interna .area-administracao :is(th, td) {
+      padding: 12px;
+    }
+  }
+}
+
+@layer overrides {
+  :root
+    .interface-interna
+    .area-administracao
+    :is(.admin-dashboard-button-7, .admin-dashboard-button-12) {
+    border-radius: 7px;
+    padding: 7px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    box-shadow: none;
+  }
+  :root .interface-interna .area-administracao .admin-dashboard-button-8 {
+    background: var(--interface-selecao);
+    color: var(--interface-destaque);
+    border-color: transparent;
+  }
+  :root
+    .interface-interna
+    .area-administracao
+    :is(.admin-dashboard-button-9, .admin-dashboard-button-13) {
+    background: transparent;
+    color: var(--text-secondary);
+  }
+  :root
+    .interface-interna
+    .area-administracao
+    :is(.admin-dashboard-button-9, .admin-dashboard-button-13):hover {
+    background: var(--interface-selecao);
+    color: var(--interface-destaque);
+  }
+  :root .interface-interna .area-administracao .gestao-metricas {
+    padding-block: 20px;
+  }
+  :root .interface-interna .area-administracao .gestao-metrica-nome {
+    font-weight: 500;
+  }
+  :root
+    .interface-interna
+    .area-administracao
+    .admin-dashboard-panel-14
+    + .admin-dashboard-panel-14 {
+    border-top: 1px solid var(--interface-linha);
+  }
+}
+
+@layer overrides {
+  :root .interface-interna .area-formador .creator-dashboard-button {
+    padding: 9px 12px;
+    border: 1px solid var(--interface-linha);
+    border-radius: 8px;
+    background: var(--interface-superficie);
+    color: var(--interface-destaque);
+    font-weight: 500;
+  }
+  :root .interface-interna .area-formador .creator-dashboard-button:hover {
+    background: var(--interface-selecao);
+    border-color: #b4c9ed;
+  }
+  :root .interface-interna .area-formador .creator-dashboard-button-2 {
+    background: var(--interface-azul);
+    color: #fff;
+    border-color: var(--interface-azul);
+    border-radius: 8px;
+    padding: 10px 14px;
+    box-shadow: none;
+  }
+  :root .interface-interna .area-formador .creator-dashboard-button-2:hover {
+    background: var(--interface-hover);
+  }
+  :root .interface-interna .creator-reviews-page {
+    padding: 28px 0;
+    max-width: 1180px;
+  }
+  :root .interface-interna .creator-reviews-page > header > a {
+    color: var(--interface-destaque);
+    background: var(--interface-superficie);
+    border-color: var(--interface-linha);
+    border-radius: 8px;
+    font-size: 13px;
+    padding: 9px 12px;
+  }
+  :root .interface-interna .fila-avaliacoes {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+  :root .interface-interna .fila-avaliacoes > header h2 {
+    font-size: 16px;
+  }
+  :root .interface-interna .creator-review-filters {
+    background: var(--interface-superficie);
+    border: 1px solid var(--interface-linha);
+    border-radius: 10px;
+    padding: 20px;
+    gap: 16px;
+  }
+  :root .interface-interna .creator-review-filters > label {
+    font-size: 13px;
+    font-weight: 500;
+    gap: 8px;
+  }
+  :root .interface-interna .creator-review {
+    background: var(--interface-superficie);
+    border: 1px solid var(--interface-linha);
+    border-radius: 10px;
+    padding: 24px;
+    margin-top: 16px;
+    gap: 12px;
+  }
+  :root .interface-interna .creator-review .avaliacao-cabecalho {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    width: 100%;
+    margin: 0;
+  }
+  :root .interface-interna .avaliacao-cabecalho h3 {
+    font-size: 16px;
+    font-weight: 600;
+  }
+  :root .interface-interna .avaliacao-cabecalho > span {
+    color: var(--interface-destaque);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0;
+  }
+  :root .interface-interna .creator-review dl {
+    padding: 18px 0;
+    border-block: 1px solid var(--interface-linha);
+  }
+  :root .interface-interna .creator-review dt {
+    font-size: 14px;
+    font-weight: 500;
+  }
+  :root .interface-interna .creator-review dd {
+    padding: 10px 12px;
+    margin: 8px 0 16px;
+    background: var(--campo-ativo-fundo);
+    border-radius: 6px;
+    line-height: 1.7;
+  }
+  :root .interface-interna .creator-review > textarea {
+    min-height: 100px;
+    resize: vertical;
+    background: var(--interface-superficie);
+  }
+  :root .interface-interna .creator-tool-actions {
+    padding-top: 8px;
+    gap: 10px;
+  }
+  :root .interface-interna .area-alunos {
+    padding-top: 28px;
+    max-width: 1180px;
+  }
+  :root .interface-interna .area-alunos .creator-members-panel-5 {
+    border-color: var(--interface-linha);
+    gap: 24px;
+    background: transparent;
+  }
+  :root .interface-interna .area-alunos .creator-members-button-2 {
+    padding: 12px 0;
+    font-size: 13px;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  :root .interface-interna .area-alunos .creator-members-button-3 {
+    color: var(--interface-destaque);
+    border-color: var(--interface-azul);
+    background: transparent;
+  }
+  :root .interface-interna .area-alunos .creator-members-panel-6 {
+    padding: 18px 0;
+    gap: 16px;
+  }
+  :root .interface-interna .area-alunos .creator-members-panel-11 {
+    border: 1px solid var(--interface-linha);
+    border-radius: 10px;
+    padding: 0;
+    background: var(--interface-superficie);
+    overflow-x: auto;
+  }
+  :root .interface-interna .area-alunos :is(th, td) {
+    padding: 14px 18px;
+    font-size: 13px;
+    border-color: var(--interface-linha);
+  }
+  :root .interface-interna .area-alunos th {
+    color: var(--text-secondary);
+    font-weight: 500;
+    background: transparent;
+    text-transform: none;
+  }
+  :root .interface-interna .area-alunos .creator-members-panel-9 {
+    background: var(--interface-superficie);
+    border-color: var(--interface-linha);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  :root .interface-interna .area-administracao .admin-dashboard-panel-32 {
+    gap: 16px;
+  }
+  :root .interface-interna .area-administracao .admin-dashboard-panel-33:hover,
+  :root .interface-interna .area-administracao .admin-dashboard-panel-41:hover {
+    border-color: #a9c2ea;
+  }
+  :root
+    .interface-interna
+    .area-administracao
+    :is(.admin-dashboard-button-5, .admin-dashboard-button-6) {
+    color: var(--interface-destaque);
+  }
+  :root .interface-interna .area-administracao .admin-dashboard-button-5.button-variants-primary {
+    color: #fff;
+  }
+  :root .interface-interna .area-administracao .admin-dashboard-panel-3 {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  @media (max-width: 767px) {
+    :root .interface-interna .creator-review-filters {
+      grid-template-columns: minmax(0, 1fr);
+      padding: 16px;
+    }
+    :root .interface-interna .creator-review {
+      padding: 18px;
+    }
+    :root .interface-interna .area-alunos :is(th, td) {
+      padding: 12px;
+    }
+  }
+}
+
+@layer overrides {
+  :root .interface-interna .area-alunos .creator-members-panel-11 {
+    padding: 36px 20px;
+    text-align: center;
+    color: var(--text-secondary);
+  }
+  :root .interface-interna .area-alunos .creator-members-panel-12 {
+    border: 1px solid var(--interface-linha);
+    border-radius: 10px;
+    overflow-x: auto;
+    background: var(--interface-superficie);
+  }
+  :root .interface-interna .area-administracao .gestao-metricas button:hover strong {
+    color: var(--interface-destaque);
+  }
+}
+
+/* Ajustes finais de interação e superfícies. */
+@layer overrides {
+  .custom-select-empty {
+    padding: 14px 12px;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .avatar-profile-link {
+    display: inline-flex;
+    flex-shrink: 0;
+    border-radius: 50%;
+  }
+  .avatar-profile-link:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 3px;
+  }
+
+  .catalogo-precos {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+  }
+  :root .interface-interna .creator-reviews-page > header > .reviews-back-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 38px;
+    white-space: nowrap;
+    line-height: 1.3;
+    color: var(--interface-destaque);
+    padding: 10px 14px;
+    text-decoration: none;
+  }
+  :root .interface-interna .creator-reviews-page > header {
+    align-items: center;
+  }
+  :root .interface-interna .discover-spaces-panel {
+    max-width: 1180px;
+    margin: auto;
+  }
+  :root .interface-interna .discover-spaces-panel-4 {
+    padding: 20px 0;
+    border-block: 1px solid var(--interface-linha);
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  :root .interface-interna .discover-spaces-panel-5 {
+    display: grid;
+    grid-template-columns: minmax(220px, 1fr) auto;
+    align-items: end;
+    gap: 20px;
+  }
+  .catalogo-filtro {
+    display: grid;
+    gap: 7px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .catalogo-filtro .custom-select-trigger {
+    min-width: 165px;
+  }
+  :root .interface-interna .discover-spaces-panel-9 {
+    margin-top: 18px;
+    gap: 4px;
+  }
+  :root .interface-interna .discover-spaces-button-6 {
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-weight: 500;
+  }
+  :root .interface-interna .discover-spaces-panel-14 {
+    gap: 22px;
+  }
+  :root .interface-interna .discover-spaces-panel-15 {
+    border: 1px solid var(--interface-linha);
+    border-radius: 10px;
+    background: var(--interface-superficie);
+    box-shadow: none;
+  }
+  :root .interface-interna .discover-spaces-link {
+    aspect-ratio: 16 / 9;
+    border-radius: 9px 9px 0 0;
+  }
+  :root .interface-interna .discover-spaces-panel-22 {
+    padding: 18px;
+    gap: 18px;
+  }
+  :root .interface-interna .discover-spaces-subheading-2 {
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  :root .interface-interna .discover-spaces-description-4 {
+    font-size: 13px;
+    line-height: 1.7;
+    -webkit-line-clamp: 2;
+  }
+  :root .interface-interna .discover-spaces-panel-19 {
+    display: none;
+  }
+  :root .interface-interna .area-administracao .admin-dashboard-panel-17 {
+    gap: 20px;
+  }
+  :root .interface-interna .area-administracao .admin-dashboard-panel-18 {
+    border-radius: 10px;
+  }
+  :root .interface-interna .area-administracao .admin-dashboard-panel-21 {
+    padding: 16px 20px;
+  }
+  :root .interface-interna .area-administracao .admin-dashboard-button-6 {
+    color: var(--interface-destaque);
+    font-weight: 500;
+  }
+  :root .interface-interna .area-administracao .gestao-metricas {
+    border-radius: 10px;
+    padding: 22px 0;
+    background: var(--interface-superficie);
+    border: 1px solid var(--interface-linha);
+  }
+  :root .interface-interna .area-administracao .gestao-metricas > :first-child {
+    padding-left: 20px;
+  }
+  :root.dark {
+    --interface-superficie: #000;
+    --bg-card: #000;
+    --interface-linha: #262626;
+    --border-color: #262626;
+    --campo-ativo-fundo: #000;
+  }
+  :root.dark .app-shell,
+  :root.dark
+    .interface-interna
+    :is(
+      .app-layout-main,
+      .sidebar-sidebar,
+      .card-panel,
+      .area-gestao,
+      .course-builder-panel-21,
+      .creator-review,
+      .creator-review-filters,
+      .creator-members-panel-12,
+      .discover-spaces-panel-15,
+      .admin-dashboard-panel-18,
+      .admin-dashboard-panel-33,
+      .admin-dashboard-panel-41
+    ),
+  :root.dark :is(.modal-panel-4, .course-enroll-modal-panel-4, .custom-select-menu) {
+    background-color: #000;
+  }
+  :root.dark .area-gestao {
+    --gestao-fundo: #000;
+    --gestao-linha: #262626;
+  }
+  :root
+    :is(.interface-interna, .modal-panel-4, .course-enroll-modal-panel-4)
+    :is(
+      input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not(
+          [type='file']
+        ),
+      textarea,
+      select
+    ):is(:hover, :focus, :focus-visible) {
+    background-color: var(--interface-superficie);
+    box-shadow: none;
+    outline: none;
+  }
+  :root
+    :is(.interface-interna, .modal-panel-4, .course-enroll-modal-panel-4)
+    :is(
+      input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not(
+          [type='file']
+        ),
+      textarea,
+      select
+    ):is(:focus, :focus-visible) {
+    border-color: #9b9b9b;
+  }
+  :root.dark
+    .interface-interna
+    :is(input:not([type='checkbox']):not([type='radio']), textarea, select) {
+    background-color: #000;
+  }
+  @media (max-width: 850px) {
+    :root .interface-interna .discover-spaces-panel-5 {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 540px) {
+    .catalogo-filtro {
+      flex: 1;
+      min-width: 0;
+    }
+    .catalogo-filtro .custom-select-trigger {
+      min-width: 0;
+      width: 100%;
+    }
+    :root .interface-interna .discover-spaces-panel-7 {
+      flex-wrap: wrap;
+    }
+  }
+}
+
+@layer overrides {
+  :root.dark
+    :is(
+      .app-navbar,
+      .sidebar-sidebar,
+      .landing-page-panel,
+      .landing-page-section,
+      .landing-page-section-2,
+      .landing-page-section-3
+    ) {
+    background-color: #000;
+  }
+  :root.dark
+    .interface-interna
+    :is(
+      .course-player-panel,
+      .course-player-panel-2,
+      .course-player-panel-3,
+      .messages-page-sidebar,
+      .space-chat-panel,
+      .settings-page-panel
+    ) {
+    background-color: #000;
+  }
+  :root.dark .interface-interna .help-center-search:focus-within {
+    background-color: #000;
+    box-shadow: none;
+    border-color: #9b9b9b;
+  }
+}
+
+@layer overrides {
+  :root
+    :is(.interface-interna, .modal-panel-4, .course-enroll-modal-panel-4)
+    :is(
+      input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not(
+          [type='file']
+        ),
+      textarea,
+      select
+    ) {
+    background-color: var(--interface-superficie);
+  }
+  :root.dark .interface-interna :is(.sidebar-panel-22, .sidebar-panel-23) {
+    background-color: #000;
+  }
+}
+
+@layer overrides {
+  :root .interface-interna .creator-reviews-page > header > .reviews-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    width: auto;
+    min-height: 32px;
+    padding: 4px 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 400;
+    white-space: nowrap;
+  }
+  :root .interface-interna .creator-reviews-page > header > .reviews-back-link:hover {
+    color: var(--interface-destaque);
+    background: transparent;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .reviews-back-link > svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+  }
+  .avatar-color-picker {
+    border: 0;
+    padding: 0;
+    min-width: 0;
+  }
+  .avatar-color-picker legend {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+  .avatar-color-picker > p {
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.6;
+    margin-bottom: 14px;
+  }
+  .avatar-color-picker > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .avatar-color-picker button {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: var(--avatar-cor);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    border: 2px solid transparent;
+  }
+  .avatar-color-picker button[aria-pressed='true'] {
+    outline: 2px solid var(--avatar-cor);
+    outline-offset: 3px;
+  }
+  .avatar-color-picker svg {
+    width: 18px;
+    height: 18px;
+  }
+  @media (pointer: coarse) {
+    .avatar-color-picker button {
+      width: 44px;
+      height: 44px;
+    }
+  }
+}
+
+@layer overrides {
+  :root.dark .landing-page-panel .landing-page-panel-9 {
+    background: #000;
+    border-color: transparent;
+    box-shadow: none;
+    border-radius: 0;
+  }
+  :root.dark .landing-page-panel .landing-page-panel-10 {
+    display: none;
+  }
+  :root.dark .landing-page-video {
+    mask-image:
+      linear-gradient(to right, transparent, #000 4%, #000 96%, transparent),
+      linear-gradient(to bottom, transparent, #000 5%, #000 95%, transparent);
+    mask-composite: intersect;
+  }
+  :root .interface-interna .discover-spaces-panel-2 {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+  :root .interface-interna .discover-spaces-panel-4 {
+    border-top: 0;
+  }
+  .cartao-curso-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .cartao-curso-acoes .cartao-curso-link-3 {
+    margin-top: 0;
+  }
+  .cartao-curso-detalhes {
+    font-size: 12px;
+    padding: 8px 10px;
+    border: 1px solid var(--interface-linha);
+    border-radius: 8px;
+    color: var(--text-secondary);
+  }
+  .cartao-curso-detalhes:hover {
+    color: var(--interface-destaque);
+    background: var(--interface-selecao);
+  }
+  .inscricao-resumo {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--interface-linha);
+  }
+  .inscricao-resumo > img {
+    width: 104px;
+    height: 76px;
+    object-fit: cover;
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+  .inscricao-resumo h4 {
+    font-size: 16px;
+    line-height: 1.4;
+    font-weight: 600;
+  }
+  .inscricao-resumo p {
+    margin-block: 5px 8px;
+    color: var(--text-secondary);
+    font-size: 12px;
+  }
+  .inscricao-resumo strong {
+    color: var(--interface-destaque);
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .inscricao-descricao {
+    font-size: 13px;
+    line-height: 1.7;
+    margin-top: 20px;
+    color: var(--text-secondary);
+  }
+  .inscricao-info {
+    font-size: 13px;
+    line-height: 1.7;
+    margin-top: 16px;
+  }
+  .inscricao-acoes {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--interface-linha);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+  }
+  .inscricao-acoes > a {
+    color: var(--interface-destaque);
+    font-size: 13px;
+  }
+  .inscricao-acoes svg {
+    width: 16px;
+    height: 16px;
+  }
+  .nova-conversa > p {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+  }
+  .nova-conversa > label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  .nova-conversa-pesquisa {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .nova-conversa-pesquisa > svg {
+    width: 18px;
+    height: 18px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+  }
+  .nova-conversa-pesquisa > input {
+    width: 100%;
+    min-width: 0;
+    padding: 11px 12px;
+    border: 1px solid var(--interface-linha);
+    border-radius: 8px;
+  }
+  .nova-conversa h4 {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-top: 24px;
+  }
+  .nova-conversa ul {
+    padding: 0;
+    margin: 12px 0 0;
+    list-style: none;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+  .nova-conversa li + li {
+    border-top: 1px solid var(--interface-linha);
+  }
+  .nova-conversa li button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 6px;
+    text-align: left;
+    border-radius: 6px;
+  }
+  .nova-conversa li button:hover {
+    background: var(--interface-selecao);
+  }
+  .nova-conversa li button > span {
+    flex: 1;
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+  .nova-conversa strong {
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .nova-conversa small {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .nova-conversa li button > svg {
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
+    color: var(--interface-destaque);
+  }
+  .nova-conversa .nova-conversa-vazio {
+    padding: 24px 8px;
+    text-align: center;
+    margin: 0;
+  }
+  :root .interface-interna .profile-page-panel-9 {
+    padding-top: 22px;
+  }
+  :root .interface-interna .profile-page-panel-10 {
+    align-items: flex-start;
+    gap: 20px;
+  }
+  :root .interface-interna .profile-page-panel-12 {
+    margin-top: 0;
+    padding-top: 0;
+    position: static;
+    z-index: auto;
+    justify-content: flex-end;
+  }
+  :root .interface-interna .profile-page-panel-12 .button-base-styles {
+    min-height: 38px;
+    padding: 9px 13px;
+    border-radius: 8px;
+    font-size: 13px;
+  }
+  :root .interface-interna .area-administracao .gestao-metricas strong {
+    color: var(--interface-destaque);
+  }
+  :root .interface-interna .area-administracao .admin-dashboard-panel-19 {
+    padding-block: 18px;
+    border-bottom: 1px solid var(--interface-linha);
+  }
+  :root .interface-interna .area-administracao .admin-dashboard-panel-21:hover {
+    background: var(--interface-selecao);
+  }
+  :root .interface-interna .area-administracao .admin-dashboard-panel-33 {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  @media (max-width: 640px) {
+    :root .interface-interna .profile-page-panel-12 {
+      justify-content: flex-start;
+      width: 100%;
+    }
+    .inscricao-resumo > img {
+      width: 84px;
+      height: 68px;
+    }
+  }
+}
+
+@layer overrides {
+  :root .interface-interna .area-administracao .gestao-metricas-admin {
+    gap: 14px;
+    border: 0;
+    padding: 0;
+    background: transparent;
+  }
+  :root .interface-interna .area-administracao .gestao-metricas-admin > button {
+    border: 1px solid var(--interface-linha);
+    border-radius: 10px;
+    padding: 20px;
+    background: var(--interface-superficie);
+    transition:
+      border-color 140ms ease,
+      background-color 140ms ease;
+  }
+  :root .interface-interna .area-administracao .gestao-metricas-admin > button:hover {
+    border-color: #8caee5;
+    background: var(--interface-selecao);
+  }
+  :root .interface-interna .area-administracao .gestao-metricas-admin .gestao-metrica-nome {
+    font-size: 13px;
+    font-weight: 500;
+  }
+  :root .interface-interna .area-administracao .admin-dashboard-panel-12 {
+    border-left: 3px solid var(--interface-azul);
+  }
+  :root .interface-interna .area-administracao .admin-dashboard-subheading-2 {
+    font-size: 15px;
+    letter-spacing: -0.01em;
+  }
+  @media (max-width: 1050px) {
+    :root .interface-interna .area-administracao .gestao-metricas-admin {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 500px) {
+    :root .interface-interna .area-administracao .gestao-metricas-admin {
+      gap: 10px;
+    }
+    :root .interface-interna .area-administracao .gestao-metricas-admin > button {
+      padding: 15px;
+    }
+  }
+}

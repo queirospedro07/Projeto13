@@ -1,0 +1,582 @@
+/* Regras partilhadas pelas áreas de gestão. */
+@layer overrides {
+  :root .area-gestao {
+    --gestao-texto: #242a32;
+    --gestao-secundario: #727985;
+    --gestao-linha: #e4e7eb;
+    --gestao-fundo: #ffffff;
+    --gestao-suave: #f7f8fa;
+    --gestao-hover: #f0f2f5;
+    --font-sans: var(--interface-fonte);
+    color: var(--gestao-texto);
+    font-family: var(--font-sans);
+    animation: none;
+  }
+  :root.dark .area-gestao {
+    --gestao-texto: #e9ecf1;
+    --gestao-secundario: #969eab;
+    --gestao-linha: #2b313a;
+    --gestao-fundo: #171a1f;
+    --gestao-suave: #1c2026;
+    --gestao-hover: #262c34;
+  }
+  :root .area-gestao h1 {
+    color: var(--gestao-texto);
+    font-size: clamp(24px, 2.1vw, 30px);
+    line-height: 1.25;
+    letter-spacing: -0.025em;
+    font-weight: 600;
+  }
+  :root .area-gestao h2,
+  :root .area-gestao h3 {
+    color: var(--gestao-texto);
+    letter-spacing: -0.01em;
+    font-weight: 600;
+  }
+  :root
+    .area-gestao
+    :is(
+      .creator-dashboard-description,
+      .admin-dashboard-description,
+      .creator-members-description
+    ) {
+    margin-top: 8px;
+    color: var(--gestao-secundario);
+    font-size: 14px;
+    line-height: 1.6;
+    max-width: 60ch;
+  }
+  :root .area-gestao :is(button, a, input, textarea, select) {
+    font-family: inherit;
+  }
+  :root .area-gestao :is(.button-base-styles, .custom-select-trigger) {
+    border-radius: 6px;
+    box-shadow: none;
+    font-weight: 500;
+  }
+  :root .area-gestao .button-variants-primary {
+    background: var(--gestao-texto);
+    color: var(--gestao-fundo);
+    border-color: var(--gestao-texto);
+  }
+  :root .area-gestao .button-variants-primary:hover {
+    opacity: 0.88;
+  }
+  :root .area-gestao :is(button, a, input, textarea):focus-visible {
+    outline: 2px solid #7592b6;
+    outline-offset: 3px;
+  }
+  :root .area-gestao .gestao-metricas {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    margin: 8px 0 12px;
+    padding-block: 22px;
+    border-block: 1px solid var(--gestao-linha);
+    background: transparent;
+  }
+  :root .area-gestao .gestao-metricas > :is(div, button) {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 0 24px;
+    border: 0;
+    border-left: 1px solid var(--gestao-linha);
+    border-radius: 0;
+    text-align: left;
+    background: transparent;
+    box-shadow: none;
+  }
+  :root .area-gestao .gestao-metricas > :first-child {
+    padding-left: 0;
+    border-left: 0;
+  }
+  :root .area-gestao .gestao-metricas :is(dt, .gestao-metrica-nome) {
+    font-size: 13px;
+    line-height: 1.5;
+    font-weight: 400;
+    color: var(--gestao-secundario);
+  }
+  :root .area-gestao .gestao-metricas :is(dd, strong) {
+    margin: 0;
+    font-size: clamp(24px, 2.4vw, 32px);
+    line-height: 1.3;
+    font-weight: 550;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.035em;
+    color: var(--gestao-texto);
+  }
+  :root .area-gestao .gestao-metrica-nota {
+    color: var(--gestao-secundario);
+    font-size: 12px;
+  }
+  :root .area-gestao .gestao-metricas-admin {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  :root .area-gestao .gestao-metricas button {
+    cursor: pointer;
+  }
+  :root .area-gestao .gestao-metricas button:hover .gestao-metrica-nome {
+    color: var(--gestao-texto);
+  }
+
+  :root .area-formador {
+    gap: 24px;
+    padding-top: 28px;
+  }
+  :root .area-formador .creator-dashboard-panel-2 {
+    align-items: flex-start;
+    gap: 20px;
+  }
+  :root .area-formador .creator-dashboard-panel-3 {
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  :root .area-formador .creator-dashboard-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 2px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--gestao-secundario);
+    font-size: 13px;
+    font-weight: 400;
+    box-shadow: none;
+  }
+  :root .area-formador .creator-dashboard-button:hover {
+    color: var(--gestao-texto);
+  }
+  :root .area-formador :is(.creator-dashboard-button-2, .creator-dashboard-button-4) {
+    display: inline-flex;
+    min-height: 38px;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 9px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--gestao-texto);
+    color: var(--gestao-fundo);
+    background: var(--gestao-texto);
+    box-shadow: none;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  :root .area-formador :is(.creator-dashboard-button-2, .creator-dashboard-button-4):hover {
+    opacity: 0.88;
+  }
+  :root .area-formador .creator-dashboard-panel-9 {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  :root .area-formador .creator-dashboard-panel-10 {
+    padding: 0 0 18px;
+    border: 0;
+  }
+  :root .area-formador .creator-dashboard-heading {
+    font-size: 16px;
+  }
+  :root .area-formador .creator-dashboard-description-5 {
+    margin-top: 5px;
+    color: var(--gestao-secundario);
+    font-size: 13px;
+  }
+  :root .area-formador .creator-dashboard-panel-14 {
+    display: block;
+    gap: 0;
+  }
+  :root .area-formador .creator-dashboard-panel-15 {
+    padding: 18px 0;
+    border: 0;
+    border-bottom: 1px solid var(--gestao-linha);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    gap: 16px;
+  }
+  :root .area-formador .creator-dashboard-panel-15:hover {
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+  }
+  :root .area-formador .creator-dashboard-panel-16 {
+    min-width: 0;
+    gap: 14px;
+  }
+  :root .area-formador .creator-dashboard-panel-17 {
+    min-width: 0;
+  }
+  :root .area-formador .creator-dashboard-image {
+    width: 64px;
+    height: 48px;
+    border-radius: 4px;
+    object-fit: cover;
+  }
+  :root .area-formador .course-cover-empty {
+    display: grid;
+    place-items: center;
+    background: var(--gestao-suave);
+    color: var(--gestao-secundario);
+  }
+  :root .area-formador .course-cover-empty svg {
+    width: 20px;
+    height: 20px;
+  }
+  :root .area-formador .creator-dashboard-caption-2 {
+    font-size: 15px;
+    line-height: 1.5;
+    font-weight: 500;
+  }
+  :root .area-formador .creator-dashboard-panel-18 {
+    gap: 8px;
+    color: var(--gestao-secundario);
+    font-size: 12px;
+  }
+  :root .area-formador :is(.creator-dashboard-label-2, .creator-dashboard-label-3) {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    font-weight: 400;
+    text-transform: none;
+  }
+  :root .area-formador :is(.creator-dashboard-button-5, .creator-dashboard-button-6) {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    padding: 8px;
+    box-shadow: none;
+    color: var(--gestao-secundario);
+    font-size: 13px;
+    font-weight: 400;
+  }
+  :root .area-formador :is(.creator-dashboard-button-5, .creator-dashboard-button-6):hover {
+    color: var(--gestao-texto);
+    background: var(--gestao-hover);
+  }
+  :root .area-formador .creator-dashboard-panel-12 {
+    padding: 36px 16px;
+    border: 1px dashed var(--gestao-linha);
+    border-radius: 6px;
+    background: transparent;
+  }
+  :root .area-formador .creator-dashboard-panel-13 {
+    border-radius: 0;
+    background: none;
+    color: var(--gestao-secundario);
+    box-shadow: none;
+  }
+
+  :root .area-administracao {
+    padding-top: 28px;
+    gap: 24px;
+  }
+  :root .area-administracao .admin-dashboard-panel-2 {
+    border: 0;
+    padding-bottom: 0;
+  }
+  :root .area-administracao .admin-dashboard-panel-4 {
+    gap: 14px;
+    border-color: var(--gestao-linha);
+  }
+  :root .area-administracao .admin-dashboard-button-2 {
+    padding: 10px 0;
+    gap: 6px;
+    font-size: 13px;
+  }
+  :root .area-administracao .admin-dashboard-button-3 {
+    color: var(--gestao-texto);
+    border-color: var(--gestao-texto);
+    font-weight: 600;
+  }
+  :root .area-administracao .admin-dashboard-button-4 {
+    color: var(--gestao-secundario);
+  }
+  :root .area-administracao .admin-dashboard-label {
+    padding: 0;
+    min-width: 0;
+    background: transparent;
+    color: var(--gestao-secundario);
+    font-size: 12px;
+    font-weight: 400;
+  }
+  :root .area-administracao .admin-dashboard-panel-12 {
+    padding: 18px 0;
+    border: 0;
+    border-block: 1px solid var(--gestao-linha);
+    border-radius: 0;
+    background: transparent;
+  }
+  :root .area-administracao .admin-dashboard-subheading {
+    color: var(--gestao-texto);
+  }
+  :root .area-administracao .admin-dashboard-alert-circle {
+    color: var(--gestao-secundario);
+  }
+  :root .area-administracao .admin-dashboard-panel-14 {
+    padding: 12px 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+  :root .area-administracao .admin-dashboard-panel-15 {
+    font-size: 14px;
+    font-weight: 500;
+  }
+  :root .area-administracao .admin-dashboard-panel-16 {
+    color: var(--gestao-secundario);
+  }
+  :root .area-administracao .admin-dashboard-panel-18 {
+    border-color: var(--gestao-linha);
+    border-radius: 6px;
+    background: var(--gestao-fundo);
+    box-shadow: none;
+  }
+  :root .area-administracao .admin-dashboard-panel-19 {
+    padding: 16px 20px;
+    background: transparent;
+    border-color: var(--gestao-linha);
+  }
+  :root .area-administracao .admin-dashboard-subheading-2 {
+    font-size: 14px;
+    font-weight: 600;
+  }
+  :root .area-administracao .admin-dashboard-panel-21 {
+    border-color: var(--gestao-linha);
+    padding-block: 14px;
+  }
+
+  :root .area-gestao .creator-tool {
+    padding: 22px 0;
+    border: 0;
+    border-top: 1px solid var(--gestao-linha);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  :root .area-gestao .creator-review-filters {
+    padding: 0 0 20px;
+    border: 0;
+    border-bottom: 1px solid var(--gestao-linha);
+    border-radius: 0;
+    background: transparent;
+  }
+  :root .area-gestao .creator-review {
+    border-radius: 6px;
+    border-color: var(--gestao-linha);
+    background: var(--gestao-fundo);
+    box-shadow: none;
+  }
+  :root .area-gestao .creator-tool header span {
+    color: var(--gestao-secundario);
+    font-size: 12px;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  :root .area-gestao .creator-tool h2 {
+    font-size: 16px;
+  }
+  :root .area-gestao .creator-tool p {
+    color: var(--gestao-secundario);
+  }
+  :root .area-alunos .creator-members-panel-4 {
+    background: none;
+    padding: 0;
+    border: 0;
+  }
+  :root .area-alunos .creator-members-panel-5 {
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    border-bottom: 1px solid var(--gestao-linha);
+    gap: 20px;
+  }
+  :root .area-alunos .creator-members-button-2 {
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    padding: 12px 0;
+    color: var(--gestao-secundario);
+  }
+  :root .area-alunos .creator-members-button-3 {
+    border-bottom-color: var(--gestao-texto);
+    color: var(--gestao-texto);
+  }
+  :root .creator-reviews-page.area-gestao > header > a {
+    padding: 6px 0;
+    border: 0;
+    border-radius: 0;
+    font-size: 13px;
+    color: var(--gestao-secundario);
+  }
+  @media (max-width: 767px) {
+    :root .area-gestao .gestao-metricas {
+      padding-block: 18px;
+    }
+    :root .area-gestao .gestao-metricas > :is(div, button) {
+      padding-inline: 14px;
+    }
+    :root .area-gestao .gestao-metricas > :first-child {
+      padding-left: 0;
+    }
+    :root .area-gestao .gestao-metricas :is(dd, strong) {
+      font-size: 23px;
+    }
+    :root .area-gestao .gestao-metricas-admin {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      row-gap: 22px;
+    }
+    :root .area-gestao .gestao-metricas-admin > :nth-child(3) {
+      border-left: 0;
+      padding-left: 0;
+    }
+    :root .area-formador .creator-dashboard-panel-15 {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    :root .area-formador .creator-dashboard-panel-19 {
+      justify-content: flex-end;
+    }
+    :root .area-administracao .admin-dashboard-panel-4 {
+      gap: 16px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :root .app-sidebar,
+    :root .area-gestao :is(a, button) {
+      transition: none;
+    }
+  }
+}
+@layer overrides {
+  :root .area-gestao {
+    --gestao-grafico: #728399;
+  }
+  :root .area-gestao .scroll-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  :root .area-formador .creator-dashboard-panel-2 {
+    border: 0;
+    padding-bottom: 0;
+  }
+  :root .area-formador .creator-dashboard-panel-11 {
+    padding: 0 18px;
+    border: 1px solid var(--gestao-linha);
+    border-radius: 6px;
+    background: var(--gestao-fundo);
+  }
+  :root .area-formador .creator-dashboard-panel-15:last-child {
+    border-bottom: 0;
+  }
+  :root .area-formador .course-feedback {
+    margin-top: 8px;
+    padding: 10px 12px;
+    border: 0;
+    border-left: 2px solid var(--gestao-linha);
+    border-radius: 0;
+    background: var(--gestao-suave);
+    font-size: 12px;
+  }
+  :root .area-administracao .course-status-chart {
+    padding: 4px 0 24px;
+    border: 0;
+    border-bottom: 1px solid var(--gestao-linha);
+    border-radius: 0;
+    background: transparent;
+  }
+  :root .area-administracao .admin-dashboard-badge {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--gestao-secundario);
+    font-size: 12px;
+    font-weight: 400;
+  }
+}
+@layer overrides {
+  :root .area-formador .creator-dashboard-button-7 {
+    padding: 8px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    box-shadow: none;
+    color: var(--gestao-secundario);
+  }
+  :root .area-formador .creator-dashboard-button-7:hover {
+    background: var(--gestao-hover);
+    color: #b94a48;
+  }
+  @media (max-width: 767px) {
+    :root .area-administracao .admin-dashboard-panel-4 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      overflow: visible;
+      gap: 0 16px;
+    }
+    :root .area-administracao .admin-dashboard-button-2 {
+      justify-content: flex-start;
+    }
+    :root .area-gestao .gestao-metricas :is(dd, strong) {
+      font-size: clamp(18px, 5vw, 23px);
+      overflow-wrap: anywhere;
+    }
+    :root .area-formador .creator-dashboard-button-2 {
+      order: -1;
+    }
+  }
+}
+@layer overrides {
+  :root .area-gestao .creator-members-field {
+    border-radius: 6px;
+    box-shadow: none;
+  }
+  :root .area-gestao .creator-members-panel-11 {
+    border: 0;
+    border-top: 1px solid var(--gestao-linha);
+    border-radius: 0;
+    background: transparent;
+    padding: 40px 0;
+    color: var(--gestao-secundario);
+  }
+}
+
+/* Azul nas ações principais. */
+@layer overrides {
+  :root .area-gestao {
+    --gestao-azul: var(--interface-azul);
+    --gestao-azul-suave: var(--interface-selecao);
+  }
+  :root.dark .area-gestao {
+    --gestao-azul: var(--interface-destaque);
+    --gestao-azul-suave: var(--interface-selecao);
+  }
+  :root .area-gestao .button-variants-primary {
+    background: var(--interface-azul);
+    border-color: var(--interface-azul);
+    color: #fff;
+  }
+  :root .area-gestao .button-variants-primary:hover {
+    background: var(--interface-hover);
+    border-color: var(--interface-hover);
+    opacity: 1;
+  }
+  :root .area-gestao :is(button, a, input, textarea, select):focus-visible {
+    outline-color: var(--gestao-azul);
+  }
+  :root .area-gestao .gestao-metricas button:hover {
+    background: var(--gestao-azul-suave);
+  }
+}

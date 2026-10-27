@@ -1,0 +1,264 @@
+@layer components {
+  .cartao-curso-panel-17 {
+    overflow: hidden;
+    border-radius: 1rem;
+    border-width: 1px;
+    --nexo-border-opacity: 1;
+    border-color: rgb(229 229 229 / var(--nexo-border-opacity, 1));
+    --nexo-bg-opacity: 1;
+    background-color: rgb(255 255 255 / var(--nexo-bg-opacity, 1));
+    --nexo-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --nexo-shadow-colored: 0 1px 2px 0 var(--nexo-shadow-color);
+    box-shadow:
+      var(--nexo-ring-offset-shadow, 0 0 #0000), var(--nexo-ring-shadow, 0 0 #0000),
+      var(--nexo-shadow);
+    transition-property: box-shadow;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+
+  .cartao-curso-panel-17:hover {
+    --nexo-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --nexo-shadow-colored:
+      0 4px 6px -1px var(--nexo-shadow-color), 0 2px 4px -2px var(--nexo-shadow-color);
+    box-shadow:
+      var(--nexo-ring-offset-shadow, 0 0 #0000), var(--nexo-ring-shadow, 0 0 #0000),
+      var(--nexo-shadow);
+  }
+
+  .cartao-curso-panel-17:is(.dark *) {
+    --nexo-border-opacity: 1;
+    border-color: rgb(38 38 38 / var(--nexo-border-opacity, 1));
+    --nexo-bg-opacity: 1;
+    background-color: rgb(13 15 20 / var(--nexo-bg-opacity, 1));
+  }
+
+  .cartao-curso-link {
+    position: relative;
+    display: block;
+    height: 10rem;
+    overflow: hidden;
+  }
+
+  .cartao-curso-image {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+  }
+
+  .cartao-curso-panel-18 {
+    position: absolute;
+    left: 0.75rem;
+    right: 0.75rem;
+    top: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .cartao-curso-label-4 {
+    border-radius: 0.375rem;
+    background-color: rgb(0 0 0 / 0.7);
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    font-size: 10px;
+    font-weight: 500;
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+  }
+
+  .cartao-curso-label-5 {
+    border-radius: 0.375rem;
+    background-color: rgb(255 255 255 / 0.9);
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    font-size: 10px;
+    font-weight: 600;
+    --nexo-text-opacity: 1;
+    color: rgb(28 28 28 / var(--nexo-text-opacity, 1));
+  }
+
+  .cartao-curso-panel-19 {
+    padding: 1rem;
+  }
+
+  .cartao-curso-panel-20 {
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 11px;
+    --nexo-text-opacity: 1;
+    color: rgb(115 115 115 / var(--nexo-text-opacity, 1));
+  }
+
+  .cartao-curso-panel-20:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(161 161 170 / var(--nexo-text-opacity, 1));
+  }
+
+  .cartao-curso-graduation-cap {
+    height: 0.875rem;
+    width: 0.875rem;
+  }
+
+  .cartao-curso-link-2 {
+    display: block;
+  }
+
+  .cartao-curso-subheading {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+    --nexo-text-opacity: 1;
+    color: rgb(28 28 28 / var(--nexo-text-opacity, 1));
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+
+  .cartao-curso-subheading:hover {
+    --nexo-text-opacity: 1;
+    color: rgb(37 99 235 / var(--nexo-text-opacity, 1));
+  }
+
+  .cartao-curso-subheading:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+  }
+
+  .cartao-curso-subheading:hover:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(96 165 250 / var(--nexo-text-opacity, 1));
+  }
+
+  .cartao-curso-description-4 {
+    margin-top: 0.5rem;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    --nexo-text-opacity: 1;
+    color: rgb(82 82 82 / var(--nexo-text-opacity, 1));
+  }
+
+  .cartao-curso-description-4:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(161 161 170 / var(--nexo-text-opacity, 1));
+  }
+
+  .cartao-curso-panel-21 {
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    --nexo-text-opacity: 1;
+    color: rgb(115 115 115 / var(--nexo-text-opacity, 1));
+  }
+
+  .cartao-curso-panel-21:is(.dark *) {
+    --nexo-text-opacity: 1;
+    color: rgb(161 161 170 / var(--nexo-text-opacity, 1));
+  }
+
+  .cartao-curso-panel-22 {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .cartao-curso-star {
+    height: 0.875rem;
+    width: 0.875rem;
+    fill: #fbbf24;
+    --nexo-text-opacity: 1;
+    color: rgb(251 191 36 / var(--nexo-text-opacity, 1));
+  }
+
+  .cartao-curso-link-3 {
+    margin-top: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 0.5rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 500;
+  }
+
+  .cartao-curso-link-4 {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(5 150 105 / var(--nexo-bg-opacity, 1));
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+  }
+
+  .cartao-curso-link-4:hover {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(16 185 129 / var(--nexo-bg-opacity, 1));
+  }
+
+  .cartao-curso-link-5 {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(28 28 28 / var(--nexo-bg-opacity, 1));
+    --nexo-text-opacity: 1;
+    color: rgb(255 255 255 / var(--nexo-text-opacity, 1));
+  }
+
+  .cartao-curso-link-5:is(.dark *) {
+    --nexo-bg-opacity: 1;
+    background-color: rgb(255 255 255 / var(--nexo-bg-opacity, 1));
+    --nexo-text-opacity: 1;
+    color: rgb(23 23 23 / var(--nexo-text-opacity, 1));
+  }
+
+  .cartao-curso-user {
+    height: 1rem;
+    width: 1rem;
+    --nexo-text-opacity: 1;
+    color: rgb(99 102 241 / var(--nexo-text-opacity, 1));
+  }
+}
+@layer overrides {
+  html.dark .cartao-curso-panel-17 {
+    background: #000;
+    border-color: #262626;
+  }
+  .cartao-curso-panel-17 {
+    display: flex;
+    flex-direction: column;
+  }
+  .cartao-curso-panel-19 {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .cartao-curso-panel-21 {
+    width: 100%;
+    margin-top: auto;
+    padding-top: 1rem;
+  }
+  .cartao-curso-label-5 del {
+    margin-right: 6px;
+    font-weight: 400;
+    opacity: 0.65;
+  }
+}

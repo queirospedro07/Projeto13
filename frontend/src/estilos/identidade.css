@@ -1,0 +1,529 @@
+/* Identidade comum: superfícies neutras e destaques azuis. */
+@layer overrides {
+  :root {
+    --interface-fonte: 'NexoFont', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --interface-azul: #2563eb;
+    --interface-hover: #1d4ed8;
+    --interface-selecao: #eff6ff;
+    --interface-destaque: #1d4ed8;
+    --interface-superficie: #fff;
+    --interface-linha: #e4e7ec;
+    --interface-texto: #202630;
+  }
+  :root.dark {
+    --interface-selecao: #192b46;
+    --interface-destaque: #93c5fd;
+    --interface-superficie: #191b20;
+    --interface-linha: #30343d;
+    --interface-texto: #edf0f5;
+  }
+  :root .interface-interna,
+  :root .area-gestao {
+    --font-sans: var(--interface-fonte);
+    --gestao-azul: var(--interface-azul);
+    --gestao-azul-suave: var(--interface-selecao);
+    font-family: var(--interface-fonte);
+  }
+  :root
+    :is(.interface-interna, .modal-panel-4, .course-enroll-modal-panel-4)
+    :is(button, input, textarea, select) {
+    font-family: inherit;
+  }
+  :root .app-layout-panel-3 h1 {
+    color: var(--interface-texto);
+    font-size: clamp(24px, 2.2vw, 30px);
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.025em;
+  }
+  :root :is(.interface-interna, .modal-panel-4, .course-enroll-modal-panel-4) .button-base-styles,
+  :root .area-gestao .button-base-styles {
+    border-radius: 8px;
+    font-weight: 500;
+    box-shadow: none;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease;
+  }
+  :root
+    :is(.interface-interna, .modal-panel-4, .course-enroll-modal-panel-4)
+    :is(.button-variants-primary, .button-variants-blue, .button-variants-glow),
+  :root .area-gestao .button-variants-primary {
+    background: var(--interface-azul);
+    color: #fff;
+    border-color: var(--interface-azul);
+    box-shadow: none;
+  }
+  :root
+    .interface-interna
+    :is(.button-variants-primary, .button-variants-blue, .button-variants-glow):hover:not(
+      :disabled
+    ),
+  :root .area-gestao .button-variants-primary:hover:not(:disabled) {
+    background: var(--interface-hover);
+    border-color: var(--interface-hover);
+    opacity: 1;
+    transform: none;
+  }
+  :root
+    .interface-interna
+    :is(.button-variants-secondary, .button-variants-outline, .button-variants-ghost):hover:not(
+      :disabled
+    ) {
+    color: var(--interface-destaque);
+    background: var(--interface-selecao);
+    border-color: var(--interface-linha);
+  }
+  :root :is(.interface-interna, .modal-panel-4, .course-enroll-modal-panel-4) .card-panel {
+    border-radius: 10px;
+    border-color: var(--interface-linha);
+    background: var(--interface-superficie);
+    color: var(--interface-texto);
+    box-shadow: none;
+  }
+  :root :is(.interface-interna, .modal-panel-4, .course-enroll-modal-panel-4) .card-panel-2:hover {
+    border-color: #8eb3f1;
+    box-shadow: 0 2px 8px rgb(20 40 70 / 0.04);
+    transform: none;
+  }
+  :root
+    .interface-interna
+    :is(
+      input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not(
+          [type='file']
+        ),
+      textarea,
+      select,
+      .custom-select-trigger
+    ) {
+    border-radius: 8px;
+    border-color: var(--interface-linha);
+    font-size: 14px;
+    box-shadow: none;
+  }
+  :root
+    :is(.interface-interna, .modal-panel-4, .course-enroll-modal-panel-4)
+    :is(input, textarea, select, .custom-select-trigger):focus-visible {
+    border-color: var(--interface-foco);
+    outline: none;
+    outline-offset: 0;
+    box-shadow: none;
+  }
+  :root
+    :is(.interface-interna, .modal-panel-4, .course-enroll-modal-panel-4)
+    :is(button, a):focus-visible {
+    outline: 2px solid var(--interface-azul);
+    outline-offset: 3px;
+  }
+  :root
+    :is(.interface-interna, .modal-panel-4, .course-enroll-modal-panel-4)
+    :is(input[type='checkbox'], input[type='radio']) {
+    accent-color: var(--interface-azul);
+  }
+  :root
+    :is(.interface-interna, .modal-panel-4, .course-enroll-modal-panel-4)
+    [role='tab'][aria-selected='true'] {
+    color: var(--interface-destaque);
+    background-color: var(--interface-selecao);
+  }
+  :root .modal-panel-4 {
+    border-radius: 12px;
+    border-color: var(--interface-linha);
+    background: var(--interface-superficie);
+  }
+  :root :is(.interface-interna, .modal-panel-4, .course-enroll-modal-panel-4) .modal-subheading {
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  :root .app-layout-panel-3 .scroll-reveal,
+  :root .app-layout-panel-3.route-enter {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Controlos próprios das páginas, alinhados com os componentes comuns. */
+@layer overrides {
+  :root
+    :is(.interface-interna, .modal-panel-4, .course-enroll-modal-panel-4)
+    :is(
+      .login-button,
+      .register-button,
+      .search-results-page-button,
+      .dashboard-button,
+      .dashboard-button-3,
+      .dashboard-button-4,
+      .dashboard-button-10,
+      .dashboard-button-11,
+      .library-page-button-19,
+      .discover-spaces-button-9,
+      .course-details-button-5,
+      .course-builder-button-17,
+      .course-builder-button-46,
+      .course-builder-button-47,
+      .space-chat-button-11
+    ) {
+    background: var(--interface-azul);
+    border-color: var(--interface-azul);
+    color: #fff;
+    border-radius: 8px;
+    font-weight: 500;
+    box-shadow: none;
+    transform: none;
+  }
+  :root
+    :is(.interface-interna, .modal-panel-4, .course-enroll-modal-panel-4)
+    :is(
+      .login-button,
+      .register-button,
+      .search-results-page-button,
+      .dashboard-button,
+      .dashboard-button-3,
+      .dashboard-button-4,
+      .dashboard-button-10,
+      .dashboard-button-11,
+      .library-page-button-19,
+      .discover-spaces-button-9,
+      .course-details-button-5,
+      .course-builder-button-17,
+      .course-builder-button-46,
+      .course-builder-button-47,
+      .space-chat-button-11
+    ):hover:not(:disabled) {
+    background: var(--interface-hover);
+    box-shadow: none;
+    transform: none;
+  }
+  :root
+    .interface-interna
+    :is(
+      .library-page-button-2,
+      .discover-spaces-button-3,
+      .course-details-button-8,
+      .course-player-button-16,
+      .profile-page-button-8,
+      .profile-page-button-11,
+      .messages-page-button-2,
+      .messages-page-panel-13,
+      .settings-page-button-2,
+      .course-builder-button-13,
+      .space-chat-button-4,
+      .help-center-tabs button[aria-current='page'],
+      .help-center-filters button[aria-pressed='true']
+    ) {
+    background: var(--interface-selecao);
+    color: var(--interface-destaque);
+    border-color: var(--interface-destaque);
+    box-shadow: none;
+  }
+  :root
+    .interface-interna
+    :is(
+      .library-page-button-3,
+      .discover-spaces-button-4,
+      .discover-spaces-button-7,
+      .course-details-button-9,
+      .course-player-button-17,
+      .profile-page-button-9,
+      .profile-page-button-12,
+      .messages-page-button-3,
+      .settings-page-button-3,
+      .course-builder-button-14,
+      .space-chat-button-5
+    ):hover:not(:disabled) {
+    background: var(--interface-selecao);
+    color: var(--interface-destaque);
+  }
+  :root
+    .interface-interna
+    :is(
+      .login-panel-5,
+      .register-panel-5,
+      .course-builder-card,
+      .course-builder-card-2,
+      .course-builder-card-3,
+      .course-builder-card-4,
+      .course-builder-card-5
+    ) {
+    border-radius: 10px;
+    border-color: var(--interface-linha);
+    background: var(--interface-superficie);
+    box-shadow: none;
+  }
+  :root
+    .interface-interna
+    :is(
+      .login-heading,
+      .register-heading,
+      .forgot-password-heading,
+      .reset-password-title,
+      .search-results-page-title,
+      .terms-page-title,
+      .privacy-policy-page-title
+    ) {
+    font-size: clamp(24px, 2.2vw, 30px);
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    line-height: 1.3;
+  }
+  :root
+    .interface-interna
+    :is(
+      .apply-creator-field-label,
+      .forgot-password-field-label,
+      .space-chat-field-label,
+      .dashboard-caption,
+      .search-results-page-description,
+      .creator-members-table-row,
+      .admin-dashboard-table-head,
+      .admin-dashboard-caption,
+      .messages-page-description
+    ) {
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 500;
+    font-size: 13px;
+  }
+  :root .interface-interna .help-center-heading {
+    background: var(--interface-superficie);
+    border-radius: 10px;
+    padding: clamp(20px, 4vw, 36px);
+  }
+  :root .interface-interna .help-center h1 {
+    font-size: clamp(26px, 3vw, 34px);
+    font-weight: 600;
+    letter-spacing: -0.025em;
+  }
+  :root .interface-interna .help-center-eyebrow {
+    letter-spacing: 0;
+    font-weight: 500;
+  }
+  @media (max-width: 640px) {
+    :root .interface-interna :is(.help-center, .terms-page-panel, .privacy-policy-page-panel) {
+      padding-inline: 16px;
+    }
+    :root .interface-interna :is(.help-center-tabs, .help-center-actions) {
+      flex-wrap: wrap;
+    }
+  }
+}
+
+/* Evita zoom automático nos campos e mantém alvos de toque confortáveis. */
+@layer overrides {
+  @media (pointer: coarse) {
+    :root
+      :is(.interface-interna, .modal-panel-4, .course-enroll-modal-panel-4)
+      :is(
+        input:not([type='checkbox']):not([type='radio']):not([type='range']):not(
+            [type='color']
+          ):not([type='file']),
+        textarea,
+        select,
+        .custom-select-trigger
+      ) {
+      font-size: 16px;
+    }
+    :root
+      :is(.interface-interna, .modal-panel-4, .course-enroll-modal-panel-4)
+      :is(
+        .login-button,
+        .register-button,
+        .search-results-page-button,
+        .button-base-styles,
+        .custom-select-trigger
+      ) {
+      min-height: 44px;
+    }
+  }
+}
+
+/* Páginas internas: mesmos acabamentos, sem alterar a página inicial. */
+@layer overrides {
+  :root {
+    --interface-foco: #858f9e;
+  }
+  :root.dark {
+    --interface-foco: #98a2b3;
+  }
+  :root
+    :is(.interface-interna, .modal-panel-4, .course-enroll-modal-panel-4)
+    :is(input[class], textarea[class], select[class], .custom-select-trigger):is(
+      :focus,
+      :focus-visible
+    ) {
+    border-color: var(--interface-foco);
+    outline: none;
+    outline-offset: 0;
+    box-shadow: none;
+    --nexo-ring-color: transparent;
+  }
+  :root .interface-interna :is(.library-page-image, .discover-spaces-image, .dashboard-image),
+  :root
+    .interface-interna
+    :hover
+    :is(.library-page-image, .discover-spaces-image, .dashboard-image) {
+    transform: none;
+    scale: 1;
+    --nexo-scale-x: 1;
+    --nexo-scale-y: 1;
+    transition-property: opacity;
+  }
+  :root
+    .interface-interna
+    :is(.dashboard-panel-23, .dashboard-panel-31, .discover-spaces-panel-15):hover {
+    transform: none;
+    box-shadow: none;
+    border-color: var(--interface-foco);
+  }
+  :root
+    .interface-interna
+    :is(
+      .dashboard-panel-6,
+      .dashboard-panel-13,
+      .dashboard-panel-23,
+      .dashboard-panel-31,
+      .library-page-panel-12,
+      .discover-spaces-panel-15,
+      .course-details-panel-13,
+      .course-details-panel-25,
+      .course-details-panel-30,
+      .course-details-panel-32,
+      .course-details-panel-37,
+      .course-details-panel-47,
+      .profile-page-card-2,
+      .messages-page-panel,
+      .space-chat-panel,
+      .apply-creator-card
+    ) {
+    border-color: var(--interface-linha);
+    border-radius: 10px;
+    background-color: var(--interface-superficie);
+    box-shadow: none;
+  }
+  :root .course-enroll-modal-panel-4 {
+    --font-sans: var(--interface-fonte);
+    font-family: var(--interface-fonte);
+    border: 1px solid var(--interface-linha);
+    border-radius: 12px;
+    background: var(--interface-superficie);
+    color: var(--interface-texto);
+  }
+  :root .course-enroll-modal-panel-4 .button-base-styles {
+    border-radius: 8px;
+    box-shadow: none;
+  }
+  :root .course-enroll-modal-panel-4 .button-variants-primary {
+    background: var(--interface-azul);
+    color: #fff;
+    border-color: var(--interface-azul);
+  }
+  :root
+    .interface-interna
+    :is(.course-details-panel-31, .course-enroll-modal-panel-17, .course-enroll-modal-panel-18) {
+    background: var(--interface-selecao);
+    color: var(--interface-destaque);
+  }
+}
+
+@layer overrides {
+  :root .interface-interna .help-center-search:focus-within {
+    border-color: var(--interface-foco);
+    box-shadow: none;
+  }
+  :root
+    .interface-interna
+    :is(
+      .course-details-caption,
+      .course-details-caption-2,
+      .course-details-caption-3,
+      .apply-creator-caption-3,
+      .library-page-label-3,
+      .dashboard-label,
+      .dashboard-label-3,
+      .discover-spaces-label-4
+    ) {
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 500;
+  }
+  :root
+    .interface-interna
+    :is(.course-details-sparkles, .course-details-sparkles-2, .course-details-sparkles-3) {
+    display: none;
+  }
+}
+
+@layer overrides {
+  :root .interface-interna :is(h2, h3) {
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  :root .interface-interna [class*='field-label'] {
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 500;
+  }
+  :root .interface-interna th {
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  :root .interface-interna tbody tr:hover {
+    background-color: var(--interface-selecao);
+  }
+  :root
+    .interface-interna
+    :is(.course-details-button-2, .course-details-button-4, .discover-spaces-button-10) {
+    background: var(--interface-azul);
+    border-color: var(--interface-azul);
+    color: #fff;
+    border-radius: 8px;
+    box-shadow: none;
+    font-weight: 500;
+  }
+  :root
+    .interface-interna
+    :is(.course-details-button-2, .course-details-button-4, .discover-spaces-button-10):hover {
+    background: var(--interface-hover);
+  }
+}
+
+/* Campos ativos: apenas mudança de fundo, sem contorno ou sublinhado. */
+@layer overrides {
+  :root {
+    --campo-ativo-fundo: #eef0f3;
+    --campo-ativo-linha: #64748b;
+  }
+  :root.dark {
+    --campo-ativo-fundo: #2b2e36;
+    --campo-ativo-linha: #a8b3c4;
+  }
+  :root
+    :is(.interface-interna, .modal-panel-4, .course-enroll-modal-panel-4)
+    :is(
+      input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not(
+          [type='file']
+        ),
+      textarea,
+      select,
+      .custom-select-trigger
+    ):is(:focus, :focus-visible) {
+    border-color: var(--interface-linha);
+    outline: none;
+    background-color: var(--campo-ativo-fundo);
+    box-shadow: none;
+    --nexo-ring-color: transparent;
+  }
+  :root .interface-interna .help-center-search:focus-within {
+    border-color: var(--interface-linha);
+    background: var(--campo-ativo-fundo);
+    box-shadow: none;
+  }
+  :root .interface-interna .help-center-search input:is(:focus, :focus-visible) {
+    box-shadow: none;
+  }
+}

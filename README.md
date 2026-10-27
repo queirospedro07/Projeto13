@@ -1,157 +1,76 @@
-# NEXO
+# NEXO — Vercel e Render
 
-Plataforma de cursos e comunidades desenvolvida para Programação Web — CTeSP TPSI, IPVC.
+Carrega **o conteúdo desta pasta** para a raiz de um repositório GitHub. A estrutura necessária é:
 
-## Tecnologias
+- `frontend/`: interface para a Vercel, com `vercel.json`.
+- `backend/`: API e Socket.IO para o Render, com migrações PostgreSQL.
+- `render.yaml`: configuração da API no Render.
 
-| Camada | Tecnologias |
-| --- | --- |
-| Frontend | React 19, Vite 8, React Router, Axios, CSS nativo |
-| Interface | CSS por componente, React Icons, Recharts, fonte NexoFont local |
-| Backend | Node.js, Express, CommonJS, PostgreSQL e `pg` |
-| Segurança | JWT, bcrypt, express-validator, Helmet, limites de pedidos e permissões verificadas no servidor |
-| Tempo real | Socket.IO e WebRTC |
-| Qualidade | ESLint, Prettier e testes de integração com PostgreSQL |
+## 1. Base de dados e API no Render
 
-A organização segue o [projeto de referência](https://github.com/queirospedro07/PW-P-LAB-TRABALHO-PRATICO), mantendo as funcionalidades específicas da NEXO.
+Criar uma base **PostgreSQL** e copiar a ligação interna fornecida pelo Render. A base deve estar na mesma região da API. A base de dados não é criada pelo `render.yaml`; escolhe o plano no painel do Render.
 
-## Executar no Windows
+Criar um **Blueprint** a partir do repositório para utilizar `render.yaml`, ou um **Web Service** com estas definições:
 
-Requer Node.js 22.16 ou superior, npm e Docker Desktop para a base de dados local.
+| Campo             | Valor               |
+| ----------------- | ------------------- |
+| Runtime           | Node                |
+| Root Directory    | `backend`           |
+| Build Command     | `npm ci --omit=dev` |
+| Start Command     | `npm start`         |
+| Node              | `24`                |
+| Health Check Path | `/api/estado`       |
 
-Para alojamento público, consulte [PUBLICACAO.md](PUBLICACAO.md). A pasta `deployment/` contém a configuração separada de produção; `start.bat` destina-se ao ambiente local.
+O Blueprint define o serviço no plano gratuito. Podes mudar o plano antes de confirmar a criação. Não configura serviços pagos nem cria a base automaticamente.
 
-```powershell
-.\start.bat
+Preencher as variáveis solicitadas:
+
+| Variável                                                                       | Valor                                                                                                              |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `DATABASE_URL`                                                                 | Ligação interna do PostgreSQL                                                                                      |
+| `CLIENT_URL`                                                                   | `https://O-TEU-SITE.vercel.app`                                                                                    |
+| `FRONTEND_URL`                                                                 | O mesmo endereço público da Vercel                                                                                 |
+| `JWT_SECRET`                                                                   | Gerado automaticamente pelo Blueprint; num serviço manual, gerar um segredo aleatório com pelo menos 32 caracteres |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | Dados do fornecedor de email                                                                                       |
+
+As restantes variáveis estão em `render.yaml` e `backend/.env.example`. Num serviço manual, configurar também essas variáveis. Não definir `PORT`: o Render fornece a porta. A API escuta em `0.0.0.0` e aplica as migrações no arranque.
+
+`PGSSL=false` destina-se à ligação interna do Render. Se usares PostgreSQL externo, configurar TLS conforme o fornecedor. Guardar os segredos apenas no painel do Render.
+
+**Email:** o Render gratuito bloqueia as portas SMTP 25, 465 e 587. É necessário um fornecedor que disponibilize SMTP numa porta permitida ou um plano compatível. A porta 25 também está bloqueada nos restantes planos. Para TLS direto, configurar `SMTP_SECURE=true`; para STARTTLS, usar `false`. O envio por email tem de ser testado no serviço real. [Limitações oficiais](https://render.com/docs/free).
+
+## 2. Frontend na Vercel
+
+Importar o mesmo repositório:
+
+| Campo            | Valor           |
+| ---------------- | --------------- |
+| Framework        | Vite            |
+| Root Directory   | `frontend`      |
+| Install Command  | `npm ci`        |
+| Build Command    | `npm run build` |
+| Output Directory | `dist`          |
+| Node             | `24.x`          |
+
+Configurar as quatro variáveis antes do build:
+
+```dotenv
+VITE_API_URL=https://A-TUA-API.onrender.com/api
+VITE_SOCKET_URL=https://A-TUA-API.onrender.com
+VITE_SITE_URL=https://O-TEU-SITE.vercel.app
+VITE_CONTACT_EMAIL=privacidade@o-teu-dominio.pt
 ```
 
-O arranque instala dependências em falta com `npm ci`, prepara a configuração local, inicia o PostgreSQL num volume persistente, aplica migrações e verifica o frontend, a API e o proxy antes de abrir o navegador. A palavra-passe local do PostgreSQL é gerada aleatoriamente na primeira configuração e conservada em `backend/.env`. Os logs e os identificadores dos processos ficam em `.runtime/`, excluída do Git.
+Substituir pelos endereços reais. Estas variáveis são públicas: nunca colocar palavras-passe, JWT_SECRET ou DATABASE_URL em variáveis VITE_. A API é chamada diretamente no Render; o Socket.IO também se liga diretamente ao Render.
 
-- Interface: http://localhost:5173
-- Estado da API e do PostgreSQL: http://localhost:5000/api/health
-- Verificar sem abrir o navegador: `start.bat -NoBrowser`.
-- Encerrar a API e o frontend: `stop.bat`. O PostgreSQL continua disponível e os dados são conservados.
+Depois de obter o domínio final da Vercel, atualizar `VITE_SITE_URL` na Vercel e confirmar `CLIENT_URL` e `FRONTEND_URL` no Render. Voltar a publicar ambos os serviços após essas alterações. Se mudares uma variável VITE_, voltar a executar o deploy da Vercel. Para previews, autorizar apenas os endereços exatos pretendidos no backend; não abrir CORS a todos os domínios.
 
-Para usar uma instalação PostgreSQL própria, configure `DATABASE_URL` e `LOCAL_POSTGRES_DOCKER=false` em `backend/.env`. Conserve as configurações e credenciais existentes.
+O `vercel.json` permite abrir e atualizar rotas como `/explorar`, `/perfil` e `/cursos/...` sem erro 404. [Configuração oficial de Vite](https://vercel.com/docs/frameworks/frontend/vite).
 
-No PostgreSQL gerido pelo projeto, o arranque também verifica a autenticação. Se um volume existente tiver uma palavra-passe antiga, sincroniza-a com a configuração local através do socket interno do contentor, sem eliminar o volume nem os dados. Esta recuperação não se aplica a bases de dados externas.
+## 3. Confirmar
 
-## Execução manual
+Abrir `https://A-TUA-API.onrender.com/api/estado`, criar uma conta, iniciar sessão e testar cursos, mensagens e recuperação de palavra-passe. Os dados devem persistir no PostgreSQL. O sistema de ficheiros do Render gratuito é efémero; não guardar nele cópias de segurança como única cópia dos dados.
 
-```powershell
-npm --prefix backend ci
-npm --prefix frontend ci
-# Apenas se backend/.env ainda não existir:
-Copy-Item backend/.env.example backend/.env
-# Configure DATABASE_URL com a sua ligação PostgreSQL.
-npm --prefix backend run migrate
-```
+Os pagamentos reais não estão implementados; a simulação está bloqueada em produção. As chamadas usam STUN, sem TURN, e dependem da rede e do navegador.
 
-Em terminais separados:
-
-```powershell
-npm --prefix backend run dev
-npm --prefix frontend run dev
-```
-
-## Organização
-
-```text
-backend/
-  src/
-    server.js             arranque HTTP e Socket.IO
-    app.js                Express, middleware e montagem das rotas
-    routes/               endpoints e middleware por domínio
-    controllers/          pedidos HTTP, validação de contexto e respostas
-    models/               consultas PostgreSQL parametrizadas
-    services/             avaliações, acesso, progresso e pagamentos
-    middleware/           autenticação, permissões e tratamento assíncrono
-    database/             pool, transações e migrações SQL versionadas
-    config/               ambiente, sessão, email e armazenamento local
-    sockets/              presença, chamadas e sinalização autenticada
-    content/              perguntas frequentes
-    utils/                funções de apoio
-  scripts/                administração, importação, backup e restauro
-  tests/                  integração em schemas PostgreSQL isolados
-frontend/
-  src/
-    pages/NomePage/     JSX, CSS e index.js de cada página
-    components/Nome/      JSX, CSS e index.js de cada componente
-    context/              sessão, tema, sockets e chamadas
-    services/api.js       instância Axios e interceptores
-    constants/            constantes partilhadas
-    utils/                pesquisa, formatação e validação de ligações
-    index.css             reset, tipografia, temas e estilos comuns
-scripts/                  arranque e encerramento no Windows
-compose.yaml              PostgreSQL local com volume persistente
-```
-
-## Demonstração e permissões
-
-A preparação de demonstração acrescenta cinco cursos e oito contas de teste, sem repor os dados existentes.
-
-```powershell
-npm --prefix backend run seed
-npm --prefix backend run account:promote -- nome_utilizador
-```
-
-Em **Administração → Utilizadores**, é possível atribuir os cargos Aluno, Formador, Administrador ou Administrador e formador. Os administradores existentes conservam os dois acessos. A alteração de cargo conserva os dados e invalida as sessões da conta alterada, exigindo novo início de sessão. Não é possível alterar o próprio cargo. O comando `account:promote` concede os acessos de administrador e formador. O arranque normal não cria demos nem promove utilizadores automaticamente.
-
-Os formadores têm a página **Avaliar trabalhos** em `/creator/reviews`, acessível pelo menu e pelo painel do criador. Podem pesquisar e filtrar por curso/tipo, atribuir notas a questionários e aprovar projetos ou pedir alterações com feedback. A lista inclui apenas os cursos que o utilizador pode gerir.
-
-## Funcionalidades
-
-### Criação e revisão de cursos
-
-No editor, **Guardar rascunho** conserva o trabalho sem o enviar para publicação. **Enviar para revisão** valida o conteúdo e notifica a administração. O administrador pode rever todas as aulas e recursos, aprovar a publicação ou enviar um feedback com as alterações necessárias.
-
-O formador consulta a decisão no sino de notificações, no painel do criador e no editor do curso. Depois de corrigir, pode voltar a submeter. A edição retira o curso do catálogo até nova aprovação; os alunos já inscritos conservam o acesso. Os pareceres anteriores continuam nas notificações. Alterações simultâneas são detetadas para evitar sobrescrever ou aprovar uma versão desatualizada.
-
-Os cursos podem ter comunidade opcional, com chats e chamadas normais de voz/vídeo. O certificado é automático e verificável após a conclusão dos requisitos. As opções sem implementação de descontos, cupões, medalhas, certificados personalizados e modos especiais de chamada foram retiradas do editor.
-
-Cursos gratuitos e pagos com simulação de pagamento, biblioteca, progresso, notas, avaliações corrigidas no servidor, projetos e certificados verificáveis. Inclui editor de cursos, revisão administrativa, colaboradores, comunidades, mensagens, amigos, chamadas, perfil com privacidade e centro de ajuda com 33 perguntas. Os tickets de suporte foram removidos.
-
-Os pagamentos são demonstrações, sem cobrança real. Anexos diretos no chat não estão disponíveis; podem ser partilhadas ligações. Os vídeos externos exigem internet e as chamadas usam ligação direta com STUN, podendo falhar em redes restritivas.
-
-## Verificação
-
-Configure `TEST_DATABASE_URL` com uma base PostgreSQL descartável e separada da base da aplicação. Os testes de integração exigem esta variável explicitamente; não reutilizam `DATABASE_URL` nem as credenciais de `backend/.env` por defeito.
-
-No Windows com Docker, `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-backend.ps1` prepara essa base descartável, executa os testes e remove o contentor no fim.
-
-Com essa ligação disponível:
-
-```powershell
-npm --prefix backend run check
-npm --prefix frontend run check
-npm --prefix backend run format:check
-npm --prefix frontend run format:check
-```
-
-Os testes usam schemas temporários e não alteram as contas da aplicação. Verificam também pedidos simultâneos, rollback, reinício, backup e restauro. O CSS é verificado para impedir `!important`.
-
-## Backup e migração
-
-```powershell
-npm --prefix backend run backup
-# Restauro apenas para uma base PostgreSQL vazia:
-npm --prefix backend run restore -- caminho/do/backup.json
-```
-
-A configuração local já foi migrada para PostgreSQL. A cópia SQLite original foi conservada como arquivo e não é utilizada pela aplicação. Os backups contêm dados privados e devem ser guardados fora do servidor.
-
-
-## Legibilidade do código
-
-O backend e o frontend seguem a mesma formatação: duas posições por nível, uma declaração por instrução, linhas em branco entre blocos lógicos e antes dos retornos, e propriedades JSX em linhas separadas. Os ficheiros CSS continuam separados dos componentes.
-
-Para formatar o código e aplicar a separação de blocos:
-
-```powershell
-npm --prefix frontend run lint:fix
-npm --prefix frontend run format
-npm --prefix backend run lint:fix
-npm --prefix backend run format
-```
-
-Use `format:check` e `lint` para verificar o estilo sem modificar os ficheiros. As regras estão em `.prettierrc.json`, `.editorconfig` e nas configurações ESLint de cada pasta.
+Esta pasta não inclui Docker, Caddy, scripts locais, testes, evoluções, relatórios, builds, dependências instaladas ou configurações privadas. A configuração foi preparada e verificada localmente; o alojamento, a base e o SMTP têm de ser confirmados nas contas reais.

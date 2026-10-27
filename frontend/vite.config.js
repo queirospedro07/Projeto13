@@ -6,6 +6,26 @@ import { siteMetadata } from './scripts/site-metadata.js';
 export default defineConfig(({ mode, command }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
   const configuredApi = env.VITE_API_URL;
+  if (command === 'build' && process.env.VERCEL === '1') {
+    for (const chave of [
+      'VITE_API_URL',
+      'VITE_SOCKET_URL',
+      'VITE_SITE_URL',
+      'VITE_CONTACT_EMAIL',
+    ]) {
+      if (!env[chave])
+        throw new Error('Configure ' + chave + ' nas variáveis da Vercel antes de publicar.');
+    }
+    for (const chave of ['VITE_API_URL', 'VITE_SOCKET_URL', 'VITE_SITE_URL']) {
+      const url = new URL(env[chave]);
+      if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash)
+        throw new Error(chave + ' deve usar um endereço HTTPS sem credenciais.');
+      if (chave === 'VITE_API_URL' && url.pathname.replace(/\/$/, '') !== '/api')
+        throw new Error('VITE_API_URL deve terminar em /api.');
+      if (chave !== 'VITE_API_URL' && url.pathname !== '/')
+        throw new Error(chave + ' deve conter apenas a origem, sem /api.');
+    }
+  }
   if (
     command === 'build' &&
     env.VITE_SITE_URL &&

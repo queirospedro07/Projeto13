@@ -1,0 +1,50 @@
+services:
+  - type: web
+    name: nexo-api
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /api/estado
+    envVars:
+      - key: NODE_VERSION
+        value: '24'
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: DATABASE_URL
+        sync: false
+      - key: PGSSL
+        value: 'false'
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 24h
+      - key: CLIENT_URL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: TRUST_PROXY_HOPS
+        value: '1'
+      - key: ENABLE_DEMO_LOGIN
+        value: 'false'
+      - key: ENABLE_DEV_PASSWORD_RESET
+        value: 'false'
+      - key: LOCAL_POSTGRES_DOCKER
+        value: 'false'
+      - key: ENABLE_PAYMENT_SIMULATION
+        value: 'false'
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_SECURE
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false

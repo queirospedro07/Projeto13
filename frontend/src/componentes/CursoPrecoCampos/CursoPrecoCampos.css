@@ -1,0 +1,93 @@
+@layer overrides {
+  .curso-preco-opcoes {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .curso-preco-opcoes legend {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .curso-preco-linha {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px 28px;
+  }
+  .curso-preco-linha > p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .curso-preco-opcoes .curso-preco-escolhas > label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    width: auto;
+    margin: 0;
+    white-space: nowrap;
+  }
+  .curso-preco-opcoes input {
+    accent-color: #2563eb;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+  .curso-preco-valor {
+    display: grid;
+    gap: 8px;
+    max-width: 260px;
+  }
+  .curso-preco-valor > label {
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .curso-preco-valor > div {
+    position: relative;
+  }
+  .curso-preco-valor input {
+    padding: 11px 40px 11px 12px;
+    width: 100%;
+    background: var(--interface-superficie);
+    border: 1px solid var(--interface-linha);
+  }
+  .curso-preco-valor > div > span {
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    pointer-events: none;
+  }
+  .curso-preco-opcoes .curso-preco-escolhas {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 24px;
+  }
+  .curso-precos {
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+  @media (max-width: 600px) {
+    .curso-precos {
+      grid-template-columns: 1fr;
+    }
+  }
+  .curso-preco-anterior {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin-left: 10px;
+  }
+}

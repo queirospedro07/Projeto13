@@ -1,47 +1,47 @@
 const {
-  connectDB,
-  closeDatabase,
-  queryOne,
-  execute,
-  transaction,
-} = require('../src/database/connection.js');
+  ligarBaseDados,
+  fecharBaseDados,
+  consultarUm,
+  executar,
+  transacao,
+} = require('../src/base-dados/ligacao.js');
 
-async function main() {
+async function principal() {
   try {
-    const username = process.argv[2];
-    if (!username || !/^[a-zA-Z0-9_.]{3,30}$/.test(username)) {
+    const nomeUtilizador = process.argv[2];
+    if (!nomeUtilizador || !/^[a-zA-Z0-9_.]{3,30}$/.test(nomeUtilizador)) {
       throw new Error('Utilização: npm run account:promote -- nome_utilizador');
     }
 
-    await connectDB();
+    await ligarBaseDados();
 
-    const user = await queryOne(
+    const utilizador = await consultarUm(
       'SELECT id, papel, admin_formador FROM utilizadores WHERE lower(nome_utilizador) = lower($1)',
-      [username],
+      [nomeUtilizador],
     );
-    if (!user) throw new Error('Conta não encontrada. Nenhuma conta foi criada ou alterada.');
-    if (user.papel !== 'ADMIN' || user.admin_formador !== 1) {
-      await transaction(
+    if (!utilizador) throw new Error('Conta não encontrada. Nenhuma conta foi criada ou alterada.');
+    if (utilizador.papel !== 'ADMIN' || utilizador.admin_formador !== 1) {
+      await transacao(
         async () =>
-          await execute(
+          await executar(
             "UPDATE utilizadores SET papel = 'ADMIN', admin_formador = 1, versao_sessao = versao_sessao + 1, atualizado_em = $1 WHERE id = $2",
-            [new Date().toISOString(), user.id],
+            [new Date().toISOString(), utilizador.id],
           ),
       );
     }
 
     console.log(
-      `${username}: administrador e formador. A palavra-passe foi conservada. Inicie sessão novamente.`,
+      `${nomeUtilizador}: administrador e formador. A palavra-passe foi conservada. Inicie sessão novamente.`,
     );
-  } catch (error) {
-    console.error(error.message);
+  } catch (erro) {
+    console.error(erro.message);
     process.exitCode = 1;
   } finally {
-    await closeDatabase();
+    await fecharBaseDados();
   }
 }
 
-main().catch((error) => {
-  console.error(error.message);
+principal().catch((erro) => {
+  console.error(erro.message);
   process.exitCode = 1;
 });

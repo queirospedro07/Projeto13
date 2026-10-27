@@ -1,0 +1,89 @@
+@layer components {
+  .course-status-chart {
+    min-width: 0;
+    padding: 24px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+  .course-status-chart__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 26px;
+  }
+  .course-status-chart h2 {
+    margin: 0 0 6px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .course-status-chart p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .course-status-chart .course-status-chart__total {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .course-status-chart__total strong {
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--text-primary);
+  }
+  .course-status-chart__rows {
+    display: grid;
+    gap: 18px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .course-status-chart__row {
+    display: grid;
+    grid-template-columns: 100px minmax(0, 1fr) 28px 40px;
+    align-items: center;
+    gap: 16px;
+    font-size: 13px;
+  }
+  .course-status-chart__name {
+    color: var(--text-secondary);
+  }
+  .course-status-chart__track {
+    height: 7px;
+    overflow: hidden;
+    border-radius: 3px;
+    background: var(--border-color);
+  }
+  .course-status-chart__track > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+  }
+  .course-status-chart__count,
+  .course-status-chart__percentage {
+    text-align: right;
+  }
+  .course-status-chart__count {
+    font-weight: 600;
+  }
+  .course-status-chart__percentage {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .course-status-chart__empty {
+    padding-block: 20px;
+  }
+  @media (max-width: 480px) {
+    .course-status-chart__row {
+      grid-template-columns: 88px minmax(0, 1fr) 20px 34px;
+      gap: 10px;
+      font-size: 12px;
+    }
+  }
+}

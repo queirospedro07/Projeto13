@@ -1,0 +1,123 @@
+/* Shared touch controls and viewport sizing for the application shell. */
+@layer overrides {
+  @media (pointer: coarse) {
+    input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+    textarea,
+    select {
+      font-size: 1rem;
+    }
+
+    .button-base-styles,
+    .custom-select-trigger,
+    .custom-select-option,
+    .navbar-button,
+    .navbar-button-2 {
+      min-height: 44px;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .course-player-panel,
+    .course-player-panel-2,
+    .course-player-panel-3 {
+      height: calc(100dvh - 9rem - env(safe-area-inset-bottom, 0px));
+    }
+  }
+
+  @media (max-width: 479px) {
+    .course-player-panel-39 {
+      flex-wrap: wrap;
+    }
+
+    .course-player-button-15 {
+      flex: 1 1 auto;
+      white-space: normal;
+      min-height: 44px;
+    }
+  }
+}
+
+@layer overrides {
+  .modal-panel {
+    top: var(--viewport-topo, 0px);
+    bottom: auto;
+    height: var(--viewport-altura, 100dvh);
+    padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px))
+      max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+  }
+  .modal-panel-4 {
+    max-height: calc(
+      var(--viewport-altura, 100dvh) - 32px - env(safe-area-inset-top, 0px) -
+        env(safe-area-inset-bottom, 0px)
+    );
+  }
+  .modal-button {
+    flex-shrink: 0;
+  }
+  .modal-subheading {
+    overflow-wrap: anywhere;
+  }
+  .ui-group:focus-within .space-message-stream-panel-14,
+  .ui-group:focus-within .course-channel-chat-panel-15 {
+    display: flex;
+  }
+  .space-message-stream-description-2,
+  .course-channel-chat-description-5 {
+    overflow-wrap: anywhere;
+  }
+  .ui-group:focus-within .lesson-video-player-panel-5,
+  .ui-group:focus-within .messages-page-button-10,
+  .ui-group:focus-within .messages-page-button-15 {
+    opacity: 1;
+  }
+  @media (hover: none), (pointer: coarse) {
+    .lesson-video-player-panel-5,
+    .messages-page-button-10,
+    .messages-page-button-15 {
+      opacity: 1;
+    }
+    .lesson-video-player-panel-5 button,
+    .messages-page-button-10,
+    .messages-page-button-15 {
+      min-width: 44px;
+      min-height: 44px;
+    }
+
+    .space-message-stream-panel-9,
+    .course-channel-chat-panel-8 {
+      flex-wrap: wrap;
+    }
+    .space-message-stream-panel-11,
+    .course-channel-chat-panel-12 {
+      flex-basis: calc(100% - 64px);
+    }
+    .space-message-stream-panel-14,
+    .course-channel-chat-panel-15 {
+      position: static;
+      display: flex;
+      margin-left: auto;
+      border: 0;
+      box-shadow: none;
+    }
+    .space-message-stream-panel-14 button,
+    .course-channel-chat-panel-15 button,
+    .modal-button {
+      min-width: 44px;
+      min-height: 44px;
+    }
+  }
+  @media (max-width: 767px) {
+    .messages-page-panel {
+      height: calc(var(--viewport-altura, 100dvh) - 10.5rem - env(safe-area-inset-bottom, 0px));
+    }
+    .curso-preco-opcoes .curso-preco-escolhas {
+      flex-wrap: wrap;
+      gap: 16px 24px;
+    }
+    .course-player-panel,
+    .course-player-panel-2,
+    .course-player-panel-3 {
+      height: calc(var(--viewport-altura, 100dvh) - 9rem - env(safe-area-inset-bottom, 0px));
+    }
+  }
+}

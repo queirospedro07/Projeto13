@@ -1,6 +1,0 @@
-node_modules
-dist
-.env
-*.db
-package-lock.json
-RELATORIO_COMPLETO.md

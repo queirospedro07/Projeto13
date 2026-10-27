@@ -1,0 +1,161 @@
+-- Atualiza apenas nomes de colunas das vistas de consulta.
+-- Tabelas, dados e registos históricos de migração são conservados.
+DO $atualizar_consultas$
+DECLARE
+  vista RECORD;
+  campo RECORD;
+BEGIN
+  FOR vista IN SELECT nome FROM (VALUES
+    ('consulta_utilizadores'),
+    ('consulta_perfis'),
+    ('consulta_cursos'),
+    ('consulta_modulos_curso'),
+    ('consulta_aulas'),
+    ('consulta_inscricoes'),
+    ('consulta_progresso_aulas'),
+    ('consulta_espacos'),
+    ('consulta_canais'),
+    ('consulta_membros_espacos'),
+    ('consulta_mensagens'),
+    ('consulta_avaliacoes'),
+    ('consulta_questionarios'),
+    ('consulta_perguntas_questionario'),
+    ('consulta_tentativas_questionario'),
+    ('consulta_certificados'),
+    ('consulta_notas'),
+    ('consulta_notificacoes'),
+    ('consulta_amizades'),
+    ('consulta_seguidores'),
+    ('consulta_mensagens_diretas'),
+    ('consulta_colaboradores_curso'),
+    ('consulta_candidaturas_formador'),
+    ('consulta_tokens_recuperacao'),
+    ('consulta_categorias')
+  ) AS vistas(nome) LOOP
+    IF EXISTS (SELECT 1 FROM information_schema.views WHERE table_schema = current_schema() AND table_name = vista.nome) THEN
+      FOR campo IN SELECT anterior, atual FROM (VALUES
+        ('userId', 'idUtilizador'),
+        ('courseId', 'idCurso'),
+        ('moduleId', 'idModulo'),
+        ('lessonId', 'idAula'),
+        ('enrollmentId', 'idInscricao'),
+        ('spaceId', 'idEspaco'),
+        ('channelId', 'idCanal'),
+        ('quizId', 'idQuestionario'),
+        ('parentId', 'idPai'),
+        ('creatorId', 'idFormador'),
+        ('ownerId', 'idProprietario'),
+        ('requesterId', 'idSolicitante'),
+        ('addresseeId', 'idDestinatario'),
+        ('followerId', 'idSeguidor'),
+        ('followingId', 'idSeguido'),
+        ('senderId', 'idRemetente'),
+        ('receiverId', 'idDestinatarioMensagem'),
+        ('credentialId', 'idCredencial'),
+        ('avatarUrl', 'urlAvatar'),
+        ('bannerUrl', 'urlCapa'),
+        ('thumbnailUrl', 'urlMiniatura'),
+        ('videoUrl', 'urlVideo'),
+        ('iconUrl', 'urlIcone'),
+        ('passwordHash', 'hashPalavraPasse'),
+        ('dailyGoalMinutes', 'objetivoDiarioMinutos'),
+        ('minutesToday', 'minutosHoje'),
+        ('totalMinutes', 'minutosTotais'),
+        ('isSuspended', 'estaSuspenso'),
+        ('isTeacher', 'eFormador'),
+        ('isAdmin', 'eAdministrador'),
+        ('authVersion', 'versaoSessao'),
+        ('createdAt', 'criadoEm'),
+        ('updatedAt', 'atualizadoEm'),
+        ('durationHours', 'duracaoHoras'),
+        ('durationMin', 'duracaoMinutos'),
+        ('isFree', 'eGratuito'),
+        ('isPublished', 'estaPublicado'),
+        ('approvalStatus', 'estadoAprovacao'),
+        ('adminNotes', 'notasAdministracao'),
+        ('submittedForReviewAt', 'submetidoParaRevisaoEm'),
+        ('reviewedAt', 'revistoEm'),
+        ('orderIndex', 'indiceOrdem'),
+        ('dripMode', 'modoDesbloqueio'),
+        ('xpReward', 'recompensaExperiencia'),
+        ('enrolledAt', 'inscritoEm'),
+        ('completedAt', 'concluidoEm'),
+        ('progressPercent', 'percentagemProgresso'),
+        ('lastLessonId', 'idUltimaAula'),
+        ('isHidden', 'estaOculto'),
+        ('timeSpentSeconds', 'tempoGastoSegundos'),
+        ('isPrivate', 'ePrivado'),
+        ('memberCount', 'totalMembros'),
+        ('bannerPosition', 'posicaoCapa'),
+        ('isVoice', 'eVoz'),
+        ('isLocked', 'estaBloqueado'),
+        ('accessMode', 'modoAcesso'),
+        ('voiceMode', 'modoVoz'),
+        ('guidingQuestion', 'perguntaOrientadora'),
+        ('joinedAt', 'aderiuEm'),
+        ('isPinned', 'estaAfixada'),
+        ('passingScore', 'pontuacaoAprovacao'),
+        ('correctOptionIndex', 'indiceOpcaoCorreta'),
+        ('attemptedAt', 'tentadoEm'),
+        ('recipientName', 'nomeDestinatario'),
+        ('courseTitle', 'tituloCurso'),
+        ('issuedAt', 'emitidoEm'),
+        ('isRead', 'estaLida'),
+        ('fullName', 'nomeCompleto'),
+        ('experienceYears', 'anosExperiencia'),
+        ('portfolioUrl', 'urlPortefolio'),
+        ('proposedCourses', 'cursosPropostos'),
+        ('sampleVideoUrl', 'urlVideoExemplo'),
+        ('adminFeedback', 'parecerAdministracao'),
+        ('reviewedBy', 'revistoPor'),
+        ('defaultCallMode', 'modoChamadaPredefinido'),
+        ('allowStudentScreenShare', 'permitirPartilhaEcraAluno'),
+        ('allowStudentCamera', 'permitirCamaraAluno'),
+        ('isPublic', 'ePublico'),
+        ('showBio', 'mostrarBiografia'),
+        ('showLocation', 'mostrarLocalizacao'),
+        ('showSocials', 'mostrarRedesSociais'),
+        ('showStats', 'mostrarEstatisticas'),
+        ('showCourses', 'mostrarCursos'),
+        ('themePreference', 'preferenciaTema'),
+        ('acceptedTerms', 'termosAceites'),
+        ('teacherId', 'idFormadorResponsavel'),
+        ('expectedUpdatedAt', 'atualizadoEmEsperado'),
+        ('socialLinks', 'ligacoesRedesSociais')
+      ) AS campos(anterior, atual) LOOP
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema=current_schema() AND table_name=vista.nome AND column_name=campo.anterior)
+          AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema=current_schema() AND table_name=vista.nome AND column_name=campo.atual) THEN
+          EXECUTE format('ALTER VIEW %I.%I RENAME COLUMN %I TO %I', current_schema(), vista.nome, campo.anterior, campo.atual);
+        END IF;
+      END LOOP;
+    END IF;
+  END LOOP;
+END;
+$atualizar_consultas$;
+
+-- Consultas em português. Vistas anteriores preservadas para compatibilidade.
+CREATE OR REPLACE VIEW consulta_utilizadores AS SELECT "id", "email", "username", "passwordHash" AS "hashPalavraPasse", "name", "role", "avatarUrl" AS "urlAvatar", "bio", "location", "dailyGoalMinutes" AS "objetivoDiarioMinutos", "minutesToday" AS "minutosHoje", "totalMinutes" AS "minutosTotais", "xp", "level", "isSuspended" AS "estaSuspenso", "createdAt" AS "criadoEm", "updatedAt" AS "atualizadoEm", "isTeacher" AS "eFormador" FROM users;
+CREATE OR REPLACE VIEW consulta_perfis AS SELECT "id", "userId" AS "idUtilizador", "headline", "website", "github", "linkedin", "bannerUrl" AS "urlCapa", "bannerPosition" AS "posicaoCapa", "isPublic" AS "ePublico", "showStreak", "showLeaderboard", "showBio" AS "mostrarBiografia", "showLocation" AS "mostrarLocalizacao", "showSocials" AS "mostrarRedesSociais", "showStats" AS "mostrarEstatisticas", "showCourses" AS "mostrarCursos", "showBadges", "themePreference" AS "preferenciaTema" FROM profiles;
+CREATE OR REPLACE VIEW consulta_cursos AS SELECT "id", "title", "slug", "description", "category", "difficulty", "thumbnailUrl" AS "urlMiniatura", "thumbnailPosition", "bannerUrl" AS "urlCapa", "bannerPosition" AS "posicaoCapa", "price", "isFree" AS "eGratuito", "isPublished" AS "estaPublicado", "approvalStatus" AS "estadoAprovacao", "adminNotes" AS "notasAdministracao", "submittedForReviewAt" AS "submetidoParaRevisaoEm", "reviewedAt" AS "revistoEm", "featured", "durationHours" AS "duracaoHoras", "language", "creatorId" AS "idFormador", "spaceId" AS "idEspaco", "defaultCallMode" AS "modoChamadaPredefinido", "allowStudentScreenShare" AS "permitirPartilhaEcraAluno", "allowStudentCamera" AS "permitirCamaraAluno", "learningOutcomes", "requirements", "documents", "createdAt" AS "criadoEm", "updatedAt" AS "atualizadoEm" FROM courses;
+CREATE OR REPLACE VIEW consulta_modulos_curso AS SELECT "id", "courseId" AS "idCurso", "title", "description", "orderIndex" AS "indiceOrdem", "dripMode" AS "modoDesbloqueio" FROM course_modules;
+CREATE OR REPLACE VIEW consulta_aulas AS SELECT "id", "moduleId" AS "idModulo", "title", "type", "content", "videoUrl" AS "urlVideo", "durationMin" AS "duracaoMinutos", "orderIndex" AS "indiceOrdem", "xpReward" AS "recompensaExperiencia" FROM lessons;
+CREATE OR REPLACE VIEW consulta_inscricoes AS SELECT "id", "userId" AS "idUtilizador", "courseId" AS "idCurso", "enrolledAt" AS "inscritoEm", "completedAt" AS "concluidoEm", "progressPercent" AS "percentagemProgresso", "lastLessonId" AS "idUltimaAula", "isHidden" AS "estaOculto" FROM enrollments;
+CREATE OR REPLACE VIEW consulta_progresso_aulas AS SELECT "id", "enrollmentId" AS "idInscricao", "lessonId" AS "idAula", "completed", "completedAt" AS "concluidoEm", "timeSpentSeconds" AS "tempoGastoSegundos" FROM lesson_progress;
+CREATE OR REPLACE VIEW consulta_espacos AS SELECT "id", "name", "slug", "description", "iconUrl" AS "urlIcone", "bannerUrl" AS "urlCapa", "bannerPosition" AS "posicaoCapa", "isPrivate" AS "ePrivado", "category", "ownerId" AS "idProprietario", "memberCount" AS "totalMembros", "createdAt" AS "criadoEm" FROM spaces;
+CREATE OR REPLACE VIEW consulta_canais AS SELECT "id", "spaceId" AS "idEspaco", "name", "type", "topic", "orderIndex" AS "indiceOrdem", "isVoice" AS "eVoz", "isLocked" AS "estaBloqueado", "accessMode" AS "modoAcesso", "voiceMode" AS "modoVoz", "guidingQuestion" AS "perguntaOrientadora", "guidelines" FROM channels;
+CREATE OR REPLACE VIEW consulta_membros_espacos AS SELECT "id", "userId" AS "idUtilizador", "spaceId" AS "idEspaco", "role", "joinedAt" AS "aderiuEm" FROM memberships;
+CREATE OR REPLACE VIEW consulta_mensagens AS SELECT "id", "channelId" AS "idCanal", "userId" AS "idUtilizador", "content", "parentId" AS "idPai", "attachments", "isPinned" AS "estaAfixada", "createdAt" AS "criadoEm", "updatedAt" AS "atualizadoEm" FROM messages;
+CREATE OR REPLACE VIEW consulta_avaliacoes AS SELECT "id", "courseId" AS "idCurso", "userId" AS "idUtilizador", "rating", "comment", "createdAt" AS "criadoEm" FROM reviews;
+CREATE OR REPLACE VIEW consulta_questionarios AS SELECT "id", "lessonId" AS "idAula", "title", "description", "passingScore" AS "pontuacaoAprovacao", "xpReward" AS "recompensaExperiencia" FROM quizzes;
+CREATE OR REPLACE VIEW consulta_perguntas_questionario AS SELECT "id", "quizId" AS "idQuestionario", "question", "options", "correctOptionIndex" AS "indiceOpcaoCorreta", "explanation", "orderIndex" AS "indiceOrdem" FROM quiz_questions;
+CREATE OR REPLACE VIEW consulta_tentativas_questionario AS SELECT "id", "quizId" AS "idQuestionario", "userId" AS "idUtilizador", "score", "passed", "attemptedAt" AS "tentadoEm" FROM quiz_attempts;
+CREATE OR REPLACE VIEW consulta_certificados AS SELECT "id", "userId" AS "idUtilizador", "courseId" AS "idCurso", "recipientName" AS "nomeDestinatario", "courseTitle" AS "tituloCurso", "credentialId" AS "idCredencial", "issuedAt" AS "emitidoEm", "score" FROM certificates;
+CREATE OR REPLACE VIEW consulta_notas AS SELECT "id", "userId" AS "idUtilizador", "lessonId" AS "idAula", "content", "createdAt" AS "criadoEm", "updatedAt" AS "atualizadoEm" FROM notes;
+CREATE OR REPLACE VIEW consulta_notificacoes AS SELECT "id", "userId" AS "idUtilizador", "type", "title", "content", "link", "isRead" AS "estaLida", "createdAt" AS "criadoEm" FROM notifications;
+CREATE OR REPLACE VIEW consulta_amizades AS SELECT "id", "requesterId" AS "idSolicitante", "addresseeId" AS "idDestinatario", "status", "createdAt" AS "criadoEm", "updatedAt" AS "atualizadoEm" FROM friendships;
+CREATE OR REPLACE VIEW consulta_seguidores AS SELECT "id", "followerId" AS "idSeguidor", "followingId" AS "idSeguido", "createdAt" AS "criadoEm" FROM follows;
+CREATE OR REPLACE VIEW consulta_mensagens_diretas AS SELECT "id", "senderId" AS "idRemetente", "receiverId" AS "idDestinatarioMensagem", "content", "isRead" AS "estaLida", "createdAt" AS "criadoEm" FROM direct_messages;
+CREATE OR REPLACE VIEW consulta_colaboradores_curso AS SELECT "id", "courseId" AS "idCurso", "userId" AS "idUtilizador", "createdAt" AS "criadoEm", "name", "email", "username", "avatarUrl" AS "urlAvatar", "role" FROM course_collaborators;
+CREATE OR REPLACE VIEW consulta_candidaturas_formador AS SELECT "id", "userId" AS "idUtilizador", "fullName" AS "nomeCompleto", "bio", "expertise", "experienceYears" AS "anosExperiencia", "portfolioUrl" AS "urlPortefolio", "motivation", "proposedCourses" AS "cursosPropostos", "sampleVideoUrl" AS "urlVideoExemplo", "status", "adminFeedback" AS "parecerAdministracao", "reviewedBy" AS "revistoPor", "reviewedAt" AS "revistoEm", "createdAt" AS "criadoEm", "updatedAt" AS "atualizadoEm" FROM creator_applications;
+CREATE OR REPLACE VIEW consulta_tokens_recuperacao AS SELECT "id", "user_id", "token_hash", "expires_at", "created_at" FROM password_reset_tokens;
+CREATE OR REPLACE VIEW consulta_categorias AS SELECT "id", "name", "slug", "description", "icon" FROM categories;
