@@ -53,17 +53,10 @@ function validarAmbienteProducao(ambiente) {
 
   for (const chave of [
     'ENABLE_DEMO_LOGIN',
-    'ENABLE_DEV_PASSWORD_RESET',
     'LOCAL_POSTGRES_DOCKER',
     'ENABLE_PAYMENT_SIMULATION',
   ]) {
     if (ambiente[chave] === 'true') erros.push(`${chave} não pode estar ativo em produção.`);
-  }
-
-  if (!ambiente.SMTP_HOST || !ambiente.SMTP_USER || !ambiente.SMTP_PASS || !ambiente.SMTP_FROM) {
-    erros.push(
-      'Configure SMTP_HOST, SMTP_USER, SMTP_PASS e SMTP_FROM para recuperar contas por email.',
-    );
   }
 
   if (ambiente.TRUST_PROXY_HOPS && !/^[1-5]$/.test(ambiente.TRUST_PROXY_HOPS)) {

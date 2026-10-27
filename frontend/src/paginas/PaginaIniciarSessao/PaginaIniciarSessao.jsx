@@ -127,12 +127,6 @@ export const PaginaIniciarSessao = () => {
                   >
                     Palavra-passe
                   </label>
-                  <Link
-                    to="/recuperar-palavra-passe"
-                    className="login-link"
-                  >
-                    Esqueceu-se da palavra-passe?
-                  </Link>
                 </div>
                 <div className="login-panel-7">
                   <Lock className="login-mail" />

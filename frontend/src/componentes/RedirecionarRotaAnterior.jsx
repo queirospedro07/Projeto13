@@ -3,8 +3,10 @@ import { Navigate, generatePath, matchPath, useLocation } from 'react-router-dom
 export const ROTAS_ANTERIORES = [
   ['login', 'entrar'],
   ['register', 'registar'],
-  ['forgot-password', 'recuperar-palavra-passe'],
-  ['reset-password', 'repor-palavra-passe'],
+  ['forgot-password', 'entrar'],
+  ['reset-password', 'entrar'],
+  ['recuperar-palavra-passe', 'entrar'],
+  ['repor-palavra-passe', 'entrar'],
   ['explore', 'explorar'],
   ['courses/:id', 'cursos/:id'],
   ['certificates/verify/:id', 'certificados/verificar/:id'],

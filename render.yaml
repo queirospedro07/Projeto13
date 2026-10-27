@@ -30,21 +30,7 @@ services:
         value: '1'
       - key: ENABLE_DEMO_LOGIN
         value: 'false'
-      - key: ENABLE_DEV_PASSWORD_RESET
-        value: 'false'
       - key: LOCAL_POSTGRES_DOCKER
         value: 'false'
       - key: ENABLE_PAYMENT_SIMULATION
         value: 'false'
-      - key: SMTP_HOST
-        sync: false
-      - key: SMTP_PORT
-        sync: false
-      - key: SMTP_SECURE
-        sync: false
-      - key: SMTP_USER
-        sync: false
-      - key: SMTP_PASS
-        sync: false
-      - key: SMTP_FROM
-        sync: false

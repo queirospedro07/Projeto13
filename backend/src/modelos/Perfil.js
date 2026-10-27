@@ -95,49 +95,6 @@ const Perfil = {
   atualizarPerfisPorIdUtilizadorParaEnviarPerfilPerfilClearCampo(parametros = []) {
     return executar('UPDATE perfis SET url_banner = NULL WHERE id_utilizador = $1', parametros);
   },
-  procurarUtilizadorResultado(parametros = []) {
-    return consultar(
-      'SELECT id, name, email FROM consulta_utilizadores WHERE LOWER(email) = $1 LIMIT 1',
-      parametros,
-    );
-  },
-  procurarPalavraPasseReporTokensPorUtilizadorId(parametros = []) {
-    return consultar(
-      'DELETE FROM tokens_recuperacao_palavra_passe WHERE id_utilizador = $1',
-      parametros,
-    );
-  },
-  procurarPalavraPasseReporTokens(parametros = []) {
-    return consultar(
-      `INSERT INTO tokens_recuperacao_palavra_passe (id, id_utilizador, hash_token, expira_em, criado_em)
-       VALUES ($1, $2, $3, $4, $5)`,
-      parametros,
-    );
-  },
-  procurarPalavraPasseReporTokensPorTokenResumo(parametros = []) {
-    return consultar(
-      'DELETE FROM tokens_recuperacao_palavra_passe WHERE hash_token = $1',
-      parametros,
-    );
-  },
-  procurarTokenResultadoPorTokenResumo(parametros = []) {
-    return consultar(
-      'SELECT user_id, expires_at FROM consulta_tokens_recuperacao WHERE token_hash = $1 LIMIT 1',
-      parametros,
-    );
-  },
-  eliminarConsumedPorResumoToken(parametros = []) {
-    return executar(
-      'DELETE FROM tokens_recuperacao_palavra_passe WHERE hash_token = $1 AND expira_em > $2',
-      parametros,
-    );
-  },
-  atualizarUtilizadoresPorResumoPalavraPasseAndAtualizadoEmAndId(parametros = []) {
-    return executar(
-      'UPDATE utilizadores SET hash_palavra_passe = $1, versao_sessao = versao_sessao + 1, atualizado_em = $2 WHERE id = $3',
-      parametros,
-    );
-  },
 };
 
 module.exports = Perfil;

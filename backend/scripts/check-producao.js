@@ -17,10 +17,7 @@ async function principal() {
     );
   }
 
-  const { verificarEmailTransporte } = require('../src/configuracao/email.js');
-
-  await verificarEmailTransporte();
-  console.log('Configuração de produção, PostgreSQL e ligação SMTP verificados.');
+  console.log('Configuração de produção e PostgreSQL verificados.');
 }
 
 principal()

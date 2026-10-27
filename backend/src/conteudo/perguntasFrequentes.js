@@ -39,7 +39,7 @@ const ajudaPerguntasFrequentes = [
       },
       {
         q: 'Esqueci-me da palavra-passe. O que faço?',
-        a: 'Na página de início de sessão, escolha a recuperação de palavra-passe e indique o seu email. O envio depende do serviço de email configurado. A ligação de recuperação expira e só pode ser utilizada uma vez.',
+        a: 'A recuperação automática de palavra-passe por email não se encontra ativa. Contacte a administração ou suporte para obter assistência no acesso à sua conta.',
       },
       {
         q: 'Como mantenho a minha conta protegida?',

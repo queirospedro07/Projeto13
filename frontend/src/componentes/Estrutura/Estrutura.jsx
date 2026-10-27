@@ -72,9 +72,7 @@ export const Estrutura = () => {
   const isLanding = localizacao.pathname === '/';
   const isAutenticacaoPagina =
     localizacao.pathname === '/entrar' ||
-    localizacao.pathname === '/registar' ||
-    localizacao.pathname === '/recuperar-palavra-passe' ||
-    localizacao.pathname === '/repor-palavra-passe';
+    localizacao.pathname === '/registar';
   const isAprenderLeitor = localizacao.pathname.startsWith('/aprender/');
   const isCursoEditor = localizacao.pathname.startsWith('/formador/cursos/');
   const isMensagens = localizacao.pathname.startsWith('/mensagens');

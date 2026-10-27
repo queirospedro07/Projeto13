@@ -18,10 +18,6 @@ import { PaginaInicial } from './paginas/PaginaInicial';
 
 const PaginaIniciarSessao = React.lazy(() => import('./paginas/PaginaIniciarSessao'));
 const PaginaRegisto = React.lazy(() => import('./paginas/PaginaRegisto'));
-const PaginaRecuperarPalavraPasse = React.lazy(
-  () => import('./paginas/PaginaRecuperarPalavraPasse'),
-);
-const PaginaReporPalavraPasse = React.lazy(() => import('./paginas/PaginaReporPalavraPasse'));
 const PainelPagina = React.lazy(() => import('./paginas/PainelPagina'));
 const CursoDetalhesPagina = React.lazy(() => import('./paginas/CursoDetalhesPagina'));
 const CursoLeitorPagina = React.lazy(() => import('./paginas/CursoLeitorPagina'));
@@ -110,11 +106,11 @@ export const Aplicacao = () => {
                       />
                       <Route
                         path="recuperar-palavra-passe"
-                        element={<PaginaRecuperarPalavraPasse />}
+                        element={<Navigate to="/entrar" replace />}
                       />
                       <Route
                         path="repor-palavra-passe"
-                        element={<PaginaReporPalavraPasse />}
+                        element={<Navigate to="/entrar" replace />}
                       />
                       <Route
                         path="explorar"

@@ -31,13 +31,10 @@ Preencher as variáveis solicitadas:
 | `CLIENT_URL`                                                                   | `https://O-TEU-SITE.vercel.app`                                                                                    |
 | `FRONTEND_URL`                                                                 | O mesmo endereço público da Vercel                                                                                 |
 | `JWT_SECRET`                                                                   | Gerado automaticamente pelo Blueprint; num serviço manual, gerar um segredo aleatório com pelo menos 32 caracteres |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | Dados do fornecedor de email                                                                                       |
 
 As restantes variáveis estão em `render.yaml` e `backend/.env.example`. Num serviço manual, configurar também essas variáveis. Não definir `PORT`: o Render fornece a porta. A API escuta em `0.0.0.0` e aplica as migrações no arranque.
 
 `PGSSL=false` destina-se à ligação interna do Render. Se usares PostgreSQL externo, configurar TLS conforme o fornecedor. Guardar os segredos apenas no painel do Render.
-
-**Email:** o Render gratuito bloqueia as portas SMTP 25, 465 e 587. É necessário um fornecedor que disponibilize SMTP numa porta permitida ou um plano compatível. A porta 25 também está bloqueada nos restantes planos. Para TLS direto, configurar `SMTP_SECURE=true`; para STARTTLS, usar `false`. O envio por email tem de ser testado no serviço real. [Limitações oficiais](https://render.com/docs/free).
 
 ## 2. Frontend na Vercel
 
@@ -52,13 +49,12 @@ Importar o mesmo repositório:
 | Output Directory | `dist`          |
 | Node             | `24.x`          |
 
-Configurar as quatro variáveis antes do build:
+Configurar as três variáveis antes do build:
 
 ```dotenv
 VITE_API_URL=https://A-TUA-API.onrender.com/api
 VITE_SOCKET_URL=https://A-TUA-API.onrender.com
 VITE_SITE_URL=https://O-TEU-SITE.vercel.app
-VITE_CONTACT_EMAIL=privacidade@o-teu-dominio.pt
 ```
 
 Substituir pelos endereços reais. Estas variáveis são públicas: nunca colocar palavras-passe, JWT_SECRET ou DATABASE_URL em variáveis VITE_. A API é chamada diretamente no Render; o Socket.IO também se liga diretamente ao Render.
@@ -69,8 +65,8 @@ O `vercel.json` permite abrir e atualizar rotas como `/explorar`, `/perfil` e `/
 
 ## 3. Confirmar
 
-Abrir `https://A-TUA-API.onrender.com/api/estado`, criar uma conta, iniciar sessão e testar cursos, mensagens e recuperação de palavra-passe. Os dados devem persistir no PostgreSQL. O sistema de ficheiros do Render gratuito é efémero; não guardar nele cópias de segurança como única cópia dos dados.
+Abrir `https://A-TUA-API.onrender.com/api/estado`, criar uma conta, iniciar sessão e testar cursos e mensagens. Os dados devem persistir no PostgreSQL. O sistema de ficheiros do Render gratuito é efémero; não guardar nele cópias de segurança como única cópia dos dados.
 
 Os pagamentos reais não estão implementados; a simulação está bloqueada em produção. As chamadas usam STUN, sem TURN, e dependem da rede e do navegador.
 
-Esta pasta não inclui Docker, Caddy, scripts locais, testes, evoluções, relatórios, builds, dependências instaladas ou configurações privadas. A configuração foi preparada e verificada localmente; o alojamento, a base e o SMTP têm de ser confirmados nas contas reais.
+Esta pasta não inclui Docker, Caddy, scripts locais, testes, evoluções, relatórios, builds, dependências instaladas ou configurações privadas. A configuração foi preparada e verificada localmente; o alojamento e a base têm de ser confirmados nas contas reais.
