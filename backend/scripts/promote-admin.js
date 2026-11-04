@@ -4,7 +4,7 @@ const {
   consultarUm,
   executar,
   transacao,
-} = require('../src/base-dados/ligacao.js');
+} = require('../src/database/connection.js');
 
 async function principal() {
   try {

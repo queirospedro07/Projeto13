@@ -2,13 +2,13 @@
   "name": "nexo-server",
   "version": "1.0.0",
   "description": "NEXO: API REST com Express, PostgreSQL e Socket.IO",
-  "main": "src/servidor.js",
+  "main": "src/server.js",
   "scripts": {
-    "start": "node src/servidor.js",
-    "migrate": "node src/base-dados/migrar.js",
+    "start": "node src/server.js",
+    "migrate": "node src/database/migrate.js",
     "admin:create": "node scripts/create-admin.js",
     "account:promote": "node scripts/promote-admin.js",
-    "production:check": "node scripts/check-producao.js"
+    "production:check": "node scripts/check-production.js"
   },
   "engines": {
     "node": "24.x"

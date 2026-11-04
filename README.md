@@ -6,6 +6,10 @@ Carrega **o conteúdo desta pasta** para a raiz de um repositório GitHub. A est
 - `backend/`: API e Socket.IO para o Render, com migrações PostgreSQL.
 - `render.yaml`: configuração da API no Render.
 
+O código do backend está organizado em `backend/src/` por responsabilidade: `config`, `controllers`, `database`, `middleware`, `models`, `realtime`, `routes`, `services`, `utils` e `validation`. Os identificadores dos ficheiros SQL de migração mantêm-se para preservar o histórico das bases de dados existentes.
+
+O frontend segue a mesma convenção em `frontend/src/`: `components`, `pages`, `contexts`, `services`, `utils`, `styles` e `constants`. Os caminhos das rotas e os textos apresentados aos utilizadores continuam em português.
+
 ## 1. Base de dados e API no Render
 
 Criar uma base **PostgreSQL** e copiar a ligação interna fornecida pelo Render. A base deve estar na mesma região da API. A base de dados não é criada pelo `render.yaml`; escolhe o plano no painel do Render.
@@ -33,6 +37,8 @@ Preencher as variáveis solicitadas:
 | `JWT_SECRET`                                                                   | Gerado automaticamente pelo Blueprint; num serviço manual, gerar um segredo aleatório com pelo menos 32 caracteres |
 
 As restantes variáveis estão em `render.yaml` e `backend/.env.example`. Num serviço manual, configurar também essas variáveis. Não definir `PORT`: o Render fornece a porta. A API escuta em `0.0.0.0` e aplica as migrações no arranque.
+
+Em produção, a API não arranca sem um `JWT_SECRET` aleatório com pelo menos 32 caracteres e uma origem HTTPS válida em `CLIENT_URL` ou `FRONTEND_URL`. As origens CORS são comparadas exatamente; para previews da Vercel, configurar no Render o endereço específico que se pretende autorizar.
 
 `PGSSL=false` destina-se à ligação interna do Render. Se usares PostgreSQL externo, configurar TLS conforme o fornecedor. Guardar os segredos apenas no painel do Render.
 

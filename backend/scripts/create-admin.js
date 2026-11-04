@@ -3,8 +3,8 @@ const {
   executar,
   transacao,
   fecharBaseDados,
-} = require('../src/base-dados/ligacao.js');
-const Utilizador = require('../src/modelos/Utilizador.js');
+} = require('../src/database/connection.js');
+const Utilizador = require('../src/models/user.js');
 
 async function principal() {
   const email = process.env.ADMIN_EMAIL;
