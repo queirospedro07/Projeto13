@@ -125,48 +125,54 @@ export const PaginaInicial = () => {
             </div>
           </div>
 
-          <div className="landing-opening__media">
-            <video
-              ref={videoRef}
-              className="landing-opening__video"
-              autoPlay={!prefersReducedMotion}
-              muted={isMuted}
-              loop
-              playsInline
-              preload="metadata"
-              aria-hidden="true"
-              onPlay={() => definirIsPlaying(true)}
-              onPause={() => definirIsPlaying(false)}
-            >
-              <source src="/video.mp4" type="video/mp4" />
-            </video>
-            <div className="landing-opening__controls">
-              <button
-                type="button"
-                onClick={alternarMute}
-                className="landing-page-button"
-                aria-label={isMuted ? 'Ativar som' : 'Silenciar som'}
-                title={isMuted ? 'Ativar som' : 'Silenciar som'}
+          <div className="landing-opening__showcase">
+            <div className="landing-opening__media">
+              <video
+                ref={videoRef}
+                className="landing-opening__video"
+                autoPlay={!prefersReducedMotion}
+                muted={isMuted}
+                loop
+                playsInline
+                preload="metadata"
+                aria-hidden="true"
+                onPlay={() => definirIsPlaying(true)}
+                onPause={() => definirIsPlaying(false)}
               >
-                {isMuted ? (
-                  <VolumeX className="landing-page-volume-x" />
-                ) : (
-                  <Volume2 className="landing-page-volume-x" />
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={alternarReproduzir}
-                className="landing-page-button-2"
-                aria-label={isPlaying ? 'Pausar vídeo' : 'Reproduzir vídeo'}
-                title={isPlaying ? 'Pausar vídeo' : 'Reproduzir vídeo'}
-              >
-                {isPlaying ? (
-                  <Pause className="landing-page-volume-x" />
-                ) : (
-                  <Play className="landing-page-play" />
-                )}
-              </button>
+                <source src="/video.mp4" type="video/mp4" />
+              </video>
+              <div className="landing-opening__controls">
+                <button
+                  type="button"
+                  onClick={alternarMute}
+                  className="landing-page-button"
+                  aria-label={isMuted ? 'Ativar som' : 'Silenciar som'}
+                  title={isMuted ? 'Ativar som' : 'Silenciar som'}
+                >
+                  {isMuted ? (
+                    <VolumeX className="landing-page-volume-x" />
+                  ) : (
+                    <Volume2 className="landing-page-volume-x" />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={alternarReproduzir}
+                  className="landing-page-button-2"
+                  aria-label={isPlaying ? 'Pausar vídeo' : 'Reproduzir vídeo'}
+                  title={isPlaying ? 'Pausar vídeo' : 'Reproduzir vídeo'}
+                >
+                  {isPlaying ? (
+                    <Pause className="landing-page-volume-x" />
+                  ) : (
+                    <Play className="landing-page-play" />
+                  )}
+                </button>
+              </div>
+            </div>
+            <div className="landing-opening__media-caption">
+              <strong>NEXO</strong>
+              <span>Cursos, comunidade e progresso num só lugar</span>
             </div>
           </div>
         </section>
