@@ -296,20 +296,20 @@ export const PaginaInicial = () => {
         </section>
 
         {/* Secção Responsiva */}
-        <section className="landing-page-section-3">
-          <div className="landing-page-panel-28">
-            <div className="landing-page-panel-29">
-              <span className="landing-page-label-5">A plataforma</span>
-              <h2 className="landing-page-heading-2">
+        <section className="landing-platform">
+          <div className="landing-platform__layout">
+            <div className="landing-platform__content">
+              <span className="landing-platform__eyebrow">A plataforma</span>
+              <h2 className="landing-platform__title">
                 Aprenda, pratique e acompanhe o seu progresso.
               </h2>
 
-              <Link to="/explorar" className="landing-page-button-6">
+              <Link to="/explorar" className="landing-platform__cta">
                 Explorar cursos
               </Link>
             </div>
 
-            <ul className="landing-page-panel-31">
+            <ul className="landing-platform__features">
               <li>
                 <CheckCircle2 aria-hidden="true" />
                 Aulas em vídeo e materiais de apoio
