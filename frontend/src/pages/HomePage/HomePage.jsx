@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   LuArrowRight as ArrowRight,
-  LuCompass as Compass,
   LuCircleCheck as CheckCircle2,
   LuChevronDown as ChevronDown,
   LuRadio as Radio,
@@ -23,7 +22,10 @@ export const PaginaInicial = () => {
   const { user: utilizador } = useAutenticacao();
   const [abrirPerguntasFrequentes, definirAbrirPerguntasFrequentes] = useState(0);
   const [isMuted, definirIsMuted] = useState(true);
-  const [isPlaying, definirIsPlaying] = useState(true);
+  const [prefersReducedMotion] = useState(
+    () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false,
+  );
+  const [isPlaying, definirIsPlaying] = useState(!prefersReducedMotion);
   const videoRef = useRef(null);
 
   useEffect(() => {
@@ -86,7 +88,6 @@ export const PaginaInicial = () => {
         title="NEXO — Plataforma de Aprendizagem e Comunidade"
         description="Plataforma de cursos online, salas de estudo por voz e vídeo em direto, certificados digitais e comunidade de estudantes."
         canonical="/"
-        ogImage="/hero-showcase.jpg"
         structuredData={{
           '@context': 'https://schema.org',
           '@type': 'EducationalOrganization',
@@ -99,140 +100,96 @@ export const PaginaInicial = () => {
         }}
       />
       <div className="landing-page-panel">
-        {/* Secção Principal (Hero) */}
-        <section className="landing-page-section">
-          <div className="landing-page-panel-6">
-            <div className="landing-page-panel-7">
-              {/* Vídeo de apresentação */}
-              <div className="landing-page-panel-8">
-                <div className="landing-page-panel-9">
-                  <video
-                    ref={videoRef}
-                    className="landing-page-video"
-                    autoPlay
-                    muted={isMuted}
-                    loop
-                    playsInline
-                    preload="metadata"
-                    onPlay={() => definirIsPlaying(true)}
-                    onPause={() => definirIsPlaying(false)}
-                    aria-label="Vídeo de demonstração da plataforma NEXO"
-                  >
-                    <source
-                      src="/video.mp4"
-                      type="video/mp4"
-                    />
-                    O seu navegador não suporta a reprodução de vídeo.
-                  </video>
-
-                  <div className="landing-page-panel-11">
-                    <div className="landing-page-panel-12">
-                      <button
-                        type="button"
-                        onClick={alternarMute}
-                        className="landing-page-button"
-                        aria-label={isMuted ? 'Ativar som' : 'Silenciar som'}
-                        title={isMuted ? 'Ativar som' : 'Silenciar som'}
-                      >
-                        {isMuted ? (
-                          <VolumeX className="landing-page-volume-x" />
-                        ) : (
-                          <Volume2 className="landing-page-volume-x" />
-                        )}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={alternarReproduzir}
-                        className="landing-page-button-2"
-                        aria-label={isPlaying ? 'Pausar vídeo' : 'Reproduzir vídeo'}
-                        title={isPlaying ? 'Pausar vídeo' : 'Reproduzir vídeo'}
-                      >
-                        {isPlaying ? (
-                          <Pause className="landing-page-volume-x" />
-                        ) : (
-                          <Play className="landing-page-play" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              {/* Texto e botões */}
-              <div className="landing-page-panel-13">
-                <h1 className="landing-page-title">Cursos práticos para aprender tecnologia.</h1>
-                <p className="landing-page-description">
-                  Veja as aulas, pratique com projetos e tire dúvidas com a comunidade. Estude ao
-                  seu ritmo e acompanhe o progresso no seu painel.
-                </p>
-
-                <div className="landing-page-panel-14">
-                  {utilizador ? (
-                    <Link
-                      to={painelCaminho}
-                      className="landing-page-link"
-                    >
-                      <span className="landing-page-button-3 ui-group">
-                        <span>Ir para o Meu Painel</span>
-                        <ArrowRight className="landing-page-arrow-right" />
-                      </span>
-                    </Link>
-                  ) : (
-                    <Link
-                      to="/registar"
-                      className="landing-page-link"
-                    >
-                      <span className="landing-page-button-4 ui-group">
-                        <span>Criar Conta Gratuita</span>
-                        <ArrowRight className="landing-page-arrow-right-2" />
-                      </span>
-                    </Link>
-                  )}
-
-                  <Link
-                    to="/explorar"
-                    className="landing-page-link"
-                  >
-                    <span className="landing-page-button-5">
-                      <Compass className="landing-page-compass" />
-                      <span>Explorar Catálogo</span>
-                    </span>
-                  </Link>
-                </div>
-                <div className="landing-page-panel-15">
-                  <div className="landing-page-panel-16">
-                    <CheckCircle2 className="landing-page-check-circle2" />
-                    <span>Acesso flexível</span>
-                  </div>
-                  <span className="landing-page-label">·</span>
-                  <div className="landing-page-panel-16">
-                    <CheckCircle2 className="landing-page-check-circle2" />
-                    <span>Comunidade de aprendizagem</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <section className="landing-opening">
+          <div className="landing-opening__media" aria-hidden="true">
+            <video
+              ref={videoRef}
+              className="landing-opening__video"
+              autoPlay={!prefersReducedMotion}
+              muted={isMuted}
+              loop
+              playsInline
+              preload="metadata"
+              onPlay={() => definirIsPlaying(true)}
+              onPause={() => definirIsPlaying(false)}
+            >
+              <source src="/video.mp4" type="video/mp4" />
+            </video>
+            <div className="landing-opening__shade" />
           </div>
 
-          <div className="landing-page-panel-17">
-            <div className="landing-page-panel-18">
-              <div className="landing-page-panel-19">
-                <div>
-                  <span className="landing-page-label-2">Acesso</span>
-                  <strong className="landing-page-strong">Cursos e recursos online</strong>
-                </div>
-                <div>
-                  <span className="landing-page-label-2">Salas de Estudo</span>
-                  <strong className="landing-page-strong-2">Voz e vídeo em direto</strong>
-                </div>
-                <div>
-                  <span className="landing-page-label-2">Certificados</span>
-                  <strong className="landing-page-strong">Código de Verificação</strong>
-                </div>
-                <div>
-                  <span className="landing-page-label-2">Aprendizagem</span>
-                  <strong className="landing-page-strong">Ao seu ritmo</strong>
-                </div>
+          <div className="landing-opening__content">
+            <p className="landing-opening__eyebrow">NEXO <span /> CURSOS · COMUNIDADE · PRÁTICA</p>
+            <h1 className="landing-opening__title">
+              Aprenda.
+              <br />
+              <span>Em conjunto.</span>
+            </h1>
+            <p className="landing-opening__description">
+              Cursos práticos e salas de estudo para aprender com outras pessoas.
+            </p>
+            <div className="landing-opening__actions">
+              <Link to={utilizador ? painelCaminho : '/registar'} className="landing-opening__primary">
+                {utilizador ? 'Ir para o meu painel' : 'Criar conta gratuita'}
+                <ArrowRight aria-hidden="true" />
+              </Link>
+              <Link to="/explorar" className="landing-opening__secondary">
+                Explorar cursos
+              </Link>
+            </div>
+            <a className="landing-opening__scroll" href="#vantagens">
+              Descubra a NEXO <ChevronDown aria-hidden="true" />
+            </a>
+          </div>
+
+          <div className="landing-opening__controls">
+            <button
+              type="button"
+              onClick={alternarMute}
+              className="landing-page-button"
+              aria-label={isMuted ? 'Ativar som' : 'Silenciar som'}
+              title={isMuted ? 'Ativar som' : 'Silenciar som'}
+            >
+              {isMuted ? (
+                <VolumeX className="landing-page-volume-x" />
+              ) : (
+                <Volume2 className="landing-page-volume-x" />
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={alternarReproduzir}
+              className="landing-page-button-2"
+              aria-label={isPlaying ? 'Pausar vídeo' : 'Reproduzir vídeo'}
+              title={isPlaying ? 'Pausar vídeo' : 'Reproduzir vídeo'}
+            >
+              {isPlaying ? (
+                <Pause className="landing-page-volume-x" />
+              ) : (
+                <Play className="landing-page-play" />
+              )}
+            </button>
+          </div>
+        </section>
+
+        <section className="landing-page-panel-17">
+          <div className="landing-page-panel-18">
+            <div className="landing-page-panel-19">
+              <div>
+                <span className="landing-page-label-2">Acesso</span>
+                <strong className="landing-page-strong">Cursos e recursos online</strong>
+              </div>
+              <div>
+                <span className="landing-page-label-2">Salas de Estudo</span>
+                <strong className="landing-page-strong-2">Voz e vídeo em direto</strong>
+              </div>
+              <div>
+                <span className="landing-page-label-2">Certificados</span>
+                <strong className="landing-page-strong">Código de Verificação</strong>
+              </div>
+              <div>
+                <span className="landing-page-label-2">Aprendizagem</span>
+                <strong className="landing-page-strong">Ao seu ritmo</strong>
               </div>
             </div>
           </div>

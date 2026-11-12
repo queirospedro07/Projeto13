@@ -2198,3 +2198,208 @@
     height: 1rem;
   }
 }
+
+@layer pages {
+  .landing-opening {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    min-height: max(42rem, calc(100svh - 4rem));
+    overflow: hidden;
+    background: #08090b;
+    color: #fff;
+  }
+
+  .landing-opening__media {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    overflow: hidden;
+    background: #08090b;
+  }
+
+  .landing-opening__video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 55%;
+    opacity: 0.78;
+  }
+
+  .landing-opening__shade {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(90deg, rgb(8 9 11 / 0.96) 0%, rgb(8 9 11 / 0.78) 38%, rgb(8 9 11 / 0.2) 100%),
+      linear-gradient(0deg, rgb(8 9 11 / 0.72), transparent 35%);
+  }
+
+  .landing-opening__content {
+    position: relative;
+    display: flex;
+    width: min(100%, 80rem);
+    min-height: inherit;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    margin-inline: auto;
+    padding: 5rem clamp(1.25rem, 6vw, 6rem);
+  }
+
+  .landing-opening__eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: rgb(255 255 255 / 0.7);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+  }
+
+  .landing-opening__eyebrow span {
+    width: 2rem;
+    height: 1px;
+    background: #60a5fa;
+  }
+
+  .landing-opening__title {
+    max-width: 12ch;
+    margin-top: 1.5rem;
+    font-size: clamp(4.25rem, 10vw, 8.5rem);
+    font-weight: 700;
+    line-height: 0.87;
+    letter-spacing: -0.075em;
+    text-wrap: balance;
+  }
+
+  .landing-opening__title span {
+    color: rgb(255 255 255 / 0.58);
+  }
+
+  .landing-opening__description {
+    max-width: 34rem;
+    margin-top: 1.75rem;
+    color: rgb(255 255 255 / 0.75);
+    font-size: clamp(1rem, 1.5vw, 1.2rem);
+    line-height: 1.65;
+  }
+
+  .landing-opening__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 2rem;
+  }
+
+  .landing-opening__primary,
+  .landing-opening__secondary {
+    display: inline-flex;
+    min-height: 3.25rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition:
+      color 150ms ease,
+      background-color 150ms ease,
+      border-color 150ms ease;
+  }
+
+  .landing-opening__primary {
+    background: #fff;
+    color: #111;
+  }
+
+  .landing-opening__primary:hover {
+    background: #dbeafe;
+  }
+
+  .landing-opening__primary svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .landing-opening__secondary {
+    border-color: rgb(255 255 255 / 0.38);
+    background: rgb(255 255 255 / 0.06);
+    color: #fff;
+  }
+
+  .landing-opening__secondary:hover {
+    border-color: rgb(255 255 255 / 0.75);
+    background: rgb(255 255 255 / 0.14);
+  }
+
+  .landing-opening__scroll {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 4.5rem;
+    color: rgb(255 255 255 / 0.58);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    transition: color 150ms ease;
+  }
+
+  .landing-opening__scroll:hover {
+    color: #fff;
+  }
+
+  .landing-opening__scroll svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .landing-opening__controls {
+    position: absolute;
+    right: clamp(1.25rem, 6vw, 6rem);
+    bottom: 1.5rem;
+    z-index: 1;
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .landing-opening__controls .landing-page-button,
+  .landing-opening__controls .landing-page-button-2 {
+    border: 1px solid rgb(255 255 255 / 0.3);
+    border-radius: 50%;
+    background: rgb(8 9 11 / 0.72);
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+
+  .landing-opening__controls .landing-page-button-2 {
+    background: #fff;
+    color: #111;
+  }
+
+  @media (max-width: 640px) {
+    .landing-opening {
+      min-height: max(40rem, calc(100svh - 4rem));
+    }
+
+    .landing-opening__content {
+      padding-bottom: 6rem;
+    }
+
+    .landing-opening__title {
+      font-size: clamp(4rem, 17vw, 6rem);
+    }
+
+    .landing-opening__shade {
+      background:
+        linear-gradient(90deg, rgb(8 9 11 / 0.86), rgb(8 9 11 / 0.28)),
+        linear-gradient(0deg, rgb(8 9 11 / 0.8), transparent 62%);
+    }
+
+    .landing-opening__scroll {
+      margin-top: 3rem;
+    }
+  }
+}
