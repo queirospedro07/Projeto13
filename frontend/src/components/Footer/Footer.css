@@ -345,14 +345,14 @@
   }
 
   .footer-panel-12 {
-    --nexo-translate-y: 15%;
+    --nexo-translate-y: 20%;
     transform: translate(var(--nexo-translate-x), var(--nexo-translate-y))
       rotate(var(--nexo-rotate)) skewX(var(--nexo-skew-x)) skewY(var(--nexo-skew-y))
       scaleX(var(--nexo-scale-x)) scaleY(var(--nexo-scale-y));
     white-space: nowrap;
     text-align: center;
     font-family: var(--font-sans);
-    font-size: clamp(3.75rem, 22vw, 28rem);
+    font-size: clamp(4rem, 25vw, 34rem);
     font-weight: 700;
     text-transform: uppercase;
     line-height: 0.65;

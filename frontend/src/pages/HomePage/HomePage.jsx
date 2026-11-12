@@ -6,7 +6,6 @@ import {
   LuCompass as Compass,
   LuCircleCheck as CheckCircle2,
   LuChevronDown as ChevronDown,
-  LuSparkles as Sparkles,
   LuRadio as Radio,
   LuFileCode2 as FileCode2,
   LuAward as Award,
@@ -26,16 +25,6 @@ export const PaginaInicial = () => {
   const [isMuted, definirIsMuted] = useState(true);
   const [isPlaying, definirIsPlaying] = useState(true);
   const videoRef = useRef(null);
-  const heroRef = useRef(null);
-  const [heroRato, definirHeroRato] = useState({ x: -1000, y: -1000, active: false });
-  const tratarHeroRatoMover = (evento) => {
-    if (!heroRef.current) return;
-    const rect = heroRef.current.getBoundingClientRect();
-
-    definirHeroRato({ x: evento.clientX - rect.left, y: evento.clientY - rect.top, active: true });
-  };
-
-  const tratarHeroRatoSair = () => definirHeroRato((atual) => ({ ...atual, active: false }));
 
   useEffect(() => {
     const video = videoRef.current;
@@ -111,30 +100,12 @@ export const PaginaInicial = () => {
       />
       <div className="landing-page-panel">
         {/* Secção Principal (Hero) */}
-        <section
-          ref={heroRef}
-          onMouseMove={tratarHeroRatoMover}
-          onMouseLeave={tratarHeroRatoSair}
-          className="landing-page-section"
-        >
-          <div className="landing-page-panel-2">
-            <div className="landing-page-panel-3" />
-            <div
-              className="landing-page-panel-4 landing-page-dynamic-1"
-              style={{
-                '--landing-page-opacity': heroRato.active ? 1 : 0,
-                '--spotlight-x': `${heroRato.x}px`,
-                '--spotlight-y': `${heroRato.y}px`,
-              }}
-            />
-            <div className="landing-page-panel-5" />
-          </div>
+        <section className="landing-page-section">
           <div className="landing-page-panel-6">
             <div className="landing-page-panel-7">
               {/* Vídeo de apresentação */}
               <div className="landing-page-panel-8">
                 <div className="landing-page-panel-9">
-                  <div className="landing-page-panel-10" />
                   <video
                     ref={videoRef}
                     className="landing-page-video"
@@ -189,10 +160,10 @@ export const PaginaInicial = () => {
               </div>
               {/* Texto e botões */}
               <div className="landing-page-panel-13">
-                <h1 className="landing-page-title">Aprenda, construa e evolua.</h1>
+                <h1 className="landing-page-title">Cursos práticos para aprender tecnologia.</h1>
                 <p className="landing-page-description">
-                  Uma plataforma pensada para estudar ao seu ritmo: cursos práticos em vídeo, salas
-                  de estudo por voz e vídeo em direto e certificados no final de cada curso.
+                  Veja as aulas, pratique com projetos e tire dúvidas com a comunidade. Estude ao
+                  seu ritmo e acompanhe o progresso no seu painel.
                 </p>
 
                 <div className="landing-page-panel-14">
@@ -274,11 +245,10 @@ export const PaginaInicial = () => {
         >
           <div className="landing-page-panel-22">
             <h2 className="landing-page-heading">
-              Tudo o que precisa para estudar e colaborar num único sítio.
+              Aulas, projetos e espaços para estudar em conjunto.
             </h2>
             <p className="landing-page-description-2">
-              Acompanhe as aulas em vídeo, tire dúvidas nos canais da comunidade e acompanhe o seu
-              progresso ao longo dos cursos.
+              Escolha um curso, avance pelas aulas e peça ajuda quando precisar.
             </p>
           </div>
 
@@ -298,8 +268,7 @@ export const PaginaInicial = () => {
 
                 <h3 className="landing-page-subheading">Cursos Práticos & Projetos</h3>
                 <p className="landing-page-description-3">
-                  Aprenda com aulas estruturadas, desafios aplicados e projetos completos prontos
-                  para produção.
+                  Aulas com exercícios e projetos para pôr em prática o que aprendeu.
                 </p>
               </div>
 
@@ -326,8 +295,8 @@ export const PaginaInicial = () => {
 
                 <h3 className="landing-page-subheading">Salas de estudo e comunidade</h3>
                 <p className="landing-page-description-3">
-                  Tire dúvidas em tempo real com formadores e participe em canais de voz com
-                  partilha de ecrã durante as sessões.
+                  Converse com outros alunos e formadores nos canais de estudo, incluindo voz e
+                  partilha de ecrã.
                 </p>
               </div>
 
@@ -354,8 +323,7 @@ export const PaginaInicial = () => {
 
                 <h3 className="landing-page-subheading">Certificados de conclusão</h3>
                 <p className="landing-page-description-3">
-                  Obtenha certificados com identificador único verificável para destacar o seu
-                  perfil no LinkedIn e CV.
+                  Nos cursos elegíveis, conclua as atividades para obter uma credencial verificável.
                 </p>
               </div>
 
@@ -373,39 +341,38 @@ export const PaginaInicial = () => {
         <section className="landing-page-section-3">
           <div className="landing-page-panel-28">
             <div className="landing-page-panel-29">
-              <span className="landing-page-label-5">Acesso em Qualquer Dispositivo</span>
+              <span className="landing-page-label-5">A plataforma</span>
               <h2 className="landing-page-heading-2">
-                Estude em qualquer ecrã, ao seu próprio ritmo.
+                Tudo o que precisa para continuar a aprender.
               </h2>
               <p className="landing-page-description-4">
-                Alterne facilmente entre o computador e o telemóvel. Continue as aulas de onde
-                parou, consulte os seus apontamentos e participe nos canais de estudo da turma.
+                Acompanhe o seu progresso, consulte os materiais das aulas e participe nos canais
+                da comunidade.
               </p>
 
-              <div className="landing-page-panel-30">
-                <Link
-                  to="/explorar"
-                  className="landing-page-link"
-                >
-                  <span className="landing-page-button-6">Começar Agora</span>
-                </Link>
-                <Link
-                  to="/biblioteca"
-                  className="landing-page-link"
-                >
-                  <span className="landing-page-button-7">Aceder à Minha Biblioteca</span>
-                </Link>
-              </div>
+              <Link to="/explorar" className="landing-page-button-6">
+                Ver cursos disponíveis
+              </Link>
             </div>
 
-            <div className="landing-page-panel-31">
-              <img
-                src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1200&auto=format&fit=crop&q=80"
-                alt="Plataforma NEXO no computador e telemóvel"
-                className="landing-page-image"
-              />
-              <div className="landing-page-panel-32" />
-            </div>
+            <ul className="landing-page-panel-31">
+              <li>
+                <CheckCircle2 aria-hidden="true" />
+                Aulas em vídeo e materiais de apoio
+              </li>
+              <li>
+                <CheckCircle2 aria-hidden="true" />
+                Exercícios, questionários e projetos
+              </li>
+              <li>
+                <CheckCircle2 aria-hidden="true" />
+                Canais para conversar e estudar em conjunto
+              </li>
+              <li>
+                <CheckCircle2 aria-hidden="true" />
+                Progresso guardado na sua conta
+              </li>
+            </ul>
           </div>
         </section>
 
@@ -414,10 +381,10 @@ export const PaginaInicial = () => {
           <div className="landing-page-panel-33">
             <div className="landing-page-panel-34">
               <span className="landing-page-label-5">Formadores NEXO</span>
-              <h3 className="landing-page-subheading-2">Quer publicar os seus próprios cursos?</h3>
+              <h3 className="landing-page-subheading-2">Tem conhecimentos para partilhar?</h3>
               <p className="landing-page-description-5">
-                Submeta uma candidatura a formador. Depois de aprovada pela administração, terá
-                acesso ao Estúdio do Criador para criar módulos, aulas em vídeo e questionários.
+                Candidate-se a formador e, se for aprovado, poderá criar cursos e acompanhar os seus
+                alunos.
               </p>
             </div>
 
@@ -426,7 +393,6 @@ export const PaginaInicial = () => {
               className="landing-page-link-3"
             >
               <span className="landing-page-button-8">
-                <Sparkles className="landing-page-sparkles" />
                 <span>Candidatura a Formador</span>
               </span>
             </Link>
@@ -490,11 +456,10 @@ export const PaginaInicial = () => {
           <div className="landing-page-panel-39">
             <div className="landing-page-panel-40">
               <h2 className="landing-page-heading-4">
-                Comece a explorar os cursos na plataforma NEXO
+                Encontre um curso para começar.
               </h2>
               <p className="landing-page-description-6">
-                Crie uma conta gratuita para assistir às aulas, resolver questionários e participar
-                nas salas de estudo da comunidade.
+                Explore o catálogo e escolha o que quer aprender.
               </p>
               <div className="landing-page-panel-41">
                 <Link
