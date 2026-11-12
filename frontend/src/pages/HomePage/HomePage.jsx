@@ -170,10 +170,6 @@ export const PaginaInicial = () => {
                 </button>
               </div>
             </div>
-            <div className="landing-opening__media-caption">
-              <strong>NEXO</strong>
-              <span>Cursos, comunidade e progresso num só lugar</span>
-            </div>
           </div>
         </section>
 
@@ -307,10 +303,6 @@ export const PaginaInicial = () => {
               <h2 className="landing-page-heading-2">
                 Aprenda, pratique e acompanhe o seu progresso.
               </h2>
-              <p className="landing-page-description-4">
-                Aulas, materiais e exercícios ficam organizados no mesmo lugar. Quando precisar,
-                converse com a comunidade e continue de onde parou.
-              </p>
 
               <Link to="/explorar" className="landing-page-button-6">
                 Explorar cursos
