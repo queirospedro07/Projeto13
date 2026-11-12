@@ -20,40 +20,32 @@ export default function Rodape() {
     if (!ctx) return;
     let isIntersecting = false;
     let isRunning = false;
-    let canvasWidth = 0;
-    let canvasHeight = 0;
-    let pixelRatio = 1;
     const tratarRedimensionar = () => {
       if (!canvas || !rodape) return;
-      canvasWidth = rodape.offsetWidth;
-      canvasHeight = rodape.offsetHeight;
-      pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = Math.round(canvasWidth * pixelRatio);
-      canvas.height = Math.round(canvasHeight * pixelRatio);
-      ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      canvas.width = rodape.offsetWidth;
+      canvas.height = rodape.offsetHeight;
     };
 
     tratarRedimensionar();
-    const resizeObserver = new ResizeObserver(tratarRedimensionar);
-    resizeObserver.observe(rodape);
+    window.addEventListener('resize', tratarRedimensionar);
 
     const animate = () => {
       if (!isIntersecting || trailRef.current.length === 0) {
-        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         isRunning = false;
         animFrameRef.current = null;
 
         return;
       }
 
-      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       const isDark = document.documentElement.classList.contains('dark');
       for (let i = trailRef.current.length - 1; i >= 0; i--) {
         const p = trailRef.current[i];
 
-        p.opacity -= 0.018;
-        p.radius += 0.55;
+        p.opacity -= 0.02;
+        p.radius += 0.45;
         if (p.opacity <= 0) {
           trailRef.current.splice(i, 1);
           continue;
@@ -61,13 +53,13 @@ export default function Rodape() {
 
         const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.radius);
         if (isDark) {
-          grad.addColorStop(0, `rgba(37, 99, 235, ${p.opacity * 0.28})`);
-          grad.addColorStop(0.5, `rgba(59, 130, 246, ${p.opacity * 0.12})`);
+          grad.addColorStop(0, `rgba(59, 130, 246, ${p.opacity * 0.95})`);
+          grad.addColorStop(0.5, `rgba(99, 102, 241, ${p.opacity * 0.45})`);
           grad.addColorStop(1, 'rgba(59, 130, 246, 0)');
         } else {
-          grad.addColorStop(0, `rgba(37, 99, 235, ${p.opacity * 0.2})`);
-          grad.addColorStop(0.5, `rgba(59, 130, 246, ${p.opacity * 0.08})`);
-          grad.addColorStop(1, 'rgba(37, 99, 235, 0)');
+          grad.addColorStop(0, `rgba(25, 149, 250, ${p.opacity * 0.95})`);
+          grad.addColorStop(0.5, `rgba(59, 130, 246, ${p.opacity * 0.4})`);
+          grad.addColorStop(1, 'rgba(25, 149, 250, 0)');
         }
 
         ctx.fillStyle = grad;
@@ -112,7 +104,7 @@ export default function Rodape() {
     return () => {
       delete window.__pace_start_footer_trail;
       observer.disconnect();
-      resizeObserver.disconnect();
+      window.removeEventListener('resize', tratarRedimensionar);
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
   }, []);

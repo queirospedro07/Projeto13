@@ -305,15 +305,15 @@ export const PaginaInicial = () => {
             <div className="landing-page-panel-29">
               <span className="landing-page-label-5">A plataforma</span>
               <h2 className="landing-page-heading-2">
-                Tudo o que precisa para continuar a aprender.
+                Aprenda, pratique e acompanhe o seu progresso.
               </h2>
               <p className="landing-page-description-4">
-                Acompanhe o seu progresso, consulte os materiais das aulas e participe nos canais
-                da comunidade.
+                Aulas, materiais e exercícios ficam organizados no mesmo lugar. Quando precisar,
+                converse com a comunidade e continue de onde parou.
               </p>
 
               <Link to="/explorar" className="landing-page-button-6">
-                Ver cursos disponíveis
+                Explorar cursos
               </Link>
             </div>
 
