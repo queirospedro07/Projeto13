@@ -101,7 +101,29 @@ export const PaginaInicial = () => {
       />
       <div className="landing-page-panel">
         <section className="landing-opening">
-          <div className="landing-opening__media" aria-hidden="true">
+          <div className="landing-opening__content">
+            <p className="landing-opening__eyebrow">Aprendizagem e comunidade</p>
+            <h1 className="landing-opening__title">
+              Aprender é melhor em conjunto.
+            </h1>
+            <p className="landing-opening__description">
+              Cursos práticos, salas de estudo e uma comunidade para avançar ao seu ritmo.
+            </p>
+            <div className="landing-opening__actions">
+              <Link
+                to={utilizador ? painelCaminho : '/registar'}
+                className="landing-opening__primary"
+              >
+                {utilizador ? 'Ir para o meu painel' : 'Criar conta gratuita'}
+                <ArrowRight aria-hidden="true" />
+              </Link>
+              <Link to="/explorar" className="landing-opening__secondary">
+                Ver cursos
+              </Link>
+            </div>
+          </div>
+
+          <div className="landing-opening__media">
             <video
               ref={videoRef}
               className="landing-opening__video"
@@ -110,65 +132,40 @@ export const PaginaInicial = () => {
               loop
               playsInline
               preload="metadata"
+              aria-hidden="true"
               onPlay={() => definirIsPlaying(true)}
               onPause={() => definirIsPlaying(false)}
             >
               <source src="/video.mp4" type="video/mp4" />
             </video>
-            <div className="landing-opening__shade" />
-          </div>
-
-          <div className="landing-opening__content">
-            <p className="landing-opening__eyebrow">NEXO <span /> CURSOS · COMUNIDADE · PRÁTICA</p>
-            <h1 className="landing-opening__title">
-              Aprenda.
-              <br />
-              <span>Em conjunto.</span>
-            </h1>
-            <p className="landing-opening__description">
-              Cursos práticos e salas de estudo para aprender com outras pessoas.
-            </p>
-            <div className="landing-opening__actions">
-              <Link to={utilizador ? painelCaminho : '/registar'} className="landing-opening__primary">
-                {utilizador ? 'Ir para o meu painel' : 'Criar conta gratuita'}
-                <ArrowRight aria-hidden="true" />
-              </Link>
-              <Link to="/explorar" className="landing-opening__secondary">
-                Explorar cursos
-              </Link>
+            <div className="landing-opening__controls">
+              <button
+                type="button"
+                onClick={alternarMute}
+                className="landing-page-button"
+                aria-label={isMuted ? 'Ativar som' : 'Silenciar som'}
+                title={isMuted ? 'Ativar som' : 'Silenciar som'}
+              >
+                {isMuted ? (
+                  <VolumeX className="landing-page-volume-x" />
+                ) : (
+                  <Volume2 className="landing-page-volume-x" />
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={alternarReproduzir}
+                className="landing-page-button-2"
+                aria-label={isPlaying ? 'Pausar vídeo' : 'Reproduzir vídeo'}
+                title={isPlaying ? 'Pausar vídeo' : 'Reproduzir vídeo'}
+              >
+                {isPlaying ? (
+                  <Pause className="landing-page-volume-x" />
+                ) : (
+                  <Play className="landing-page-play" />
+                )}
+              </button>
             </div>
-            <a className="landing-opening__scroll" href="#vantagens">
-              Descubra a NEXO <ChevronDown aria-hidden="true" />
-            </a>
-          </div>
-
-          <div className="landing-opening__controls">
-            <button
-              type="button"
-              onClick={alternarMute}
-              className="landing-page-button"
-              aria-label={isMuted ? 'Ativar som' : 'Silenciar som'}
-              title={isMuted ? 'Ativar som' : 'Silenciar som'}
-            >
-              {isMuted ? (
-                <VolumeX className="landing-page-volume-x" />
-              ) : (
-                <Volume2 className="landing-page-volume-x" />
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={alternarReproduzir}
-              className="landing-page-button-2"
-              aria-label={isPlaying ? 'Pausar vídeo' : 'Reproduzir vídeo'}
-              title={isPlaying ? 'Pausar vídeo' : 'Reproduzir vídeo'}
-            >
-              {isPlaying ? (
-                <Pause className="landing-page-volume-x" />
-              ) : (
-                <Play className="landing-page-play" />
-              )}
-            </button>
           </div>
         </section>
 

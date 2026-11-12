@@ -345,17 +345,17 @@
   }
 
   .footer-panel-12 {
-    --nexo-translate-y: 25%;
+    --nexo-translate-y: 18%;
     transform: translate(var(--nexo-translate-x), var(--nexo-translate-y))
       rotate(var(--nexo-rotate)) skewX(var(--nexo-skew-x)) skewY(var(--nexo-skew-y))
       scaleX(var(--nexo-scale-x)) scaleY(var(--nexo-scale-y));
     white-space: nowrap;
     text-align: center;
     font-family: var(--font-sans);
-    font-size: clamp(5rem, 32vw, 44rem);
+    font-size: clamp(5rem, 24vw, 22rem);
     font-weight: 700;
     text-transform: uppercase;
-    line-height: 0.55;
+    line-height: 0.68;
     letter-spacing: -0.06em;
     --nexo-text-opacity: 1;
     color: rgb(0 0 0 / var(--nexo-text-opacity, 1));
