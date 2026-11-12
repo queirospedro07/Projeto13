@@ -2205,18 +2205,19 @@
     grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
     align-items: center;
     gap: clamp(2.5rem, 7vw, 7rem);
-    min-height: 38rem;
-    padding: 5rem max(clamp(1.25rem, 6vw, 6rem), calc((100% - 80rem) / 2));
-    background: #f5f5f2;
+    min-height: 36rem;
+    padding: 4.5rem max(clamp(1.25rem, 6vw, 6rem), calc((100% - 80rem) / 2));
+    background: #f8f8f7;
     color: #20211f;
   }
 
   .landing-opening__media {
     position: relative;
     min-width: 0;
-    aspect-ratio: 1.25;
+    aspect-ratio: 16 / 10;
     overflow: hidden;
-    border-radius: 0.375rem;
+    border: 1px solid #e3e4e1;
+    border-radius: 0.5rem;
     background: #d7d8d5;
   }
 
@@ -2245,12 +2246,12 @@
   }
 
   .landing-opening__title {
-    max-width: 10ch;
+    max-width: 14ch;
     margin-top: 1rem;
-    font-size: clamp(3rem, 5.3vw, 5.25rem);
+    font-size: clamp(3rem, 4.7vw, 4.5rem);
     font-weight: 600;
-    line-height: 1.02;
-    letter-spacing: -0.055em;
+    line-height: 1.04;
+    letter-spacing: -0.045em;
     text-wrap: pretty;
   }
 
@@ -2341,11 +2342,10 @@
       grid-template-columns: minmax(0, 1fr);
       gap: 2.5rem;
       min-height: auto;
-      padding-block: 4rem;
+      padding-block: 3.5rem;
     }
 
     .landing-opening__title {
-      max-width: 12ch;
       font-size: clamp(3rem, 9vw, 4.5rem);
     }
   }
@@ -2364,7 +2364,7 @@
 
 @layer overrides {
   html.dark .landing-opening {
-    background: #151614;
+    background: #141414;
     color: #f4f4f0;
   }
 
@@ -2375,6 +2375,7 @@
 
   html.dark .landing-opening__media {
     background: #292b28;
+    border-color: #333;
   }
 
   html.dark .landing-opening__primary {

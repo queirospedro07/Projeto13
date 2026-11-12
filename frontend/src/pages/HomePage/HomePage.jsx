@@ -104,10 +104,12 @@ export const PaginaInicial = () => {
           <div className="landing-opening__content">
             <p className="landing-opening__eyebrow">Aprendizagem e comunidade</p>
             <h1 className="landing-opening__title">
-              Aprender é melhor em conjunto.
+              Aprenda.
+              <br />
+              Em conjunto.
             </h1>
             <p className="landing-opening__description">
-              Cursos práticos, salas de estudo e uma comunidade para avançar ao seu ritmo.
+              Cursos práticos e salas de estudo para aprender com outras pessoas.
             </p>
             <div className="landing-opening__actions">
               <Link
