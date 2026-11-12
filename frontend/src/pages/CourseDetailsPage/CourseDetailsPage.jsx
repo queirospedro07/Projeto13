@@ -22,6 +22,7 @@ import { Distintivo } from '../../components/Badge';
 import { Avatar } from '../../components/Avatar';
 import { CursoInscreverJanela } from '../../components/CourseEnrollmentDialog';
 import { SEO } from '../../components/SEO';
+import { EsqueletoPagina } from '../../components/Skeleton';
 import { useAutenticacao } from '../../contexts/AuthContext';
 import { useAvisos } from '../../components/Alerts';
 
@@ -156,12 +157,7 @@ export const CursoDetalhesPagina = () => {
   };
 
   if (carregamento) {
-    return (
-      <div className="course-details-panel">
-        <div className="course-details-panel-2" />
-        <p className="course-details-description">A carregar os detalhes do curso...</p>
-      </div>
-    );
+    return <EsqueletoPagina variant="course" label="A carregar os detalhes do curso" />;
   }
 
   if (!curso) {

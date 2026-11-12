@@ -2,6 +2,7 @@ import './LessonNotesTab.css';
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../../services/api';
 import { soundEffects } from '../../services/soundEffects';
+import { EsqueletoLinhas } from '../Skeleton';
 
 export const AulaNotasSeparador = ({
   idAula: aulaId,
@@ -91,7 +92,7 @@ export const AulaNotasSeparador = ({
           {isSaving ? 'A guardar...' : 'Guardar Notas'}
         </button>
       </div>
-      {carregamento && <p role="status">A carregar notas...</p>}
+      {carregamento && <EsqueletoLinhas count={2} label="A carregar notas" />}
       {guardado && <p role="status">Notas guardadas.</p>}
       {erro && (
         <p role="alert">

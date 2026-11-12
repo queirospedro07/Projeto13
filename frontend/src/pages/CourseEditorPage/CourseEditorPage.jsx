@@ -40,6 +40,7 @@ import { useAutenticacao } from '../../contexts/AuthContext';
 import { soundEffects } from '../../services/soundEffects';
 import { api } from '../../services/api';
 import { formatarCursoPreco, formatarCategoria } from '../../utils/formatting';
+import { EsqueletoPagina } from '../../components/Skeleton';
 
 export const QuestionarioAulaEditor = ({ quiz: questionario, onChange: onAlterar }) => {
   const atualQuestionario = questionario || {
@@ -1243,12 +1244,7 @@ export const CursoEditorPagina = () => {
   };
 
   if (isCarregamentoCurso) {
-    return (
-      <div className="course-builder-panel-20">
-        <Loader2 className="course-builder-loader2" />
-        <p className="course-builder-description-4">A carregar dados do curso para edição...</p>
-      </div>
-    );
+    return <EsqueletoPagina variant="course" label="A carregar dados do curso para edição" />;
   }
 
   return (

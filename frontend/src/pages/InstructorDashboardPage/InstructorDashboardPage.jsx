@@ -75,6 +75,7 @@ export const FormadorPainelPagina = () => {
       <PaginaEstado
         loading
         title="A preparar o seu estúdio…"
+        loadingVariant="dashboard"
       />
     );
   if (erro)

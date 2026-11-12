@@ -13,7 +13,6 @@ import {
   LuClock as Clock,
   LuCamera as Camera,
   LuImagePlus as ImagePlus,
-  LuLoaderCircle as Loader2,
   LuEye as Eye,
   LuEyeOff as EyeOff,
   LuCheck as Check,
@@ -31,6 +30,7 @@ import { useAvisos } from '../../components/Alerts';
 import { soundEffects } from '../../services/soundEffects';
 import { api } from '../../services/api';
 import { formatarCategoria, formatarCargo } from '../../utils/formatting';
+import { EsqueletoPagina } from '../../components/Skeleton';
 
 export const PerfilPagina = () => {
   const { username: nomeUtilizador } = useParams();
@@ -217,11 +217,7 @@ export const PerfilPagina = () => {
   };
 
   if (carregamento) {
-    return (
-      <div className="profile-page-panel">
-        <Loader2 className="profile-page-loader2" />
-      </div>
-    );
+    return <EsqueletoPagina variant="profile" label="A carregar perfil" />;
   }
 
   if (carregarErro)

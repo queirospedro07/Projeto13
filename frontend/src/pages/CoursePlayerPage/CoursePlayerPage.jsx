@@ -43,6 +43,7 @@ import { CursoQuestionarioVista } from '../../components/CourseQuizView';
 import { CursoDocumentosVista } from '../../components/CourseDocumentsView';
 import { AulaNotasSeparador } from '../../components/LessonNotesTab';
 import { AulaRecursosSeparador } from '../../components/LessonResourcesTab';
+import { EsqueletoPagina } from '../../components/Skeleton';
 
 export const CursoLeitorPagina = () => {
   const { idCurso: cursoId } = useParams();
@@ -610,11 +611,7 @@ export const CursoLeitorPagina = () => {
       : null;
   const isAtualConcluido = concluidoAulaIds.has(atualAula?.id);
   if (carregamento) {
-    return (
-      <div className="course-player-panel">
-        <span className="course-player-label"></span>A carregar o ambiente do curso...
-      </div>
-    );
+    return <EsqueletoPagina variant="player" label="A carregar o ambiente do curso" />;
   }
 
   if (!curso) {

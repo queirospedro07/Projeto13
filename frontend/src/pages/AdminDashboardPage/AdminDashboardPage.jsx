@@ -349,6 +349,7 @@ export const AdministracaoPainelPagina = () => {
       <PaginaEstado
         loading
         title="A carregar a administração…"
+        loadingVariant="dashboard"
       />
     );
   if (carregarErro)

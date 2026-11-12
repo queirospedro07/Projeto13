@@ -1,5 +1,6 @@
-import { LuCircleAlert as AlertCircle, LuLoaderCircle as LoaderCircle } from 'react-icons/lu';
+import { LuCircleAlert as AlertCircle } from 'react-icons/lu';
 import { Botao } from '../Button';
+import { EsqueletoPagina } from '../Skeleton';
 import './StatusPage.css';
 
 export function PaginaEstado({
@@ -7,19 +8,23 @@ export function PaginaEstado({
   title: titulo,
   message: mensagem,
   onRetry,
+  loadingVariant: varianteCarregamento = 'default',
 }) {
-  const Icon = carregamento ? LoaderCircle : AlertCircle;
+  if (carregamento) {
+    return (
+      <EsqueletoPagina
+        variant={varianteCarregamento}
+        label={titulo || 'A carregar conteúdo'}
+      />
+    );
+  }
 
   return (
     <section
       className="page-state"
-      role={carregamento ? 'status' : 'alert'}
-      aria-busy={carregamento}
+      role="alert"
     >
-      <Icon
-        aria-hidden="true"
-        className={carregamento ? 'page-state__spinner' : undefined}
-      />
+      <AlertCircle aria-hidden="true" />
       <h1>{titulo}</h1>
       {mensagem && <p>{mensagem}</p>}
       {onRetry && (

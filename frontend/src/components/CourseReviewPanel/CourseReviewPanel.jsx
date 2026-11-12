@@ -4,6 +4,7 @@ import { Janela } from '../Dialog';
 import { Botao } from '../Button';
 import { obterYouTubeIncorporadoUrl } from '../LessonVideoPlayer/LessonVideoPlayer';
 import { seguroExternoUrl, seguroDescarregarUrl } from '../../utils/safeUrl';
+import { EsqueletoLinhas } from '../Skeleton';
 import {
   formatarCursoPreco,
   formatarCategoria,
@@ -94,7 +95,7 @@ export default function RevisaoCurso({
       onClose={() => !busy && onFechar()}
     >
       {carregamento ? (
-        <p role="status">A carregar o conteúdo do curso…</p>
+        <EsqueletoLinhas count={5} label="A carregar o conteúdo do curso" />
       ) : erro ? (
         <div role="alert">
           <p>Não foi possível carregar o curso para revisão.</p>

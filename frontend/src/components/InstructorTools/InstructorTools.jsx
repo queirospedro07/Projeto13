@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { api } from '../../services/api';
 import { Botao } from '../Button';
+import { EsqueletoLinhas } from '../Skeleton';
 import { Seletor } from '../Select';
 import { seguroExternoUrl } from '../../utils/safeUrl';
 import './InstructorTools.css';
@@ -188,9 +189,11 @@ export function ReverFila() {
         </p>
       )}
       {!filtered.length && !erro && (
-        <p role="status">
-          {busy ? 'A carregar…' : 'Não existem trabalhos pendentes para os filtros selecionados.'}
-        </p>
+        busy ? (
+          <EsqueletoLinhas count={4} label="A carregar trabalhos para avaliar" />
+        ) : (
+          <p role="status">Não existem trabalhos pendentes para os filtros selecionados.</p>
+        )
       )}
       {filtered.map((item) => (
         <article

@@ -16,6 +16,7 @@ import { useAvisos } from '../../components/Alerts';
 import { useAutenticacao } from '../../contexts/AuthContext';
 import { api } from '../../services/api';
 import { formatarCategoria } from '../../utils/formatting';
+import { EsqueletoCartoes } from '../../components/Skeleton';
 
 export const BibliotecaPagina = () => {
   const { user: utilizador } = useAutenticacao();
@@ -272,10 +273,7 @@ export const BibliotecaPagina = () => {
       </div>
 
       {carregamento ? (
-        <div className="library-page-panel-5">
-          <div className="library-page-panel-6" />
-          <p className="library-page-description-2">A carregar os seus cursos...</p>
-        </div>
+        <EsqueletoCartoes count={6} label="A carregar os seus cursos" />
       ) : filtered.length === 0 ? (
         filtrar === 'hidden' ? (
           <div className="library-page-panel-7">

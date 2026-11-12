@@ -21,6 +21,7 @@ import { Avatar } from '../../components/Avatar';
 import { useAutenticacao } from '../../contexts/AuthContext';
 import { CursoInscreverJanela } from '../../components/CourseEnrollmentDialog';
 import { api } from '../../services/api';
+import { EsqueletoCartoes } from '../../components/Skeleton';
 
 export const DescobrirEspacosPagina = () => {
   const { user: utilizador } = useAutenticacao();
@@ -207,10 +208,11 @@ export const DescobrirEspacosPagina = () => {
       </div>
 
       {carregamento ? (
-        <div className="discover-spaces-panel-10">
-          <div className="discover-spaces-panel-11" />
-          <p className="discover-spaces-description-2">A carregar catálogo de cursos...</p>
-        </div>
+        <EsqueletoCartoes
+          count={6}
+          className="discover-spaces-panel-14"
+          label="A carregar catálogo de cursos"
+        />
       ) : filteredEspacos.length === 0 ? (
         <div className="discover-spaces-panel-12">
           <div className="discover-spaces-panel-13">

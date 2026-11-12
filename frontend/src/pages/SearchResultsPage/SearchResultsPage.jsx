@@ -8,6 +8,7 @@ import { Avatar } from '../../components/Avatar';
 import { api } from '../../services/api';
 import { formatarCargo } from '../../utils/formatting';
 import { useAutenticacao } from '../../contexts/AuthContext';
+import { EsqueletoCartoes, EsqueletoPagina } from '../../components/Skeleton';
 
 export const PesquisarResultadosPagina = () => {
   const { user: utilizador, isLoading: isCarregamento } = useAutenticacao();
@@ -87,12 +88,7 @@ export const PesquisarResultadosPagina = () => {
   };
 
   if (isCarregamento) {
-    return (
-      <div className="search-results-page-panel">
-        <div className="search-results-page-panel-2" />
-        <p className="search-results-page-description">A verificar sessão...</p>
-      </div>
-    );
+    return <EsqueletoPagina label="A verificar sessão" />;
   }
 
   if (!utilizador) {
@@ -143,21 +139,7 @@ export const PesquisarResultadosPagina = () => {
           </p>
         </div>
       ) : carregamento ? (
-        <div className="search-results-page-panel-7">
-          <div className="search-results-page-panel-8">
-            <div className="search-results-page-panel-9" />
-            <div className="search-results-page-panel-10">
-              {Array.from({
-                length: 4,
-              }).map((_, indice) => (
-                <div
-                  key={indice}
-                  className="search-results-page-panel-11"
-                />
-              ))}
-            </div>
-          </div>
-        </div>
+        <EsqueletoCartoes count={4} label="A carregar resultados da pesquisa" />
       ) : (
         <>
           <div className="search-results-page-panel-12">

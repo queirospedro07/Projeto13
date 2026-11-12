@@ -15,6 +15,7 @@ import { ChamadaSalaJanela } from './components/CallRoomDialog';
 import { useLocation } from 'react-router-dom';
 import { RedirecionarRotaAnterior, ROTAS_ANTERIORES } from './components/PreviousRouteRedirect';
 import { PaginaInicial } from './pages/HomePage';
+import { EsqueletoPagina } from './components/Skeleton';
 
 const PaginaIniciarSessao = React.lazy(() => import('./pages/LoginPage'));
 const PaginaRegisto = React.lazy(() => import('./pages/RegisterPage'));
@@ -79,12 +80,7 @@ export const Aplicacao = () => {
                 )}
                 <React.Suspense
                   fallback={
-                    <div
-                      className="app-panel"
-                      role="status"
-                    >
-                      A carregar...
-                    </div>
+                    <EsqueletoPagina label="A carregar página" />
                   }
                 >
                   <Routes>

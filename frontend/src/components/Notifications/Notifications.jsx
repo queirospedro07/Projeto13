@@ -4,6 +4,7 @@ import { LuBell, LuCheck, LuCheckCheck, LuArrowUpRight } from 'react-icons/lu';
 import { api } from '../../services/api';
 import { Janela } from '../Dialog';
 import { Botao } from '../Button';
+import { EsqueletoLinhas } from '../Skeleton';
 import './Notifications.css';
 
 function formatarData(valor) {
@@ -195,6 +196,9 @@ export default function Notificacoes() {
                 Tentar novamente
               </Botao>
             </div>
+          )}
+          {carregamento && (
+            <EsqueletoLinhas count={4} withAvatar label="A carregar notificações" />
           )}
           {!carregamento && !erro && !visiveis.length && (
             <div className="notifications-empty">

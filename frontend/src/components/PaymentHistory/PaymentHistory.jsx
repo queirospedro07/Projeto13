@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../services/api';
 import { Botao } from '../Button';
+import { EsqueletoLinhas } from '../Skeleton';
 import './PaymentHistory.css';
 
 const methods = {
@@ -42,7 +43,7 @@ export function PagamentoHistorico() {
     >
       <h3>Pagamentos</h3>
       <p>Consulte os pagamentos associados à sua conta.</p>
-      {estado === 'loading' && <p role="status">A carregar…</p>}
+      {estado === 'loading' && <EsqueletoLinhas count={3} label="A carregar pagamentos" />}
       {estado === 'error' && (
         <>
           <p role="alert">Não foi possível carregar o histórico.</p>

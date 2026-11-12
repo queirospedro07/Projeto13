@@ -6,11 +6,11 @@ import {
   LuClock as Clock,
   LuRotateCcw as RotateCcw,
   LuBookOpen as BookOpen,
-  LuLoaderCircle as Loader2,
 } from 'react-icons/lu';
 import { api } from '../../services/api';
 import { Botao } from '../Button';
 import { Seletor } from '../Select';
+import { EsqueletoLinhas } from '../Skeleton';
 
 export function CursoQuestionarioVista({
   idAula: aulaId,
@@ -124,14 +124,7 @@ export function CursoQuestionarioVista({
       };
     });
   if (carregamento)
-    return (
-      <div
-        className="assessment-loading"
-        role="status"
-      >
-        <Loader2 />A carregar o questionário…
-      </div>
-    );
+    return <EsqueletoLinhas count={3} label="A carregar o questionário" />;
   if (!questionario)
     return (
       <div className="assessment-empty">

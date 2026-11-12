@@ -14,6 +14,7 @@ import { api } from '../../services/api';
 import { Botao } from '../../components/Button';
 import { SEO } from '../../components/SEO';
 import { filtrarPerguntasFrequentes } from '../../utils/helpSearch';
+import { EsqueletoLinhas } from '../../components/Skeleton';
 
 const manual = [
   [
@@ -189,13 +190,7 @@ export function PerguntasFrequentesPagina() {
                 ))}
               </div>
               {carregamento ? (
-                <div
-                  className="help-center-state"
-                  role="status"
-                >
-                  <BookOpen aria-hidden="true" />
-                  <p>A preparar as respostas…</p>
-                </div>
+                <EsqueletoLinhas count={5} label="A preparar as respostas" />
               ) : erro ? (
                 <div
                   className="help-center-state"

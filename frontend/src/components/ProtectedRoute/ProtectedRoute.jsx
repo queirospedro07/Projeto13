@@ -3,6 +3,7 @@ import { podeEnsinar } from '../../utils/permissions';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAutenticacao } from '../../contexts/AuthContext';
 import { Botao } from '../Button';
+import { EsqueletoPagina } from '../Skeleton';
 
 export const RotaProtegida = ({ children: conteudoFilho, requiredRole: obrigatorioCargo }) => {
   const {
@@ -13,12 +14,7 @@ export const RotaProtegida = ({ children: conteudoFilho, requiredRole: obrigator
   } = useAutenticacao();
   const localizacao = useLocation();
   if (isCarregamento) {
-    return (
-      <div className="protected-route-panel">
-        <div className="protected-route-panel-2"></div>
-        <p className="protected-route-description">A verificar credenciais de segurança...</p>
-      </div>
-    );
+    return <EsqueletoPagina label="A verificar credenciais de segurança" />;
   }
 
   if (sessaoErro) {

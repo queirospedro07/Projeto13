@@ -16,6 +16,7 @@ import {
 } from 'react-icons/lu';
 import { Botao } from '../../components/Button';
 import { Avatar } from '../../components/Avatar';
+import { EsqueletoLinhas } from '../../components/Skeleton';
 import { Seletor } from '../../components/Select';
 import { useAvisos } from '../../components/Alerts';
 import { api } from '../../services/api';
@@ -356,7 +357,7 @@ export const FormadorMembrosPagina = () => {
       {ativoSeparador === 'members' && (
         <>
           {carregamento ? (
-            <div className="creator-members-panel-11">A carregar lista de membros...</div>
+            <EsqueletoLinhas count={5} withAvatar label="A carregar lista de membros" />
           ) : filteredMembros.length === 0 ? (
             <div className="creator-members-panel-11">
               Nenhum membro encontrado com os filtros selecionados.
@@ -454,7 +455,7 @@ export const FormadorMembrosPagina = () => {
       {ativoSeparador === 'collaborators' && (
         <div className="creator-members-panel-16">
           {carregamentoCollabs ? (
-            <div className="creator-members-panel-19">A carregar colaboradores...</div>
+            <EsqueletoLinhas count={3} withAvatar label="A carregar colaboradores" />
           ) : colaboradores.length === 0 ? (
             <div className="creator-members-panel-20">
               <div className="creator-members-panel-21">

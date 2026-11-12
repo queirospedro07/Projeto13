@@ -23,6 +23,7 @@ import { Distintivo } from '../../components/Badge';
 import { useAvisos } from '../../components/Alerts';
 import { useAutenticacao } from '../../contexts/AuthContext';
 import { api } from '../../services/api';
+import { EsqueletoPagina } from '../../components/Skeleton';
 
 const EXPERTISE_OPTIONS = [
   {
@@ -269,12 +270,7 @@ export const CandidatarFormadorPagina = () => {
   };
 
   if (carregamento) {
-    return (
-      <div className="apply-creator-panel">
-        <div className="apply-creator-panel-2" />
-        <span className="apply-creator-label">A carregar inquérito de candidatura...</span>
-      </div>
-    );
+    return <EsqueletoPagina label="A carregar candidatura de formador" />;
   }
 
   // Se já é Formador ou Administrador

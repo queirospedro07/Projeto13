@@ -14,6 +14,7 @@ import { Logotipo } from '../../components/Logo';
 import { SEO } from '../../components/SEO';
 import { SocialPartilharJanela } from '../../components/SocialShareDialog';
 import { api } from '../../services/api';
+import { EsqueletoPagina } from '../../components/Skeleton';
 
 export const CertificadoVistaPagina = () => {
   const { id } = useParams();
@@ -38,7 +39,7 @@ export const CertificadoVistaPagina = () => {
   };
 
   if (carregamento) {
-    return <div className="certificate-view-panel">A verificar credencial de certificado...</div>;
+    return <EsqueletoPagina label="A verificar certificado" />;
   }
 
   if (!certificado) {

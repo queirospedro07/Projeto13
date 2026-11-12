@@ -158,6 +158,7 @@ export const PainelPagina = () => {
       <PaginaEstado
         loading
         title="A preparar os seus cursos…"
+        loadingVariant="dashboard"
       />
     );
   if (erro)
